@@ -1,7 +1,10 @@
 logging:
   level: INFO
 performanceMetricQuery: 
-  provider: org.zenoss.app.query.api.query.impl.MockProvider
+  defaultTimeZone: UTC
+  defaultExactTimeWindow: true
+  defaultStartTime: 1h-ago
+  defaultEndTime: now
 http:
   connectorType: nonblocking
   port: 8888

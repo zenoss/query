@@ -32,6 +32,8 @@ package org.zenoss.app.query.api;
 
 import java.util.List;
 
+import javax.ws.rs.core.Response;
+
 import com.google.common.base.Optional;
 
 /**
@@ -39,8 +41,8 @@ import com.google.common.base.Optional;
  * 
  */
 public interface PerformanceMetricQueryAPI {
-	public PerformanceQueryResponse query(Optional<String> id,
+	public Response query(Optional<String> id,
 			Optional<String> startTime, Optional<String> endTime,
 			Optional<String> tz, Optional<Boolean> exactTimeWindow,
-			List<MetricSpecification> queries);
+			List<MetricQuery> queries);	
 }

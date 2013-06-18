@@ -37,7 +37,7 @@ import java.util.Map;
  * @author David Bainbridge <dbainbridge@zenoss.com>
  * 
  */
-public final class MetricSpecification {
+public final class MetricQuery {
 	private final String metric;
 	private final Aggregator aggregator;
 	private final String downsample;
@@ -46,7 +46,7 @@ public final class MetricSpecification {
 
 	private static final Aggregator DEFAULT_AGGREGATOR = Aggregator.avg;
 
-	public MetricSpecification(Aggregator aggregator, String downsample,
+	public MetricQuery(Aggregator aggregator, String downsample,
 			boolean rate, String metric, Map<String, String> tags) {
 		this.aggregator = aggregator;
 		this.downsample = downsample;
@@ -69,7 +69,7 @@ public final class MetricSpecification {
 		return tags;
 	}
 
-	public static MetricSpecification fromString(String value) {
+	public static MetricQuery fromString(String value) {
 
 		// Determine if there are tags in this query specification. This will
 		// be a simple check, if there is a pattern '{' ... at the end
@@ -104,7 +104,7 @@ public final class MetricSpecification {
 			downsample = terms[2].trim();
 		}
 
-		return new MetricSpecification(aggregator, downsample, rate, metric,
+		return new MetricQuery(aggregator, downsample, rate, metric,
 				tags);
 	}
 
