@@ -33,12 +33,15 @@ package org.zenoss.app.query.api.query.impl;
 import java.lang.reflect.Constructor;
 import java.util.List;
 
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
 import org.zenoss.app.annotations.API;
 import org.zenoss.app.query.QueryAppConfiguration;
-import org.zenoss.app.query.api.MetricSpecification;
+import org.zenoss.app.query.api.MetricQuery;
 import org.zenoss.app.query.api.PerformanceMetricQueryAPI;
-import org.zenoss.app.query.api.PerformanceQueryResponse;
 
 import com.google.common.base.Optional;
 
@@ -47,33 +50,26 @@ import com.google.common.base.Optional;
  * 
  */
 @API
+@Configuration
 public class PerformanceMetricQueryAPIImpl implements PerformanceMetricQueryAPI {
 	@Autowired
 	QueryAppConfiguration config;
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.zenoss.app.query.api.PerformanceMetricQueryAPI#query(java.lang.String
-	 * , com.google.common.base.Optional, com.google.common.base.Optional,
-	 * com.google.common.base.Optional, com.google.common.base.Optional,
-	 * com.google.common.base.Optional)
-	 */
 	@Override
-	public PerformanceQueryResponse query(Optional<String> id,
-			Optional<String> startTime, Optional<String> endTime,
-			Optional<String> tz, Optional<Boolean> exactTimeWindow,
-			List<MetricSpecification> queries) {
+	public Response query(Optional<String> id, Optional<String> startTime,
+			Optional<String> endTime, Optional<String> tz,
+			Optional<Boolean> exactTimeWindow, List<MetricQuery> queries) {
 		try {
 			Class<?> clazz = Class.forName(config
 					.getPerformanceMetricQueryConfig().getProvider());
-			Constructor<?> constructor = clazz
-					.getConstructor(QueryAppConfiguration.class);
-			PerformanceMetricQueryAPI api = (PerformanceMetricQueryAPI) constructor
-					.newInstance(config);
-			return api.query(id, startTime, endTime, tz, exactTimeWindow,
-					queries);
+			Constructor<?> constructor = clazz.getConstructor(
+					QueryAppConfiguration.class, Optional.class,
+					Optional.class, Optional.class, Optional.class,
+					Optional.class, List.class);
+			StreamingOutput provider = (StreamingOutput) constructor
+					.newInstance(config, id, startTime, endTime, tz,
+							exactTimeWindow, queries);
+			return Response.ok(provider).build();
 		} catch (Throwable t) {
 			t.printStackTrace();
 		}

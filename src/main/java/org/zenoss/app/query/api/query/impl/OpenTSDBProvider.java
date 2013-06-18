@@ -30,14 +30,16 @@
  */
 package org.zenoss.app.query.api.query.impl;
 
-import java.util.ArrayList;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.util.List;
 
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.StreamingOutput;
+
 import org.zenoss.app.query.QueryAppConfiguration;
-import org.zenoss.app.query.api.MetricSpecification;
-import org.zenoss.app.query.api.PerformanceMetricQueryAPI;
-import org.zenoss.app.query.api.PerformanceQueryResponse;
-import org.zenoss.app.query.api.QueryResult;
+import org.zenoss.app.query.api.MetricQuery;
 
 import com.google.common.base.Optional;
 
@@ -45,37 +47,60 @@ import com.google.common.base.Optional;
  * @author David Bainbridge <dbainbridge@zenoss.com>
  * 
  */
-public class OpenTSDBProvider implements PerformanceMetricQueryAPI {
+public class OpenTSDBProvider implements StreamingOutput {
 
-	private QueryAppConfiguration config;
+	private final String id;
+	private final String startTime;
+	private final String endTime;
+	private final String tz;
+	private final Boolean exactTimeWindow;
+	private final List<MetricQuery> queries;
 
-	public OpenTSDBProvider(QueryAppConfiguration config) {
-		this.config = config;
+	public OpenTSDBProvider(QueryAppConfiguration config, Optional<String> id,
+			Optional<String> startTime, Optional<String> endTime,
+			Optional<String> tz, Optional<Boolean> exactTimeWindow,
+			List<MetricQuery> queries) {
+		this.id = id.or("not-specified");
+		this.startTime = startTime.or(config.getPerformanceMetricQueryConfig()
+				.getDefaultStartTime());
+		this.endTime = endTime.or(config.getPerformanceMetricQueryConfig()
+				.getDefaultEndTime());
+		this.tz = tz.or(config.getPerformanceMetricQueryConfig()
+				.getDefaultTimeZone());
+		this.exactTimeWindow = exactTimeWindow.or(config
+				.getPerformanceMetricQueryConfig().getDefaultExactTimeWindow());
+		this.queries = queries;
 	}
 
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * org.zenoss.app.query.api.PerformanceMetricQueryAPI#query(com.google.common
-	 * .base.Optional, com.google.common.base.Optional,
-	 * com.google.common.base.Optional, com.google.common.base.Optional,
-	 * java.util.List)
+	 * @see javax.ws.rs.core.StreamingOutput#write(java.io.OutputStream)
 	 */
 	@Override
-	public PerformanceQueryResponse query(Optional<String> id,
-			Optional<String> startTime, Optional<String> endTime,
-			Optional<String> tz, Optional<Boolean> exactTimeWindow,
-			List<MetricSpecification> queries) {
-		return new PerformanceQueryResponse(id.orNull(), startTime.or(config
-				.getPerformanceMetricQueryConfig().getDefaultStartTime()),
-				endTime.or(config.getPerformanceMetricQueryConfig()
-						.getDefaultEndTime()),
-				tz.or(config.getPerformanceMetricQueryConfig()
-						.getDefaultTimeZone()), exactTimeWindow.or(config
-						.getPerformanceMetricQueryConfig()
-						.getDefaultExactTimeWindow()),
-				new ArrayList<QueryResult>());
+	public void write(OutputStream output) throws IOException,
+			WebApplicationException {
+		try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(output))) {
+			writer.objectS().value("clientId", id, true)
+					.value("startTime", startTime, true)
+					.value("endTime", endTime, true)
+					.value("timeZone", tz, true)
+					.value("exactTimeWindow", exactTimeWindow, true)
+					.arrayS("results");
+			for (MetricQuery query : queries) {
+				writer.objectS()
+						.value("aggregator", query.getAggregator().toString(),
+								true)
+						.value("rate", query.isRate(), true)
+						.value("downsample",
+								(query.getDownsample() == null ? "not-specified"
+										: query.getDownsample()), true)
+						.value("metric", query.getMetric(), true)
+						.arrayS("datapoints");
+				writer.arrayE().objectE();
+			}
+			writer.arrayE().objectE();
+			writer.flush();
+		}
 	}
-
 }
