@@ -37,11 +37,11 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zenoss.app.query.api.MetricSpecification;
+import org.zenoss.app.query.api.MetricQuery;
 import org.zenoss.app.query.api.PerformanceMetricQueryAPI;
-import org.zenoss.app.query.api.PerformanceQueryResponse;
 import org.zenoss.dropwizardspring.annotations.Resource;
 
 import com.google.common.base.Optional;
@@ -63,13 +63,13 @@ public class PerformanceMetricQueryResources {
 	@Path("/performance")
 	@Timed
 	@GET
-	public PerformanceQueryResponse query(
-			@QueryParam("id") Optional<String> id,
-			@QueryParam("query") List<MetricSpecification> queries,
+	public Response query(@QueryParam("id") Optional<String> id,
+			@QueryParam("query") List<MetricQuery> queries,
 			@QueryParam("start") Optional<String> startTime,
 			@QueryParam("end") Optional<String> endTime,
 			@QueryParam("tz") Optional<String> tz,
 			@QueryParam("exact") Optional<Boolean> exactTimeWindow) {
+
 		return api.query(id, startTime, endTime, tz, exactTimeWindow, queries);
 	}
 }
