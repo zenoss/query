@@ -28,52 +28,28 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.query.api.query.configs;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
+package org.zenoss.app.query.api.query.impl;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
- * 
+ *
  */
-public class PerformanceMetricQueryConfig {
-	@JsonProperty
-	private String defaultTimeZone = "UTC";
-
-	@JsonProperty
-	private Boolean defaultExactTimeWindow = Boolean.TRUE;
-
-	@JsonProperty
-	private String defaultStartTime = "1h-ago";
-
-	@JsonProperty
-	private String defaultEndTime = "now";
-
-	/**
-	 * @return the defaultTimeZone
-	 */
-	public String getDefaultTimeZone() {
-		return defaultTimeZone;
-	}
-
-	/**
-	 * @return the defaultExactTimeWindow
-	 */
-	public Boolean getDefaultExactTimeWindow() {
-		return defaultExactTimeWindow;
-	}
-
-	/**
-	 * @return the defaultStartTime
-	 */
-	public String getDefaultStartTime() {
-		return defaultStartTime;
-	}
-
-	/**
-	 * @return the defaultEndTime
-	 */
-	public String getDefaultEndTime() {
-		return defaultEndTime;
-	}
+public class BasePerformanceMetricQueryAPIImpl {
+	protected static final String CLIENT_ID = "clientId";
+	protected static final String SOURCE = "source";
+	protected static final String START_TIME = "startTime";
+	protected static final String END_TIME = "endTime";
+	protected static final String TIME_ZONE = "timeZone";
+	protected static final String RESULTS = "results";
+	protected static final String DATAPOINTS = "datapoints";
+	protected static final String AGGREGATOR = "aggregator";
+	protected static final String RATE = "rate";
+	protected static final String DOWNSAMPLE = "downsample";
+	protected static final String METRIC = "metric";
+	protected static final String EXACT_TIME_WINDOW = "exactTimeWindow";
+	protected static final String TIMESTAMP = "timestamp";
+	protected static final String VALUE = "value";
+	protected static final String TAGS = "tags";
+	
+	protected static final String NOT_SPECIFIED = "not-specified";
 }
