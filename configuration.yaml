@@ -1,0 +1,12 @@
+logging:
+  level: INFO
+performanceMetricQuery: 
+  provider: org.zenoss.app.query.api.query.impl.MockProvider
+http:
+  connectorType: nonblocking
+  port: 8888
+  ssl:
+      #Example is using a java keystore in the target directory.
+      keyStore: ./target/ssl.pfx
+      keyStorePassword: zapp_pass
+      keyStoreType: pkcs12
