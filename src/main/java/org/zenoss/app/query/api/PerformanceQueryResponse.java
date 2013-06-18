@@ -37,19 +37,29 @@ import java.util.List;
  * 
  */
 public final class PerformanceQueryResponse {
+	private String clientId;
 	private String startTime;
 	private String endTime;
 	private String timeZone;
 	private Boolean exactTimeWindow;
 	private List<QueryResult> results;
 
-	public PerformanceQueryResponse(String startTime, String endTime,
-			String timeZone, Boolean exactTimeWindow, List<QueryResult> results) {
+	public PerformanceQueryResponse(String clientId, String startTime,
+			String endTime, String timeZone, Boolean exactTimeWindow,
+			List<QueryResult> results) {
+		this.clientId = (clientId == null ? "not-specified" : clientId);
 		this.startTime = startTime;
 		this.endTime = endTime;
 		this.timeZone = timeZone;
 		this.exactTimeWindow = exactTimeWindow;
 		this.results = results;
+	}
+
+	/**
+	 * @return the clientId
+	 */
+	public final String getClientId() {
+		return clientId;
 	}
 
 	/**

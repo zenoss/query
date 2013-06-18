@@ -64,12 +64,12 @@ public class PerformanceMetricQueryResources {
 	@Timed
 	@GET
 	public PerformanceQueryResponse query(
-			@QueryParam("query") List<MetricSpecification> metrics,
+			@QueryParam("id") Optional<String> id,
+			@QueryParam("query") List<MetricSpecification> queries,
 			@QueryParam("start") Optional<String> startTime,
 			@QueryParam("end") Optional<String> endTime,
-			@QueryParam("filter") Optional<String> filters,
 			@QueryParam("tz") Optional<String> tz,
 			@QueryParam("exact") Optional<Boolean> exactTimeWindow) {
-		return api.query(startTime, endTime, tz, exactTimeWindow, metrics);
+		return api.query(id, startTime, endTime, tz, exactTimeWindow, queries);
 	}
 }

@@ -138,21 +138,26 @@ public class MockProvider implements PerformanceMetricQueryAPI {
 	 * java.util.List)
 	 */
 	@Override
-	public PerformanceQueryResponse query(Optional<String> startTime,
-			Optional<String> endTime, Optional<String> tz,
-			Optional<Boolean> exactTimeWindow, List<MetricSpecification> queries) {
+	public PerformanceQueryResponse query(Optional<String> id,
+			Optional<String> startTime, Optional<String> endTime,
+			Optional<String> tz, Optional<Boolean> exactTimeWindow,
+			List<MetricSpecification> queries) {
 		List<QueryResult> results = new ArrayList<QueryResult>();
 
-		long start = parseDate(startTime.or(config.getPerformanceMetricQueryConfig().getDefaultStartTime()));
-		long end = parseDate(endTime.or(config.getPerformanceMetricQueryConfig().getDefaultEndTime()));
+		long start = parseDate(startTime.or(config
+				.getPerformanceMetricQueryConfig().getDefaultStartTime()));
+		long end = parseDate(endTime.or(config
+				.getPerformanceMetricQueryConfig().getDefaultEndTime()));
 		for (MetricSpecification query : queries) {
 			results.add(new QueryResult(query.getAggregator(), query.isRate(),
 					query.getDownsample(), query.getMetric(), generateData(
 							start, end, query.getTags())));
 		}
 
-		return new PerformanceQueryResponse(startTime.or(config.getPerformanceMetricQueryConfig().getDefaultStartTime()),
-				endTime.or(config.getPerformanceMetricQueryConfig().getDefaultEndTime()),
+		return new PerformanceQueryResponse(id.orNull(), startTime.or(config
+				.getPerformanceMetricQueryConfig().getDefaultStartTime()),
+				endTime.or(config.getPerformanceMetricQueryConfig()
+						.getDefaultEndTime()),
 				tz.or(config.getPerformanceMetricQueryConfig()
 						.getDefaultTimeZone()), exactTimeWindow.or(config
 						.getPerformanceMetricQueryConfig()

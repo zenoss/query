@@ -63,10 +63,11 @@ public class OpenTSDBProvider implements PerformanceMetricQueryAPI {
 	 * java.util.List)
 	 */
 	@Override
-	public PerformanceQueryResponse query(Optional<String> startTime,
-			Optional<String> endTime, Optional<String> tz,
-			Optional<Boolean> exactTimeWindow, List<MetricSpecification> queries) {
-		return new PerformanceQueryResponse(startTime.or(config
+	public PerformanceQueryResponse query(Optional<String> id,
+			Optional<String> startTime, Optional<String> endTime,
+			Optional<String> tz, Optional<Boolean> exactTimeWindow,
+			List<MetricSpecification> queries) {
+		return new PerformanceQueryResponse(id.orNull(), startTime.or(config
 				.getPerformanceMetricQueryConfig().getDefaultStartTime()),
 				endTime.or(config.getPerformanceMetricQueryConfig()
 						.getDefaultEndTime()),

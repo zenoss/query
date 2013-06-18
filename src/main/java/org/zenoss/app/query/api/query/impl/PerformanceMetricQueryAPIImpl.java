@@ -47,11 +47,9 @@ import com.google.common.base.Optional;
  * 
  */
 @API
-public class PerformanceMetricQueryAPIImpl implements
-		PerformanceMetricQueryAPI {
+public class PerformanceMetricQueryAPIImpl implements PerformanceMetricQueryAPI {
 	@Autowired
 	QueryAppConfiguration config;
-
 
 	/*
 	 * (non-Javadoc)
@@ -63,14 +61,19 @@ public class PerformanceMetricQueryAPIImpl implements
 	 * com.google.common.base.Optional)
 	 */
 	@Override
-	public PerformanceQueryResponse query(Optional<String> startTime,
-			Optional<String> endTime, Optional<String> tz,
-			Optional<Boolean> exactTimeWindow, List<MetricSpecification> queries) {
+	public PerformanceQueryResponse query(Optional<String> id,
+			Optional<String> startTime, Optional<String> endTime,
+			Optional<String> tz, Optional<Boolean> exactTimeWindow,
+			List<MetricSpecification> queries) {
 		try {
-			Class<?> clazz = Class.forName(config.getPerformanceMetricQueryConfig().getProvider());
-			Constructor<?> constructor = clazz.getConstructor(QueryAppConfiguration.class);
-			PerformanceMetricQueryAPI api = (PerformanceMetricQueryAPI) constructor.newInstance(config);
-			return api.query(startTime, endTime, tz, exactTimeWindow, queries);
+			Class<?> clazz = Class.forName(config
+					.getPerformanceMetricQueryConfig().getProvider());
+			Constructor<?> constructor = clazz
+					.getConstructor(QueryAppConfiguration.class);
+			PerformanceMetricQueryAPI api = (PerformanceMetricQueryAPI) constructor
+					.newInstance(config);
+			return api.query(id, startTime, endTime, tz, exactTimeWindow,
+					queries);
 		} catch (Throwable t) {
 			t.printStackTrace();
 		}

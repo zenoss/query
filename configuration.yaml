@@ -1,7 +1,7 @@
 logging:
   level: INFO
-performanceMetricQuery:
-  provider: org.zenoss.app.query.api.query.impl.OpenTSDBProvider
+performanceMetricQuery: 
+  provider: org.zenoss.app.query.api.query.impl.MockProvider
 http:
   connectorType: nonblocking
   port: 8888

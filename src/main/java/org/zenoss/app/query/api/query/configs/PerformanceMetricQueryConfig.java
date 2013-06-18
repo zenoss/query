@@ -41,7 +41,7 @@ public class PerformanceMetricQueryConfig {
 	private String defaultTimeZone = "UTC";
 
 	@JsonProperty
-	private String provider = "org.zenoss.app.query.api.query.impl.MockPerformanceMetricQueryAPIImpl";;
+	private String provider = "org.zenoss.app.query.api.query.impl.MockProvider";
 
 	@JsonProperty
 	private Boolean defaultExactTimeWindow = Boolean.TRUE;
