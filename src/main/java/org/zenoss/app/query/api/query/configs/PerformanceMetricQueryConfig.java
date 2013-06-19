@@ -49,31 +49,51 @@ public class PerformanceMetricQueryConfig {
 	@JsonProperty
 	private String defaultEndTime = "now";
 
+	@JsonProperty
+	private Boolean defaultSeries = Boolean.TRUE;
+
+	@JsonProperty
+	private String openTsdbUrl = "http://tsdb.zenaas.com:4242";
+
 	/**
 	 * @return the defaultTimeZone
 	 */
-	public String getDefaultTimeZone() {
+	public final String getDefaultTimeZone() {
 		return defaultTimeZone;
 	}
 
 	/**
 	 * @return the defaultExactTimeWindow
 	 */
-	public Boolean getDefaultExactTimeWindow() {
+	public final Boolean getDefaultExactTimeWindow() {
 		return defaultExactTimeWindow;
 	}
 
 	/**
 	 * @return the defaultStartTime
 	 */
-	public String getDefaultStartTime() {
+	public final String getDefaultStartTime() {
 		return defaultStartTime;
 	}
 
 	/**
 	 * @return the defaultEndTime
 	 */
-	public String getDefaultEndTime() {
+	public final String getDefaultEndTime() {
 		return defaultEndTime;
+	}
+
+	/**
+	 * @return the defaultSeries
+	 */
+	public final Boolean getDefaultSeries() {
+		return defaultSeries;
+	}
+
+	/**
+	 * @return the openTsdbUrl
+	 */
+	public final String getOpenTsdbUrl() {
+		return openTsdbUrl;
 	}
 }

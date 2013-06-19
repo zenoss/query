@@ -30,14 +30,11 @@
  */
 package org.zenoss.app.query.api.query.impl;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.List;
-
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -45,9 +42,6 @@ import org.springframework.context.annotation.Profile;
 import org.zenoss.app.annotations.API;
 import org.zenoss.app.query.QueryAppConfiguration;
 import org.zenoss.app.query.api.MetricQuery;
-import org.zenoss.app.query.api.PerformanceMetricQueryAPI;
-
-import com.google.common.base.Optional;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
@@ -57,91 +51,55 @@ import com.google.common.base.Optional;
 @Configuration
 @Profile({ "default", "prod" })
 public class OpenTSDBPerformanceMetricQueryAPIImpl extends
-		BasePerformanceMetricQueryAPIImpl implements PerformanceMetricQueryAPI {
+		BasePerformanceMetricQueryAPIImpl {
 	@Autowired
 	QueryAppConfiguration config;
 
 	private static final String SOURCE_ID = "OpenTSDB";
 
-	private class Worker implements StreamingOutput {
-
-		private final String id;
-		private final String startTime;
-		private final String endTime;
-		private final String tz;
-		private final Boolean exactTimeWindow;
-		private final List<MetricQuery> queries;
-
-		public Worker(QueryAppConfiguration config, String id,
-				String startTime, String endTime, String tz,
-				Boolean exactTimeWindow, List<MetricQuery> queries) {
-			this.id = id;
-			this.startTime = startTime;
-			this.endTime = endTime;
-			this.tz = tz;
-			this.exactTimeWindow = exactTimeWindow;
-			this.queries = queries;
+	protected BufferedReader getReader(QueryAppConfiguration config, String id,
+			String startTime, String endTime, String tz,
+			Boolean exactTimeWindow, Boolean series, List<MetricQuery> queries)
+			throws IOException {
+		StringBuilder buf = new StringBuilder(config
+				.getPerformanceMetricQueryConfig().getOpenTsdbUrl());
+		buf.append("/q?");
+		if (!NOW.equals(startTime)) {
+			buf.append("start=").append(startTime);
 		}
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see javax.ws.rs.core.StreamingOutput#write(java.io.OutputStream)
-		 */
-		@Override
-		public void write(OutputStream output) throws IOException,
-				WebApplicationException {
-			try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(
-					output))) {
-				writer.objectS().value(CLIENT_ID, id, true)
-						.value(SOURCE, SOURCE_ID, true)
-						.value(START_TIME, startTime, true)
-						.value(END_TIME, endTime, true)
-						.value(TIME_ZONE, tz, true)
-						.value(EXACT_TIME_WINDOW, exactTimeWindow, true)
-						.arrayS(RESULTS);
-				for (MetricQuery query : queries) {
-					writer.objectS()
-							.value(AGGREGATOR,
-									query.getAggregator().toString(), true)
-							.value(RATE, query.isRate(), true)
-							.value(DOWNSAMPLE,
-									(query.getDownsample() == null ? NOT_SPECIFIED
-											: query.getDownsample()), true)
-							.value(METRIC, query.getMetric(), true)
-							.arrayS(DATAPOINTS);
-					writer.arrayE().objectE();
-				}
-				writer.arrayE().objectE();
-				writer.flush();
-			}
+		if (!NOW.equals(endTime)) {
+			buf.append("&end=").append(endTime);
 		}
+		for (MetricQuery query : queries) {
+			buf.append("&m=").append(query.toString());
+		}
+		buf.append("&ascii");
+
+		return new BufferedReader(new InputStreamReader(
+				new URL(buf.toString()).openStream()));
 	}
 
 	/*
 	 * (non-Javadoc)
 	 * 
 	 * @see
-	 * org.zenoss.app.query.api.PerformanceMetricQueryAPI#query(com.google.common
-	 * .base.Optional, com.google.common.base.Optional,
-	 * com.google.common.base.Optional, com.google.common.base.Optional,
-	 * com.google.common.base.Optional, java.util.List)
+	 * org.zenoss.app.query.api.query.impl.BasePerformanceMetricQueryAPIImpl
+	 * #getConfiguration()
 	 */
 	@Override
-	public Response query(Optional<String> id, Optional<String> startTime,
-			Optional<String> endTime, Optional<String> tz,
-			Optional<Boolean> exactTimeWindow, List<MetricQuery> queries) {
+	protected QueryAppConfiguration getConfiguration() {
+		return config;
+	}
 
-		return Response
-				.ok(new Worker(config, id.or(NOT_SPECIFIED), startTime
-						.or(config.getPerformanceMetricQueryConfig()
-								.getDefaultStartTime()),
-						endTime.or(config.getPerformanceMetricQueryConfig()
-								.getDefaultEndTime()), tz.or(config
-								.getPerformanceMetricQueryConfig()
-								.getDefaultTimeZone()), exactTimeWindow
-								.or(config.getPerformanceMetricQueryConfig()
-										.getDefaultExactTimeWindow()), queries))
-				.build();
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.zenoss.app.query.api.query.impl.BasePerformanceMetricQueryAPIImpl
+	 * #getSourceId()
+	 */
+	@Override
+	protected String getSourceId() {
+		return SOURCE_ID;
 	}
 }
