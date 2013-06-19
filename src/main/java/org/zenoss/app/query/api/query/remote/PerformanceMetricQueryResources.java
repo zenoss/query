@@ -67,11 +67,10 @@ public class PerformanceMetricQueryResources {
             @QueryParam("query") List<MetricQuery> queries,
             @QueryParam("start") Optional<String> startTime,
             @QueryParam("end") Optional<String> endTime,
-            @QueryParam("tz") Optional<String> tz,
             @QueryParam("exact") Optional<Boolean> exactTimeWindow,
             @QueryParam("series") Optional<Boolean> series) {
 
-        return api.query(id, startTime, endTime, tz, exactTimeWindow, series,
+        return api.query(id, startTime, endTime, exactTimeWindow, series,
                 queries);
     }
 }

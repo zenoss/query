@@ -33,9 +33,13 @@ package org.zenoss.app.query.api.query.impl;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -53,6 +57,9 @@ import org.zenoss.app.query.api.MetricQuery;
 public class MockPerformanceMetricQueryAPIImpl extends
         BasePerformanceMetricQueryAPIImpl {
 
+    private static final Logger log = LoggerFactory
+            .getLogger(OpenTSDBPerformanceMetricQueryAPIImpl.class);
+
     private static final String SOURCE_ID = "mock";
     private static final String MOCK_VALUE = "mock-value";
     private static final char EQ = '=';
@@ -61,14 +68,41 @@ public class MockPerformanceMetricQueryAPIImpl extends
     @Autowired
     QueryAppConfiguration config;
 
+    protected TimeZone getServerTimeZone() {
+        return TimeZone.getDefault();
+    }
+
     protected BufferedReader getReader(QueryAppConfiguration config, String id,
-            String startTime, String endTime, String tz,
-            Boolean exactTimeWindow, Boolean series, List<MetricQuery> queries)
-            throws IOException {
+            String startTime, String endTime, Boolean exactTimeWindow,
+            Boolean series, List<MetricQuery> queries) throws IOException {
+
+        log.debug("Generate data for '{}' to '{}' requested", startTime,
+                endTime);
+
         StringBuilder buf = new StringBuilder();
-        long start = parseDate(startTime);
-        long end = parseDate(endTime);
+
+        long start = 0;
+        try {
+            start = parseDate(startTime);
+        } catch (ParseException e) {
+            log.debug(
+                    "Unable to parse start time specification of '{}' : {}:{}",
+                    startTime, e.getClass().getName(), e.getMessage());
+            return null;
+        }
+        long end = 0;
+        try {
+            end = parseDate(endTime);
+        } catch (ParseException e) {
+            log.debug("Unable to parse end time specification of '{}' : {}:{}",
+                    endTime, e.getClass().getName(), e.getMessage());
+            return null;
+        }
+
         long dur = end - start;
+
+        log.debug("Generating mock data for '{}' to '{}', a duraction of '{}'",
+                start, end, dur);
         long step = 0;
         if (dur < 60) {
             step = 1;
@@ -77,6 +111,7 @@ public class MockPerformanceMetricQueryAPIImpl extends
         } else {
             step = 15;
         }
+        log.debug("Mock data geneated at an interval of '{}' seconds", step);
 
         // Return an array of results from 0.0 to 1.0 equally distributed
         // over the time range with 1 second steps.
@@ -96,6 +131,7 @@ public class MockPerformanceMetricQueryAPIImpl extends
                 buf.append(LF);
             }
         }
+
         return new BufferedReader(new StringReader(buf.toString()));
     }
 

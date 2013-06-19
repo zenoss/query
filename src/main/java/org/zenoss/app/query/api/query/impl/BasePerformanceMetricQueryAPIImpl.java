@@ -38,11 +38,14 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zenoss.app.query.QueryAppConfiguration;
 import org.zenoss.app.query.api.MetricQuery;
 import org.zenoss.app.query.api.PerformanceMetricQueryAPI;
@@ -58,8 +61,9 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
     protected static final String CLIENT_ID = "clientId";
     protected static final String SOURCE = "source";
     protected static final String START_TIME = "startTime";
+    protected static final String START_TIME_ACTUAL = "startTimeActual";
     protected static final String END_TIME = "endTime";
-    protected static final String TIME_ZONE = "timeZone";
+    protected static final String END_TIME_ACTUAL = "endTimeActual";
     protected static final String RESULTS = "results";
     protected static final String DATAPOINTS = "datapoints";
     protected static final String AGGREGATOR = "aggregator";
@@ -75,14 +79,21 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
     protected static final String NOT_SPECIFIED = "not-specified";
     protected static final String NOW = "now";
 
+    private static final Logger log = LoggerFactory
+            .getLogger(BasePerformanceMetricQueryAPIImpl.class);
+
     protected abstract BufferedReader getReader(QueryAppConfiguration config,
-            String id, String startTime, String endTime, String tz,
+            String id, String startTime, String endTime,
             Boolean exactTimeWindow, Boolean series, List<MetricQuery> queries)
             throws IOException;
 
     protected abstract QueryAppConfiguration getConfiguration();
 
     protected abstract String getSourceId();
+
+    protected abstract TimeZone getServerTimeZone();
+
+    protected TimeZone serverTimeZone = null;
 
     protected long parseDuration(String v) {
         char last = v.charAt(v.length() - 1);
@@ -112,7 +123,7 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
         return 0;
     }
 
-    protected long parseDate(String value) {
+    protected long parseDate(String value) throws ParseException {
         String v = value.trim();
 
         if (NOW.equals(v)) {
@@ -122,9 +133,13 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
                     - parseDuration(v.substring(0, v.length() - 4));
         }
         try {
-            return new SimpleDateFormat().parse(v).getTime() / 1000;
+            return new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss-Z").parse(v)
+                    .getTime() / 1000;
         } catch (ParseException e) {
-            return new Date().getTime() / 1000;
+            // If it failed to parse with a timezone then attempt to parse
+            // w/o and use the default timezone
+            return new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss").parse(v)
+                    .getTime() / 1000;
         }
     }
 
@@ -133,7 +148,6 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
         private final String id;
         private final String startTime;
         private final String endTime;
-        private final String tz;
         private final Boolean exactTimeWindow;
         private final Boolean series;
         private final List<MetricQuery> queries;
@@ -141,13 +155,11 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
         private long end = -1;
 
         public Worker(QueryAppConfiguration config, String id,
-                String startTime, String endTime, String tz,
-                Boolean exactTimeWindow, Boolean series,
-                List<MetricQuery> queries) {
+                String startTime, String endTime, Boolean exactTimeWindow,
+                Boolean series, List<MetricQuery> queries) {
             this.id = id;
             this.startTime = startTime;
             this.endTime = endTime;
-            this.tz = tz;
             this.exactTimeWindow = exactTimeWindow;
             this.series = series;
             this.queries = queries;
@@ -178,7 +190,7 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
                     comma = false;
                 }
                 t = ts;
-                if (ts >= start && ts <= end) {
+                if (!exactTimeWindow || (ts >= start && ts <= end)) {
                     if (needHeader) {
                         writer.objectS().value(METRIC, terms[0], true);
 
@@ -234,7 +246,7 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
                 // Check the timestamp and if we went backwards in time that
                 // means that we are onto the next query.
                 ts = Long.valueOf(terms[1]);
-                if (ts >= start && ts <= end) {
+                if (!exactTimeWindow || (ts >= start && ts <= end)) {
                     if (comma) {
                         writer.write(',');
                     }
@@ -278,15 +290,36 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
             try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(
                     output))) {
 
-                BufferedReader reader = getReader(getConfiguration(), id,
-                        startTime, endTime, tz, exactTimeWindow, series,
-                        queries);
+                // Fetch the server time zone if we don't already have it
+                if (serverTimeZone == null) {
+                    serverTimeZone = getServerTimeZone();
+                }
+                start = parseDate(startTime);
+                end = parseDate(endTime);
+                SimpleDateFormat sdf = new SimpleDateFormat(
+                        "yyyy/MM/dd-HH:mm:ss");
+                sdf.setTimeZone(serverTimeZone);
+                SimpleDateFormat actual = new SimpleDateFormat(
+                        "yyyy/MM/dd-HH:mm:ss-Z");
+                actual.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-                writer.objectS().value(CLIENT_ID, id, true)
+                Date startDate = new Date(start * 1000);
+                Date endDate = new Date(end * 1000);
+
+                String convertedStartTime = sdf.format(startDate);
+                String convertedEndTime = sdf.format(endDate);
+
+                BufferedReader reader = getReader(getConfiguration(), id,
+                        convertedStartTime, convertedEndTime, exactTimeWindow,
+                        series, queries);
+
+                writer.objectS()
+                        .value(CLIENT_ID, id, true)
                         .value(SOURCE, getSourceId(), true)
                         .value(START_TIME, startTime, true)
-                        .value(END_TIME, endTime, true)
-                        .value(TIME_ZONE, tz, true)
+                        .value(START_TIME_ACTUAL, actual.format(startDate),
+                                true).value(END_TIME, endTime, true)
+                        .value(END_TIME_ACTUAL, actual.format(endDate), true)
                         .value(EXACT_TIME_WINDOW, exactTimeWindow, true)
                         .value(SERIES, series, true).arrayS(RESULTS);
 
@@ -294,12 +327,6 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
                 // the returned results are outside the bounds of the requested
                 // area. this only needs to be done if the query was for the
                 // exact time window.
-                if (exactTimeWindow) {
-                    start = parseDate(startTime);
-                    end = parseDate(endTime);
-                    System.err.printf("START:%d, END:%d\n", start, end);
-                }
-
                 if (series) {
                     writeAsSeries(writer, reader);
                 } else {
@@ -308,6 +335,10 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
 
                 writer.arrayE().objectE(); // end the whole thing
                 writer.flush();
+            } catch (Throwable t) {
+                log.error(
+                        "Server error while processing metric source {} : {}:{}",
+                        getSourceId(), t.getClass().getName(), t.getMessage());
             }
         }
     }
@@ -323,9 +354,8 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
      */
     @Override
     public Response query(Optional<String> id, Optional<String> startTime,
-            Optional<String> endTime, Optional<String> tz,
-            Optional<Boolean> exactTimeWindow, Optional<Boolean> series,
-            List<MetricQuery> queries) {
+            Optional<String> endTime, Optional<Boolean> exactTimeWindow,
+            Optional<Boolean> series, List<MetricQuery> queries) {
 
         QueryAppConfiguration config = getConfiguration();
 
@@ -334,13 +364,10 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
                         .getPerformanceMetricQueryConfig()
                         .getDefaultStartTime()),
                         endTime.or(config.getPerformanceMetricQueryConfig()
-                                .getDefaultEndTime()), tz.or(config
-                                .getPerformanceMetricQueryConfig()
-                                .getDefaultTimeZone()), exactTimeWindow
+                                .getDefaultEndTime()), exactTimeWindow
                                 .or(config.getPerformanceMetricQueryConfig()
                                         .getDefaultExactTimeWindow()), series
                                 .or(config.getPerformanceMetricQueryConfig()
                                         .getDefaultSeries()), queries)).build();
     }
-
 }

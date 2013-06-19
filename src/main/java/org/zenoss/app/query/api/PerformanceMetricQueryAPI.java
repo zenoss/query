@@ -42,7 +42,6 @@ import com.google.common.base.Optional;
  */
 public interface PerformanceMetricQueryAPI {
     public Response query(Optional<String> id, Optional<String> startTime,
-            Optional<String> endTime, Optional<String> tz,
-            Optional<Boolean> exactTimeWindow, Optional<Boolean> series,
-            List<MetricQuery> queries);
+            Optional<String> endTime, Optional<Boolean> exactTimeWindow,
+            Optional<Boolean> series, List<MetricQuery> queries);
 }

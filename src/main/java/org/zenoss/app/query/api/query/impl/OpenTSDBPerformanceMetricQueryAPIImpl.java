@@ -33,9 +33,13 @@ package org.zenoss.app.query.api.query.impl;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
+import java.util.TimeZone;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -55,12 +59,106 @@ public class OpenTSDBPerformanceMetricQueryAPIImpl extends
     @Autowired
     QueryAppConfiguration config;
 
+    private static final Logger log = LoggerFactory
+            .getLogger(OpenTSDBPerformanceMetricQueryAPIImpl.class);
+
     private static final String SOURCE_ID = "OpenTSDB";
 
+    /**
+     * Attempt to determine the time zone of the server on which the TSD is
+     * executing. The server time zone is determined by performing a "HTTP HEAD"
+     * operation on the server and looking to see if the server returned a Date
+     * header value. If not, then the default port is attempted (if not used
+     * originally). If neither are found then it will default to the value set
+     * in the configuration.
+     * 
+     * If a date header is found, then that is assumed it is in the format
+     * "EEE, d MMM yyyy HH:mm:ss Z" and the last term (space separated) is the
+     * time zone. This information is extracted, converted to a time zone {@see
+     * TimeZone#getTimeZone(String)}, and returned.
+     * 
+     * @return the TSD server's time zone
+     */
+    protected TimeZone getServerTimeZone() {
+
+        String sdate = null;
+        HttpURLConnection connection = null;
+        URL url = null;
+        try {
+            // Do a HEAD on the TSDB server and see if it reports the Date
+            url = new URL(getConfiguration().getPerformanceMetricQueryConfig()
+                    .getOpenTsdbUrl());
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("HEAD");
+            sdate = connection.getHeaderField("Date");
+            connection.disconnect();
+            connection = null;
+            if (log.isDebugEnabled()) {
+                if (sdate == null) {
+                    log.debug(
+                            "Unable to find 'Date' header value from HTTP HEAD @ {}",
+                            url);
+                } else {
+                    log.debug(
+                            "Found 'Date' header value from HTTP HEAD @ {} : {}",
+                            url, sdate);
+                }
+            }
+            if (sdate == null) {
+                // HEAD did not return value, try standard port, if not already
+                // tried.
+                if (url.getPort() != url.getDefaultPort()) {
+                    url = new URL(url.getProtocol(), url.getHost(),
+                            url.getDefaultPort(), "");
+                    connection = (HttpURLConnection) url.openConnection();
+                    connection.setRequestMethod("HEAD");
+                    sdate = connection.getHeaderField("Date");
+                    connection.disconnect();
+                    connection = null;
+                    if (log.isDebugEnabled()) {
+                        if (sdate == null) {
+                            log.debug(
+                                    "Unable to find 'Date' header value from HTTP HEAD using default port @ {}",
+                                    url);
+                        } else {
+                            log.debug(
+                                    "Found 'Date' header value from HTTP HEAD using default port @ {} : {}",
+                                    url, sdate);
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            log.error(
+                    "Failed to connect to server via '{}' to retrieve server time zone information: {} : {}",
+                    url, e.getClass().getName(), e.getMessage());
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+
+        if (sdate != null) {
+            String[] terms = sdate.split(" ");
+            TimeZone tz = TimeZone.getTimeZone(terms[terms.length - 1]);
+            return tz;
+        }
+
+        // Date not found, grab the default from the
+        // configuration
+        if (log.isDebugEnabled()) {
+            log.debug(
+                    "Returning default time zone information from configuration: {}",
+                    getConfiguration().getPerformanceMetricQueryConfig()
+                            .getDefaultTsdTimeZone());
+        }
+        return TimeZone.getTimeZone(getConfiguration()
+                .getPerformanceMetricQueryConfig().getDefaultTsdTimeZone());
+    }
+
     protected BufferedReader getReader(QueryAppConfiguration config, String id,
-            String startTime, String endTime, String tz,
-            Boolean exactTimeWindow, Boolean series, List<MetricQuery> queries)
-            throws IOException {
+            String startTime, String endTime, Boolean exactTimeWindow,
+            Boolean series, List<MetricQuery> queries) throws IOException {
         StringBuilder buf = new StringBuilder(config
                 .getPerformanceMetricQueryConfig().getOpenTsdbUrl());
         buf.append("/q?");
@@ -74,6 +172,10 @@ public class OpenTSDBPerformanceMetricQueryAPIImpl extends
             buf.append("&m=").append(query.toString());
         }
         buf.append("&ascii");
+
+        if (log.isDebugEnabled()) {
+            log.debug("OpenTSDB GET: {}", buf.toString());
+        }
 
         return new BufferedReader(new InputStreamReader(
                 new URL(buf.toString()).openStream()));
