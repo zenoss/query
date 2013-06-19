@@ -57,20 +57,20 @@ import com.yammer.metrics.annotation.Timed;
 @Produces(MediaType.APPLICATION_JSON)
 public class PerformanceMetricQueryResources {
 
-	@Autowired
-	PerformanceMetricQueryAPI api;
+    @Autowired
+    PerformanceMetricQueryAPI api;
 
-	@Path("/performance")
-	@Timed
-	@GET
-	public Response query(@QueryParam("id") Optional<String> id,
-			@QueryParam("query") List<MetricQuery> queries,
-			@QueryParam("start") Optional<String> startTime,
-			@QueryParam("end") Optional<String> endTime,
-			@QueryParam("tz") Optional<String> tz,
-			@QueryParam("exact") Optional<Boolean> exactTimeWindow,
-			@QueryParam("series") Optional<Boolean> series) {
+    @Path("/performance")
+    @Timed
+    @GET
+    public Response query(@QueryParam("id") Optional<String> id,
+            @QueryParam("query") List<MetricQuery> queries,
+            @QueryParam("start") Optional<String> startTime,
+            @QueryParam("end") Optional<String> endTime,
+            @QueryParam("exact") Optional<Boolean> exactTimeWindow,
+            @QueryParam("series") Optional<Boolean> series) {
 
-		return api.query(id, startTime, endTime, tz, exactTimeWindow, series, queries);
-	}
+        return api.query(id, startTime, endTime, exactTimeWindow, series,
+                queries);
+    }
 }
