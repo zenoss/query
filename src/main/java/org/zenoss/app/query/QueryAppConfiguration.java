@@ -43,7 +43,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class QueryAppConfiguration extends AppConfiguration {
 	@Valid
-	@JsonProperty("performanceMetricQuery")
+    @JsonProperty("performanceMetricQuery")
 	private PerformanceMetricQueryConfig performanceMetricQueryConfig = new PerformanceMetricQueryConfig();
 
 	public PerformanceMetricQueryConfig getPerformanceMetricQueryConfig() {

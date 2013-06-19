@@ -38,17 +38,17 @@ import org.zenoss.app.AutowiredApp;
  */
 public class QueryApp extends AutowiredApp<QueryAppConfiguration> {
 
-	public static void main(String[] args) throws Exception {
-		new QueryApp().run(args);
-	}
+    public static void main(String[] args) throws Exception {
+        new QueryApp().run(args);
+    }
 
-	@Override
-	public String getAppName() {
-		return "Central Query App";
-	}
+    @Override
+    public String getAppName() {
+        return "Central Query App";
+    }
 
-	@Override
-	protected Class<QueryAppConfiguration> getConfigType() {
-		return QueryAppConfiguration.class;
-	}
+    @Override
+    protected Class<QueryAppConfiguration> getConfigType() {
+        return QueryAppConfiguration.class;
+    }
 }

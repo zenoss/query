@@ -42,400 +42,400 @@ import java.io.Writer;
  */
 public class JsonWriter extends BufferedWriter {
 
-	/**
-	 * Constructs a JsonWriter that uses the specified writer for the actual
-	 * writing of data.
-	 * 
-	 * @param out
-	 *            the writer that will be utilized
-	 */
-	public JsonWriter(Writer out) {
-		super(out);
-	}
+    /**
+     * Constructs a JsonWriter that uses the specified writer for the actual
+     * writing of data.
+     * 
+     * @param out
+     *            the writer that will be utilized
+     */
+    public JsonWriter(Writer out) {
+        super(out);
+    }
 
-	/**
-	 * Writes a name / "string" value pair in JSON format to the output with an
-	 * optionally appended comma
-	 * 
-	 * @param name
-	 *            name of the property
-	 * @param value
-	 *            value of the property
-	 * @param appendComma
-	 *            determines if a comma will be appended
-	 * @return the JsonWriter, so chaining can be utilized
-	 * @throws IOException
-	 *             when then underlying writer throws an exception
-	 */
-	public JsonWriter value(String name, String value, boolean appendComma)
-			throws IOException {
-		write('\"');
-		write(name);
-		write("\":\"");
-		write(value);
-		write('\"');
-		if (appendComma) {
-			write(',');
-		}
-		return this;
-	}
+    /**
+     * Writes a name / "string" value pair in JSON format to the output with an
+     * optionally appended comma
+     * 
+     * @param name
+     *            name of the property
+     * @param value
+     *            value of the property
+     * @param appendComma
+     *            determines if a comma will be appended
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter value(String name, String value, boolean appendComma)
+            throws IOException {
+        write('\"');
+        write(name);
+        write("\":\"");
+        write(value);
+        write('\"');
+        if (appendComma) {
+            write(',');
+        }
+        return this;
+    }
 
-	/**
-	 * Writes a name / "string" value pair in JSON format to the output with no
-	 * comma appended
-	 * 
-	 * @param name
-	 *            name of the property
-	 * @param value
-	 *            value of the property
-	 * @return the JsonWriter, so chaining can be utilized
-	 * @throws IOException
-	 *             when then underlying writer throws an exception
-	 */
-	public JsonWriter value(String name, String value) throws IOException {
-		value(name, value, false);
-		return this;
-	}
+    /**
+     * Writes a name / "string" value pair in JSON format to the output with no
+     * comma appended
+     * 
+     * @param name
+     *            name of the property
+     * @param value
+     *            value of the property
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter value(String name, String value) throws IOException {
+        value(name, value, false);
+        return this;
+    }
 
-	/**
-	 * Writes a name / "boolean" value pair in JSON format to the output with an
-	 * optionally appended comma
-	 * 
-	 * @param name
-	 *            name of the property
-	 * @param value
-	 *            value of the property
-	 * @param appendComma
-	 *            determines if a comma will be appended
-	 * @return the JsonWriter, so chaining can be utilized
-	 * @throws IOException
-	 *             when then underlying writer throws an exception
-	 */
-	public JsonWriter value(String name, boolean value, boolean appendComma)
-			throws IOException {
-		write('\"');
-		write(name);
-		write("\":");
-		write(Boolean.toString(value));
-		if (appendComma) {
-			write(',');
-		}
-		return this;
-	}
+    /**
+     * Writes a name / "boolean" value pair in JSON format to the output with an
+     * optionally appended comma
+     * 
+     * @param name
+     *            name of the property
+     * @param value
+     *            value of the property
+     * @param appendComma
+     *            determines if a comma will be appended
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter value(String name, boolean value, boolean appendComma)
+            throws IOException {
+        write('\"');
+        write(name);
+        write("\":");
+        write(Boolean.toString(value));
+        if (appendComma) {
+            write(',');
+        }
+        return this;
+    }
 
-	/**
-	 * Writes a name / "boolean" value pair in JSON format to the output with no
-	 * comma appended
-	 * 
-	 * @param name
-	 *            name of the property
-	 * @param value
-	 *            value of the property
-	 * @return the JsonWriter, so chaining can be utilized
-	 * @throws IOException
-	 *             when then underlying writer throws an exception
-	 */
-	public JsonWriter value(String name, boolean value) throws IOException {
-		value(name, value, false);
-		return this;
-	}
+    /**
+     * Writes a name / "boolean" value pair in JSON format to the output with no
+     * comma appended
+     * 
+     * @param name
+     *            name of the property
+     * @param value
+     *            value of the property
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter value(String name, boolean value) throws IOException {
+        value(name, value, false);
+        return this;
+    }
 
-	/**
-	 * Writes a name / "long" value pair in JSON format to the output with an
-	 * optionally appended comma
-	 * 
-	 * @param name
-	 *            name of the property
-	 * @param value
-	 *            value of the property
-	 * @param appendComma
-	 *            determines if a comma will be appended
-	 * @return the JsonWriter, so chaining can be utilized
-	 * @throws IOException
-	 *             when then underlying writer throws an exception
-	 */
-	public JsonWriter value(String name, long value, boolean appendComma)
-			throws IOException {
-		write('\"');
-		write(name);
-		write("\":");
-		write(Long.toString(value));
-		if (appendComma) {
-			write(',');
-		}
-		return this;
-	}
+    /**
+     * Writes a name / "long" value pair in JSON format to the output with an
+     * optionally appended comma
+     * 
+     * @param name
+     *            name of the property
+     * @param value
+     *            value of the property
+     * @param appendComma
+     *            determines if a comma will be appended
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter value(String name, long value, boolean appendComma)
+            throws IOException {
+        write('\"');
+        write(name);
+        write("\":");
+        write(Long.toString(value));
+        if (appendComma) {
+            write(',');
+        }
+        return this;
+    }
 
-	/**
-	 * Writes a name / "long" value pair in JSON format to the output with no
-	 * comma appended
-	 * 
-	 * @param name
-	 *            name of the property
-	 * @param value
-	 *            value of the property
-	 * @return the JsonWriter, so chaining can be utilized
-	 * @throws IOException
-	 *             when then underlying writer throws an exception
-	 */
-	public JsonWriter value(String name, long value) throws IOException {
-		value(name, value, false);
-		return this;
-	}
+    /**
+     * Writes a name / "long" value pair in JSON format to the output with no
+     * comma appended
+     * 
+     * @param name
+     *            name of the property
+     * @param value
+     *            value of the property
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter value(String name, long value) throws IOException {
+        value(name, value, false);
+        return this;
+    }
 
-	/**
-	 * Writes a name / "double" value pair in JSON format to the output with an
-	 * optionally appended comma
-	 * 
-	 * @param name
-	 *            name of the property
-	 * @param value
-	 *            value of the property
-	 * @param appendComma
-	 *            determines if a comma will be appended
-	 * @return the JsonWriter, so chaining can be utilized
-	 * @throws IOException
-	 *             when then underlying writer throws an exception
-	 */
-	public JsonWriter value(String name, double value, boolean appendComma)
-			throws IOException {
-		write('\"');
-		write(name);
-		write("\":");
-		write(Double.toString(value));
-		if (appendComma) {
-			write(',');
-		}
-		return this;
-	}
+    /**
+     * Writes a name / "double" value pair in JSON format to the output with an
+     * optionally appended comma
+     * 
+     * @param name
+     *            name of the property
+     * @param value
+     *            value of the property
+     * @param appendComma
+     *            determines if a comma will be appended
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter value(String name, double value, boolean appendComma)
+            throws IOException {
+        write('\"');
+        write(name);
+        write("\":");
+        write(Double.toString(value));
+        if (appendComma) {
+            write(',');
+        }
+        return this;
+    }
 
-	/**
-	 * Writes a name / "double" value pair in JSON format to the output with no
-	 * comma appended
-	 * 
-	 * @param name
-	 *            name of the property
-	 * @param value
-	 *            value of the property
-	 * @return the JsonWriter, so chaining can be utilized
-	 * @throws IOException
-	 *             when then underlying writer throws an exception
-	 */
-	public JsonWriter value(String name, double value) throws IOException {
-		value(name, value, false);
-		return this;
-	}
+    /**
+     * Writes a name / "double" value pair in JSON format to the output with no
+     * comma appended
+     * 
+     * @param name
+     *            name of the property
+     * @param value
+     *            value of the property
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter value(String name, double value) throws IOException {
+        value(name, value, false);
+        return this;
+    }
 
-	/**
-	 * Writes a name / "int" value pair in JSON format to the output with an
-	 * optionally appended comma
-	 * 
-	 * @param name
-	 *            name of the property
-	 * @param value
-	 *            value of the property
-	 * @param appendComma
-	 *            determines if a comma will be appended
-	 * @return the JsonWriter, so chaining can be utilized
-	 * @throws IOException
-	 *             when then underlying writer throws an exception
-	 */
-	public JsonWriter value(String name, int value, boolean appendComma)
-			throws IOException {
-		write('\"');
-		write(name);
-		write("\":");
-		write(Integer.toString(value));
-		if (appendComma) {
-			write(',');
-		}
-		return this;
-	}
+    /**
+     * Writes a name / "int" value pair in JSON format to the output with an
+     * optionally appended comma
+     * 
+     * @param name
+     *            name of the property
+     * @param value
+     *            value of the property
+     * @param appendComma
+     *            determines if a comma will be appended
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter value(String name, int value, boolean appendComma)
+            throws IOException {
+        write('\"');
+        write(name);
+        write("\":");
+        write(Integer.toString(value));
+        if (appendComma) {
+            write(',');
+        }
+        return this;
+    }
 
-	/**
-	 * Writes a name / "int" value pair in JSON format to the output with no
-	 * comma appended
-	 * 
-	 * @param name
-	 *            name of the property
-	 * @param value
-	 *            value of the property
-	 * @return the JsonWriter, so chaining can be utilized
-	 * @throws IOException
-	 *             when then underlying writer throws an exception
-	 */
-	public JsonWriter value(String name, int value) throws IOException {
-		value(name, value, false);
-		return this;
-	}
+    /**
+     * Writes a name / "int" value pair in JSON format to the output with no
+     * comma appended
+     * 
+     * @param name
+     *            name of the property
+     * @param value
+     *            value of the property
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter value(String name, int value) throws IOException {
+        value(name, value, false);
+        return this;
+    }
 
-	/**
-	 * Writes a name / "float" value pair in JSON format to the output with an
-	 * optionally appended comma
-	 * 
-	 * @param name
-	 *            name of the property
-	 * @param value
-	 *            value of the property
-	 * @param appendComma
-	 *            determines if a comma will be appended
-	 * @return the JsonWriter, so chaining can be utilized
-	 * @throws IOException
-	 *             when then underlying writer throws an exception
-	 */
-	public JsonWriter value(String name, float value, boolean appendComma)
-			throws IOException {
-		write('\"');
-		write(name);
-		write("\":");
-		write(Float.toString(value));
-		if (appendComma) {
-			write(',');
-		}
-		return this;
-	}
+    /**
+     * Writes a name / "float" value pair in JSON format to the output with an
+     * optionally appended comma
+     * 
+     * @param name
+     *            name of the property
+     * @param value
+     *            value of the property
+     * @param appendComma
+     *            determines if a comma will be appended
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter value(String name, float value, boolean appendComma)
+            throws IOException {
+        write('\"');
+        write(name);
+        write("\":");
+        write(Float.toString(value));
+        if (appendComma) {
+            write(',');
+        }
+        return this;
+    }
 
-	/**
-	 * Writes a name / "float" value pair in JSON format to the output with no
-	 * comma appended
-	 * 
-	 * @param name
-	 *            name of the property
-	 * @param value
-	 *            value of the property
-	 * @return the JsonWriter, so chaining can be utilized
-	 * @throws IOException
-	 *             when then underlying writer throws an exception
-	 */
-	public JsonWriter value(String name, float value) throws IOException {
-		value(name, value, false);
-		return this;
-	}
+    /**
+     * Writes a name / "float" value pair in JSON format to the output with no
+     * comma appended
+     * 
+     * @param name
+     *            name of the property
+     * @param value
+     *            value of the property
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter value(String name, float value) throws IOException {
+        value(name, value, false);
+        return this;
+    }
 
-	/**
-	 * Writes the starting elements of a named JSON array to the output stream
-	 * 
-	 * @param name
-	 *            name of the array
-	 * @return the JsonWriter, so chaining can be utilized
-	 * @throws IOException
-	 *             when then underlying writer throws an exception
-	 */
-	public JsonWriter arrayS(String name) throws IOException {
-		if (name != null) {
-			write('\"');
-			write(name);
-			write("\":[");
-		} else {
-			write('[');
-		}
-		return this;
-	}
+    /**
+     * Writes the starting elements of a named JSON array to the output stream
+     * 
+     * @param name
+     *            name of the array
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter arrayS(String name) throws IOException {
+        if (name != null) {
+            write('\"');
+            write(name);
+            write("\":[");
+        } else {
+            write('[');
+        }
+        return this;
+    }
 
-	/**
-	 * Writes the starting elements of a unnamed JSON array to the output stream
-	 * 
-	 * @return the JsonWriter, so chaining can be utilized
-	 * @throws IOException
-	 *             when then underlying writer throws an exception
-	 */
-	public JsonWriter arrayS() throws IOException {
-		write('[');
-		return this;
-	}
+    /**
+     * Writes the starting elements of a unnamed JSON array to the output stream
+     * 
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter arrayS() throws IOException {
+        write('[');
+        return this;
+    }
 
-	/**
-	 * Writes the ending elements of a JSON array to the output stream with an
-	 * optional comma
-	 * 
-	 * @param appendComma
-	 *            determines if a comma will be appended
-	 * @return the JsonWriter, so chaining can be utilized
-	 * @throws IOException
-	 *             when then underlying writer throws an exception
-	 */
-	public JsonWriter arrayE(boolean appendComma) throws IOException {
-		write(']');
-		if (appendComma) {
-			write(',');
-		}
-		return this;
-	}
+    /**
+     * Writes the ending elements of a JSON array to the output stream with an
+     * optional comma
+     * 
+     * @param appendComma
+     *            determines if a comma will be appended
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter arrayE(boolean appendComma) throws IOException {
+        write(']');
+        if (appendComma) {
+            write(',');
+        }
+        return this;
+    }
 
-	/**
-	 * Writes the ending elements of a JSON array to the output stream with no
-	 * optional comma
-	 * 
-	 * @return the JsonWriter, so chaining can be utilized
-	 * @throws IOException
-	 *             when then underlying writer throws an exception
-	 */
-	public JsonWriter arrayE() throws IOException {
-		write(']');
-		return this;
-	}
+    /**
+     * Writes the ending elements of a JSON array to the output stream with no
+     * optional comma
+     * 
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter arrayE() throws IOException {
+        write(']');
+        return this;
+    }
 
-	/**
-	 * Writes the starting elements of a named JSON object to the output stream
-	 * 
-	 * @param name
-	 *            name of the object
-	 * @return the JsonWriter, so chaining can be utilized
-	 * @throws IOException
-	 *             when then underlying writer throws an exception
-	 */
-	public JsonWriter objectS(String name) throws IOException {
-		if (name != null) {
-			write('\"');
-			write(name);
-			write("\":{");
-		} else {
-			write('{');
-		}
-		return this;
-	}
+    /**
+     * Writes the starting elements of a named JSON object to the output stream
+     * 
+     * @param name
+     *            name of the object
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter objectS(String name) throws IOException {
+        if (name != null) {
+            write('\"');
+            write(name);
+            write("\":{");
+        } else {
+            write('{');
+        }
+        return this;
+    }
 
-	/**
-	 * Writes the starting elements of a unnamed JSON object to the output
-	 * stream
-	 * 
-	 * @return the JsonWriter, so chaining can be utilized
-	 * @throws IOException
-	 *             when then underlying writer throws an exception
-	 */
-	public JsonWriter objectS() throws IOException {
-		write('{');
-		return this;
-	}
+    /**
+     * Writes the starting elements of a unnamed JSON object to the output
+     * stream
+     * 
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter objectS() throws IOException {
+        write('{');
+        return this;
+    }
 
-	/**
-	 * Writes the ending elements of a JSON object to the output stream with an
-	 * optional comma
-	 * 
-	 * @param appendComma
-	 *            determines if a comma will be appended
-	 * @return the JsonWriter, so chaining can be utilized
-	 * @throws IOException
-	 *             when then underlying writer throws an exception
-	 */
-	public JsonWriter objectE(boolean appendComma) throws IOException {
-		write('}');
-		if (appendComma) {
-			write(',');
-		}
-		return this;
-	}
+    /**
+     * Writes the ending elements of a JSON object to the output stream with an
+     * optional comma
+     * 
+     * @param appendComma
+     *            determines if a comma will be appended
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter objectE(boolean appendComma) throws IOException {
+        write('}');
+        if (appendComma) {
+            write(',');
+        }
+        return this;
+    }
 
-	/**
-	 * Writes the ending elements of a JSON array to the output stream with no
-	 * optional comma
-	 * 
-	 * @return the JsonWriter, so chaining can be utilized
-	 * @throws IOException
-	 *             when then underlying writer throws an exception
-	 */
-	public JsonWriter objectE() throws IOException {
-		write('}');
-		return this;
-	}
+    /**
+     * Writes the ending elements of a JSON array to the output stream with no
+     * optional comma
+     * 
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter objectE() throws IOException {
+        write('}');
+        return this;
+    }
 }
