@@ -22,7 +22,6 @@ The resources this service provides are:
     - exact=<_true_ | _false_>
     - series-<_true_ | _false_><br/>
       Determines is the results are grouped as individual series based on the results based on metric name and tag values not based on the number of queries specified.
-    - tz=<_time zone TLA_>
     - query=<_AGG:[rate:][downsample:]metric[{tags}]_>
 
         AGG = min | max | sum | avg
