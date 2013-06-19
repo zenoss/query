@@ -5,6 +5,7 @@ performanceMetricQuery:
   defaultExactTimeWindow: true
   defaultStartTime: 1h-ago
   defaultEndTime: now
+  openTsdbUrl: http://tsdb.zenaas.com:4242
 http:
   connectorType: nonblocking
   port: 8888
