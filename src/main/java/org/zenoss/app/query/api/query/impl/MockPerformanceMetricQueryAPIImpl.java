@@ -64,49 +64,6 @@ public class MockPerformanceMetricQueryAPIImpl extends
 	@Autowired
 	QueryAppConfiguration config;
 
-	private long parseDuration(String v) {
-		char last = v.charAt(v.length() - 1);
-
-		int period = 0;
-		try {
-			period = Integer.parseInt(v.substring(0, v.length() - 1));
-		} catch (NumberFormatException e) {
-			return 0;
-		}
-
-		switch (last) {
-		case 's':
-			return period;
-		case 'm':
-			return period * 60;
-		case 'h':
-			return period * 60 * 60;
-		case 'd':
-			return period * 60 * 60 * 24;
-		case 'w':
-			return period * 60 * 60 * 24 * 7;
-		case 'y':
-			return period * 60 * 60 * 24 * 265;
-		}
-
-		return 0;
-	}
-
-	private long parseDate(String value) {
-		String v = value.trim();
-
-		if (NOW.equals(v)) {
-			return new Date().getTime() / 1000;
-		} else if (v.endsWith("-ago")) {
-			return new Date().getTime() / 1000
-					- parseDuration(v.substring(0, v.length() - 4));
-		}
-		try {
-			return new SimpleDateFormat().parse(v).getTime() / 1000;
-		} catch (ParseException e) {
-			return new Date().getTime() / 1000;
-		}
-	}
 
 	protected BufferedReader getReader(QueryAppConfiguration config, String id,
 			String startTime, String endTime, String tz,

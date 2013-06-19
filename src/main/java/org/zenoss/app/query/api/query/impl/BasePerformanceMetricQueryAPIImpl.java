@@ -34,6 +34,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 import javax.ws.rs.WebApplicationException;
@@ -78,8 +81,52 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
 			throws IOException;
 
 	protected abstract QueryAppConfiguration getConfiguration();
-	
+
 	protected abstract String getSourceId();
+
+	protected long parseDuration(String v) {
+		char last = v.charAt(v.length() - 1);
+
+		int period = 0;
+		try {
+			period = Integer.parseInt(v.substring(0, v.length() - 1));
+		} catch (NumberFormatException e) {
+			return 0;
+		}
+
+		switch (last) {
+		case 's':
+			return period;
+		case 'm':
+			return period * 60;
+		case 'h':
+			return period * 60 * 60;
+		case 'd':
+			return period * 60 * 60 * 24;
+		case 'w':
+			return period * 60 * 60 * 24 * 7;
+		case 'y':
+			return period * 60 * 60 * 24 * 265;
+		}
+
+		return 0;
+	}
+
+	protected long parseDate(String value) {
+		String v = value.trim();
+
+		if (NOW.equals(v)) {
+			return new Date().getTime() / 1000;
+		} else if (v.endsWith("-ago")) {
+			return new Date().getTime() / 1000
+					- parseDuration(v.substring(0, v.length() - 4));
+		}
+		try {
+			return new SimpleDateFormat().parse(v).getTime() / 1000;
+		} catch (ParseException e) {
+			return new Date().getTime() / 1000;
+		}
+	}
 
 	private class Worker implements StreamingOutput {
 
@@ -90,6 +137,8 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
 		private final Boolean exactTimeWindow;
 		private final Boolean series;
 		private final List<MetricQuery> queries;
+		private long start = -1;
+		private long end = -1;
 
 		public Worker(QueryAppConfiguration config, String id,
 				String startTime, String endTime, String tz,
@@ -104,57 +153,73 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
 			this.queries = queries;
 		}
 
-
 		private void writeAsSeries(JsonWriter writer, BufferedReader reader)
 				throws NumberFormatException, IOException {
 			long t = -1;
 			String line = null;
 			long ts = 0;
 			double val = 0;
+			boolean comma = false;
+			boolean needHeader = true;
+
 			while ((line = reader.readLine()) != null) {
 				String terms[] = line.split(" ", 4);
 
 				// Check the timestamp and if we went backwards in time that
 				// means that we are onto the next query.
 				ts = Long.valueOf(terms[1]);
-				if (t == -1 || ts < t) {
-					if (t != -1) {
+				if (ts < t) {
+					// If we have written a header then we need to close
+					// out the JSON object
+					if (!needHeader) {
 						writer.arrayE().objectE(true);
 					}
-					writer.objectS().value(METRIC, terms[0], true);
-
-					// every entry in this series should have the same
-					// tags, so output them once, by just using the tags
-					// from the first entry
-					if (terms.length > 3) {
-						// The result has tags
-						writer.objectS(TAGS);
-						int eq = -1;
-						for (String tag : terms[3].split(" ")) {
-							// Bit of a hack here. We are using the fact
-							// that only on the first trip through this loop
-							// eq == -1 as an indicator that on before every
-							// value except the first we need to add a ','
-							if (eq != -1) {
-								writer.write(',');
-							}
-							eq = tag.indexOf('=');
-							writer.value(tag.substring(0, eq),
-									tag.substring(eq + 1));
-						}
-						writer.objectE(true);
-					}
-
-					writer.arrayS(DATAPOINTS);
-				} else {
-					writer.write(',');
+					needHeader = true;
+					comma = false;
 				}
 				t = ts;
-				val = Double.valueOf(terms[2]);
-				writer.objectS().value(TIMESTAMP, ts, true)
-						.value(VALUE, val, false).objectE();
+				if (ts >= start && ts <= end) {
+					if (needHeader) {
+						writer.objectS().value(METRIC, terms[0], true);
+
+						// every entry in this series should have the same
+						// tags, so output them once, by just using the tags
+						// from the first entry
+						if (terms.length > 3) {
+							// The result has tags
+							writer.objectS(TAGS);
+							int eq = -1;
+							for (String tag : terms[3].split(" ")) {
+								// Bit of a hack here. We are using the fact
+								// that only on the first trip through this loop
+								// eq == -1 as an indicator that on before every
+								// value except the first we need to add a ','
+								if (eq != -1) {
+									writer.write(',');
+								}
+								eq = tag.indexOf('=');
+								writer.value(tag.substring(0, eq),
+										tag.substring(eq + 1));
+							}
+							writer.objectE(true);
+						}
+
+						writer.arrayS(DATAPOINTS);
+						needHeader = false;
+					}
+					if (comma) {
+						writer.write(',');
+					}
+					comma = true;
+					val = Double.valueOf(terms[2]);
+					writer.objectS().value(TIMESTAMP, ts, true)
+							.value(VALUE, val, false).objectE();
+				}
 			}
-			writer.arrayE().objectE(); // end the last query
+			if (!needHeader) {
+				// end the last query, if we opened it
+				writer.arrayE().objectE(); 
+			}
 		}
 
 		private void writeAsIs(JsonWriter writer, BufferedReader reader)
@@ -162,40 +227,43 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
 			String line = null;
 			long ts = -1;
 			double val = 0;
+			boolean comma = false;
 			while ((line = reader.readLine()) != null) {
 				String terms[] = line.split(" ", 4);
-
-				if (ts != -1) {
-					writer.write(',');
-				}
 
 				// Check the timestamp and if we went backwards in time that
 				// means that we are onto the next query.
 				ts = Long.valueOf(terms[1]);
-				val = Double.valueOf(terms[2]);
-				writer.objectS().value(METRIC, terms[0], true)
-						.value(TIMESTAMP, ts, true)
-						.value(VALUE, val, terms.length > 3);
+				if (ts >= start && ts <= end) {
+					if (comma) {
+						writer.write(',');
+					}
+					comma = true;
+					val = Double.valueOf(terms[2]);
+					writer.objectS().value(METRIC, terms[0], true)
+							.value(TIMESTAMP, ts, true)
+							.value(VALUE, val, terms.length > 3);
 
-				if (terms.length > 3) {
-					// The result has tags
-					writer.objectS(TAGS);
-					int eq = -1;
-					for (String tag : terms[3].split(" ")) {
-						// Bit of a hack here. We are using the fact that
-						// only on the first trip through this loop eq == -1
-						// as an indicator that on before every value except
-						// the first we need to add a ','
-						if (eq != -1) {
-							writer.write(',');
+					if (terms.length > 3) {
+						// The result has tags
+						writer.objectS(TAGS);
+						int eq = -1;
+						for (String tag : terms[3].split(" ")) {
+							// Bit of a hack here. We are using the fact that
+							// only on the first trip through this loop eq == -1
+							// as an indicator that on before every value except
+							// the first we need to add a ','
+							if (eq != -1) {
+								writer.write(',');
+							}
+							eq = tag.indexOf('=');
+							writer.value(tag.substring(0, eq),
+									tag.substring(eq + 1));
 						}
-						eq = tag.indexOf('=');
-						writer.value(tag.substring(0, eq),
-								tag.substring(eq + 1));
+						writer.objectE();
 					}
 					writer.objectE();
 				}
-				writer.objectE();
 			}
 		}
 
@@ -210,11 +278,9 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
 			try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(
 					output))) {
 
-				BufferedReader reader = getReader(getConfiguration(), id, startTime,
-						endTime, tz, exactTimeWindow, series, queries);
-				// URL url = new URL(buildUrl());
-				// BufferedReader reader = new BufferedReader(
-				// new InputStreamReader(url.openStream()));
+				BufferedReader reader = getReader(getConfiguration(), id,
+						startTime, endTime, tz, exactTimeWindow, series,
+						queries);
 
 				writer.objectS().value(CLIENT_ID, id, true)
 						.value(SOURCE, getSourceId(), true)
@@ -222,8 +288,17 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
 						.value(END_TIME, endTime, true)
 						.value(TIME_ZONE, tz, true)
 						.value(EXACT_TIME_WINDOW, exactTimeWindow, true)
-						.value(SERIES, series, true)
-						.arrayS(RESULTS);
+						.value(SERIES, series, true).arrayS(RESULTS);
+
+				// convert the start / end times to longs so we can determine if
+				// the returned results are outside the bounds of the requested
+				// area. this only needs to be done if the query was for the
+				// exact time window.
+				if (exactTimeWindow) {
+					start = parseDate(startTime);
+					end = parseDate(endTime);
+					System.err.printf("START:%d, END:%d\n", start, end);
+				}
 
 				if (series) {
 					writeAsSeries(writer, reader);
@@ -251,7 +326,7 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
 			Optional<String> endTime, Optional<String> tz,
 			Optional<Boolean> exactTimeWindow, Optional<Boolean> series,
 			List<MetricQuery> queries) {
-		
+
 		QueryAppConfiguration config = getConfiguration();
 
 		return Response.ok(
