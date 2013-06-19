@@ -30,18 +30,14 @@
  */
 package org.zenoss.app.query.api.query.impl;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+import java.io.StringReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -49,9 +45,6 @@ import org.springframework.context.annotation.Profile;
 import org.zenoss.app.annotations.API;
 import org.zenoss.app.query.QueryAppConfiguration;
 import org.zenoss.app.query.api.MetricQuery;
-import org.zenoss.app.query.api.PerformanceMetricQueryAPI;
-
-import com.google.common.base.Optional;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
@@ -61,168 +54,119 @@ import com.google.common.base.Optional;
 @Configuration
 @Profile("dev")
 public class MockPerformanceMetricQueryAPIImpl extends
-		BasePerformanceMetricQueryAPIImpl implements PerformanceMetricQueryAPI {
-	
+		BasePerformanceMetricQueryAPIImpl {
+
 	private static final String SOURCE_ID = "mock";
-	
+	private static final String MOCK_VALUE = "mock-value";
+	private static final char EQ = '=';
+	private static final char LF = '\n';
+
 	@Autowired
 	QueryAppConfiguration config;
 
-	private class Worker implements StreamingOutput {
-		private final String id;
-		private final String startTime;
-		private final String endTime;
-		private final String tz;
-		private final Boolean exactTimeWindow;
-		private final List<MetricQuery> queries;
+	private long parseDuration(String v) {
+		char last = v.charAt(v.length() - 1);
 
-		public Worker(QueryAppConfiguration config, String id,
-				String startTime, String endTime, String tz,
-				Boolean exactTimeWindow, List<MetricQuery> queries) {
-			this.id = id;
-			this.startTime = startTime;
-			this.endTime = endTime;
-			this.tz = tz;
-			this.exactTimeWindow = exactTimeWindow;
-			this.queries = queries;
-		}
-
-		private long parseDuration(String v) {
-			char last = v.charAt(v.length() - 1);
-
-			int period = 0;
-			try {
-				period = Integer.parseInt(v.substring(0, v.length() - 1));
-			} catch (NumberFormatException e) {
-				return 0;
-			}
-
-			switch (last) {
-			case 's':
-				return period;
-			case 'm':
-				return period * 60;
-			case 'h':
-				return period * 60 * 60;
-			case 'd':
-				return period * 60 * 60 * 24;
-			case 'w':
-				return period * 60 * 60 * 24 * 7;
-			case 'y':
-				return period * 60 * 60 * 24 * 265;
-			}
-
+		int period = 0;
+		try {
+			period = Integer.parseInt(v.substring(0, v.length() - 1));
+		} catch (NumberFormatException e) {
 			return 0;
 		}
 
-		private long parseDate(String value) {
-			String v = value.trim();
-
-			if ("now".equals(v)) {
-				return new Date().getTime() / 1000;
-			} else if (v.endsWith("-ago")) {
-				return new Date().getTime() / 1000
-						- parseDuration(v.substring(0, v.length() - 4));
-			}
-			try {
-				return new SimpleDateFormat().parse(v).getTime() / 1000;
-			} catch (ParseException e) {
-				return new Date().getTime() / 1000;
-			}
+		switch (last) {
+		case 's':
+			return period;
+		case 'm':
+			return period * 60;
+		case 'h':
+			return period * 60 * 60;
+		case 'd':
+			return period * 60 * 60 * 24;
+		case 'w':
+			return period * 60 * 60 * 24 * 7;
+		case 'y':
+			return period * 60 * 60 * 24 * 265;
 		}
 
-		private void generateData(JsonWriter writer, long start, long end,
-				Map<String, String> tags) throws IOException {
-			long dur = end - start;
-			long step = 0;
-			if (dur < 60) {
-				step = 1;
-			} else if (dur < 60 * 60) {
-				step = 5;
-			} else {
-				step = 15;
-			}
+		return 0;
+	}
 
-			// Return an array of results from 0.0 to 1.0 equally distributed
-			// over
-			// the time range with 1 second steps.
-			double inc = 1.0 / (double) (dur / step);
+	private long parseDate(String value) {
+		String v = value.trim();
+
+		if (NOW.equals(v)) {
+			return new Date().getTime() / 1000;
+		} else if (v.endsWith("-ago")) {
+			return new Date().getTime() / 1000
+					- parseDuration(v.substring(0, v.length() - 4));
+		}
+		try {
+			return new SimpleDateFormat().parse(v).getTime() / 1000;
+		} catch (ParseException e) {
+			return new Date().getTime() / 1000;
+		}
+	}
+
+	protected BufferedReader getReader(QueryAppConfiguration config, String id,
+			String startTime, String endTime, String tz,
+			Boolean exactTimeWindow, Boolean series, List<MetricQuery> queries)
+			throws IOException {
+		StringBuilder buf = new StringBuilder();
+		long start = parseDate(startTime);
+		long end = parseDate(endTime);
+		long dur = end - start;
+		long step = 0;
+		if (dur < 60) {
+			step = 1;
+		} else if (dur < 60 * 60) {
+			step = 5;
+		} else {
+			step = 15;
+		}
+
+		// Return an array of results from 0.0 to 1.0 equally distributed
+		// over the time range with 1 second steps.
+		double inc = 1.0 / (double) (dur / step);
+
+		for (MetricQuery query : queries) {
 			double val = 0.0;
-
 			for (long i = start; i <= end; i += step, val += inc) {
-				writer.objectS().value(TIMESTAMP, i, true)
-						.value(VALUE, val, true).objectS(TAGS);
-				int count = tags.size();
-				for (Map.Entry<String, String> entry : tags.entrySet()) {
-					writer.value(entry.getKey(), entry.getValue(),
-							(--count) > 0);
-				}
-				writer.objectE().objectE(i < end);
-			}
-		}
+				buf.append(query.getMetric()).append(' ');
+				buf.append(i).append(' ');
+				buf.append(val);
 
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see javax.ws.rs.core.StreamingOutput#write(java.io.OutputStream)
-		 */
-		@Override
-		public void write(OutputStream output) throws IOException,
-				WebApplicationException {
-			try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(
-					output))) {
-				writer.objectS().value(CLIENT_ID, id, true)
-						.value(SOURCE, SOURCE_ID, true)
-						.value(START_TIME, startTime, true)
-						.value(END_TIME, endTime, true)
-						.value(TIME_ZONE, tz, true)
-						.value(EXACT_TIME_WINDOW, exactTimeWindow, true)
-						.arrayS(RESULTS);
-				long start = parseDate(startTime);
-				long end = parseDate(endTime);
-				for (MetricQuery query : queries) {
-					writer.objectS()
-							.value(AGGREGATOR,
-									query.getAggregator().toString(), true)
-							.value(RATE, query.isRate(), true)
-							.value(DOWNSAMPLE,
-									(query.getDownsample() == null ? NOT_SPECIFIED
-											: query.getDownsample()), true)
-							.value(METRIC, query.getMetric(), true)
-							.arrayS(DATAPOINTS);
-					generateData(writer, start, end, query.getTags());
-					writer.arrayE().objectE();
+				for (Map.Entry<String, String> tag : query.getTags().entrySet()) {
+					buf.append(' ').append(tag.getKey()).append(EQ)
+							.append(MOCK_VALUE);
 				}
-				writer.arrayE().objectE();
-				writer.flush();
+				buf.append(LF);
 			}
 		}
+		return new BufferedReader(new StringReader(buf.toString()));
 	}
 
 	/*
 	 * (non-Javadoc)
 	 * 
 	 * @see
-	 * org.zenoss.app.query.api.PerformanceMetricQueryAPI#query(com.google.common
-	 * .base.Optional, com.google.common.base.Optional,
-	 * com.google.common.base.Optional, com.google.common.base.Optional,
-	 * com.google.common.base.Optional, java.util.List)
+	 * org.zenoss.app.query.api.query.impl.BasePerformanceMetricQueryAPIImpl
+	 * #getConfiguration()
 	 */
 	@Override
-	public Response query(Optional<String> id, Optional<String> startTime,
-			Optional<String> endTime, Optional<String> tz,
-			Optional<Boolean> exactTimeWindow, List<MetricQuery> queries) {
+	protected QueryAppConfiguration getConfiguration() {
+		return config;
+	}
 
-		return Response
-				.ok(new Worker(config, id.or(NOT_SPECIFIED), startTime
-						.or(config.getPerformanceMetricQueryConfig()
-								.getDefaultStartTime()),
-						endTime.or(config.getPerformanceMetricQueryConfig()
-								.getDefaultEndTime()), tz.or(config
-								.getPerformanceMetricQueryConfig()
-								.getDefaultTimeZone()), exactTimeWindow
-								.or(config.getPerformanceMetricQueryConfig()
-										.getDefaultExactTimeWindow()), queries))
-				.build();
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.zenoss.app.query.api.query.impl.BasePerformanceMetricQueryAPIImpl
+	 * #getSourceId()
+	 */
+	@Override
+	protected String getSourceId() {
+		return SOURCE_ID;
 	}
 }

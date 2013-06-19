@@ -46,8 +46,8 @@ public final class MetricQuery {
 
 	private static final Aggregator DEFAULT_AGGREGATOR = Aggregator.avg;
 
-	public MetricQuery(Aggregator aggregator, String downsample,
-			boolean rate, String metric, Map<String, String> tags) {
+	public MetricQuery(Aggregator aggregator, String downsample, boolean rate,
+			String metric, Map<String, String> tags) {
 		this.aggregator = aggregator;
 		this.downsample = downsample;
 		this.rate = rate;
@@ -80,11 +80,11 @@ public final class MetricQuery {
 		String metric = null;
 		Map<String, String> tags = null;
 		if (idx >= 0) {
-			tags = parseTags(terms[terms.length-1].substring(idx).trim());
-			metric = terms[terms.length-1].substring(0, idx-1);
+			tags = parseTags(terms[terms.length - 1].substring(idx).trim());
+			metric = terms[terms.length - 1].substring(0, idx);
 		} else {
 			tags = new HashMap<String, String>();
-			metric = terms[terms.length-1];
+			metric = terms[terms.length - 1];
 		}
 
 		Aggregator aggregator = DEFAULT_AGGREGATOR;
@@ -96,16 +96,18 @@ public final class MetricQuery {
 		if (terms.length > 2) {
 			if ("rate".equals(terms[1].trim())) {
 				rate = true;
+				if (terms.length > 3) {
+					downsample = terms[2].trim();
+				}
 			} else {
 				downsample = terms[1].trim();
+				if (terms.length > 3 && "rate".equals(terms[1].trim())) {
+					rate = true;
+				}
 			}
 		}
-		if (terms.length > 3) {
-			downsample = terms[2].trim();
-		}
 
-		return new MetricQuery(aggregator, downsample, rate, metric,
-				tags);
+		return new MetricQuery(aggregator, downsample, rate, metric, tags);
 	}
 
 	public String toString() {
@@ -113,13 +115,25 @@ public final class MetricQuery {
 		if (aggregator != null) {
 			buf.append(aggregator).append(':');
 		}
-		if (rate) {
-			buf.append("rate:");
-		}
 		if (downsample != null) {
 			buf.append(downsample).append(':');
 		}
+		if (rate) {
+			buf.append("rate:");
+		}
 		buf.append(metric);
+		if (tags.size() > 0) {
+			buf.append('{');
+			boolean comma = false;
+			for (Map.Entry<String, String> tag : tags.entrySet()) {
+				if (comma) {
+					buf.append(',');
+				}
+				comma = true;
+				buf.append(tag.getKey()).append('=').append(tag.getValue());
+			}
+			buf.append('}');
+		}
 		return buf.toString();
 	}
 
