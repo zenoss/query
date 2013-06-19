@@ -37,63 +37,63 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * 
  */
 public class PerformanceMetricQueryConfig {
-	@JsonProperty
-	private String defaultTimeZone = "UTC";
+    @JsonProperty
+    private String defaultTimeZone = "UTC";
 
-	@JsonProperty
-	private Boolean defaultExactTimeWindow = Boolean.TRUE;
+    @JsonProperty
+    private Boolean defaultExactTimeWindow = Boolean.TRUE;
 
-	@JsonProperty
-	private String defaultStartTime = "1h-ago";
+    @JsonProperty
+    private String defaultStartTime = "1h-ago";
 
-	@JsonProperty
-	private String defaultEndTime = "now";
+    @JsonProperty
+    private String defaultEndTime = "now";
 
-	@JsonProperty
-	private Boolean defaultSeries = Boolean.TRUE;
+    @JsonProperty
+    private Boolean defaultSeries = Boolean.TRUE;
 
-	@JsonProperty
-	private String openTsdbUrl = "http://tsdb.zenaas.com:4242";
+    @JsonProperty
+    private String openTsdbUrl = "http://tsdb.zenaas.com:4242";
 
-	/**
-	 * @return the defaultTimeZone
-	 */
-	public final String getDefaultTimeZone() {
-		return defaultTimeZone;
-	}
+    /**
+     * @return the defaultTimeZone
+     */
+    public final String getDefaultTimeZone() {
+        return defaultTimeZone;
+    }
 
-	/**
-	 * @return the defaultExactTimeWindow
-	 */
-	public final Boolean getDefaultExactTimeWindow() {
-		return defaultExactTimeWindow;
-	}
+    /**
+     * @return the defaultExactTimeWindow
+     */
+    public final Boolean getDefaultExactTimeWindow() {
+        return defaultExactTimeWindow;
+    }
 
-	/**
-	 * @return the defaultStartTime
-	 */
-	public final String getDefaultStartTime() {
-		return defaultStartTime;
-	}
+    /**
+     * @return the defaultStartTime
+     */
+    public final String getDefaultStartTime() {
+        return defaultStartTime;
+    }
 
-	/**
-	 * @return the defaultEndTime
-	 */
-	public final String getDefaultEndTime() {
-		return defaultEndTime;
-	}
+    /**
+     * @return the defaultEndTime
+     */
+    public final String getDefaultEndTime() {
+        return defaultEndTime;
+    }
 
-	/**
-	 * @return the defaultSeries
-	 */
-	public final Boolean getDefaultSeries() {
-		return defaultSeries;
-	}
+    /**
+     * @return the defaultSeries
+     */
+    public final Boolean getDefaultSeries() {
+        return defaultSeries;
+    }
 
-	/**
-	 * @return the openTsdbUrl
-	 */
-	public final String getOpenTsdbUrl() {
-		return openTsdbUrl;
-	}
+    /**
+     * @return the openTsdbUrl
+     */
+    public final String getOpenTsdbUrl() {
+        return openTsdbUrl;
+    }
 }

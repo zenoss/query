@@ -33,9 +33,6 @@ package org.zenoss.app.query.api.query.impl;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -54,76 +51,75 @@ import org.zenoss.app.query.api.MetricQuery;
 @Configuration
 @Profile("dev")
 public class MockPerformanceMetricQueryAPIImpl extends
-		BasePerformanceMetricQueryAPIImpl {
+        BasePerformanceMetricQueryAPIImpl {
 
-	private static final String SOURCE_ID = "mock";
-	private static final String MOCK_VALUE = "mock-value";
-	private static final char EQ = '=';
-	private static final char LF = '\n';
+    private static final String SOURCE_ID = "mock";
+    private static final String MOCK_VALUE = "mock-value";
+    private static final char EQ = '=';
+    private static final char LF = '\n';
 
-	@Autowired
-	QueryAppConfiguration config;
+    @Autowired
+    QueryAppConfiguration config;
 
+    protected BufferedReader getReader(QueryAppConfiguration config, String id,
+            String startTime, String endTime, String tz,
+            Boolean exactTimeWindow, Boolean series, List<MetricQuery> queries)
+            throws IOException {
+        StringBuilder buf = new StringBuilder();
+        long start = parseDate(startTime);
+        long end = parseDate(endTime);
+        long dur = end - start;
+        long step = 0;
+        if (dur < 60) {
+            step = 1;
+        } else if (dur < 60 * 60) {
+            step = 5;
+        } else {
+            step = 15;
+        }
 
-	protected BufferedReader getReader(QueryAppConfiguration config, String id,
-			String startTime, String endTime, String tz,
-			Boolean exactTimeWindow, Boolean series, List<MetricQuery> queries)
-			throws IOException {
-		StringBuilder buf = new StringBuilder();
-		long start = parseDate(startTime);
-		long end = parseDate(endTime);
-		long dur = end - start;
-		long step = 0;
-		if (dur < 60) {
-			step = 1;
-		} else if (dur < 60 * 60) {
-			step = 5;
-		} else {
-			step = 15;
-		}
+        // Return an array of results from 0.0 to 1.0 equally distributed
+        // over the time range with 1 second steps.
+        double inc = 1.0 / (double) (dur / step);
 
-		// Return an array of results from 0.0 to 1.0 equally distributed
-		// over the time range with 1 second steps.
-		double inc = 1.0 / (double) (dur / step);
+        for (MetricQuery query : queries) {
+            double val = 0.0;
+            for (long i = start; i <= end; i += step, val += inc) {
+                buf.append(query.getMetric()).append(' ');
+                buf.append(i).append(' ');
+                buf.append(val);
 
-		for (MetricQuery query : queries) {
-			double val = 0.0;
-			for (long i = start; i <= end; i += step, val += inc) {
-				buf.append(query.getMetric()).append(' ');
-				buf.append(i).append(' ');
-				buf.append(val);
+                for (Map.Entry<String, String> tag : query.getTags().entrySet()) {
+                    buf.append(' ').append(tag.getKey()).append(EQ)
+                            .append(MOCK_VALUE);
+                }
+                buf.append(LF);
+            }
+        }
+        return new BufferedReader(new StringReader(buf.toString()));
+    }
 
-				for (Map.Entry<String, String> tag : query.getTags().entrySet()) {
-					buf.append(' ').append(tag.getKey()).append(EQ)
-							.append(MOCK_VALUE);
-				}
-				buf.append(LF);
-			}
-		}
-		return new BufferedReader(new StringReader(buf.toString()));
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.zenoss.app.query.api.query.impl.BasePerformanceMetricQueryAPIImpl
+     * #getConfiguration()
+     */
+    @Override
+    protected QueryAppConfiguration getConfiguration() {
+        return config;
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.zenoss.app.query.api.query.impl.BasePerformanceMetricQueryAPIImpl
-	 * #getConfiguration()
-	 */
-	@Override
-	protected QueryAppConfiguration getConfiguration() {
-		return config;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.zenoss.app.query.api.query.impl.BasePerformanceMetricQueryAPIImpl
-	 * #getSourceId()
-	 */
-	@Override
-	protected String getSourceId() {
-		return SOURCE_ID;
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.zenoss.app.query.api.query.impl.BasePerformanceMetricQueryAPIImpl
+     * #getSourceId()
+     */
+    @Override
+    protected String getSourceId() {
+        return SOURCE_ID;
+    }
 }

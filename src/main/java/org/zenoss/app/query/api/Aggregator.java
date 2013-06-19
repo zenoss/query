@@ -35,5 +35,5 @@ package org.zenoss.app.query.api;
  * 
  */
 public enum Aggregator {
-	min, max, avg, sum
+    min, max, avg, sum
 }

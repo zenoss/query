@@ -51,55 +51,55 @@ import org.zenoss.app.query.api.MetricQuery;
 @Configuration
 @Profile({ "default", "prod" })
 public class OpenTSDBPerformanceMetricQueryAPIImpl extends
-		BasePerformanceMetricQueryAPIImpl {
-	@Autowired
-	QueryAppConfiguration config;
+        BasePerformanceMetricQueryAPIImpl {
+    @Autowired
+    QueryAppConfiguration config;
 
-	private static final String SOURCE_ID = "OpenTSDB";
+    private static final String SOURCE_ID = "OpenTSDB";
 
-	protected BufferedReader getReader(QueryAppConfiguration config, String id,
-			String startTime, String endTime, String tz,
-			Boolean exactTimeWindow, Boolean series, List<MetricQuery> queries)
-			throws IOException {
-		StringBuilder buf = new StringBuilder(config
-				.getPerformanceMetricQueryConfig().getOpenTsdbUrl());
-		buf.append("/q?");
-		if (!NOW.equals(startTime)) {
-			buf.append("start=").append(startTime);
-		}
-		if (!NOW.equals(endTime)) {
-			buf.append("&end=").append(endTime);
-		}
-		for (MetricQuery query : queries) {
-			buf.append("&m=").append(query.toString());
-		}
-		buf.append("&ascii");
+    protected BufferedReader getReader(QueryAppConfiguration config, String id,
+            String startTime, String endTime, String tz,
+            Boolean exactTimeWindow, Boolean series, List<MetricQuery> queries)
+            throws IOException {
+        StringBuilder buf = new StringBuilder(config
+                .getPerformanceMetricQueryConfig().getOpenTsdbUrl());
+        buf.append("/q?");
+        if (!NOW.equals(startTime)) {
+            buf.append("start=").append(startTime);
+        }
+        if (!NOW.equals(endTime)) {
+            buf.append("&end=").append(endTime);
+        }
+        for (MetricQuery query : queries) {
+            buf.append("&m=").append(query.toString());
+        }
+        buf.append("&ascii");
 
-		return new BufferedReader(new InputStreamReader(
-				new URL(buf.toString()).openStream()));
-	}
+        return new BufferedReader(new InputStreamReader(
+                new URL(buf.toString()).openStream()));
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.zenoss.app.query.api.query.impl.BasePerformanceMetricQueryAPIImpl
-	 * #getConfiguration()
-	 */
-	@Override
-	protected QueryAppConfiguration getConfiguration() {
-		return config;
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.zenoss.app.query.api.query.impl.BasePerformanceMetricQueryAPIImpl
+     * #getConfiguration()
+     */
+    @Override
+    protected QueryAppConfiguration getConfiguration() {
+        return config;
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.zenoss.app.query.api.query.impl.BasePerformanceMetricQueryAPIImpl
-	 * #getSourceId()
-	 */
-	@Override
-	protected String getSourceId() {
-		return SOURCE_ID;
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.zenoss.app.query.api.query.impl.BasePerformanceMetricQueryAPIImpl
+     * #getSourceId()
+     */
+    @Override
+    protected String getSourceId() {
+        return SOURCE_ID;
+    }
 }
