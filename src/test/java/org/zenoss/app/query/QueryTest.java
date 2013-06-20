@@ -31,6 +31,8 @@
 package org.zenoss.app.query;
 
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.Map;
 import java.util.TimeZone;
@@ -106,8 +108,17 @@ public class QueryTest extends ResourceTest {
     private char addArgument(StringBuilder buf, String name, Optional<?> value,
             char prefix) {
         if (value.isPresent()) {
-            buf.append(prefix).append(name).append('=')
-                    .append(value.get().toString());
+            try {
+                buf.append(prefix)
+                        .append(name)
+                        .append('=')
+                        .append(URLEncoder.encode(value.get().toString(),
+                                "UTF-8"));
+            } catch (UnsupportedEncodingException e) {
+                // If encoding fails, then just try the value raw
+                buf.append(prefix).append(name).append('=')
+                        .append(value.get().toString());
+            }
             return '&';
         }
         return prefix;
@@ -285,5 +296,39 @@ public class QueryTest extends ResourceTest {
                 Optional.<String> absent(), Optional.of(true),
                 Optional.of(false), new String[] { "avg:laLoadInt1",
                         "sum:laLoadInt5" });
+    }
+
+    @Test
+    public void queryTest10sAgo1QuerySeriesWithTags() throws Exception {
+        testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
+                Optional.<String> absent(), Optional.of(true),
+                Optional.of(true),
+                new String[] { "avg:laLoadInt1{btag1=value1,tag2=value2}" });
+    }
+
+    @Test
+    public void queryTest10sAgo1QueryNoSeriesWithTags() throws Exception {
+        testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
+                Optional.<String> absent(), Optional.of(true),
+                Optional.of(false),
+                new String[] { "avg:laLoadInt1{tag1=value1,tag2=value2}" });
+    }
+
+    @Test
+    public void queryTest10sAgo2QuerySeriesWithTags() throws Exception {
+        testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
+                Optional.<String> absent(), Optional.of(true),
+                Optional.of(true), new String[] {
+                        "avg:laLoadInt1{tag1=value1,tag2=value2}",
+                        "sum:laLoadInt5{tag1=value1,tag2=value2}" });
+    }
+
+    @Test
+    public void queryTest10sAgo2QueryNoSeriesWithTags() throws Exception {
+        testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
+                Optional.<String> absent(), Optional.of(true),
+                Optional.of(false), new String[] {
+                        "avg:laLoadInt1{tag1=value1,tag2=value2}",
+                        "sum:laLoadInt5{tag1=value1,tag2=value2}" });
     }
 }
