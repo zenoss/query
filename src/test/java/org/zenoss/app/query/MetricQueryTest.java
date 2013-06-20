@@ -30,6 +30,8 @@
  */
 package org.zenoss.app.query;
 
+import java.util.Map;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.zenoss.app.query.api.MetricQuery;
@@ -42,7 +44,25 @@ public class MetricQueryTest {
 
     private MetricQuery test(String source, String expected) {
         MetricQuery mq = MetricQuery.fromString(source);
-        Assert.assertEquals(expected, mq.toString());
+
+        int idx = source.indexOf('{');
+        if (idx >= 0) {
+            // has tags
+            String base = mq.toString();
+            Assert.assertEquals(expected, base.substring(0, base.indexOf('{')));
+
+            Map<String, String> tags = mq.getTags();
+            Assert.assertNotNull(tags);
+            Assert.assertEquals(2, tags.size());
+            Assert.assertEquals("value1", tags.get("tag1"));
+            Assert.assertEquals("value2", tags.get("tag2"));
+
+        } else {
+            Assert.assertEquals(expected, mq.toString());
+            Map<String, String> tags = mq.getTags();
+            Assert.assertNotNull(tags);
+            Assert.assertEquals(0, tags.size());
+        }
         return mq;
     }
 
@@ -69,7 +89,7 @@ public class MetricQueryTest {
         Assert.assertEquals("10s-ago", mq.getDownsample());
         Assert.assertEquals("laLoadInt", mq.getMetric());
     }
-    
+
     @Test
     public void fullMinTest() {
         // The to result will be different from the input as the toString
@@ -81,7 +101,7 @@ public class MetricQueryTest {
         Assert.assertEquals("10s-ago", mq.getDownsample());
         Assert.assertEquals("laLoadInt", mq.getMetric());
     }
-    
+
     @Test
     public void fullMaxTest() {
         // The to result will be different from the input as the toString
@@ -98,8 +118,7 @@ public class MetricQueryTest {
     public void noRateTest() {
         // The to result will be different from the input as the toString
         // method always outputs the downsample and then the rate
-        MetricQuery mq = test("avg:10s-ago:laLoadInt",
-                "avg:10s-ago:laLoadInt");
+        MetricQuery mq = test("avg:10s-ago:laLoadInt", "avg:10s-ago:laLoadInt");
         Assert.assertEquals("avg", mq.getAggregator().toString());
         Assert.assertEquals(false, mq.isRate());
         Assert.assertEquals("10s-ago", mq.getDownsample());
@@ -110,8 +129,7 @@ public class MetricQueryTest {
     public void noDownsampleTest() {
         // The to result will be different from the input as the toString
         // method always outputs the downsample and then the rate
-        MetricQuery mq = test("avg:rate:laLoadInt",
-                "avg:rate:laLoadInt");
+        MetricQuery mq = test("avg:rate:laLoadInt", "avg:rate:laLoadInt");
         Assert.assertEquals("avg", mq.getAggregator().toString());
         Assert.assertEquals(true, mq.isRate());
         Assert.assertNull(mq.getDownsample());
@@ -122,7 +140,94 @@ public class MetricQueryTest {
     public void fullDefaultTest() {
         // The to result will be different from the input as the toString
         // method always outputs the downsample and then the rate
-        MetricQuery mq = test("laLoadInt",
+        MetricQuery mq = test("laLoadInt", "avg:laLoadInt");
+        Assert.assertEquals("avg", mq.getAggregator().toString());
+        Assert.assertEquals(false, mq.isRate());
+        Assert.assertNull(mq.getDownsample());
+        Assert.assertEquals("laLoadInt", mq.getMetric());
+    }
+
+    @Test
+    public void fullAvgWithTagsTest() {
+        // The to result will be different from the input as the toString
+        // method always outputs the downsample and then the rate
+        MetricQuery mq = test(
+                "avg:rate:10s-ago:laLoadInt{tag1=value1,tag2=value2}",
+                "avg:10s-ago:rate:laLoadInt");
+        Assert.assertEquals("avg", mq.getAggregator().toString());
+        Assert.assertEquals(true, mq.isRate());
+        Assert.assertEquals("10s-ago", mq.getDownsample());
+        Assert.assertEquals("laLoadInt", mq.getMetric());
+    }
+
+    @Test
+    public void fullSumWithTagsTest() {
+        // The to result will be different from the input as the toString
+        // method always outputs the downsample and then the rate
+        MetricQuery mq = test(
+                "sum:rate:10s-ago:laLoadInt{tag1=value1,tag2=value2}",
+                "sum:10s-ago:rate:laLoadInt");
+        Assert.assertEquals("sum", mq.getAggregator().toString());
+        Assert.assertEquals(true, mq.isRate());
+        Assert.assertEquals("10s-ago", mq.getDownsample());
+        Assert.assertEquals("laLoadInt", mq.getMetric());
+    }
+
+    @Test
+    public void fullMinWithTagsTest() {
+        // The to result will be different from the input as the toString
+        // method always outputs the downsample and then the rate
+        MetricQuery mq = test(
+                "min:rate:10s-ago:laLoadInt{tag1=value1,tag2=value2}",
+                "min:10s-ago:rate:laLoadInt");
+        Assert.assertEquals("min", mq.getAggregator().toString());
+        Assert.assertEquals(true, mq.isRate());
+        Assert.assertEquals("10s-ago", mq.getDownsample());
+        Assert.assertEquals("laLoadInt", mq.getMetric());
+    }
+
+    @Test
+    public void fullMaxWithTagsTest() {
+        // The to result will be different from the input as the toString
+        // method always outputs the downsample and then the rate
+        MetricQuery mq = test(
+                "max:rate:10s-ago:laLoadInt{tag1=value1,tag2=value2}",
+                "max:10s-ago:rate:laLoadInt");
+        Assert.assertEquals("max", mq.getAggregator().toString());
+        Assert.assertEquals(true, mq.isRate());
+        Assert.assertEquals("10s-ago", mq.getDownsample());
+        Assert.assertEquals("laLoadInt", mq.getMetric());
+    }
+
+    @Test
+    public void noRateWithTagsTest() {
+        // The to result will be different from the input as the toString
+        // method always outputs the downsample and then the rate
+        MetricQuery mq = test("avg:10s-ago:laLoadInt{tag1=value1,tag2=value2}",
+                "avg:10s-ago:laLoadInt");
+        Assert.assertEquals("avg", mq.getAggregator().toString());
+        Assert.assertEquals(false, mq.isRate());
+        Assert.assertEquals("10s-ago", mq.getDownsample());
+        Assert.assertEquals("laLoadInt", mq.getMetric());
+    }
+
+    @Test
+    public void noDownsampleWithTagsTest() {
+        // The to result will be different from the input as the toString
+        // method always outputs the downsample and then the rate
+        MetricQuery mq = test("avg:rate:laLoadInt{tag1=value1,tag2=value2}",
+                "avg:rate:laLoadInt");
+        Assert.assertEquals("avg", mq.getAggregator().toString());
+        Assert.assertEquals(true, mq.isRate());
+        Assert.assertNull(mq.getDownsample());
+        Assert.assertEquals("laLoadInt", mq.getMetric());
+    }
+
+    @Test
+    public void fullDefaultWithTagsTest() {
+        // The to result will be different from the input as the toString
+        // method always outputs the downsample and then the rate
+        MetricQuery mq = test("laLoadInt{tag1=value1,tag2=value2}",
                 "avg:laLoadInt");
         Assert.assertEquals("avg", mq.getAggregator().toString());
         Assert.assertEquals(false, mq.isRate());
