@@ -30,31 +30,29 @@
  */
 package org.zenoss.app.query;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
+import java.util.Map;
+import java.util.TimeZone;
 
-import org.junit.Before;
+import org.eclipse.jetty.util.ajax.JSON;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowire;
-import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
-import org.zenoss.app.query.api.Aggregator;
-import org.zenoss.app.query.api.MetricQuery;
-import org.zenoss.app.query.api.query.impl.MockPerformanceMetricQueryAPIImpl;
 import org.zenoss.app.query.api.query.remote.PerformanceMetricQueryResources;
 
 import com.google.common.base.Optional;
-import com.yammer.dropwizard.config.Environment;
-import com.yammer.dropwizard.json.ObjectMapperFactory;
+import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.WebResource;
 import com.yammer.dropwizard.testing.ResourceTest;
 
 /**
@@ -62,59 +60,230 @@ import com.yammer.dropwizard.testing.ResourceTest;
  * 
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {
-        org.zenoss.app.query.api.query.remote.PerformanceMetricQueryResources.class,
-        org.zenoss.app.query.api.query.impl.MockPerformanceMetricQueryAPIImpl.class }, loader = AnnotationConfigContextLoader.class)
+@ContextConfiguration(loader = AnnotationConfigContextLoader.class)
 @ActiveProfiles("dev")
-@Configuration
-@ComponentScan(basePackages = { "org.zenoss.app",
-        "org.zenoss.app.query.api.query.remote",
-        "org.zenoss.app.query.api.query.impl",
-        "org.zenoss.app.query.api.query.configs",
-        "org.zenoss.app.query.api.query.api" })
-@Configurable(autowire = Autowire.BY_NAME)
-@TestExecutionListeners(inheritListeners = true)
 public class QueryTest extends ResourceTest {
-    // private final QueryApp app = Mockito.mock(QueryApp.class);
-    private final Environment environment = Mockito.mock(Environment.class);
-    private QueryApp app = new QueryApp();
-    private final PerformanceMetricQueryResources impl = Mockito.mock(PerformanceMetricQueryResources.class);
+    @Autowired
+    ApplicationContext ctx;
 
-    // private final Bootstrap<QueryAppConfiguration> bconfig = new
-    // Bootstrap<QueryAppConfiguration>(app);
-    private final QueryAppConfiguration config = new QueryAppConfiguration();
-
-    @Before
-    public void setup() throws Exception {
-        ObjectMapperFactory omf = new ObjectMapperFactory();
-        Mockito.when(environment.getObjectMapperFactory()).thenReturn(omf);
+    @Configuration
+    @ComponentScan(basePackages = { "org.zenoss.app" })
+    static class ContextConfiguration {
+        @Bean
+        public QueryAppConfiguration getQueryAppConfiguration() {
+            return new QueryAppConfiguration();
+        }
     }
 
-    @Test
-    public void buildsAThingResource() throws Exception {
-
-        app.run(config, environment);
-        PerformanceMetricQueryResources pqr = client().resource("/query/performance").get(PerformanceMetricQueryResources.class);
-        //AsyncWebResource awr = client().asyncResource("/query/performance");
-        //PerformanceMetricQueryResources pqr = awr.get(PerformanceMetricQueryResources.class);
-
-         List<MetricQuery> queries = new ArrayList<MetricQuery>();
-         queries.add(new MetricQuery(Aggregator.avg, "", false, "laLoadInt1",
-         new HashMap<String, String>()));
-        //
-        // PerformanceMetricQueryResources pmqr = new
-        // PerformanceMetricQueryResources();
-        pqr.query(Optional.of("sample"), queries, Optional.of("1m-ago"),
-                Optional.of("now"), Optional.of(true), Optional.of(false));
-    }
+    @Autowired
+    PerformanceMetricQueryResources resource;
 
     /*
      * (non-Javadoc)
      * 
      * @see com.yammer.dropwizard.testing.ResourceTest#setUpResources()
      */
-    // @Override
+    @Override
     protected void setUpResources() throws Exception {
-        addResource(new PerformanceMetricQueryResources());
+        addResource(resource);
+    }
+
+    /**
+     * If the value is present then add the given name/value pair as a query
+     * parameter to the given buffer and return the '&' as the prefix, else just
+     * return the given prefix.
+     * 
+     * @param buf
+     *            the buffer to which to append
+     * @param name
+     *            the name of the query parameter
+     * @param value
+     *            the optional value of the query parameter
+     * @param prefix
+     *            the current prefix to use
+     * @return the prefix that should be used for the next parameter
+     */
+    private char addArgument(StringBuilder buf, String name, Optional<?> value,
+            char prefix) {
+        if (value.isPresent()) {
+            buf.append(prefix).append(name).append('=')
+                    .append(value.get().toString());
+            return '&';
+        }
+        return prefix;
+    }
+
+    /**
+     * Constructs a URI to test the performance query service given the various
+     * optional parameters, invokes the URI and does some basic structural
+     * checks on the results.
+     * 
+     * @param id
+     *            the id of the request
+     * @param start
+     *            the start date/time of the request
+     * @param end
+     *            the end date/time of the request
+     * @param exact
+     *            should the time window be honored
+     * @param series
+     *            should the results be separated into series
+     * @param queries
+     *            the list of queries
+     * @return the response object parsed into an Map
+     * @throws Exception
+     *             if the process encounters an exception
+     */
+    private Map<?, ?> testQuery(Optional<String> id, Optional<String> start,
+            Optional<String> end, Optional<Boolean> exact,
+            Optional<Boolean> series, String[] queries) throws Exception {
+
+        // Build up the URI query
+        char prefix = '?';
+        StringBuilder buf = new StringBuilder("/query/performance");
+        prefix = addArgument(buf, "id", id, prefix);
+        prefix = addArgument(buf, "start", start, prefix);
+        prefix = addArgument(buf, "end", end, prefix);
+        prefix = addArgument(buf, "exact", exact, prefix);
+        prefix = addArgument(buf, "series", series, prefix);
+        for (String query : queries) {
+            prefix = addArgument(buf, "query", Optional.of(query), prefix);
+        }
+
+        // Invoke the URI and make sure we get a response
+        WebResource wr = client().resource(buf.toString());
+        Assert.assertNotNull(wr);
+        ClientResponse response = wr.get(ClientResponse.class);
+        Assert.assertNotNull(response);
+
+        // Parse and verify the response
+        Object o;
+        try (InputStreamReader reader = new InputStreamReader(
+                response.getEntityInputStream())) {
+            o = JSON.parse(reader);
+            Assert.assertNotNull(o);
+            Assert.assertTrue(Map.class.isInstance(o));
+        }
+        Map<?, ?> json = (Map<?, ?>) o;
+
+        // Verify the basic values
+        if (id.isPresent()) {
+            Assert.assertEquals(id.get(), json.get("clientId"));
+        }
+        if (start.isPresent()) {
+            Assert.assertEquals(start.get(), json.get("startTime"));
+        }
+        if (end.isPresent()) {
+            Assert.assertEquals(end.get(), json.get("endTime"));
+        }
+        if (exact.isPresent()) {
+            Assert.assertEquals(exact.get(), json.get("exactTimeWindow"));
+        }
+        if (series.isPresent()) {
+            Assert.assertEquals(series.get(), json.get("series"));
+        }
+        Assert.assertNotNull(json.get("results"));
+
+        // Verify the structure of the results
+        Object[] results = (Object[]) json.get("results");
+
+        if (results.length > 0) {
+            // If we are using the mock generator then we can calculate
+            // the number of entries in the results set
+            int count = -1;
+            if ("mock".equals(json.get("source"))) {
+                SimpleDateFormat sdf = new SimpleDateFormat(
+                        "yyyy/MM/dd-hh:mm:ss-Z");
+                sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+                long s = sdf.parse((String) json.get("startTimeActual"))
+                        .getTime() / 1000;
+                long e = sdf.parse((String) json.get("endTimeActual"))
+                        .getTime() / 1000;
+                long dur = e - s;
+                long step = 1;
+                if (dur < 60) {
+                    step = 1;
+                } else if (dur < 60 * 60) {
+                    step = 5;
+                } else {
+                    step = 15;
+                }
+
+                count = (int) Math.floor(dur / step) + 1;
+            }
+
+            if ((Boolean) json.get("series")) {
+
+                // If we are a series then there will be at least 2 entries in
+                // the result set; if our mock source then exactly two
+                if ("mock".equals(json.get("source"))) {
+                    Assert.assertEquals(queries.length, results.length);
+                } else {
+                    Assert.assertTrue(results.length >= queries.length);
+                }
+
+                for (Object r : results) {
+                    Map<?, ?> value = (Map<?, ?>) r;
+                    Assert.assertNotNull(value.get("metric"));
+                    Assert.assertNotNull(value.get("datapoints"));
+                    Object[] dps = (Object[]) value.get("datapoints");
+                    Assert.assertTrue(dps.length > 0);
+                    if ("mock".equals(json.get("source"))) {
+                        Assert.assertEquals(count, dps.length);
+                    }
+                    for (Object dpo : dps) {
+                        Map<?, ?> dp = (Map<?, ?>) dpo;
+                        Assert.assertNotNull(dp.get("timestamp"));
+                        Assert.assertNotNull(dp.get("value"));
+                    }
+                }
+            } else {
+
+                if ("mock".equals(json.get("source"))) {
+                    // count is * queries.length because the mock generates
+                    // a data point for each step in the time span for each
+                    // query
+                    Assert.assertEquals(count * queries.length, results.length);
+                }
+                for (Object r : results) {
+                    Map<?, ?> value = (Map<?, ?>) r;
+                    Assert.assertNotNull(value.get("metric"));
+                    Assert.assertNotNull(value.get("timestamp"));
+                    Assert.assertNotNull(value.get("value"));
+                }
+            }
+        }
+
+        return (Map<?, ?>) json;
+    }
+
+    @Test
+    public void queryTest10sAgo1QuerySeries() throws Exception {
+        testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
+                Optional.<String> absent(), Optional.of(true),
+                Optional.of(true), new String[] { "avg:laLoadInt1" });
+    }
+
+    @Test
+    public void queryTest10sAgo1QueryNoSeries() throws Exception {
+        testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
+                Optional.<String> absent(), Optional.of(true),
+                Optional.of(false), new String[] { "avg:laLoadInt1" });
+    }
+
+    @Test
+    public void queryTest10sAgo2QuerySeries() throws Exception {
+        testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
+                Optional.<String> absent(), Optional.of(true),
+                Optional.of(true), new String[] { "avg:laLoadInt1",
+                        "sum:laLoadInt5" });
+    }
+
+    @Test
+    public void queryTest10sAgo2QueryNoSeries() throws Exception {
+        testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
+                Optional.<String> absent(), Optional.of(true),
+                Optional.of(false), new String[] { "avg:laLoadInt1",
+                        "sum:laLoadInt5" });
     }
 }
