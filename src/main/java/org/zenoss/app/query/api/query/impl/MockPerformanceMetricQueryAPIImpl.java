@@ -117,6 +117,7 @@ public class MockPerformanceMetricQueryAPIImpl extends
         // over the time range with 1 second steps.
         double inc = 1.0 / (double) (dur / step);
 
+        int count = 0;
         for (MetricQuery query : queries) {
             double val = 0.0;
             for (long i = start; i <= end; i += step, val += inc) {
@@ -129,9 +130,11 @@ public class MockPerformanceMetricQueryAPIImpl extends
                             .append(MOCK_VALUE);
                 }
                 buf.append(LF);
+                count++;
             }
         }
 
+        log.debug("Generated {} lines of data", count);
         return new BufferedReader(new StringReader(buf.toString()));
     }
 

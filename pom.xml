@@ -7,12 +7,12 @@
           <maven.compiler.source>1.7</maven.compiler.source>
           <maven.compiler.target>1.7</maven.compiler.target>
           <zapp.version>0.0.1</zapp.version>
-          <!--<jersey.version>1.17.1</jersey.version> -->
+          <jersey.version>1.15</jersey.version>
           <mockito.version>1.9.5</mockito.version>
           <junit.version>4.11</junit.version>
-          <!--<guava.version>14.0.1</guava.version> -->
           <spring.version>3.2.1.RELEASE</spring.version>
           <dropwizard.version>0.6.2</dropwizard.version>
+          <!--<guava.version>14.0.1</guava.version> -->
           <!--<jackson.version>2.1.4</jackson.version> -->
      </properties>
 
@@ -36,8 +36,20 @@
           <dependency>
                <groupId>com.sun.jersey</groupId>
                <artifactId>jersey-server</artifactId>
-               <version>1.15</version>
+               <version>${jersey.version}</version>
                <scope>runtime</scope>
+          </dependency>
+          <dependency>
+               <groupId>com.yammer.dropwizard</groupId>
+               <artifactId>dropwizard-testing</artifactId>
+               <version>${dropwizard.version}</version>
+               <scope>test</scope>
+          </dependency>
+          <dependency>
+               <groupId>org.springframework</groupId>
+               <artifactId>spring-test</artifactId>
+               <version>${spring.version}</version>
+               <scope>test</scope>
           </dependency>
      </dependencies>
      <build>
