@@ -31,8 +31,10 @@
 package org.zenoss.app.query.api.query.impl;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.StringReader;
+import java.io.InputStreamReader;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
@@ -72,14 +74,13 @@ public class MockPerformanceMetricQueryAPIImpl extends
         return TimeZone.getDefault();
     }
 
-    protected BufferedReader getReader(QueryAppConfiguration config, String id,
+    public byte[] generateData(QueryAppConfiguration config, String id,
             String startTime, String endTime, Boolean exactTimeWindow,
             Boolean series, List<MetricQuery> queries) throws IOException {
-
         log.debug("Generate data for '{}' to '{}' requested", startTime,
                 endTime);
 
-        StringBuilder buf = new StringBuilder();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         long start = 0;
         try {
@@ -99,6 +100,8 @@ public class MockPerformanceMetricQueryAPIImpl extends
             return null;
         }
 
+        long preStart = start - 60; // 60 seconds
+        long postEnd = end + 60; // 60 seconds
         long dur = end - start;
 
         log.debug("Generating mock data for '{}' to '{}', a duraction of '{}'",
@@ -118,24 +121,42 @@ public class MockPerformanceMetricQueryAPIImpl extends
         double inc = 1.0 / (double) (dur / step);
 
         int count = 0;
+        StringBuilder buf = new StringBuilder();
         for (MetricQuery query : queries) {
             double val = 0.0;
-            for (long i = start; i <= end; i += step, val += inc) {
+            for (long i = preStart; i <= postEnd; i += step) {
+                buf.setLength(0);
                 buf.append(query.getMetric()).append(' ');
                 buf.append(i).append(' ');
-                buf.append(val);
+
+                if (i >= start && i <= end) {
+                    buf.append(val);
+                    val += inc;
+                } else {
+                    buf.append(2.0);
+                }
 
                 for (Map.Entry<String, String> tag : query.getTags().entrySet()) {
                     buf.append(' ').append(tag.getKey()).append(EQ)
                             .append(MOCK_VALUE);
                 }
                 buf.append(LF);
+                baos.write(buf.toString().getBytes());
                 count++;
             }
         }
 
         log.debug("Generated {} lines of data", count);
-        return new BufferedReader(new StringReader(buf.toString()));
+        return baos.toByteArray();
+    }
+
+    public BufferedReader getReader(QueryAppConfiguration config, String id,
+            String startTime, String endTime, Boolean exactTimeWindow,
+            Boolean series, List<MetricQuery> queries) throws IOException {
+        byte[] data = generateData(config, id, startTime, endTime,
+                exactTimeWindow, series, queries);
+        return new BufferedReader(new InputStreamReader(
+                new ByteArrayInputStream(data)));
     }
 
     /*

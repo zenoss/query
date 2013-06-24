@@ -37,6 +37,8 @@ import org.zenoss.app.AutowiredApp;
  * 
  */
 public class QueryApp extends AutowiredApp<QueryAppConfiguration> {
+    
+    public  static final String APP_NAME = "Central Query Zapplication";
 
     public static void main(String[] args) throws Exception {
         new QueryApp().run(args);
@@ -44,7 +46,7 @@ public class QueryApp extends AutowiredApp<QueryAppConfiguration> {
 
     @Override
     public String getAppName() {
-        return "Central Query App";
+        return APP_NAME;
     }
 
     @Override

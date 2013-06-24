@@ -3,7 +3,6 @@ logging:
   loggers:
     "org.zenoss": DEBUG
 performanceMetricQuery: 
-  defaultTimeZone: UTC
   defaultExactTimeWindow: true
   defaultStartTime: 1h-ago
   defaultEndTime: now

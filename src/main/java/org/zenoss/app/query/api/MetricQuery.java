@@ -101,7 +101,7 @@ public final class MetricQuery {
                 }
             } else {
                 downsample = terms[1].trim();
-                if (terms.length > 3 && "rate".equals(terms[1].trim())) {
+                if (terms.length > 3 && "rate".equals(terms[2].trim())) {
                     rate = true;
                 }
             }
