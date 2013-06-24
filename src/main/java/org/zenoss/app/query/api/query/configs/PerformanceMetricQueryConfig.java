@@ -38,9 +38,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class PerformanceMetricQueryConfig {
     @JsonProperty
-    private String defaultTimeZone = "UTC";
-
-    @JsonProperty
     private Boolean defaultExactTimeWindow = Boolean.TRUE;
 
     @JsonProperty
@@ -98,5 +95,53 @@ public class PerformanceMetricQueryConfig {
      */
     public final String getDefaultTsdTimeZone() {
         return defaultTsdTimeZone;
+    }
+
+    /**
+     * @param defaultExactTimeWindow
+     *            the defaultExactTimeWindow to set
+     */
+    public final void setDefaultExactTimeWindow(Boolean defaultExactTimeWindow) {
+        this.defaultExactTimeWindow = defaultExactTimeWindow;
+    }
+
+    /**
+     * @param defaultStartTime
+     *            the defaultStartTime to set
+     */
+    public final void setDefaultStartTime(String defaultStartTime) {
+        this.defaultStartTime = defaultStartTime;
+    }
+
+    /**
+     * @param defaultEndTime
+     *            the defaultEndTime to set
+     */
+    public final void setDefaultEndTime(String defaultEndTime) {
+        this.defaultEndTime = defaultEndTime;
+    }
+
+    /**
+     * @param defaultSeries
+     *            the defaultSeries to set
+     */
+    public final void setDefaultSeries(Boolean defaultSeries) {
+        this.defaultSeries = defaultSeries;
+    }
+
+    /**
+     * @param openTsdbUrl
+     *            the openTsdbUrl to set
+     */
+    public final void setOpenTsdbUrl(String openTsdbUrl) {
+        this.openTsdbUrl = openTsdbUrl;
+    }
+
+    /**
+     * @param defaultTsdTimeZone
+     *            the defaultTsdTimeZone to set
+     */
+    public final void setDefaultTsdTimeZone(String defaultTsdTimeZone) {
+        this.defaultTsdTimeZone = defaultTsdTimeZone;
     }
 }
