@@ -234,4 +234,10 @@ public class MetricQueryTest {
         Assert.assertNull(mq.getDownsample());
         Assert.assertEquals("laLoadInt", mq.getMetric());
     }
+
+    @Test
+    public void downsampleFirstTest() {
+        test("avg:10s-avg:rate:laLoadInt{tag1=value1,tag2=value2}",
+                "avg:10s-avg:rate:laLoadInt");
+    }
 }

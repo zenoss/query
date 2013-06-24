@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -163,13 +164,13 @@ public class OpenTSDBPerformanceMetricQueryAPIImpl extends
                 .getPerformanceMetricQueryConfig().getOpenTsdbUrl());
         buf.append("/q?");
         if (!NOW.equals(startTime)) {
-            buf.append("start=").append(startTime);
+            buf.append("start=").append(URLEncoder.encode(startTime, "UTF-8"));
         }
         if (!NOW.equals(endTime)) {
-            buf.append("&end=").append(endTime);
+            buf.append("&end=").append(URLEncoder.encode(endTime, "UTF-8"));
         }
         for (MetricQuery query : queries) {
-            buf.append("&m=").append(query.toString());
+            buf.append("&m=").append(URLEncoder.encode(query.toString(), "UTF-8"));
         }
         buf.append("&ascii");
 
