@@ -31,14 +31,23 @@
 package org.zenoss.app.query.api.query.impl;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+
+import org.apache.commons.io.IOUtils;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,6 +100,11 @@ public class OpenTSDBPerformanceMetricQueryAPIImpl extends
                     .getOpenTsdbUrl());
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("HEAD");
+            connection
+                    .setConnectTimeout(config.getPerformanceMetricQueryConfig()
+                            .getConnectionTimeoutMs());
+            connection.setReadTimeout(config.getPerformanceMetricQueryConfig()
+                    .getConnectionTimeoutMs());
             sdate = connection.getHeaderField("Date");
             connection.disconnect();
             connection = null;
@@ -113,6 +127,12 @@ public class OpenTSDBPerformanceMetricQueryAPIImpl extends
                             url.getDefaultPort(), "");
                     connection = (HttpURLConnection) url.openConnection();
                     connection.setRequestMethod("HEAD");
+                    connection.setConnectTimeout(config
+                            .getPerformanceMetricQueryConfig()
+                            .getConnectionTimeoutMs());
+                    connection.setReadTimeout(config
+                            .getPerformanceMetricQueryConfig()
+                            .getConnectionTimeoutMs());
                     sdate = connection.getHeaderField("Date");
                     connection.disconnect();
                     connection = null;
@@ -157,6 +177,49 @@ public class OpenTSDBPerformanceMetricQueryAPIImpl extends
                 .getPerformanceMetricQueryConfig().getDefaultTsdTimeZone());
     }
 
+    private WebApplicationException generateException(
+            HttpURLConnection connection) {
+        int code = 500;
+        try {
+            code = connection.getResponseCode();
+            InputStream is = connection.getErrorStream();
+
+            // Read the entire buffer as is should be a very short HTML page.
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            IOUtils.copy(is, baos);
+
+            Pattern pattern = Pattern
+                    .compile("The reason provided was:\\<blockquote\\>(.*)\\</blockquote>\\</blockquote\\>");
+            Matcher matcher = pattern.matcher(baos.toString());
+            if (matcher.find()) {
+                String message = matcher.group(1);
+                if (message != null) {
+                    JSONObject error = new JSONObject();
+                    error.put(ERROR_MESSAGE, message);
+                    return new WebApplicationException(Response.status(code)
+                            .entity(error.toString()).build());
+                }
+            } else {
+                log.error("MESSAGE NOT FOUND");
+            }
+
+            return new WebApplicationException(Response.status(code).build());
+        } catch (Throwable t) {
+            t.printStackTrace();
+            log.error(
+                    "Unexpected error while attempting to parse response from OpenTSDB: {} : {}",
+                    t.getClass().getName(), t.getMessage());
+            try {
+                JSONObject error = new JSONObject();
+                error.put(ERROR_MESSAGE, t.getMessage());
+                return new WebApplicationException(Response.status(code)
+                        .entity(error.toString()).build());
+            } catch (Throwable i) {
+                return new WebApplicationException(code);
+            }
+        }
+    }
+
     protected BufferedReader getReader(QueryAppConfiguration config, String id,
             String startTime, String endTime, Boolean exactTimeWindow,
             Boolean series, List<MetricQuery> queries) throws IOException {
@@ -170,7 +233,8 @@ public class OpenTSDBPerformanceMetricQueryAPIImpl extends
             buf.append("&end=").append(URLEncoder.encode(endTime, "UTF-8"));
         }
         for (MetricQuery query : queries) {
-            buf.append("&m=").append(URLEncoder.encode(query.toString(), "UTF-8"));
+            buf.append("&m=").append(
+                    URLEncoder.encode(query.toString(), "UTF-8"));
         }
         buf.append("&ascii");
 
@@ -178,8 +242,22 @@ public class OpenTSDBPerformanceMetricQueryAPIImpl extends
             log.debug("OpenTSDB GET: {}", buf.toString());
         }
 
+        HttpURLConnection connection = (HttpURLConnection) new URL(
+                buf.toString()).openConnection();
+        connection.setConnectTimeout(config.getPerformanceMetricQueryConfig()
+                .getConnectionTimeoutMs());
+        connection.setReadTimeout(config.getPerformanceMetricQueryConfig()
+                .getConnectionTimeoutMs());
+
+        if (Math.floor(connection.getResponseCode() / 100) != 2) {
+            // OpenTSDB through an error, attempt to parse out the reason from
+            // any response information that was send back.
+
+            throw generateException(connection);
+        }
+
         return new BufferedReader(new InputStreamReader(
-                new URL(buf.toString()).openStream()));
+                connection.getInputStream()));
     }
 
     /*

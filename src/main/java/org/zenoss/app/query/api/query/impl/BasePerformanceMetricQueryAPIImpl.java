@@ -36,14 +36,19 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenoss.app.query.QueryAppConfiguration;
@@ -78,6 +83,14 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
 
     protected static final String NOT_SPECIFIED = "not-specified";
     protected static final String NOW = "now";
+
+    // Error tags
+    protected static final String ERRORS = "errors";
+    protected static final String ERROR_MESSAGE = "errorMessage";
+    protected static final String ERROR_CAUSE = "errorSource";
+    protected static final String ERROR_PART = "errorPart";
+    protected static final String START = "start";
+    protected static final String END = "end";
 
     private static final Logger log = LoggerFactory
             .getLogger(BasePerformanceMetricQueryAPIImpl.class);
@@ -279,6 +292,20 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
             }
         }
 
+        private Response getErrorResponse(int status, String message,
+                Object cause) {
+            try {
+                JSONObject response = new JSONObject();
+                response.put(CLIENT_ID, id);
+                response.put(ERROR_MESSAGE, message);
+                response.put(ERROR_CAUSE, cause);
+                return Response.status(status).entity(response.toString())
+                        .build();
+            } catch (Throwable t) {
+                return Response.status(status).build();
+            }
+        }
+
         /*
          * (non-Javadoc)
          * 
@@ -287,31 +314,115 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
         @Override
         public void write(OutputStream output) throws IOException,
                 WebApplicationException {
+
+            // Validate the input parameters
+            List<Object> errors = new ArrayList<Object>();
+
+            // Validate start time
+            try {
+                start = parseDate(startTime);
+            } catch (ParseException e) {
+                log.error("Failed to parse start time option of '{}': {} : {}",
+                        startTime, e.getClass().getName(), e.getMessage());
+                Map<String, Object> error = new HashMap<String, Object>();
+                error.put(ERROR_MESSAGE, String.format(
+                        "Unable to parse specified start time value of '%s'",
+                        startTime));
+                error.put(ERROR_CAUSE, e.getMessage());
+                error.put(ERROR_PART, START);
+                errors.add(error);
+            }
+
+            // Validate end time
+            try {
+                end = parseDate(endTime);
+            } catch (ParseException e) {
+                log.error("Failed to parse end time option of '{}': {} : {}",
+                        endTime, e.getClass().getName(), e.getMessage());
+                Map<String, Object> error = new HashMap<String, Object>();
+                error.put(ERROR_MESSAGE, String.format(
+                        "Unable to parse specified end time value of '%s'",
+                        startTime));
+                error.put(ERROR_CAUSE, e.getMessage());
+                error.put(ERROR_PART, END);
+                errors.add(error);
+            }
+
+            // Validate that there is at least one (1) metric specification
+            if (queries.size() == 0) {
+                log.error("No queries specified for request");
+                Map<String, Object> error = new HashMap<String, Object>();
+                error.put(ERROR_MESSAGE,
+                        "At least one (1) metric query term must be specified, none found");
+                error.put(ERROR_CAUSE, METRIC);
+                error.put(ERROR_PART, METRIC);
+                errors.add(error);
+            }
+
+            if (errors.size() > 0) {
+                Map<String, Object> response = new HashMap<String, Object>();
+                response.put(CLIENT_ID, id);
+                response.put(ERRORS, errors);
+                throw new WebApplicationException(Response.status(400)
+                        .entity(new JSONObject(response).toString()).build());
+            }
+
+            if (serverTimeZone == null) {
+                try {
+                    serverTimeZone = getServerTimeZone();
+                } catch (Throwable t) {
+                    log.error(
+                            "Unable to determine timezone of the performance metric server: {} : {}",
+                            t.getClass().getName(), t.getMessage());
+                    throw new WebApplicationException(
+                            getErrorResponse(
+                                    500,
+                                    String.format("Unable to determine timezone of the performance metric server"),
+                                    t));
+                }
+            }
+
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
+            sdf.setTimeZone(serverTimeZone);
+            SimpleDateFormat actual = new SimpleDateFormat(
+                    "yyyy/MM/dd-HH:mm:ss-Z");
+            actual.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+            Date startDate = new Date(start * 1000);
+            Date endDate = new Date(end * 1000);
+
+            String convertedStartTime = sdf.format(startDate);
+            String convertedEndTime = sdf.format(endDate);
+
+            BufferedReader reader = null;
+            try {
+                reader = getReader(getConfiguration(), id, convertedStartTime,
+                        convertedEndTime, exactTimeWindow, series, queries);
+            } catch (WebApplicationException e) {
+                try {
+                    throw new WebApplicationException(getErrorResponse(e
+                            .getResponse().getStatus(),
+                            new JSONObject(e.getResponse().getEntity()
+                                    .toString()).getString(ERROR_MESSAGE),
+                            getSourceId()));
+                } catch (JSONException e1) {
+                    e1.printStackTrace();
+                    throw new WebApplicationException(getErrorResponse(500,
+                            e.getMessage(), getSourceId()));
+                }
+            } catch (Throwable t) {
+                log.error("Failed to connect to metric data source: {} : {}", t
+                        .getClass().getName(), t.getMessage());
+                throw new WebApplicationException(
+                        getErrorResponse(
+                                500,
+                                String.format("Unable to connect to performance metric data source"),
+                                t));
+
+            }
+
             try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(
                     output))) {
-
-                // Fetch the server time zone if we don't already have it
-                if (serverTimeZone == null) {
-                    serverTimeZone = getServerTimeZone();
-                }
-                start = parseDate(startTime);
-                end = parseDate(endTime);
-                SimpleDateFormat sdf = new SimpleDateFormat(
-                        "yyyy/MM/dd-HH:mm:ss");
-                sdf.setTimeZone(serverTimeZone);
-                SimpleDateFormat actual = new SimpleDateFormat(
-                        "yyyy/MM/dd-HH:mm:ss-Z");
-                actual.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-                Date startDate = new Date(start * 1000);
-                Date endDate = new Date(end * 1000);
-
-                String convertedStartTime = sdf.format(startDate);
-                String convertedEndTime = sdf.format(endDate);
-
-                BufferedReader reader = getReader(getConfiguration(), id,
-                        convertedStartTime, convertedEndTime, exactTimeWindow,
-                        series, queries);
 
                 writer.objectS()
                         .value(CLIENT_ID, id, true)
@@ -339,6 +450,11 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
                 log.error(
                         "Server error while processing metric source {} : {}:{}",
                         getSourceId(), t.getClass().getName(), t.getMessage());
+                throw new WebApplicationException(Response.status(500).build());
+            } finally {
+                if (reader != null) {
+                    reader.close();
+                }
             }
         }
     }
@@ -359,15 +475,19 @@ public abstract class BasePerformanceMetricQueryAPIImpl implements
 
         QueryAppConfiguration config = getConfiguration();
 
-        return Response.ok(
-                new Worker(config, id.or(NOT_SPECIFIED), startTime.or(config
-                        .getPerformanceMetricQueryConfig()
-                        .getDefaultStartTime()),
-                        endTime.or(config.getPerformanceMetricQueryConfig()
-                                .getDefaultEndTime()), exactTimeWindow
-                                .or(config.getPerformanceMetricQueryConfig()
-                                        .getDefaultExactTimeWindow()), series
-                                .or(config.getPerformanceMetricQueryConfig()
-                                        .getDefaultSeries()), queries)).build();
+        try {
+            return Response.ok(
+                    new Worker(config, id.or(NOT_SPECIFIED), startTime
+                            .or(config.getPerformanceMetricQueryConfig()
+                                    .getDefaultStartTime()), endTime.or(config
+                            .getPerformanceMetricQueryConfig()
+                            .getDefaultEndTime()), exactTimeWindow.or(config
+                            .getPerformanceMetricQueryConfig()
+                            .getDefaultExactTimeWindow()), series.or(config
+                            .getPerformanceMetricQueryConfig()
+                            .getDefaultSeries()), queries)).build();
+        } catch (Throwable t) {
+            return Response.status(500).build();
+        }
     }
 }

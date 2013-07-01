@@ -25,6 +25,16 @@
                <artifactId>zenoss-app</artifactId>
                <version>${zapp.version}</version>
           </dependency>
+          <dependency>
+               <groupId>org.json</groupId>
+               <artifactId>json</artifactId>
+               <version>20090211</version>
+          </dependency>
+          <dependency>
+               <groupId>org.apache.commons</groupId>
+               <artifactId>commons-io</artifactId>
+               <version>1.3.2</version>
+          </dependency>
           <!--test scope -->
           <dependency>
                <groupId>junit</groupId>
@@ -51,12 +61,6 @@
                <!-- Include this if you have dependency conflicts for Guava, 
                     Jetty, Jackson or Apache HTTP Client -->
                <classifier>standalone</classifier>
-               <scope>test</scope>
-          </dependency>
-          <dependency>
-               <groupId>org.apache.commons</groupId>
-               <artifactId>commons-io</artifactId>
-               <version>1.3.2</version>
                <scope>test</scope>
           </dependency>
           <!--runtime -->

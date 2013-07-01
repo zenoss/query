@@ -54,6 +54,9 @@ public class PerformanceMetricQueryConfig {
 
     @JsonProperty
     private String defaultTsdTimeZone = "UTC";
+    
+    @JsonProperty
+    private int connectionTimeoutMs = 1000;
 
     /**
      * @return the defaultExactTimeWindow
@@ -143,5 +146,13 @@ public class PerformanceMetricQueryConfig {
      */
     public final void setDefaultTsdTimeZone(String defaultTsdTimeZone) {
         this.defaultTsdTimeZone = defaultTsdTimeZone;
+    }
+
+    public final int getConnectionTimeoutMs() {
+        return connectionTimeoutMs;
+    }
+
+    public final void setConnectionTimeoutMs(int connectionTimeoutMs) {
+        this.connectionTimeoutMs = connectionTimeoutMs;
     }
 }
