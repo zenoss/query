@@ -9,6 +9,7 @@ performanceMetricQuery:
   defaultSeries: false
   openTsdbUrl: http://tsdb.zenaas.com:4242
   defaultTsdTimeZone: UTC
+  connectionTimeoutMs: 1000
 http:
   connectorType: nonblocking
   port: 8888
