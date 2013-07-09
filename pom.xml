@@ -12,8 +12,8 @@
           <junit.version>4.11</junit.version>
           <spring.version>3.2.1.RELEASE</spring.version>
           <dropwizard.version>0.6.2</dropwizard.version>
-          <!--<guava.version>14.0.1</guava.version> -->
-          <!--<jackson.version>2.1.4</jackson.version> -->
+          <ssl.cert.dir>target/cert</ssl.cert.dir>
+          <assembly.skipAssembly>true</assembly.skipAssembly>
      </properties>
 
      <groupId>org.zenoss</groupId>
@@ -69,6 +69,17 @@
      </dependencies>
 
      <build>
+         <resources>
+             <resource>
+                 <targetPath>${project.build.directory}/etc</targetPath>
+                 <filtering>true</filtering>
+                 <directory>${basedir}/src/main/etc</directory>
+             </resource>
+             <resource>
+                 <filtering>true</filtering>
+                 <directory>${basedir}/src/main/resources</directory>
+             </resource>
+         </resources>
           <plugins>
                <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -78,7 +89,7 @@
                          <mainClass>org.zenoss.app.query.QueryApp</mainClass>
                          <arguments>
                               <argument>server</argument>
-                              <argument>configuration.yaml</argument>
+                              <argument>${project.build.directory}/etc/configuration.yaml</argument>
                          </arguments>
                     </configuration>
                </plugin>
@@ -203,7 +214,7 @@
                          </execution>
                     </executions>
                     <configuration>
-                         <keystore>${project.build.directory}/ssl.pfx</keystore>
+                         <keystore>${project.build.directory}/cert/ssl.pfx</keystore>
                          <dname>cn=localhost</dname>
                          <keypass>zapp_pass</keypass>
                          <storepass>zapp_pass</storepass>
@@ -212,6 +223,26 @@
                          <storetype>pkcs12</storetype>
                     </configuration>
                </plugin>
+              <plugin>
+                  <artifactId>maven-assembly-plugin</artifactId>
+                  <version>2.4</version>
+                  <configuration>
+                      <descriptors>
+                          <descriptor>src/main/assembly/zapp.xml</descriptor>
+                      </descriptors>
+                  </configuration>
+                  <executions>
+                      <execution>
+                          <id>make-assembly</id>
+                          <!-- this is used for inheritance merges -->
+                          <phase>package</phase>
+                          <!-- bind to the packaging phase -->
+                          <goals>
+                              <goal>single</goal>
+                          </goals>
+                      </execution>
+                  </executions>
+              </plugin>
           </plugins>
      </build>
      <repositories>
@@ -224,4 +255,13 @@
                </snapshots>
           </repository>
      </repositories>
+    <profiles>
+        <profile>
+            <id>assemble</id>
+            <properties>
+                <ssl.cert.dir>etc/${project.artifactId}/cert</ssl.cert.dir>
+                <assembly.skipAssembly>false</assembly.skipAssembly>
+            </properties>
+        </profile>
+    </profiles>
 </project>
