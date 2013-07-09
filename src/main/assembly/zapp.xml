@@ -1,0 +1,34 @@
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+    <id>zapp</id>
+    <formats>
+        <format>tar.gz</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <fileSets>
+        <fileSet>
+            <includes>
+                <include>LICENSE</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>target</directory>
+            <outputDirectory>lib/${project.artifactId}</outputDirectory>
+            <includes>
+                <include>${project.artifactId}*.jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>target/cert</directory>
+            <outputDirectory>/etc/${project.artifactId}/cert</outputDirectory>
+            <includes>
+                <include>ssl.pfx</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>target/etc</directory>
+            <outputDirectory>etc/${project.artifactId}</outputDirectory>
+        </fileSet>
+    </fileSets>
+</assembly>
