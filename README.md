@@ -1,11 +1,11 @@
 Zenoss Central Query Service
 =====
-This project provides a HTTP/JSON based query capability for the information 
+This project provides a HTTP/JSON based metric service capability for the information 
 that Zenoss stores in its central repository.
 
 The resources this service provides are:
 
-  - GET /query/performance - returns the performance metrics that match the search criteria.
+  - GET /metric/performance - returns the performance metrics that match the search criteria.
 
     This resource is loosely based on the OpenTSDB HTTP query API at [OpenTsdb](http://opentsdb.net/http-api.html#/q) and supports the following query parameters:
 
