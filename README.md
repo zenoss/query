@@ -9,6 +9,7 @@ The resources this service provides are:
   
   This operation can take a `start` and `end` query parameter that specifies the range (inclusive) that the requester wishes to get back. This enables paging through the list of available charts. Additionally a `count=true` query parameter can be specified such that the total count of charts will be returned as well. This operation will return
   a JSON structure of the form:
+  
         {
             "start" : #,
             "end"   : #,
