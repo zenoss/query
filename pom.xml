@@ -6,7 +6,7 @@
      <properties>
           <maven.compiler.source>1.7</maven.compiler.source>
           <maven.compiler.target>1.7</maven.compiler.target>
-          <zapp.version>0.0.1</zapp.version>
+          <zapp.version>0.0.4</zapp.version>
           <jersey.version>1.15</jersey.version>
           <mockito.version>1.9.5</mockito.version>
           <junit.version>4.11</junit.version>

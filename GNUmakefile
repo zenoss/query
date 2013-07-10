@@ -16,11 +16,11 @@ JAVADIR=$(PROJECT)
 
 TARGETDIR=$(JAVADIR)/target
 
-INSTALLDIR ?= $(PROJECT)/install
+INSTALL_DIR ?= $(PROJECT)/install
 
 SUPERVISOR_CONF = $(PROJECT_NAME)_supervisor.conf
 
-SUPERVISORD_DIR = $(INSTALLDIR)/etc/supervisor
+SUPERVISORD_DIR = $(INSTALL_DIR)/etc/supervisor
 
 default: build
 
@@ -32,8 +32,22 @@ build-java:
 
 build: build-java
 
-install:
-	cd $(JAVADIR) && mvn clean package -P assemble
-	mkdir -p $(INSTALLDIR)/log && cd $(INSTALLDIR) && tar -xvf $(TARGETDIR)/*tar.gz
+.PHONY: install assemble
+
+ARTIFACT_TAR=$(TARGETDIR)/assembly.tar.gz
+
+$(ARTIFACT_TAR):
+	cd $(JAVADIR) && mvn package -P assemble
+	cd $(TARGETDIR) && ln -sf *tar.gz assembly.tar.gz
+
+assemble: $(ARTIFACT_TAR)
+	echo "debug $(@)"
+
+install:$(ARTIFACT_TAR)
+install:$(ARTIFACT_TAR)
+	echo "Installing $(PROJECT_NAME) into $(INSTALL_DIR)"
+	mkdir -p $(INSTALL_DIR)
+	cd $(INSTALL_DIR) && tar -xvf $(TARGETDIR)/assembly.tar.gz
 	mkdir -p $(SUPERVISORD_DIR)
-	ln -s ../$(PROJECT_NAME)/$(SUPERVISOR_CONF) $(SUPERVISORD_DIR)/$(SUPERVISOR_CONF)
+	ln -sf ../$(PROJECT_NAME)/$(SUPERVISOR_CONF) $(SUPERVISORD_DIR)/$(SUPERVISOR_CONF)
+	mkdir -p $(INSTALL_DIR)/log
