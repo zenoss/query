@@ -2,13 +2,16 @@ logging:
   level: INFO
   loggers:
     "org.zenoss": DEBUG
-performanceMetricQuery: 
+metrics: 
   defaultExactTimeWindow: true
   defaultStartTime: 1h-ago
   defaultEndTime: now
   defaultSeries: false
   openTsdbUrl: http://tsdb.zenaas.com:4242
   defaultTsdTimeZone: UTC
+  connectionTimeoutMs: 1000
+charts:
+  redisConnection: localhost:6379
 http:
   connectorType: nonblocking
   port: 8888
