@@ -12,3 +12,9 @@ target
 .classpath
 .project
 .settings
+
+# emacs
+*~
+
+# intellij
+*.iml
