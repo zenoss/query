@@ -86,22 +86,23 @@ public class ChartService implements ChartServiceAPI {
         if (!persistence.isConnected()) {
             synchronized (this) {
                 if (!persistence.isConnected()) {
-                    String[] parts = config.getChartServiceConfig()
-                            .getRedisConnection().split(":");
-                    if (parts.length == 1) {
-                        persistence.connect(ZEN_CHART, parts[0]);
-                    } else if (parts.length == 2) {
-                        persistence.connect(ZEN_CHART, parts[0],
-                                Integer.parseInt(parts[1]));
-                    } else {
-                        // An error, what was put as the connection string?!?
-                        log.error(
-                                "Invalid connection string specified ({}), should be host:port; will attempt to connect on localhost.",
-                                config.getChartServiceConfig()
-                                        .getRedisConnection());
-                        persistence.connect(ZEN_CHART, "localhost");
-                    }
                     try {
+                        String[] parts = config.getChartServiceConfig()
+                                .getRedisConnection().split(":");
+                        if (parts.length == 1) {
+                            persistence.connect(ZEN_CHART, parts[0]);
+                        } else if (parts.length == 2) {
+                            persistence.connect(ZEN_CHART, parts[0],
+                                    Integer.parseInt(parts[1]));
+                        } else {
+                            // An error, what was put as the connection
+                            // string?!?
+                            log.error(
+                                    "Invalid connection string specified ({}), should be host:port; will attempt to connect on localhost.",
+                                    config.getChartServiceConfig()
+                                            .getRedisConnection());
+                            persistence.connect(ZEN_CHART, "localhost");
+                        }
                         persistence.ping();
                     } catch (Throwable t) {
                         try {
@@ -111,7 +112,7 @@ public class ChartService implements ChartServiceAPI {
                         }
                         throw new WebApplicationException(
                                 Utils.getErrorResponse(
-                                        Utils.NOT_SPECIFIED,
+                                        null,
                                         500,
                                         "Unable to connect to resource storage",
                                         t.getMessage()));
@@ -233,9 +234,10 @@ public class ChartService implements ChartServiceAPI {
      * @see org.zenoss.app.query.api.ChartAPI#getList()
      */
     @Override
-    public Response getList(Optional<Integer> start, Optional<Integer> end, Optional<Boolean> includeCount) {
+    public Response getList(Optional<Integer> start, Optional<Integer> end,
+            Optional<Boolean> includeCount) {
         connect();
-        
+
         ChartList list = new ChartList();
         list.setStart(start.or(0));
         list.setEnd(end.or(list.getStart() + 9));
