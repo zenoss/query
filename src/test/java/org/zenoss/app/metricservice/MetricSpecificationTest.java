@@ -73,7 +73,7 @@ public class MetricSpecificationTest {
         MetricSpecification mq = test("avg:rate:10s-ago:laLoadInt",
                 "avg:10s-ago:rate:laLoadInt");
         Assert.assertEquals("avg", mq.getAggregator().toString());
-        Assert.assertEquals(true, mq.isRate());
+        Assert.assertEquals(true, mq.getRate());
         Assert.assertEquals("10s-ago", mq.getDownsample());
         Assert.assertEquals("laLoadInt", mq.getMetric());
     }
@@ -85,7 +85,7 @@ public class MetricSpecificationTest {
         MetricSpecification mq = test("sum:rate:10s-ago:laLoadInt",
                 "sum:10s-ago:rate:laLoadInt");
         Assert.assertEquals("sum", mq.getAggregator().toString());
-        Assert.assertEquals(true, mq.isRate());
+        Assert.assertEquals(true, mq.getRate());
         Assert.assertEquals("10s-ago", mq.getDownsample());
         Assert.assertEquals("laLoadInt", mq.getMetric());
     }
@@ -97,7 +97,7 @@ public class MetricSpecificationTest {
         MetricSpecification mq = test("min:rate:10s-ago:laLoadInt",
                 "min:10s-ago:rate:laLoadInt");
         Assert.assertEquals("min", mq.getAggregator().toString());
-        Assert.assertEquals(true, mq.isRate());
+        Assert.assertEquals(true, mq.getRate());
         Assert.assertEquals("10s-ago", mq.getDownsample());
         Assert.assertEquals("laLoadInt", mq.getMetric());
     }
@@ -109,7 +109,7 @@ public class MetricSpecificationTest {
         MetricSpecification mq = test("max:rate:10s-ago:laLoadInt",
                 "max:10s-ago:rate:laLoadInt");
         Assert.assertEquals("max", mq.getAggregator().toString());
-        Assert.assertEquals(true, mq.isRate());
+        Assert.assertEquals(true, mq.getRate());
         Assert.assertEquals("10s-ago", mq.getDownsample());
         Assert.assertEquals("laLoadInt", mq.getMetric());
     }
@@ -121,7 +121,7 @@ public class MetricSpecificationTest {
         MetricSpecification mq = test("avg:10s-ago:laLoadInt",
                 "avg:10s-ago:laLoadInt");
         Assert.assertEquals("avg", mq.getAggregator().toString());
-        Assert.assertEquals(false, mq.isRate());
+        Assert.assertEquals(false, mq.getRate());
         Assert.assertEquals("10s-ago", mq.getDownsample());
         Assert.assertEquals("laLoadInt", mq.getMetric());
     }
@@ -133,7 +133,7 @@ public class MetricSpecificationTest {
         MetricSpecification mq = test("avg:rate:laLoadInt",
                 "avg:rate:laLoadInt");
         Assert.assertEquals("avg", mq.getAggregator().toString());
-        Assert.assertEquals(true, mq.isRate());
+        Assert.assertEquals(true, mq.getRate());
         Assert.assertNull(mq.getDownsample());
         Assert.assertEquals("laLoadInt", mq.getMetric());
     }
@@ -144,7 +144,7 @@ public class MetricSpecificationTest {
         // method always outputs the downsample and then the rate
         MetricSpecification mq = test("laLoadInt", "avg:laLoadInt");
         Assert.assertEquals("avg", mq.getAggregator().toString());
-        Assert.assertEquals(false, mq.isRate());
+        Assert.assertEquals(false, mq.getRate());
         Assert.assertNull(mq.getDownsample());
         Assert.assertEquals("laLoadInt", mq.getMetric());
     }
@@ -157,7 +157,7 @@ public class MetricSpecificationTest {
                 "avg:rate:10s-ago:laLoadInt{tag1=value1,tag2=value2}",
                 "avg:10s-ago:rate:laLoadInt");
         Assert.assertEquals("avg", mq.getAggregator().toString());
-        Assert.assertEquals(true, mq.isRate());
+        Assert.assertEquals(true, mq.getRate());
         Assert.assertEquals("10s-ago", mq.getDownsample());
         Assert.assertEquals("laLoadInt", mq.getMetric());
     }
@@ -170,7 +170,7 @@ public class MetricSpecificationTest {
                 "sum:rate:10s-ago:laLoadInt{tag1=value1,tag2=value2}",
                 "sum:10s-ago:rate:laLoadInt");
         Assert.assertEquals("sum", mq.getAggregator().toString());
-        Assert.assertEquals(true, mq.isRate());
+        Assert.assertEquals(true, mq.getRate());
         Assert.assertEquals("10s-ago", mq.getDownsample());
         Assert.assertEquals("laLoadInt", mq.getMetric());
     }
@@ -183,7 +183,7 @@ public class MetricSpecificationTest {
                 "min:rate:10s-ago:laLoadInt{tag1=value1,tag2=value2}",
                 "min:10s-ago:rate:laLoadInt");
         Assert.assertEquals("min", mq.getAggregator().toString());
-        Assert.assertEquals(true, mq.isRate());
+        Assert.assertEquals(true, mq.getRate());
         Assert.assertEquals("10s-ago", mq.getDownsample());
         Assert.assertEquals("laLoadInt", mq.getMetric());
     }
@@ -196,7 +196,7 @@ public class MetricSpecificationTest {
                 "max:rate:10s-ago:laLoadInt{tag1=value1,tag2=value2}",
                 "max:10s-ago:rate:laLoadInt");
         Assert.assertEquals("max", mq.getAggregator().toString());
-        Assert.assertEquals(true, mq.isRate());
+        Assert.assertEquals(true, mq.getRate());
         Assert.assertEquals("10s-ago", mq.getDownsample());
         Assert.assertEquals("laLoadInt", mq.getMetric());
     }
@@ -209,7 +209,7 @@ public class MetricSpecificationTest {
                 "avg:10s-ago:laLoadInt{tag1=value1,tag2=value2}",
                 "avg:10s-ago:laLoadInt");
         Assert.assertEquals("avg", mq.getAggregator().toString());
-        Assert.assertEquals(false, mq.isRate());
+        Assert.assertEquals(false, mq.getRate());
         Assert.assertEquals("10s-ago", mq.getDownsample());
         Assert.assertEquals("laLoadInt", mq.getMetric());
     }
@@ -222,7 +222,7 @@ public class MetricSpecificationTest {
                 "avg:rate:laLoadInt{tag1=value1,tag2=value2}",
                 "avg:rate:laLoadInt");
         Assert.assertEquals("avg", mq.getAggregator().toString());
-        Assert.assertEquals(true, mq.isRate());
+        Assert.assertEquals(true, mq.getRate());
         Assert.assertNull(mq.getDownsample());
         Assert.assertEquals("laLoadInt", mq.getMetric());
     }
@@ -234,7 +234,7 @@ public class MetricSpecificationTest {
         MetricSpecification mq = test("laLoadInt{tag1=value1,tag2=value2}",
                 "avg:laLoadInt");
         Assert.assertEquals("avg", mq.getAggregator().toString());
-        Assert.assertEquals(false, mq.isRate());
+        Assert.assertEquals(false, mq.getRate());
         Assert.assertNull(mq.getDownsample());
         Assert.assertEquals("laLoadInt", mq.getMetric());
     }

@@ -61,7 +61,7 @@ import com.google.common.base.Optional;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
 @ActiveProfiles("prod")
-public class HttpProviderTest extends ProviderTestBase {
+public class HttpPostProviderTest extends ProviderTestBase {
     @Autowired
     ApplicationContext ctx;
 
@@ -84,7 +84,7 @@ public class HttpProviderTest extends ProviderTestBase {
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(WireMockConfiguration
             .wireMockConfig().port(8089));
-    
+
     protected Map<?, ?> testQuery(Optional<String> id, Optional<String> start,
             Optional<String> end, Optional<Boolean> exact,
             Optional<Boolean> series, String[] queries) throws Exception {
@@ -113,6 +113,6 @@ public class HttpProviderTest extends ProviderTestBase {
                         .withHeader("Content-type", "text/plain")
                         .withHeader("Date", "Tue, 30 Apr 2013 14:12:34 GMT")
                         .withBody(new String(data))));
-        return super.testQuery(id, start, end, exact, series, queries);
+        return super.testPostQuery(id, start, end, exact, series, queries);
     }
 }
