@@ -1,0 +1,22 @@
+logging:
+  level: INFO
+  loggers:
+    "org.zenoss": DEBUG
+metrics: 
+  defaultExactTimeWindow: true
+  defaultStartTime: 1h-ago
+  defaultEndTime: now
+  defaultSeries: false
+  openTsdbUrl: http://tsdb.zenaas.com:4242
+  defaultTsdTimeZone: UTC
+  connectionTimeoutMs: 1000
+charts:
+  redisConnection: localhost:6379
+http:
+  connectorType: nonblocking
+  port: 8888
+  ssl:
+      #Example is using a java keystore in the target directory.
+      keyStore: ${ssl.cert.dir}/ssl.pfx
+      keyStorePassword: zapp_pass
+      keyStoreType: pkcs12
