@@ -119,10 +119,6 @@ public class MetricSpecification {
         return rate;
     }
 
-    public final Boolean isRate() {
-        return (rate == null ? false : rate);
-    }
-
     /**
      * @param rate
      *            the rate to set
@@ -245,7 +241,7 @@ public class MetricSpecification {
         String[] parts = content.substring("rate{".length(),
                 content.length() - 1).split(",");
 
-        if (parts.length < 0 || parts.length > 3) {
+        if (parts[0].trim().length() == 0 || parts.length > 3) {
             throw new RateFormatException("invalid number of options");
         }
 
@@ -358,6 +354,17 @@ public class MetricSpecification {
                                             .getName()));
                         }
                     }
+                } else if (terms.length >= 4) {
+                    // They specified enough terms to include "rate", but the
+                    // term that should be "rate" is some other random value,
+                    // so this is a bad request.
+                    throw new WebApplicationException(
+                            Utils.getErrorResponse(
+                                    null,
+                                    400,
+                                    String.format(
+                                            "unknown value '%s' specified, when only 'rate' value is allowed",
+                                            terms[2].trim()), "RequestParse"));
                 }
             }
         }

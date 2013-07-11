@@ -34,18 +34,27 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+
+import javax.ws.rs.core.MediaType;
 
 import org.eclipse.jetty.util.ajax.JSON;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zenoss.app.metricservice.api.model.Chart;
+import org.zenoss.app.metricservice.api.model.MetricSpecification;
+import org.zenoss.app.metricservice.api.model.PerformanceQuery;
 import org.zenoss.app.metricservice.api.remote.MetricResources;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.WebResource.Builder;
 import com.yammer.dropwizard.testing.ResourceTest;
 
 /**
@@ -101,51 +110,10 @@ public abstract class ProviderTestBase extends ResourceTest {
         return prefix;
     }
 
-    /**
-     * Constructs a URI to test the performance query service given the various
-     * optional parameters, invokes the URI and does some basic structural
-     * checks on the results.
-     * 
-     * @param id
-     *            the id of the request
-     * @param start
-     *            the start date/time of the request
-     * @param end
-     *            the end date/time of the request
-     * @param exact
-     *            should the time window be honored
-     * @param series
-     *            should the results be separated into series
-     * @param queries
-     *            the list of queries
-     * @return the response object parsed into an Map
-     * @throws Exception
-     *             if the process encounters an exception
-     */
-    protected Map<?, ?> testQuery(Optional<String> id, Optional<String> start,
-            Optional<String> end, Optional<Boolean> exact,
-            Optional<Boolean> series, String[] queries) throws Exception {
-
-        // Build up the URI query
-        char prefix = '?';
-        StringBuilder buf = new StringBuilder("/query/performance");
-        prefix = addArgument(buf, "id", id, prefix);
-        prefix = addArgument(buf, "start", start, prefix);
-        prefix = addArgument(buf, "end", end, prefix);
-        prefix = addArgument(buf, "exact", exact, prefix);
-        prefix = addArgument(buf, "series", series, prefix);
-        for (String query : queries) {
-            prefix = addArgument(buf, "query", Optional.of(query), prefix);
-        }
-
-        // Invoke the URI and make sure we get a response
-        WebResource wr = client().resource(buf.toString());
-        Assert.assertNotNull(wr);
-        ClientResponse response = wr.get(ClientResponse.class);
-        Assert.assertNotNull(response);
-        Assert.assertEquals("Invalid response code", 200, response.getStatus());
-
-        // Parse and verify the response
+    protected Map<?, ?> parseAndVerifyResponse(Optional<String> id,
+            Optional<String> start, Optional<String> end,
+            Optional<Boolean> exact, Optional<Boolean> series,
+            String[] queries, ClientResponse response) throws Exception {
         Object o;
         try (InputStreamReader reader = new InputStreamReader(
                 response.getEntityInputStream())) {
@@ -246,6 +214,90 @@ public abstract class ProviderTestBase extends ResourceTest {
         return (Map<?, ?>) json;
     }
 
+    protected Map<?, ?> testPostQuery(Optional<String> id,
+            Optional<String> start, Optional<String> end,
+            Optional<Boolean> exact, Optional<Boolean> series, String[] queries)
+            throws Exception {
+        // Build up a query object to post
+        PerformanceQuery pq = new PerformanceQuery();
+        if (start.isPresent()) {
+            pq.setStart(start.get());
+        }
+        if (end.isPresent()) {
+            pq.setEnd(end.get());
+        }
+        if (exact.isPresent()) {
+            pq.setExactTimeWindow(exact.get());
+        }
+        if (series.isPresent()) {
+            pq.setSeries(series.get());
+        }
+        List<MetricSpecification> list = new ArrayList<MetricSpecification>();
+        for (String s : queries) {
+            list.add(MetricSpecification.fromString(s));
+        }
+        pq.setMetrics(list);
+
+        WebResource wr = client().resource("/query/performance");
+        Assert.assertNotNull(wr);
+        wr.accept(MediaType.APPLICATION_JSON);
+        Builder request = wr.type(MediaType.APPLICATION_JSON);
+        request.accept(MediaType.APPLICATION_JSON);
+        ClientResponse response = request.post(ClientResponse.class, pq);
+        Assert.assertNotNull(response);
+        Assert.assertEquals("Invalid response code", 200, response.getStatus());
+
+        return parseAndVerifyResponse(Optional.<String> absent(), start, end,
+                exact, series, queries, response);
+    }
+
+    /**
+     * Constructs a URI to test the performance query service given the various
+     * optional parameters, invokes the URI and does some basic structural
+     * checks on the results.
+     * 
+     * @param id
+     *            the id of the request
+     * @param start
+     *            the start date/time of the request
+     * @param end
+     *            the end date/time of the request
+     * @param exact
+     *            should the time window be honored
+     * @param series
+     *            should the results be separated into series
+     * @param queries
+     *            the list of queries
+     * @return the response object parsed into an Map
+     * @throws Exception
+     *             if the process encounters an exception
+     */
+    protected Map<?, ?> testQuery(Optional<String> id, Optional<String> start,
+            Optional<String> end, Optional<Boolean> exact,
+            Optional<Boolean> series, String[] queries) throws Exception {
+
+        // Build up the URI query
+        char prefix = '?';
+        StringBuilder buf = new StringBuilder("/query/performance");
+        prefix = addArgument(buf, "id", id, prefix);
+        prefix = addArgument(buf, "start", start, prefix);
+        prefix = addArgument(buf, "end", end, prefix);
+        prefix = addArgument(buf, "exact", exact, prefix);
+        prefix = addArgument(buf, "series", series, prefix);
+        for (String query : queries) {
+            prefix = addArgument(buf, "query", Optional.of(query), prefix);
+        }
+
+        // Invoke the URI and make sure we get a response
+        WebResource wr = client().resource(buf.toString());
+        Assert.assertNotNull(wr);
+        ClientResponse response = wr.get(ClientResponse.class);
+        Assert.assertNotNull(response);
+        Assert.assertEquals("Invalid response code", 200, response.getStatus());
+        return parseAndVerifyResponse(id, start, end, exact, series, queries,
+                response);
+    }
+    
     @Test
     public void queryTest10sAgo1QuerySeries() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
@@ -274,7 +326,7 @@ public abstract class ProviderTestBase extends ResourceTest {
                 Optional.<String> absent(), Optional.of(true),
                 Optional.of(false), new String[] { "avg:laLoadInt1",
                         "sum:laLoadInt5" });
-    }
+    }    
 
     @Test
     public void queryTest10sAgo1QuerySeriesWithTags() throws Exception {
