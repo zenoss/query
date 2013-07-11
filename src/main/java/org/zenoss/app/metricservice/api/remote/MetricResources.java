@@ -82,8 +82,10 @@ public class MetricResources {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response query2(PerformanceQuery query) {
         Optional<String> id = Optional.<String> absent();
-        Optional<String> start = Optional.of(query.getStart());
-        Optional<String> end = Optional.of(query.getEnd());
+        Optional<String> start = query.getStart() != null ? Optional.of(query
+                .getStart()) : Optional.<String> absent();
+        Optional<String> end = query.getEnd() != null ? Optional.of(query
+                .getEnd()) : Optional.<String> absent();
         Optional<Boolean> exact = query.getExactTimeWindow() == null ? Optional
                 .<Boolean> absent() : Optional.of(query.getExactTimeWindow());
         Optional<Boolean> series = (query.getSeries() == null ? Optional

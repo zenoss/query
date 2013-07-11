@@ -30,11 +30,8 @@
  */
 package org.zenoss.app.metricservice;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
-import org.junit.Rule;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -45,13 +42,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
-import org.zenoss.app.metricservice.api.configs.MetricServiceConfig;
-import org.zenoss.app.metricservice.api.impl.mocks.MockMetricStorage;
-import org.zenoss.app.metricservice.api.model.MetricSpecification;
+import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.base.Optional;
 
 /**
@@ -60,8 +52,8 @@ import com.google.common.base.Optional;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
-@ActiveProfiles("prod")
-public class HttpProviderTest extends ProviderTestBase {
+@ActiveProfiles("dev")
+public class MockPostProviderTest extends ProviderTestBase {
     @Autowired
     ApplicationContext ctx;
 
@@ -71,48 +63,13 @@ public class HttpProviderTest extends ProviderTestBase {
         @Bean
         public MetricServiceAppConfiguration getQueryAppConfiguration() {
             MetricServiceAppConfiguration config = new MetricServiceAppConfiguration();
-
-            // Set up the config so that it contacts our mock server for tsdb
-            // queries
-            config.getMetricServiceConfig().setOpenTsdbUrl(
-                    "http://localhost:8089");
             return config;
         }
     }
 
-    // Create a mock http server to stand in for our tsdb server
-    @Rule
-    public WireMockRule wireMockRule = new WireMockRule(WireMockConfiguration
-            .wireMockConfig().port(8089));
-    
     protected Map<?, ?> testQuery(Optional<String> id, Optional<String> start,
             Optional<String> end, Optional<Boolean> exact,
             Optional<Boolean> series, String[] queries) throws Exception {
-        MetricServiceAppConfiguration config = new ContextConfiguration()
-                .getQueryAppConfiguration();
-        MetricServiceConfig pref = config.getMetricServiceConfig();
-
-        // Create some mock data for the request. This mock data will be
-        // generated based on the request.
-        List<MetricSpecification> queryList = new ArrayList<MetricSpecification>();
-        for (String query : queries) {
-            queryList.add(MetricSpecification.fromString(query));
-        }
-        byte[] data = new MockMetricStorage().generateData(
-                new ContextConfiguration().getQueryAppConfiguration(),
-                id.or("not-specified"), start.or(pref.getDefaultStartTime()),
-                end.or(pref.getDefaultEndTime()),
-                exact.or(pref.getDefaultExactTimeWindow()),
-                series.or(pref.getDefaultSeries()), queryList);
-
-        WireMock.stubFor(WireMock.head(WireMock.urlMatching(".*")).willReturn(
-                WireMock.aResponse().withStatus(200)
-                        .withHeader("Date", "Tue, 30 Apr 2013 14:12:34 GMT")));
-        WireMock.stubFor(WireMock.get(WireMock.urlMatching("/q.*")).willReturn(
-                WireMock.aResponse().withStatus(200)
-                        .withHeader("Content-type", "text/plain")
-                        .withHeader("Date", "Tue, 30 Apr 2013 14:12:34 GMT")
-                        .withBody(new String(data))));
-        return super.testQuery(id, start, end, exact, series, queries);
+        return testPostQuery(id, start, end, exact, series, queries);
     }
 }
