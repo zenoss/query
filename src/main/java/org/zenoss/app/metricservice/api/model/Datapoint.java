@@ -38,40 +38,23 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Datapoint {
     @JsonProperty(required=true)
-    private String type = null;
-
-    @JsonProperty(required=true)
-    private String consolidator = null;
+    private String aggregator = null;
 
     @JsonProperty(required=true)
     private String metric = null;
 
     /**
-     * @return the type
+     * @return the aggregator
      */
-    public final String getType() {
-        return type;
+    public final String getAggregator() {
+        return aggregator;
     }
 
     /**
-     * @param type the type to set
+     * @param aggregator the consolidation to set
      */
-    public final void setType(String type) {
-        this.type = type;
-    }
-
-    /**
-     * @return the consolidator
-     */
-    public final String getConsolidator() {
-        return consolidator;
-    }
-
-    /**
-     * @param consolidation the consolidation to set
-     */
-    public final void setConsolidator(String consolidator) {
-        this.consolidator = consolidator;
+    public final void setAggregator(String aggregator) {
+        this.aggregator = aggregator;
     }
 
     /**

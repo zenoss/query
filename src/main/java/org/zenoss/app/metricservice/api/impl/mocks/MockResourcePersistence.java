@@ -35,16 +35,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.ws.rs.WebApplicationException;
+
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.zenoss.app.metricservice.api.impl.ResourcePersistenceAPI;
+import org.zenoss.app.metricservice.api.impl.Utils;
+import org.zenoss.app.metricservice.api.model.Chart;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 
 @Configuration
 @Profile({ "dev" })
 public class MockResourcePersistence implements ResourcePersistenceAPI {
     private boolean connected = false;
     private List<String> list = new ArrayList<String>();
-    private Map<String, String> hash = new HashMap<String, String>();
+    private Map<String, String> idHash = new HashMap<String, String>();
 
     @Override
     public void connect(String prefix, String host) {
@@ -65,7 +72,7 @@ public class MockResourcePersistence implements ResourcePersistenceAPI {
     public void disconnect() {
         connected = false;
         list.clear();
-        hash.clear();
+        idHash.clear();
     }
 
     @Override
@@ -74,14 +81,37 @@ public class MockResourcePersistence implements ResourcePersistenceAPI {
     }
 
     @Override
-    public String getResource(String id) {
-        return hash.get(id);
+    public String getResourceById(String id) {
+        return idHash.get(id);
+    }
+
+    @Override
+    public String getResourceByName(String name) {
+        // Walk the list of charts and if we find one with the attribute
+        // name and value specified
+        ObjectMapper om = new ObjectMapper();
+        ObjectReader reader = om.reader(Chart.class);
+        Chart chart = null;
+
+        for (String content : idHash.values()) {
+            try {
+                chart = reader.readValue(content);
+                if (name.equals(chart.getName())) {
+                    return content;
+                }
+            } catch (Throwable t) {
+                throw new WebApplicationException(Utils.getErrorResponse(null,
+                        500, "unable to read chart from persistence",
+                        "persistence"));
+            }
+        }
+        return null;
     }
 
     @Override
     public boolean delete(String id) {
-        if (hash.containsKey(id)) {
-            hash.remove(id);
+        if (idHash.containsKey(id)) {
+            idHash.remove(id);
             list.remove(id);
             return true;
         }
@@ -90,19 +120,19 @@ public class MockResourcePersistence implements ResourcePersistenceAPI {
 
     @Override
     public boolean exists(String id) {
-        return hash.containsKey(id);
+        return idHash.containsKey(id);
     }
 
     @Override
     public boolean add(String id, String content) {
-        hash.put(id, content);
+        idHash.put(id, content);
         list.add(id);
         return true;
     }
 
     @Override
     public boolean update(String id, String content) {
-        hash.put(id, content);
+        idHash.put(id, content);
         return true;
     }
 

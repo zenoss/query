@@ -37,9 +37,13 @@ import javax.ws.rs.WebApplicationException;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.zenoss.app.annotations.API;
+import org.zenoss.app.metricservice.api.model.Chart;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Transaction;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 
 @API
 @Configuration
@@ -47,7 +51,7 @@ import redis.clients.jedis.Transaction;
 public class RedisResourcePersistence implements ResourcePersistenceAPI {
 
     private Jedis jedis = null;
-    private String hashName = null;
+    private String idHashName = null;
     private String listName = null;
 
     @Override
@@ -58,7 +62,7 @@ public class RedisResourcePersistence implements ResourcePersistenceAPI {
     @Override
     public void connect(String prefix, String host, int port) {
         if (jedis == null) {
-            hashName = prefix + "_HASH";
+            idHashName = prefix + "_HASH";
             listName = prefix + "_LIST";
             if (port == -1) {
                 jedis = new Jedis(host);
@@ -108,15 +112,41 @@ public class RedisResourcePersistence implements ResourcePersistenceAPI {
     }
 
     @Override
-    public String getResource(String id) {
-        return jedis.hget(hashName, id);
+    public String getResourceById(String id) {
+        return jedis.hget(idHashName, id);
+    }
+
+    @Override
+    public String getResourceByName(String name) {
+        // No good way to deal with this in redis
+        List<String> charts = jedis.hvals(idHashName);
+
+        // Walk the list of charts and if we find one with the attribute
+        // name and value specified
+        ObjectMapper om = new ObjectMapper();
+        ObjectReader reader = om.reader(Chart.class);
+        Chart chart = null;
+
+        for (String content : charts) {
+            try {
+                chart = reader.readValue(content);
+                if (name.equals(chart.getName())) {
+                    return content;
+                }
+            } catch (Throwable t) {
+                throw new WebApplicationException(Utils.getErrorResponse(null,
+                        500, "unable to read chart from persistence",
+                        "persistence"));
+            }
+        }
+        return null;
     }
 
     @Override
     public boolean delete(String id) {
         Transaction txn = jedis.multi();
         txn.lrem(listName, 1, id);
-        txn.hdel(hashName, id);
+        txn.hdel(idHashName, id);
         List<Object> responses = txn.exec();
 
         return (responses != null && !responses.isEmpty() && ((Long) responses
@@ -127,7 +157,7 @@ public class RedisResourcePersistence implements ResourcePersistenceAPI {
     public boolean add(String uuid, String content) {
         Transaction txn = jedis.multi();
         txn.rpush(listName, uuid);
-        txn.hset(hashName, uuid, content);
+        txn.hset(idHashName, uuid, content);
         List<Object> responses = txn.exec();
 
         return responses != null && responses.size() == 2;
@@ -135,12 +165,12 @@ public class RedisResourcePersistence implements ResourcePersistenceAPI {
 
     @Override
     public boolean update(String uuid, String content) {
-        return jedis.hset(hashName, uuid, content) != null;
+        return jedis.hset(idHashName, uuid, content) != null;
     }
 
     @Override
     public boolean exists(String id) {
-        return jedis.hexists(hashName, id);
+        return jedis.hexists(idHashName, id);
     }
 
     @Override

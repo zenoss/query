@@ -1,247 +1,3 @@
-var __data = {
-	"clientId" : "not-specified",
-	"source" : "OpenTSDB",
-	"startTime" : "10m-ago",
-	"startTimeActual" : "2013/07/11-22:50:33-+0000",
-	"endTime" : "now",
-	"endTimeActual" : "2013/07/11-23:00:33-+0000",
-	"exactTimeWindow" : true,
-	"series" : false,
-	"results" : [ {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583047,
-		"value" : 16.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583061,
-		"value" : 17.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583064,
-		"value" : 17.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583073,
-		"value" : 18.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583081,
-		"value" : 18.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583086,
-		"value" : 18.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583104,
-		"value" : 19.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583260,
-		"value" : 16.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583262,
-		"value" : 16.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583265,
-		"value" : 16.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583318,
-		"value" : 15.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583320,
-		"value" : 16.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583326,
-		"value" : 16.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583330,
-		"value" : 16.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583347,
-		"value" : 15.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583361,
-		"value" : 16.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583364,
-		"value" : 16.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583373,
-		"value" : 17.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583381,
-		"value" : 21.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583386,
-		"value" : 23.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583404,
-		"value" : 5.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583560,
-		"value" : 5.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583562,
-		"value" : 3.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583565,
-		"value" : 1.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583620,
-		"value" : 1.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583626,
-		"value" : 1.0
-	}, {
-		"metric" : "laLoadInt1",
-		"timestamp" : 1373583630,
-		"value" : 0.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583047,
-		"value" : 15.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583057,
-		"value" : 15.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583061,
-		"value" : 15.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583064,
-		"value" : 16.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583073,
-		"value" : 16.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583081,
-		"value" : 16.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583086,
-		"value" : 16.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583104,
-		"value" : 16.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583260,
-		"value" : 15.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583262,
-		"value" : 15.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583265,
-		"value" : 15.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583318,
-		"value" : 15.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583320,
-		"value" : 16.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583326,
-		"value" : 16.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583328,
-		"value" : 16.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583330,
-		"value" : 16.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583347,
-		"value" : 15.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583357,
-		"value" : 16.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583361,
-		"value" : 17.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583364,
-		"value" : 18.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583373,
-		"value" : 19.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583381,
-		"value" : 22.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583386,
-		"value" : 24.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583404,
-		"value" : 7.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583560,
-		"value" : 5.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583562,
-		"value" : 3.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583565,
-		"value" : 3.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583620,
-		"value" : 5.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583626,
-		"value" : 6.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583628,
-		"value" : 9.0
-	}, {
-		"metric" : "laLoadInt5",
-		"timestamp" : 1373583630,
-		"value" : 0.0
-	} ]
-};
-
 var zenoss = {
 	visualization : {
 		url : "http://localhost:8080",
@@ -422,19 +178,212 @@ var zenoss = {
 			}
 		},
 		chart : {
-			create : function(name, config) {
-				if (typeof jQuery == 'undefined') {
-					loadRequiredLibraries(function() {
-						return new zenoss.visualization.Chart(name, config);
+			create : function(name, arg1, arg2) {
+
+				function loadChart(name, callback) {
+					$.ajax({
+						'url' : zenoss.visualization.url + '/chart/name/'
+								+ name,
+						'type' : 'GET',
+						'dataType' : 'json',
+						'contentType' : 'application/json',
+						'success' : function(data) {
+							callback(data);
+						},
+						'error' : function(response) {
+							alert("FAIL");
+						}
+					});
+				}
+
+				if (typeof arg1 == 'string') {
+					// A chart template name was specified, so we need to first
+					// load that template and then create the chart based on
+					// that.
+					var config = arg2;
+					if (typeof jQuery == 'undefined') {
+						loadRequiredLibraries(function() {
+							loadChart(arg1, function(template) {
+								return new zenoss.visualization.Chart(name,
+										template, config);
+							});
+						});
+						return;
+					}
+					loadChart(arg1, function(template) {
+						return new zenoss.visualization.Chart(name, template,
+								config);
 					});
 					return;
 				}
-				zenoss.visualization.Chart(name, config);
+
+				var template = null;
+				var config = arg1;
+
+				if (typeof jQuery == 'undefined') {
+					loadRequiredLibraries(function() {
+						return new zenoss.visualization.Chart(name, template,
+								config);
+					});
+					return;
+				}
+				zenoss.visualization.Chart(name, template, config);
 			}
 		},
-		Chart : function(name, config) {
+
+		/**
+		 * Constructs and renders a chart / graph in the "div" elements
+		 * specified by the "name" parameter.
+		 * 
+		 * @param name
+		 *            specifies the "div" element in the HTML document that will
+		 *            be replaced by the chart.
+		 * @param template
+		 *            specifies the template chart, this is the chart that was
+		 *            fetched from the metric service
+		 * @param config
+		 *            if not template is specified this contains the chart
+		 *            specification, if a template is specified this contains
+		 *            "override" values for the template.
+		 */
+		Chart : function(name, template, config) {
+
+			function processResultAsSeries(request, data) {
+				var plots = [];
+
+				data.results.forEach(function(result) {
+					// The key for a series plot will be its distinguishing
+					// characteristics, which is the metric name and the
+					// tags / filter
+					var key = result.metric;
+					if (typeof result.tags != 'undefined') {
+						key += '{';
+						var prefix = '';
+						for ( var tag in result.tags) {
+							if (result.tags.hasOwnProperty(tag)) {
+								key += prefix + tag + '=' + result.tags[tag];
+								prefix = ',';
+							}
+						}
+						key += '};'
+					}
+					var plot = {
+						'key' : key,
+						'values' : []
+					};
+					result.datapoints.forEach(function(dp) {
+						plot.values.push({
+							'x' : dp.timestamp * 1000,
+							'y' : dp.value
+						});
+					});
+					plots.push(plot);
+				});
+
+				return plots;
+			}
+
+			function processResultAsDefault(request, data) {
+
+				var plotMap = Array();
+
+				// Create a plot for each metric name, this is essentially
+				// grouping the results by metric name. This can cause problems
+				// if the request contains multiple queries for the same
+				// metric, but this is basically a restriction of the
+				// implementation (OpenTSDB) where it doesn't split the results
+				// logically when multiple requests are made in a single call.
+				data.results.forEach(function(result) {
+					var plot = plotMap[result.metric];
+					if (typeof plot == 'undefined') {
+						plot = {
+							'key' : result.metric,
+							'values' : []
+						};
+						plotMap[result.metric] = plot;
+					}
+
+					plot.values.push({
+						'x' : result.timestamp * 1000,
+						'y' : result.value
+					});
+				});
+
+				// Convert the plotMap into an array of plots for the graph
+				// library to process
+				var plots = [];
+				for ( var key in plotMap) {
+					if (plotMap.hasOwnProperty(key)) {
+						// Sort the values of the plot as we put them in the
+						// plots aray.
+						plotMap[key].values.sort(function compare(a, b) {
+							if (a.x < b.x)
+								return -1;
+							if (a.x > b.x)
+								return 1;
+							return 0;
+						});
+						plots.push(plotMap[key]);
+					}
+				}
+				return plots;
+			}
+
+			function processResult(request, data) {
+				if (data.series) {
+					return processResultAsSeries(request, data);
+				}
+				return processResultAsDefault(request, data);
+			}
+
+			/**
+			 * Deep object merge. This merge differs significantly from the
+			 * "extend" method provide by jQuery in that it will merge the value
+			 * of arrays, but concatenating the arrays together using the jQuery
+			 * method "merge". Neither of the objects passed are modified and a
+			 * new object is returned.
+			 * 
+			 * @param a
+			 *            object 1
+			 * @param b
+			 *            object 2
+			 * @returns the merged object
+			 */
+			function merge(a, b) {
+				if (typeof a == 'undefined' || a == null) {
+					return $.extend(true, {}, b);
+				}
+				if (typeof b == 'undefined' || b == null) {
+					return $.extend(true, {}, a);
+				}
+
+				var m = $.extend(true, {}, a);
+
+				for ( var k in b) {
+					if (b.hasOwnProperty(k)) {
+						var v = b[k];
+						if (v.constructor == Number || v.constructor == String) {
+							m[k] = v;
+						} else if (v instanceof Array) {
+							m[k] = $.merge(m[k], v);
+						} else if (v instanceof Object) {
+							if (typeof m[k] == 'undefined') {
+								m[k] = $.extend({}, v);
+							} else {
+								m[k] = merge(m[k], v);
+							}
+						} else {
+							m[k] = $.extend(m[k], v);
+						}
+					}
+				}
+
+				return m;
+			}
+
 			var _name = name;
-			var _config = config;
+			var _config = merge(template, config);
+
 			this.name = function() {
 				return _name;
 			}
@@ -451,52 +400,133 @@ var zenoss = {
 			}
 
 			var div = $('#' + name);
-			if (typeof config.width != 'undefined') {
-				div.width(config.width);
-			}
-			if (typeof config.height != 'undefined') {
-				div.height(config.height);
+			if (typeof _config != 'undefined') {
+				if (typeof _config.width != 'undefined') {
+					div.width(_config.width);
+				}
+				if (typeof _config.height != 'undefined') {
+					div.height(_config.height);
+				}
 			}
 			// div.css('background-color', 'red');
 			var timeFormat = function(ts) {
 				return d3.time.format('%x %X')(new Date(ts));
 			}
-			var _d = [];
-			var plots = [];
-			__data.results.forEach(function(v) {
-				var plot = plots[v.metric];
-				if (typeof plot == 'undefined') {
-					plot = {
-						"key" : v.metric,
-						"values" : []
-					};
-					plots[v.metric] = plot;
-				}
-				plot.values.push({
-					"x" : v.timestamp * 1000,
-					"y" : v.value
-				});
-			});
-			// convert associative array plots to normal array
-			var _plots = [];
 
-			for ( var key in plots) {
-				if (plots.hasOwnProperty(key)) {
-					_plots.push(plots[key]);
+			var request = {};
+			if (typeof _config != 'undefined') {
+				if (typeof _config.range != 'undefined') {
+					if (typeof _config.range.start != 'undefined') {
+						request.start = _config.range.start;
+					}
+					if (typeof _config.range.end != 'undefined') {
+						request.end = _config.range.end;
+					}
+				}
+
+				if (typeof _config.series != 'undefined') {
+					request.series = _config.series;
+				}
+
+				if (typeof _config.datapoints != 'undefined') {
+					request.metrics = [];
+					_config.datapoints.forEach(function(dp) {
+						var m = {};
+						m.metric = dp.metric;
+						if (typeof dp.rate != 'undefined') {
+							m.rate = dp.rate;
+						}
+						if (typeof dp.aggregator != 'undefined') {
+							m.aggregator = dp.aggregator;
+						}
+						if (typeof dp.downsample != 'undefined') {
+							m.downsample = dp.downsample;
+						}
+						if (typeof dp.filter != 'undefined') {
+							m.tags = {};
+							for ( var key in dp.filter) {
+								if (dp.filter.hasOwnProperty(key)) {
+									m.tags[key] = dp.filter[key];
+								}
+							}
+						}
+						request.metrics.push(m);
+					});
 				}
 			}
 
-			var _chart = nv.models.lineChart();
-			var _svg = null;
+			if (typeof request.metrics == 'undefined') {
+				return;
+			}
+			$.ajax({
+				'url' : zenoss.visualization.url + '/query/performance',
+				'type' : 'POST',
+				'data' : JSON.stringify(request),
+				'dataType' : 'json',
+				'contentType' : 'application/json',
+				'success' : function(data) {
+					var plots = processResult(request, data);
 
-			nv.addGraph(function() {
-				_chart.xAxis.tickFormat(timeFormat).axisLabel('Date/Time');
-				_chart.yAxis.axisLabel('Memory');
-				_svg = d3.select('#' + _name).append('svg');
-				_svg.datum(_plots).transition().duration(500).call(_chart);
-				nv.utils.windowResize(function() {
-					_svg.call(_chart)
-				});
+					var type = "line";
+					if (typeof _config.type != 'undefined') {
+						type = _config.type;
+					}
+
+					var _chart = null;
+					switch (type) {
+					case "area":
+						// Area plots don't seem to do well if there are
+						// multiple data point sets and there are not the same
+						// number of points in each set, so tuncate the data
+						// point areas to the same number of points.
+						if (plots.length > 1) {
+							// get minmum length
+							var minLength = plots[0].values.length;
+							plots.forEach(function(plot) {
+								minLength = Math.min(minLength,
+										plot.values.length);
+							});
+
+							// Truncate
+							plots.forEach(function(plot) {
+								plot.values.length = minLength;
+							});
+
+						}
+						_chart = nv.models.stackedAreaChart().x(function(v) {
+							return v.x;
+						}).y(function(v) {
+							return v.y;
+						}).clipEdge(true);
+						break;
+					case "bar":
+						_chart = nv.models.multiBarChart();
+						break;	
+					case "focus":
+						_chart = nv.models.lineWithFocusChart();
+						break;
+					case "line":
+					default:
+						_chart = nv.models.lineChart();
+						break;
+					}
+					var _svg = null;
+
+					nv.addGraph(function() {
+						_chart.xAxis.tickFormat(timeFormat).axisLabel(
+								'Date/Time');
+						_chart.yAxis.axisLabel('Memory');
+						_svg = d3.select('#' + _name).append('svg');
+						_svg.datum(plots).transition().duration(500).call(
+								_chart);
+						nv.utils.windowResize(function() {
+							_svg.call(_chart)
+						});
+					});
+				},
+				'error' : function(res) {
+					alert("bad: " + JSON.stringify(res));
+				}
 			});
 		}
 	}
