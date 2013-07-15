@@ -1,5 +1,6 @@
 var zenoss = {
 	visualization : {
+		debug : false,
 		url : "http://localhost:8080",
 		defaults : {
 			range : {
@@ -53,21 +54,34 @@ var zenoss = {
 					'http://localhost:8888/api/jquery.min.js',
 					true,
 					function() {
-						console.log('JQuery loaded');
+						if (zenoss.visualization.debug) {
+							console.log('JQuery loaded');
+						}
 						$
 								.getScript(
 										'http://localhost:8888/api/d3.v3.min.js',
 										function() {
-											console.log('D3 loaded');
+											if (zenoss.visualization.debug) {
+												console.log('D3 loaded');
+											}
 											$
 													.getScript(
 															'http://localhost:8888/api/nv.d3.min.js',
 															function() {
-																console
-																		.log('NV.D3 Loaded');
+																if (zenoss.visualization.debug) {
+																	console
+																			.log('NV.D3 Loaded');
+																}
 																includeCSS('http://localhost:8888/api/css/nv.d3.css');
-																console
-																		.log("Loaded NV.D3 CSS");
+																if (zenoss.visualization.debug) {
+																	console
+																			.log("Loaded NV.D3 CSS");
+																}
+																includeCSS('http://localhost:8888/api/css/zenoss.css');
+																if (zenoss.visualization.debug) {
+																	console
+																			.log("Loaded Zenoss CSS");
+																}
 																callback();
 															});
 										});
@@ -180,20 +194,39 @@ var zenoss = {
 		chart : {
 			create : function(name, arg1, arg2) {
 
-				function loadChart(name, callback) {
-					$.ajax({
-						'url' : zenoss.visualization.url + '/chart/name/'
-								+ name,
-						'type' : 'GET',
-						'dataType' : 'json',
-						'contentType' : 'application/json',
-						'success' : function(data) {
-							callback(data);
-						},
-						'error' : function(response) {
-							alert("FAIL");
-						}
-					});
+				function showError(name, err, detail) {
+					$('#' + name).html(
+							'<span class="zenerror">' + detail + '</span>');
+				}
+
+				function loadChart(name, callback, onerror) {
+					$
+							.ajax({
+								'url' : zenoss.visualization.url
+										+ '/chart/name/' + name,
+								'type' : 'GET',
+								'dataType' : 'json',
+								'contentType' : 'application/json',
+								'success' : function(data) {
+									callback(data);
+								},
+								'error' : function(response) {
+									var err = JSON.parse(response.responseText);
+									var detail = 'Error while attempting to fetch chart resource with the name "'
+											+ name
+											+ '", via the URL "'
+											+ zenoss.visualization.url
+											+ '/chart/name/'
+											+ name
+											+ '", the reported error was "'
+											+ err.errorSource
+											+ ':'
+											+ err.errorMessage + '"';
+									if (typeof onerror != 'undefined') {
+										onerror(err, detail);
+									}
+								}
+							});
 				}
 
 				if (typeof arg1 == 'string') {
@@ -206,6 +239,8 @@ var zenoss = {
 							loadChart(arg1, function(template) {
 								return new zenoss.visualization.Chart(name,
 										template, config);
+							}, function(err, detail) {
+								showError(name, err, detail);
 							});
 						});
 						return;
@@ -213,6 +248,8 @@ var zenoss = {
 					loadChart(arg1, function(template) {
 						return new zenoss.visualization.Chart(name, template,
 								config);
+					}, function(err, detail) {
+						showError(name, err, detail);
 					});
 					return;
 				}
@@ -247,6 +284,11 @@ var zenoss = {
 		 *            "override" values for the template.
 		 */
 		Chart : function(name, template, config) {
+
+			function showError(name, err, detail) {
+				$('#' + name).html(
+						'<span class="zenerror">Error: ' + detail + '</span>');
+			}
 
 			function processResultAsSeries(request, data) {
 				var plots = [];
@@ -381,6 +423,16 @@ var zenoss = {
 				return m;
 			}
 
+			// By this point all the supporting libraries should be loaded,
+			// if they are not then we can not continue. Verify this with
+			// a simple check for the NVD3 library.
+			if (typeof nv == 'undefined') {
+				console
+						.error("Error: not all supporting libraries were loaded, cannot continue");
+				alert("Error: not all supporting libraries were loaded, cannot continue");
+				return;
+			}
+
 			var _name = name;
 			var _config = merge(template, config);
 
@@ -392,11 +444,6 @@ var zenoss = {
 			}
 			this.add = function(name, options) {
 				return zenoss.visualization.plot.create(name, options);
-			}
-
-			if (typeof jQuery == 'undefined') {
-				console.log("no go");
-				return;
 			}
 
 			var div = $('#' + name);
@@ -458,76 +505,112 @@ var zenoss = {
 			if (typeof request.metrics == 'undefined') {
 				return;
 			}
-			$.ajax({
-				'url' : zenoss.visualization.url + '/query/performance',
-				'type' : 'POST',
-				'data' : JSON.stringify(request),
-				'dataType' : 'json',
-				'contentType' : 'application/json',
-				'success' : function(data) {
-					var plots = processResult(request, data);
 
-					var type = "line";
-					if (typeof _config.type != 'undefined') {
-						type = _config.type;
-					}
+			if (zenoss.visualization.debug) {
+				console.log('POST: ' + zenoss.visualization.url
+						+ '/query/performance: ' + JSON.stringify(request));
+			}
+			$
+					.ajax({
+						'url' : zenoss.visualization.url + '/query/performance',
+						'type' : 'POST',
+						'data' : JSON.stringify(request),
+						'dataType' : 'json',
+						'contentType' : 'application/json',
+						'success' : function(data) {
+							var plots = processResult(request, data);
 
-					var _chart = null;
-					switch (type) {
-					case "area":
-						// Area plots don't seem to do well if there are
-						// multiple data point sets and there are not the same
-						// number of points in each set, so tuncate the data
-						// point areas to the same number of points.
-						if (plots.length > 1) {
-							// get minmum length
-							var minLength = plots[0].values.length;
-							plots.forEach(function(plot) {
-								minLength = Math.min(minLength,
-										plot.values.length);
+							var type = "line";
+							if (typeof _config.type != 'undefined') {
+								type = _config.type;
+							}
+
+							var _chart = null;
+							switch (type) {
+							case "area":
+								// Area plots don't seem to do well if there are
+								// multiple data point sets and there are not
+								// the same
+								// number of points in each set, so tuncate the
+								// data
+								// point areas to the same number of points.
+								if (plots.length > 1) {
+									// get minmum length
+									var minLength = plots[0].values.length;
+									plots.forEach(function(plot) {
+										minLength = Math.min(minLength,
+												plot.values.length);
+									});
+
+									// Truncate
+									plots.forEach(function(plot) {
+										plot.values.length = minLength;
+									});
+
+								}
+								_chart = nv.models.stackedAreaChart().x(
+										function(v) {
+											return v.x;
+										}).y(function(v) {
+									return v.y;
+								}).clipEdge(true);
+								break;
+							case "bar":
+								_chart = nv.models.multiBarChart();
+								break;
+							case "focus":
+								_chart = nv.models.lineWithFocusChart();
+								break;
+							case "line":
+							default:
+								_chart = nv.models.lineChart();
+								break;
+							}
+							var _svg = null;
+
+							nv.addGraph(function() {
+								_chart.xAxis.tickFormat(timeFormat).axisLabel(
+										'Date/Time');
+								_chart.yAxis.axisLabel('Memory');
+								_svg = d3.select('#' + _name).append('svg');
+								_svg.datum(plots).transition().duration(500)
+										.call(_chart);
+								nv.utils.windowResize(function() {
+									_svg.call(_chart)
+								});
 							});
-
-							// Truncate
-							plots.forEach(function(plot) {
-								plot.values.length = minLength;
-							});
-
+						},
+						'error' : function(res) {
+							// Many, many reasons that we might have gotten
+							// here, with
+							// most of them we are not able to detect why. If we
+							// have
+							// a readystate of 4 and an response code in the
+							// 200s that
+							// likely means we were unable to parse the JSON
+							// returned
+							// from the server. If not that then who knows ....
+							if (res.readyState == 4
+									&& Math.floor(res.status / 100) == 2) {
+								var detail = 'Severe: Unable to parse data returned from Zenoss metric service as JSON object. Please copy / paste the REQUEST and RESPONSE written to your browser\'s Java Console into an email to Zenoss Support';
+								console.group('Severe error, please report');
+								console
+										.error('REQUEST : POST /query/performance: '
+												+ JSON.stringify(request));
+								console.error('RESPONSE: ' + res.responseText);
+								console.groupEnd();
+								showError(_name, {}, detail);
+							} else {
+								var err = JSON.parse(res.responseText);
+								var detail = 'An unexpected failure response was received from the server. The reported message is: '
+										+ err.errorSource
+										+ ' : '
+										+ err.errorMessage;
+								console.error(detail);
+								showError(_name, err, detail);
+							}
 						}
-						_chart = nv.models.stackedAreaChart().x(function(v) {
-							return v.x;
-						}).y(function(v) {
-							return v.y;
-						}).clipEdge(true);
-						break;
-					case "bar":
-						_chart = nv.models.multiBarChart();
-						break;	
-					case "focus":
-						_chart = nv.models.lineWithFocusChart();
-						break;
-					case "line":
-					default:
-						_chart = nv.models.lineChart();
-						break;
-					}
-					var _svg = null;
-
-					nv.addGraph(function() {
-						_chart.xAxis.tickFormat(timeFormat).axisLabel(
-								'Date/Time');
-						_chart.yAxis.axisLabel('Memory');
-						_svg = d3.select('#' + _name).append('svg');
-						_svg.datum(plots).transition().duration(500).call(
-								_chart);
-						nv.utils.windowResize(function() {
-							_svg.call(_chart)
-						});
 					});
-				},
-				'error' : function(res) {
-					alert("bad: " + JSON.stringify(res));
-				}
-			});
 		}
 	}
 }

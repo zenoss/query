@@ -136,7 +136,7 @@ public class RedisResourcePersistence implements ResourcePersistenceAPI {
             } catch (Throwable t) {
                 throw new WebApplicationException(Utils.getErrorResponse(null,
                         500, "unable to read chart from persistence",
-                        "persistence"));
+                        t.getClass().getName() + ":" + t.getMessage()));
             }
         }
         return null;
