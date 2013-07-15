@@ -68,7 +68,6 @@ public class MetricServiceApp extends
      */
     @Override
     public com.yammer.dropwizard.Bundle getBundle() {
-        System.err.println("CALL CALL CALL");
         return new AssetsBundle("/api/", "/api/");
     }
 
