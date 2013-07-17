@@ -38,7 +38,8 @@ public interface ResourcePersistenceAPI {
     public boolean isConnected();
     public void disconnect();
     public void ping();
-    public String getResource(String id);
+    public String getResourceById(String id);
+    public String getResourceByName(String name);
     public boolean delete(String id);
     public boolean exists(String id);
     public boolean add(String uuid, String content);

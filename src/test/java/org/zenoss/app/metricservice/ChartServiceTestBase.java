@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import javax.ws.rs.core.MediaType;
 
@@ -87,9 +88,8 @@ public abstract class ChartServiceTestBase extends ResourceTest {
         List<Datapoint> datapoints = new ArrayList<Datapoint>();
         for (int i = 0; i < numDatapoints; ++i) {
             Datapoint dp = new Datapoint();
-            dp.setConsolidator("AVG");
+            dp.setAggregator("avg");
             dp.setMetric("laLoadInt" + i);
-            dp.setType("line");
             datapoints.add(dp);
         }
 
@@ -304,7 +304,6 @@ public abstract class ChartServiceTestBase extends ResourceTest {
                         + id, 404, response.getStatus());
             }
             ids = null;
-
         } finally {
             if (ids != null) {
                 deleteCharts(ids);
@@ -342,7 +341,6 @@ public abstract class ChartServiceTestBase extends ResourceTest {
                 try {
                     new ObjectMapper().writeValueAsString(list);
                 } catch (JsonProcessingException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
 
@@ -355,4 +353,37 @@ public abstract class ChartServiceTestBase extends ResourceTest {
             }
         }
     }
+
+    @Test
+    public void testByName() {
+        List<String> ids = null;
+
+        try {
+            List<Chart> charts = createCharts(5, 5, 100);
+            ids = addCharts(charts);
+
+            // Fetch 10 random charts by name
+            Random r = new Random();
+            StringBuilder buf = new StringBuilder();
+            for (int i = 0; i < 10; ++i) {
+                int idx = r.nextInt(charts.size());
+                buf.setLength(0);
+                buf.append("/chart/name/").append(charts.get(idx).getName());
+                WebResource wr = client().resource(buf.toString());
+                Assert.assertNotNull(wr);
+                ClientResponse response = wr.get(ClientResponse.class);
+                Assert.assertNotNull(response);
+                Assert.assertEquals("Unexpected response code", 200,
+                        response.getStatus());
+                Chart chart = response.getEntity(Chart.class);
+                Assert.assertNotNull(chart);
+                Assert.assertEquals(charts.get(idx).getName(), chart.getName());
+            }
+        } finally {
+            if (ids != null) {
+                deleteCharts(ids);
+            }
+        }
+    }
+
 }

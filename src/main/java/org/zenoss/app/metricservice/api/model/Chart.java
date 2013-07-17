@@ -44,6 +44,9 @@ public class Chart {
     @JsonProperty
     private String name = null;
     
+    @JsonProperty(required=true)
+    private String type = null;
+    
     @JsonProperty
     private Range range = null;
     
@@ -66,6 +69,20 @@ public class Chart {
      */
     public final void setName(String name) {
         this.name = name;
+    }
+    
+    /**
+     * @return the type
+     */
+    public final String getType() {
+        return type;
+    }
+
+    /**
+     * @param type the type to set
+     */
+    public final void setType(String type) {
+        this.type = type;
     }
 
     /**
