@@ -433,7 +433,8 @@ zenoss.visualization.__loadDependencies = function(required, callback) {
 	if (typeof o != 'undefined') {
 		if (o == 'loaded') {
 			if (zenoss.visualization.debug) {
-				console.log('Dependencies already loaded, continuing.');
+				console.log('Dependencies for "' + required.defined
+						+ '" already loaded, continuing.');
 			}
 			// Already loaded, so just invoke the callback
 			callback();
@@ -456,7 +457,9 @@ zenoss.visualization.__loadDependencies = function(required, callback) {
 		// OK, not yet loaded or being loaded, so it is ours.
 		if (zenoss.visualization.debug) {
 			console
-					.log('Dependencies not loaded or in process of loading, initiate loading.');
+					.log('Dependencies for "'
+							+ required.defined
+							+ '" not loaded nor in process of loading, initiate loading.');
 		}
 
 		zenoss.visualization.__dependencies[required.defined] = {};
