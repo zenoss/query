@@ -7,8 +7,6 @@ var zenoss = {
 			$('#' + name).html('<span class="zenerror">' + detail + '</span>');
 		},
 
-		dependencies : {},
-
 		Chart : function(name, template, config) {
 			var self = this;
 			this.name = name;
@@ -19,6 +17,7 @@ var zenoss = {
 
 			if (zenoss.visualization.debug) {
 				console.groupCollapsed('POST Request Object');
+				console.log(zenoss.visualization.url + '/query/performance')
 				console.log(this.request);
 				console.groupEnd();
 			}
@@ -109,7 +108,6 @@ var zenoss = {
 		},
 
 		chart : {
-			all : {},
 			create : function(name, arg1, arg2, complete, error) {
 
 				function loadChart(name, callback, onerror) {
@@ -187,6 +185,19 @@ var zenoss = {
 			}
 		},
 
+		/**
+		 * Used to track dependency loading, including the load state (loaded /
+		 * loading) as well as the callback that will be called when a
+		 * dependency load has been completed.
+		 */
+		__dependencies : {},
+
+		/**
+		 * Main entry point for web pages. This method is used to first
+		 * bootstrap the library and then call the callback to create charts.
+		 * Because of the updated dependency loading capability, this method is
+		 * not strictly needed any more, but will be left around for posterity.
+		 */
 		load : function(callback) {
 			zenoss.visualization.__bootstrap(callback);
 		}
@@ -405,8 +416,7 @@ zenoss.visualization.Chart.prototype.__processResult = function(request, data) {
 	return this.__processResultAsDefault(request, data);
 }
 
-zenoss.visualization.Chart.prototype.__loadDependencies = function(required,
-		callback) {
+zenoss.visualization.__loadDependencies = function(required, callback) {
 	if (typeof required == 'undefined') {
 		callback();
 		return;
@@ -415,7 +425,7 @@ zenoss.visualization.Chart.prototype.__loadDependencies = function(required,
 	// Check if it is already loaded, using the value in the 'defined' field
 	var o;
 	try {
-		o = eval('zenoss.visualization.dependencies.' + required.defined
+		o = eval('zenoss.visualization.__dependencies.' + required.defined
 				+ '.state');
 	} catch (e) {
 		// noop
@@ -432,10 +442,12 @@ zenoss.visualization.Chart.prototype.__loadDependencies = function(required,
 			// list of callbacks to call when it is loaded.
 			if (zenoss.visualization.debug) {
 				console
-						.log('Dependencies in process of being loaded, queuing until loaded.');
+						.log('Dependencies for "'
+								+ required.defined
+								+ '" in process of being loaded, queuing until loaded.');
 			}
 
-			var c = eval('zenoss.visualization.dependencies.'
+			var c = eval('zenoss.visualization.__dependencies.'
 					+ required.defined + '.callbacks');
 			c.push(callback);
 		}
@@ -447,8 +459,8 @@ zenoss.visualization.Chart.prototype.__loadDependencies = function(required,
 					.log('Dependencies not loaded or in process of loading, initiate loading.');
 		}
 
-		zenoss.visualization.dependencies[required.defined] = {};
-		var base = zenoss.visualization.dependencies[required.defined];
+		zenoss.visualization.__dependencies[required.defined] = {};
+		var base = zenoss.visualization.__dependencies[required.defined];
 		base['state'] = 'loading';
 		base['callbacks'] = [];
 		base['callbacks'].push(callback);
@@ -470,7 +482,7 @@ zenoss.visualization.Chart.prototype.__loadDependencies = function(required,
 		}
 	});
 
-	var base = zenoss.visualization.dependencies[required.defined];
+	var base = zenoss.visualization.__dependencies[required.defined];
 	zenoss.visualization.__load(js, css, function() {
 		base['state'] = 'loaded';
 		base['callbacks'].forEach(function(c) {
@@ -482,49 +494,19 @@ zenoss.visualization.Chart.prototype.__loadDependencies = function(required,
 
 zenoss.visualization.Chart.prototype.__render = function() {
 	var self = this;
-
-	try {
+	zenoss.visualization.__loadDependencies({
+		'defined' : self.config.type.replace('.', '_'),
+		'source' : [ 'charts/' + self.config.type.replace('.', '/') + '.js' ]
+	}, function() {
 		self.impl = eval('zenoss.visualization.chart.' + self.config.type);
-	} catch (e) {
-		// Support not yet loaded, will be handled below.
-	}
-	if (typeof self.impl == 'undefined') {
-		if (zenoss.visualization.debug) {
-			console.log('Loading chart type, "' + self.config.type
-					+ '" from URL "http://localhost:8888/api/charts/'
-					+ self.config.type.replace('.', '/') + '.js.');
-		}
-		$.getScript(
-				'http://localhost:8888/api/charts/'
-						+ self.config.type.replace('.', '/') + '.js',
-				function() {
-					self.impl = eval('zenoss.visualization.chart.'
-							+ self.config.type);
 
-					// Check the impl to see if a dependency is listed and
-					// if so load that.
-
-					self.__loadDependencies(self.impl.required, function() {
-						self.impl.build(self);
-						self.impl.render();
-					});
-				}).fail(
-				function(a, b, exception) {
-					var msg = 'Unable to load chart implementation for "'
-							+ self.config.type + '", error reported was "'
-							+ exception + '".';
-					console.error(zenoss);
-					zenoss.visualization.showError(self.name, {}, msg);
-					console.error(msg);
-				});
-	} else {
-		if (zenoss.visualization.debug) {
-			console.log('Chart type, "' + self.config.type
-					+ '" already loaded.');
-		}
-		self.impl.build(self);
-		self.impl.render();
-	}
+		// Check the impl to see if a dependency is listed and
+		// if so load that.
+		zenoss.visualization.__loadDependencies(self.impl.required, function() {
+			self.impl.build(self);
+			self.impl.render();
+		});
+	});
 }
 
 zenoss.visualization.__loadCSS = function(url) {
@@ -533,6 +515,38 @@ zenoss.visualization.__loadCSS = function(url) {
 	css.type = 'text/css';
 	css.href = url;
 	document.getElementsByTagName('head')[0].appendChild(css);
+}
+
+zenoss.visualization.__bootstrapScriptLoader = function(url, callback) {
+	this.__failcallback = function() {
+		// noop;
+	};
+
+	this.fail = function(callback) {
+		this.__failcallback = callback;
+	};
+
+	var script = document.createElement("script")
+	script.type = "text/javascript";
+	script.async = true;
+
+	if (script.readyState) { // IE
+		script.onreadystatechange = function() {
+			if (script.readyState == "loaded"
+					|| script.readyState == "complete") {
+				script.onreadystatechange = null;
+				callback();
+			}
+		};
+	} else { // Others
+		script.onload = function() {
+			callback();
+		};
+	}
+
+	script.src = url;
+	document.getElementsByTagName("head")[0].appendChild(script);
+	return this;
 }
 
 zenoss.visualization.__load = function(js, css, success, fail) {
@@ -558,13 +572,16 @@ zenoss.visualization.__load = function(js, css, success, fail) {
 	var _js = js;
 	var _css = css;
 	var self = this;
-	$
-			.getScript(uri, function() {
-				if (zenoss.visualization.debug) {
-					console.log('Loaded dependency "' + uri + '".');
-				}
-				self.__load(_js, _css, success, fail);
-			})
+	var loader = zenoss.visualization.__bootstrapScriptLoader;
+	if (typeof jQuery != 'undefined') {
+		loader = $.getScript;
+	}
+	loader(uri, function() {
+		if (zenoss.visualization.debug) {
+			console.log('Loaded dependency "' + uri + '".');
+		}
+		self.__load(_js, _css, success, fail);
+	})
 			.fail(
 					function(jqxhr, settings, exception) {
 						console
@@ -577,42 +594,13 @@ zenoss.visualization.__load = function(js, css, success, fail) {
 					});
 }
 
-zenoss.visualization.__bootstrapScriptLoader = function(url, async, callback) {
-	var script = document.createElement("script")
-	script.type = "text/javascript";
-	if (async) {
-		script.async = true;
-	}
-
-	if (script.readyState) { // IE
-		script.onreadystatechange = function() {
-			if (script.readyState == "loaded"
-					|| script.readyState == "complete") {
-				script.onreadystatechange = null;
-				callback();
-			}
-		};
-	} else { // Others
-		script.onload = function() {
-			callback();
-		};
-	}
-
-	script.src = url;
-	document.getElementsByTagName("head")[0].appendChild(script);
-}
-
 // Script order matters and as this is all loaded asynchronously the
 // loads are nested. Bootstrap load JQuery and then use JQuery to
 // load everything else
 zenoss.visualization.__bootstrap = function(success, fail) {
-	zenoss.visualization.__bootstrapScriptLoader(
-			'http://localhost:8888/api/jquery.min.js', true, function() {
-				if (zenoss.visualization.debug) {
-					console.log('JQuery loaded');
-				}
-				var js = [ 'd3.v3.min.js' ];
-				var css = [ 'css/zenoss.css' ];
-				zenoss.visualization.__load(js, css, success, fail);
-			});
+	var js = [ 'jquery.min.js' ]
+	zenoss.visualization.__loadDependencies({
+		'defined' : 'd3',
+		'source' : [ 'jquery.min.js', 'd3.v3.min.js', 'css/zenoss.css' ]
+	}, success);
 }
