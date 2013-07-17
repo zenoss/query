@@ -1,5 +1,9 @@
 zenoss.visualization.chart.dc = {
 	area : {
+		required : {
+			defined : 'dc',
+			source : [ 'crossfilter.min.js', 'dc.min.js', 'css/dc.css' ]
+		},
 		build : function(chart) {
 
 			var _chart = null;

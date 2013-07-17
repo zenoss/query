@@ -1,4 +1,8 @@
 zenoss.visualization.chart.bar = {
+	required : {
+		defined : 'nv',
+		source : [ 'nv.d3.min.js', 'css/nv.d3.css' ]
+	},
 
 	build : function(chart) {
 		nv.addGraph(function() {

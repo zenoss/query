@@ -1,4 +1,9 @@
 zenoss.visualization.chart.area = {
+	required : {
+		defined : 'nv',
+		source : [ 'nv.d3.min.js', 'css/nv.d3.css' ]
+	},
+
 	build : function(chart) {
 		// Area plots don't seem to do well if there are multiple data point
 		// sets and there are not the same number of points in each set, so

@@ -1,4 +1,9 @@
 zenoss.visualization.chart.discretebar = {
+	required : {
+		defined : 'nv',
+		source : [ 'nv.d3.min.js', 'css/nv.d3.css' ]
+	},
+
 	build : function(chart) {
 		var _chart = nv.models.discreteBarChart().x(function(d) {
 			return d.label

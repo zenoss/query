@@ -1,4 +1,9 @@
 zenoss.visualization.chart.pie = {
+	required : {
+		defined : 'nv',
+		source : [ 'nv.d3.min.js', 'css/nv.d3.css' ]
+	},
+
 	build : function(chart) {
 		var _chart = nv.models.pie();
 		_chart.x(function(d) {

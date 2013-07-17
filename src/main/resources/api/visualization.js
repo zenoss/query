@@ -7,6 +7,8 @@ var zenoss = {
 			$('#' + name).html('<span class="zenerror">' + detail + '</span>');
 		},
 
+		dependencies : {},
+
 		Chart : function(name, template, config) {
 			var self = this;
 			this.name = name;
@@ -150,8 +152,8 @@ var zenoss = {
 					// load that template and then create the chart based on
 					// that.
 					var config = arg2;
-					if (typeof nv == 'undefined') {
-						loadRequiredLibraries(function() {
+					if (typeof jQuery == 'undefined') {
+						zenoss.visualization.__bootstrap(function() {
 							loadChart(arg1, function(template) {
 								return new zenoss.visualization.Chart(name,
 										template, config);
@@ -175,7 +177,7 @@ var zenoss = {
 				var config = arg1;
 
 				if (typeof jQuery == 'undefined') {
-					loadRequiredLibraries(function() {
+					zenoss.visualization.__bootstrap(function() {
 						return new zenoss.visualization.Chart(name, template,
 								config);
 					});
@@ -186,104 +188,15 @@ var zenoss = {
 		},
 
 		load : function(callback) {
-			function loadScript(url, async, callback) {
-				var script = document.createElement("script")
-				script.type = "text/javascript";
-				if (async) {
-					script.async = true;
-				}
-
-				if (script.readyState) { // IE
-					script.onreadystatechange = function() {
-						if (script.readyState == "loaded"
-								|| script.readyState == "complete") {
-							script.onreadystatechange = null;
-							callback();
-						}
-					};
-				} else { // Others
-					script.onload = function() {
-						callback();
-					};
-				}
-
-				script.src = url;
-				document.getElementsByTagName("head")[0].appendChild(script);
-			}
-
-			function includeCSS(url) {
-				var css = document.createElement('link');
-				css.rel = 'stylesheet'
-				css.type = 'text/css';
-				css.href = url;
-				document.getElementsByTagName('head')[0].appendChild(css);
-			}
-
-			// Script order matters and as this is all loaded asynchronously the
-			// loads are nested. Bootstrap load JQuery and then use JQuery to
-			// load everything else
-			loadScript(
-					'http://localhost:8888/api/jquery.min.js',
-					true,
-					function() {
-						if (zenoss.visualization.debug) {
-							console.log('JQuery loaded');
-						}
-						$
-								.getScript(
-										'http://localhost:8888/api/d3.v3.min.js',
-										function() {
-											if (zenoss.visualization.debug) {
-												console.log('D3 loaded');
-											}
-											$
-													.getScript(
-															'http://localhost:8888/api/crossfilter.min.js',
-															function() {
-																if (zenoss.visualization.debug) {
-																	console
-																			.log('Crossfilter Loaded');
-																}
-																$
-																		.getScript(
-																				'http://localhost:8888/api/dc.min.js',
-																				function() {
-																					if (zenoss.visualization.debug) {
-																						console
-																								.log('DC Loaded');
-																					}
-																					$
-																							.getScript(
-																									'http://localhost:8888/api/nv.d3.min.js',
-																									function() {
-																										if (zenoss.visualization.debug) {
-																											console
-																													.log('NV.D3 Loaded');
-																										}
-																										includeCSS('http://localhost:8888/api/css/dc.css');
-																										if (zenoss.visualization.debug) {
-																											console
-																													.log("Loaded DC CSS");
-																										}
-																										includeCSS('http://localhost:8888/api/css/nv.d3.css');
-																										if (zenoss.visualization.debug) {
-																											console
-																													.log("Loaded NV.D3 CSS");
-																										}
-																										includeCSS('http://localhost:8888/api/css/zenoss.css');
-																										if (zenoss.visualization.debug) {
-																											console
-																													.log("Loaded Zenoss CSS");
-																										}
-																										callback();
-																									});
-																				});
-															});
-										});
-					});
-
+			zenoss.visualization.__bootstrap(callback);
 		}
 	}
+}
+
+if (typeof String.prototype.endsWith !== 'function') {
+	String.prototype.endsWith = function(suffix) {
+		return this.indexOf(suffix, this.length - suffix.length) !== -1;
+	};
 }
 
 /**
@@ -492,12 +405,88 @@ zenoss.visualization.Chart.prototype.__processResult = function(request, data) {
 	return this.__processResultAsDefault(request, data);
 }
 
+zenoss.visualization.Chart.prototype.__loadDependencies = function(required,
+		callback) {
+	if (typeof required == 'undefined') {
+		callback();
+		return;
+	}
+
+	// Check if it is already loaded, using the value in the 'defined' field
+	var o;
+	try {
+		o = eval('zenoss.visualization.dependencies.' + required.defined
+				+ '.state');
+	} catch (e) {
+		// noop
+	}
+	if (typeof o != 'undefined') {
+		if (o == 'loaded') {
+			if (zenoss.visualization.debug) {
+				console.log('Dependencies already loaded, continuing.');
+			}
+			// Already loaded, so just invoke the callback
+			callback();
+		} else {
+			// It is in the process of being loaded, so add our callback to the
+			// list of callbacks to call when it is loaded.
+			if (zenoss.visualization.debug) {
+				console
+						.log('Dependencies in process of being loaded, queuing until loaded.');
+			}
+
+			var c = eval('zenoss.visualization.dependencies.'
+					+ required.defined + '.callbacks');
+			c.push(callback);
+		}
+		return;
+	} else {
+		// OK, not yet loaded or being loaded, so it is ours.
+		if (zenoss.visualization.debug) {
+			console
+					.log('Dependencies not loaded or in process of loading, initiate loading.');
+		}
+
+		zenoss.visualization.dependencies[required.defined] = {};
+		var base = zenoss.visualization.dependencies[required.defined];
+		base['state'] = 'loading';
+		base['callbacks'] = [];
+		base['callbacks'].push(callback);
+	}
+
+	// Load the JS and CSS files. Divide the list of files into two lists: JS
+	// and CSS as we can load one async, and the other loads sync (CSS).
+	var js = [];
+	var css = [];
+	required.source.forEach(function(v) {
+		if (v.endsWith('.js')) {
+			js.push(v);
+		} else if (v.endsWith('.css')) {
+			css.push(v);
+		} else {
+			console.warn('Unknown required file type, "' + v
+					+ '" when loading dependencies for "' + 'unknown'
+					+ '". Ignored.')
+		}
+	});
+
+	var base = zenoss.visualization.dependencies[required.defined];
+	zenoss.visualization.__load(js, css, function() {
+		base['state'] = 'loaded';
+		base['callbacks'].forEach(function(c) {
+			c();
+		});
+		base['callbacks'].length = 0;
+	});
+}
+
 zenoss.visualization.Chart.prototype.__render = function() {
 	var self = this;
 
 	try {
 		self.impl = eval('zenoss.visualization.chart.' + self.config.type);
 	} catch (e) {
+		// Support not yet loaded, will be handled below.
 	}
 	if (typeof self.impl == 'undefined') {
 		if (zenoss.visualization.debug) {
@@ -511,9 +500,14 @@ zenoss.visualization.Chart.prototype.__render = function() {
 				function() {
 					self.impl = eval('zenoss.visualization.chart.'
 							+ self.config.type);
-					self.impl.loaded = true;
-					self.impl.build(self);
-					self.impl.render();
+
+					// Check the impl to see if a dependency is listed and
+					// if so load that.
+
+					self.__loadDependencies(self.impl.required, function() {
+						self.impl.build(self);
+						self.impl.render();
+					});
 				}).fail(
 				function(a, b, exception) {
 					var msg = 'Unable to load chart implementation for "'
@@ -531,4 +525,94 @@ zenoss.visualization.Chart.prototype.__render = function() {
 		self.impl.build(self);
 		self.impl.render();
 	}
+}
+
+zenoss.visualization.__loadCSS = function(url) {
+	var css = document.createElement('link');
+	css.rel = 'stylesheet'
+	css.type = 'text/css';
+	css.href = url;
+	document.getElementsByTagName('head')[0].appendChild(css);
+}
+
+zenoss.visualization.__load = function(js, css, success, fail) {
+	if (zenoss.visualization.debug) {
+		console.log('Request to load "' + js + '" and "' + css + '".');
+	}
+	if (js.length == 0) {
+		// All JavaScript files are loaded, now the loading of CSS can begin
+		css.forEach(function(uri) {
+			zenoss.visualization.__loadCSS(uri);
+			if (zenoss.visualization.debug) {
+				console.log('Loaded dependency "' + uri + '".');
+			}
+		});
+		if (typeof success == 'function') {
+			success();
+		}
+		return;
+	}
+
+	// Shift the next value off of the JS array and load it.
+	var uri = 'http://localhost:8888/api/' + js.shift();
+	var _js = js;
+	var _css = css;
+	var self = this;
+	$
+			.getScript(uri, function() {
+				if (zenoss.visualization.debug) {
+					console.log('Loaded dependency "' + uri + '".');
+				}
+				self.__load(_js, _css, success, fail);
+			})
+			.fail(
+					function(jqxhr, settings, exception) {
+						console
+								.error('Unable to load dependency "'
+										+ uri
+										+ '", with error "'
+										+ exception
+										+ '". Loding halted, will continue, but additional errors likely.');
+						self.__load(_js, _css, success, fail);
+					});
+}
+
+zenoss.visualization.__bootstrapScriptLoader = function(url, async, callback) {
+	var script = document.createElement("script")
+	script.type = "text/javascript";
+	if (async) {
+		script.async = true;
+	}
+
+	if (script.readyState) { // IE
+		script.onreadystatechange = function() {
+			if (script.readyState == "loaded"
+					|| script.readyState == "complete") {
+				script.onreadystatechange = null;
+				callback();
+			}
+		};
+	} else { // Others
+		script.onload = function() {
+			callback();
+		};
+	}
+
+	script.src = url;
+	document.getElementsByTagName("head")[0].appendChild(script);
+}
+
+// Script order matters and as this is all loaded asynchronously the
+// loads are nested. Bootstrap load JQuery and then use JQuery to
+// load everything else
+zenoss.visualization.__bootstrap = function(success, fail) {
+	zenoss.visualization.__bootstrapScriptLoader(
+			'http://localhost:8888/api/jquery.min.js', true, function() {
+				if (zenoss.visualization.debug) {
+					console.log('JQuery loaded');
+				}
+				var js = [ 'd3.v3.min.js' ];
+				var css = [ 'css/zenoss.css' ];
+				zenoss.visualization.__load(js, css, success, fail);
+			});
 }
