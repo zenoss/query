@@ -47,4 +47,6 @@ public interface ChartServiceAPI {
     public Response put(String id, Chart chart);
 
     public Response getList(Optional<Integer> start, Optional<Integer> end, Optional<Boolean> includeTotal);
+
+    public Response getByName(String name);
 }

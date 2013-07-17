@@ -31,14 +31,21 @@
 package org.zenoss.app.metricservice;
 
 import org.zenoss.app.AutowiredApp;
+import org.zenoss.app.annotations.Bundle;
+import org.zenoss.app.autobundle.AutoBundle;
+
+import com.google.common.base.Optional;
+import com.yammer.dropwizard.assets.AssetsBundle;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
  * 
  */
-public class MetricServiceApp extends AutowiredApp<MetricServiceAppConfiguration> {
-    
-    public  static final String APP_NAME = "Metric Service Zapplication";
+@Bundle
+public class MetricServiceApp extends
+        AutowiredApp<MetricServiceAppConfiguration> implements AutoBundle {
+
+    public static final String APP_NAME = "Metric Service Zapplication";
 
     public static void main(String[] args) throws Exception {
         new MetricServiceApp().run(args);
@@ -52,5 +59,26 @@ public class MetricServiceApp extends AutowiredApp<MetricServiceAppConfiguration
     @Override
     protected Class<MetricServiceAppConfiguration> getConfigType() {
         return MetricServiceAppConfiguration.class;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.zenoss.app.autobundle.AutoBundle#getBundle()
+     */
+    @Override
+    public com.yammer.dropwizard.Bundle getBundle() {
+        return new AssetsBundle("/api/", "/api/");
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.zenoss.app.autobundle.AutoBundle#getRequiredConfig()
+     */
+    @SuppressWarnings("rawtypes")
+    @Override
+    public Optional<Class> getRequiredConfig() {
+        return Optional.<Class> absent();
     }
 }
