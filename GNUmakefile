@@ -44,7 +44,6 @@ assemble: $(ARTIFACT_TAR)
 	echo "debug $(@)"
 
 install:$(ARTIFACT_TAR)
-install:$(ARTIFACT_TAR)
 	echo "Installing $(PROJECT_NAME) into $(INSTALL_DIR)"
 	mkdir -p $(INSTALL_DIR)
 	cd $(INSTALL_DIR) && tar -xvf $(TARGETDIR)/assembly.tar.gz

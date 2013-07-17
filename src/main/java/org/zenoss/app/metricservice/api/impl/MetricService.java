@@ -141,6 +141,14 @@ public class MetricService implements MetricServiceAPI {
             long ts = 0;
             double val = 0;
             boolean comma = false;
+            
+            // Because TSDB gives data that is outside the exact time range
+            // requested it is not always known at any point if the further 
+            // data is "valid" if we are triming to the exact time range. As
+            // such we have to delay the comma before a new "series" until we
+            // know we will actually have one.
+            boolean precomma = false;
+            
             boolean needHeader = true;
 
             while ((line = reader.readLine()) != null) {
@@ -153,14 +161,19 @@ public class MetricService implements MetricServiceAPI {
                     // If we have written a header then we need to close
                     // out the JSON object
                     if (!needHeader) {
-                        writer.arrayE().objectE(true);
+                        writer.arrayE().objectE(false);
                     }
                     needHeader = true;
                     comma = false;
+                    precomma = true;
                 }
                 t = ts;
                 if (!exactTimeWindow || (ts >= start && ts <= end)) {
                     if (needHeader) {
+                        if (precomma) {
+                            writer.write(',');
+                            precomma = false;
+                        }
                         writer.objectS().value(METRIC, terms[0], true);
 
                         // every entry in this series should have the same
