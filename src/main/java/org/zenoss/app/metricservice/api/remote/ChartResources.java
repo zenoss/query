@@ -65,6 +65,14 @@ public class ChartResources {
     public Response get(@PathParam("id") String id) {
         return api.get(id);
     }
+    
+    @Path("name/{name}")
+    @Timed
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getByName(@PathParam("name") String name) {
+        return api.getByName(name);
+    }
 
     @Timed
     @GET

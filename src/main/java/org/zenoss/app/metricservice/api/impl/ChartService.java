@@ -131,7 +131,7 @@ public class ChartService implements ChartServiceAPI {
     public Response get(String id) {
         try {
             connect();
-            String content = persistence.getResource(id);
+            String content = persistence.getResourceById(id);
 
             if (content == null) {
                 throw new WebApplicationException(Response.status(404).build());
@@ -145,7 +145,7 @@ public class ChartService implements ChartServiceAPI {
             throw w;
         } catch (Throwable t) {
             throw new WebApplicationException(Utils.getErrorResponse(
-                    Utils.NOT_SPECIFIED, 500, "Unable to create resource",
+                    Utils.NOT_SPECIFIED, 500, "Unable to fetch resource by ID",
                     t.getMessage()));
         }
     }
@@ -244,5 +244,36 @@ public class ChartService implements ChartServiceAPI {
         list.setCount(includeCount.or(false) ? persistence.count() : null);
         list.setIds(persistence.range(list.getStart(), list.getEnd()));
         return Response.ok(list).build();
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.zenoss.app.metricservice.api.ChartServiceAPI#getByName(java.lang.
+     * String)
+     */
+    @Override
+    public Response getByName(String name) {
+        try {
+            connect();
+            String content = persistence.getResourceByName(name);
+
+            if (content == null) {
+                throw new WebApplicationException(Response.status(404).build());
+            }
+
+            Chart chart = objectMapper.readValue(content, Chart.class);
+
+            return Response.ok(chart).build();
+
+        } catch (WebApplicationException w) {
+            throw w;
+        } catch (Throwable t) {
+            throw new WebApplicationException(Utils.getErrorResponse(
+                    Utils.NOT_SPECIFIED, 500, "Unable to fetch resource by name",
+                    t.getMessage()));
+        }
+
     }
 }
