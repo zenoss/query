@@ -220,6 +220,7 @@ var zenoss = {
 									callback(data);
 								},
 								'error' : function(response) {
+									console.error(response.responseText);
 									var err = JSON.parse(response.responseText);
 									var detail = 'Error while attempting to fetch chart resource with the name "'
 											+ name
@@ -247,7 +248,8 @@ var zenoss = {
 						zenoss.visualization.__bootstrap(function() {
 							loadChart(arg1, function(template) {
 								return new zenoss.visualization.Chart(name,
-										template, config);
+										zenoss.visualization.__merge(template,
+												config));
 							}, function(err, detail) {
 								zenoss.visualization.__showError(name, err,
 										detail);
@@ -255,12 +257,15 @@ var zenoss = {
 						});
 						return;
 					}
-					loadChart(arg1, function(template) {
-						return new zenoss.visualization.Chart(name, template,
-								config);
-					}, function(err, detail) {
-						zenoss.visualization.__showError(name, err, detail);
-					});
+					loadChart(arg1,
+							function(template) {
+								return new zenoss.visualization.Chart(name,
+										zenoss.visualization.__merge(template,
+												config));
+							}, function(err, detail) {
+								zenoss.visualization.__showError(name, err,
+										detail);
+							});
 					return;
 				}
 
@@ -344,6 +349,10 @@ zenoss.visualization.Chart.prototype.__buildDataRequest = function(config) {
 		if (typeof config.series != 'undefined') {
 			request.series = config.series;
 		}
+		
+		if (typeof config.tags != 'undefined') {
+			request.tags = config.tags;
+		}
 
 		if (typeof config.datapoints != 'undefined') {
 			request.metrics = [];
@@ -359,11 +368,11 @@ zenoss.visualization.Chart.prototype.__buildDataRequest = function(config) {
 				if (typeof dp.downsample != 'undefined') {
 					m.downsample = dp.downsample;
 				}
-				if (typeof dp.filter != 'undefined') {
+				if (typeof dp.tags != 'undefined') {
 					m.tags = {};
-					for ( var key in dp.filter) {
-						if (dp.filter.hasOwnProperty(key)) {
-							m.tags[key] = dp.filter[key];
+					for ( var key in dp.tags) {
+						if (dp.tags.hasOwnProperty(key)) {
+							m.tags[key] = dp.tags[key];
 						}
 					}
 				}
@@ -393,7 +402,7 @@ zenoss.visualization.Chart.prototype.__processResultAsSeries = function(
 	data.results.forEach(function(result) {
 		// The key for a series plot will be its distinguishing
 		// characteristics, which is the metric name and the
-		// tags / filter
+		// tags
 		var key = result.metric;
 		if (typeof result.tags != 'undefined') {
 			key += '{';
@@ -542,9 +551,9 @@ zenoss.visualization.__merge = function(base, extend) {
 
 	var m = $.extend(true, {}, base);
 
-	for ( var k in b) {
-		if (b.hasOwnProperty(k)) {
-			var v = b[k];
+	for ( var k in extend) {
+		if (extend.hasOwnProperty(k)) {
+			var v = extend[k];
 			if (v.constructor == Number || v.constructor == String) {
 				m[k] = v;
 			} else if (v instanceof Array) {
@@ -553,7 +562,7 @@ zenoss.visualization.__merge = function(base, extend) {
 				if (typeof m[k] == 'undefined') {
 					m[k] = $.extend({}, v);
 				} else {
-					m[k] = merge(m[k], v);
+					m[k] = zenoss.visualization.__merge(m[k], v);
 				}
 			} else {
 				m[k] = $.extend(m[k], v);
@@ -696,7 +705,12 @@ zenoss.visualization.__loadCSS = function(url) {
 	var css = document.createElement('link');
 	css.rel = 'stylesheet'
 	css.type = 'text/css';
-	css.href = url;
+
+	if (!url.startsWith("http")) {
+		css.href = zenoss.visualization.url + '/api/' + url;
+	} else {
+		css.href = url;
+	}
 	document.getElementsByTagName('head')[0].appendChild(css);
 }
 
@@ -783,6 +797,10 @@ zenoss.visualization.__load = function(js, css, success, fail) {
 	var _js = js;
 	var _css = css;
 	var self = this;
+	if (!uri.startsWith("http")) {
+		uri = zenoss.visualization.url + '/api/' + uri;
+	}
+
 	var loader = zenoss.visualization.__bootstrapScriptLoader;
 	if (typeof jQuery != 'undefined') {
 		loader = $.getScript;

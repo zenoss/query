@@ -31,6 +31,7 @@
 package org.zenoss.app.metricservice.api;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.core.Response;
 
@@ -45,5 +46,6 @@ import com.google.common.base.Optional;
 public interface MetricServiceAPI {
     public Response query(Optional<String> id, Optional<String> startTime,
             Optional<String> endTime, Optional<Boolean> exactTimeWindow,
-            Optional<Boolean> series, List<MetricSpecification> queries);
+            Optional<Boolean> series, Optional<Map<String, String>> tags,
+            List<MetricSpecification> queries);
 }

@@ -87,7 +87,8 @@ public class HttpPostProviderTest extends ProviderTestBase {
 
     protected Map<?, ?> testQuery(Optional<String> id, Optional<String> start,
             Optional<String> end, Optional<Boolean> exact,
-            Optional<Boolean> series, String[] queries) throws Exception {
+            Optional<Boolean> series, Optional<Map<String, String>> globalTags,
+            String[] queries) throws Exception {
         MetricServiceAppConfiguration config = new ContextConfiguration()
                 .getQueryAppConfiguration();
         MetricServiceConfig pref = config.getMetricServiceConfig();
@@ -103,7 +104,8 @@ public class HttpPostProviderTest extends ProviderTestBase {
                 id.or("not-specified"), start.or(pref.getDefaultStartTime()),
                 end.or(pref.getDefaultEndTime()),
                 exact.or(pref.getDefaultExactTimeWindow()),
-                series.or(pref.getDefaultSeries()), queryList);
+                series.or(pref.getDefaultSeries()),
+                globalTags.orNull(), queryList);
 
         WireMock.stubFor(WireMock.head(WireMock.urlMatching(".*")).willReturn(
                 WireMock.aResponse().withStatus(200)

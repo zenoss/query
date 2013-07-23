@@ -31,6 +31,7 @@
 package org.zenoss.app.metricservice.api.remote;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -73,7 +74,7 @@ public class MetricResources {
             @QueryParam("series") Optional<Boolean> series) {
 
         return api.query(id, startTime, endTime, exactTimeWindow, series,
-                queries);
+                Optional.<Map<String, String>> absent(), queries);
     }
 
     @Path("/performance")
@@ -90,7 +91,10 @@ public class MetricResources {
                 .<Boolean> absent() : Optional.of(query.getExactTimeWindow());
         Optional<Boolean> series = (query.getSeries() == null ? Optional
                 .<Boolean> absent() : Optional.of(query.getSeries()));
+        Optional<Map<String, String>> tags = query.getTags() == null ? Optional
+                .<Map<String, String>> absent() : Optional.of(query.getTags());        
 
-        return api.query(id, start, end, exact, series, query.getMetrics());
+        return api.query(id, start, end, exact, series, tags,
+                query.getMetrics());
     }
 }

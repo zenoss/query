@@ -40,6 +40,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -235,7 +236,8 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
     public BufferedReader getReader(MetricServiceAppConfiguration config,
             String id, String startTime, String endTime,
             Boolean exactTimeWindow, Boolean series,
-            List<MetricSpecification> queries) throws IOException {
+            Map<String, String> globalTags, List<MetricSpecification> queries)
+            throws IOException {
         StringBuilder buf = new StringBuilder(config.getMetricServiceConfig()
                 .getOpenTsdbUrl());
         buf.append("/q?");
@@ -247,7 +249,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         }
         for (MetricSpecification query : queries) {
             buf.append("&m=").append(
-                    URLEncoder.encode(query.toString(), "UTF-8"));
+                    URLEncoder.encode(query.toString(globalTags), "UTF-8"));
         }
         buf.append("&ascii");
 

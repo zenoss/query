@@ -62,7 +62,7 @@ public class ChartService implements ChartServiceAPI {
     MetricServiceAppConfiguration config;
 
     @Autowired
-    ResourcePersistenceAPI persistence;
+    ResourcePersistenceFactoryAPI persistenceFactory;
 
     private final ObjectMapper objectMapper;
 
@@ -70,6 +70,8 @@ public class ChartService implements ChartServiceAPI {
 
     private static final Logger log = LoggerFactory
             .getLogger(ChartService.class);
+
+    // private ResourcePersistenceAPI persistence = null;
 
     public ChartService() {
         objectMapper = new ObjectMapper();
@@ -82,46 +84,6 @@ public class ChartService implements ChartServiceAPI {
         objectMapper.enable(DeserializationFeature.READ_ENUMS_USING_TO_STRING);
     }
 
-    private void connect() {
-        if (!persistence.isConnected()) {
-            synchronized (this) {
-                if (!persistence.isConnected()) {
-                    try {
-                        String[] parts = config.getChartServiceConfig()
-                                .getRedisConnection().split(":");
-                        if (parts.length == 1) {
-                            persistence.connect(ZEN_CHART, parts[0]);
-                        } else if (parts.length == 2) {
-                            persistence.connect(ZEN_CHART, parts[0],
-                                    Integer.parseInt(parts[1]));
-                        } else {
-                            // An error, what was put as the connection
-                            // string?!?
-                            log.error(
-                                    "Invalid connection string specified ({}), should be host:port; will attempt to connect on localhost.",
-                                    config.getChartServiceConfig()
-                                            .getRedisConnection());
-                            persistence.connect(ZEN_CHART, "localhost");
-                        }
-                        persistence.ping();
-                    } catch (Throwable t) {
-                        try {
-                            persistence.disconnect();
-                        } catch (Throwable ignore) {
-                            // ignore
-                        }
-                        throw new WebApplicationException(
-                                Utils.getErrorResponse(
-                                        null,
-                                        500,
-                                        "Unable to connect to resource storage",
-                                        t.getMessage()));
-                    }
-                }
-            }
-        }
-    }
-
     /*
      * (non-Javadoc)
      * 
@@ -129,9 +91,10 @@ public class ChartService implements ChartServiceAPI {
      */
     @Override
     public Response get(String id) {
+        ResourcePersistenceAPI api = null;
         try {
-            connect();
-            String content = persistence.getResourceById(id);
+            api = persistenceFactory.getInstance(ZEN_CHART);
+            String content = api.getResourceById(id);
 
             if (content == null) {
                 throw new WebApplicationException(Response.status(404).build());
@@ -144,9 +107,12 @@ public class ChartService implements ChartServiceAPI {
         } catch (WebApplicationException w) {
             throw w;
         } catch (Throwable t) {
+            t.printStackTrace();
             throw new WebApplicationException(Utils.getErrorResponse(
                     Utils.NOT_SPECIFIED, 500, "Unable to fetch resource by ID",
                     t.getMessage()));
+        } finally {
+            persistenceFactory.returnInstance(api);
         }
     }
 
@@ -157,9 +123,10 @@ public class ChartService implements ChartServiceAPI {
      */
     @Override
     public Response delete(String id) {
+        ResourcePersistenceAPI api = null;
         try {
-            connect();
-            if (!persistence.delete(id)) {
+            api = persistenceFactory.getInstance(ZEN_CHART);
+            if (!api.delete(id)) {
                 return Response.status(404).build();
             }
             return Response.noContent().build();
@@ -167,6 +134,8 @@ public class ChartService implements ChartServiceAPI {
             throw new WebApplicationException(Utils.getErrorResponse(
                     Utils.NOT_SPECIFIED, 500, "Unable to delete resource",
                     t.getMessage()));
+        } finally {
+            persistenceFactory.returnInstance(api);
         }
     }
 
@@ -177,11 +146,12 @@ public class ChartService implements ChartServiceAPI {
      */
     @Override
     public Response post(Chart chart) {
+        ResourcePersistenceAPI api = null;
         try {
-            connect();
+            api = persistenceFactory.getInstance(ZEN_CHART);
             String uuid = Utils.createUuid();
             String content = objectMapper.writeValueAsString(chart);
-            if (!persistence.add(uuid, content)) {
+            if (!api.add(uuid, content)) {
                 // Attempt to clean up partials
                 try {
                     // persistence.delete(uuid);
@@ -198,6 +168,8 @@ public class ChartService implements ChartServiceAPI {
             log.error("Error while creating resource", t);
             throw new WebApplicationException(Utils.getErrorResponse(null, 500,
                     "Unable to create new resource", t.getMessage()));
+        } finally {
+            persistenceFactory.returnInstance(api);
         }
     }
 
@@ -208,16 +180,17 @@ public class ChartService implements ChartServiceAPI {
      */
     @Override
     public Response put(String id, Chart chart) {
+        ResourcePersistenceAPI api = null;
         try {
-            connect();
+            api = persistenceFactory.getInstance(ZEN_CHART);
             // Check to see if the specified ID exists
-            if (!persistence.exists(id)) {
+            if (!api.exists(id)) {
                 // Not found, and we don't allow clients to pick there own
                 // UUIDs, so return not found.
                 return Response.status(404).build();
             }
             String content = objectMapper.writeValueAsString(chart);
-            persistence.update(id, content);
+            api.update(id, content);
             return Response.status(204).build();
         } catch (WebApplicationException w) {
             throw w;
@@ -225,6 +198,8 @@ public class ChartService implements ChartServiceAPI {
             throw new WebApplicationException(Utils.getErrorResponse(
                     Utils.NOT_SPECIFIED, 500, "Unable to create resource",
                     t.getMessage()));
+        } finally {
+            persistenceFactory.returnInstance(api);
         }
     }
 
@@ -236,14 +211,25 @@ public class ChartService implements ChartServiceAPI {
     @Override
     public Response getList(Optional<Integer> start, Optional<Integer> end,
             Optional<Boolean> includeCount) {
-        connect();
+        ResourcePersistenceAPI api = null;
+        try {
+            api = persistenceFactory.getInstance(ZEN_CHART);
 
-        ChartList list = new ChartList();
-        list.setStart(start.or(0));
-        list.setEnd(end.or(list.getStart() + 9));
-        list.setCount(includeCount.or(false) ? persistence.count() : null);
-        list.setIds(persistence.range(list.getStart(), list.getEnd()));
-        return Response.ok(list).build();
+            ChartList list = new ChartList();
+            list.setStart(start.or(0));
+            list.setEnd(end.or(list.getStart() + 9));
+            list.setCount(includeCount.or(false) ? api.count() : null);
+            list.setIds(api.range(list.getStart(), list.getEnd()));
+            return Response.ok(list).build();
+        } catch (Throwable t) {
+            log.error("Unexpected error", t);
+            t.printStackTrace();
+            throw new WebApplicationException(Utils.getErrorResponse(
+                    Utils.NOT_SPECIFIED, 500,
+                    "Unable to fetch resource by name", t.getMessage()));
+        } finally {
+            persistenceFactory.returnInstance(api);
+        }
     }
 
     /*
@@ -255,12 +241,14 @@ public class ChartService implements ChartServiceAPI {
      */
     @Override
     public Response getByName(String name) {
+        ResourcePersistenceAPI api = null;
         try {
-            connect();
-            String content = persistence.getResourceByName(name);
+            api = persistenceFactory.getInstance(ZEN_CHART);
+            String content = api.getResourceByName(name);
 
             if (content == null) {
-                throw new WebApplicationException(Response.status(404).build());
+                throw new WebApplicationException(Utils.getErrorResponse(null,
+                        404, "Chart not found", "Not Found"));
             }
 
             Chart chart = objectMapper.readValue(content, Chart.class);
@@ -270,10 +258,13 @@ public class ChartService implements ChartServiceAPI {
         } catch (WebApplicationException w) {
             throw w;
         } catch (Throwable t) {
+            log.error("Unexpected error", t);
+            t.printStackTrace();
             throw new WebApplicationException(Utils.getErrorResponse(
-                    Utils.NOT_SPECIFIED, 500, "Unable to fetch resource by name",
-                    t.getMessage()));
+                    Utils.NOT_SPECIFIED, 500,
+                    "Unable to fetch resource by name", t.getMessage()));
+        } finally {
+            persistenceFactory.returnInstance(api);
         }
-
     }
 }

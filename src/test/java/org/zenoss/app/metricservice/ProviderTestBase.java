@@ -272,7 +272,8 @@ public abstract class ProviderTestBase extends ResourceTest {
      */
     protected Map<?, ?> testQuery(Optional<String> id, Optional<String> start,
             Optional<String> end, Optional<Boolean> exact,
-            Optional<Boolean> series, String[] queries) throws Exception {
+            Optional<Boolean> series, Optional<Map<String, String>> globalTags,
+            String[] queries) throws Exception {
 
         // Build up the URI query
         char prefix = '?';
@@ -295,42 +296,44 @@ public abstract class ProviderTestBase extends ResourceTest {
         return parseAndVerifyResponse(id, start, end, exact, series, queries,
                 response);
     }
-    
+
     @Test
     public void queryTest10sAgo1QuerySeries() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
                 Optional.<String> absent(), Optional.of(true),
-                Optional.of(true), new String[] { "avg:laLoadInt1" });
+                Optional.of(true), Optional.<Map<String, String>> absent(),
+                new String[] { "avg:laLoadInt1" });
     }
 
     @Test
     public void queryTest10sAgo1QueryNoSeries() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
                 Optional.<String> absent(), Optional.of(true),
-                Optional.of(false), new String[] { "avg:laLoadInt1" });
+                Optional.of(false), Optional.<Map<String, String>> absent(),
+                new String[] { "avg:laLoadInt1" });
     }
 
     @Test
     public void queryTest10sAgo2QuerySeries() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
                 Optional.<String> absent(), Optional.of(true),
-                Optional.of(true), new String[] { "avg:laLoadInt1",
-                        "sum:laLoadInt5" });
+                Optional.of(true), Optional.<Map<String, String>> absent(),
+                new String[] { "avg:laLoadInt1", "sum:laLoadInt5" });
     }
 
     @Test
     public void queryTest10sAgo2QueryNoSeries() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
                 Optional.<String> absent(), Optional.of(true),
-                Optional.of(false), new String[] { "avg:laLoadInt1",
-                        "sum:laLoadInt5" });
-    }    
+                Optional.of(false), Optional.<Map<String, String>> absent(),
+                new String[] { "avg:laLoadInt1", "sum:laLoadInt5" });
+    }
 
     @Test
     public void queryTest10sAgo1QuerySeriesWithTags() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
                 Optional.<String> absent(), Optional.of(true),
-                Optional.of(true),
+                Optional.of(true), Optional.<Map<String, String>> absent(),
                 new String[] { "avg:laLoadInt1{btag1=value1,tag2=value2}" });
     }
 
@@ -338,7 +341,7 @@ public abstract class ProviderTestBase extends ResourceTest {
     public void queryTest10sAgo1QueryNoSeriesWithTags() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
                 Optional.<String> absent(), Optional.of(true),
-                Optional.of(false),
+                Optional.of(false), Optional.<Map<String, String>> absent(),
                 new String[] { "avg:laLoadInt1{tag1=value1,tag2=value2}" });
     }
 
@@ -346,8 +349,8 @@ public abstract class ProviderTestBase extends ResourceTest {
     public void queryTest10sAgo2QuerySeriesWithTags() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
                 Optional.<String> absent(), Optional.of(true),
-                Optional.of(true), new String[] {
-                        "avg:laLoadInt1{tag1=value1,tag2=value2}",
+                Optional.of(true), Optional.<Map<String, String>> absent(),
+                new String[] { "avg:laLoadInt1{tag1=value1,tag2=value2}",
                         "sum:laLoadInt5{tag1=value1,tag2=value2}" });
     }
 
@@ -355,8 +358,8 @@ public abstract class ProviderTestBase extends ResourceTest {
     public void queryTest10sAgo2QueryNoSeriesWithTags() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
                 Optional.<String> absent(), Optional.of(true),
-                Optional.of(false), new String[] {
-                        "avg:laLoadInt1{tag1=value1,tag2=value2}",
+                Optional.of(false), Optional.<Map<String, String>> absent(),
+                new String[] { "avg:laLoadInt1{tag1=value1,tag2=value2}",
                         "sum:laLoadInt5{tag1=value1,tag2=value2}" });
     }
 
@@ -365,7 +368,8 @@ public abstract class ProviderTestBase extends ResourceTest {
         testQuery(Optional.of("my-client-id"),
                 Optional.of("2013/04/30-16:00:00-GMT"),
                 Optional.of("2013/04/30-18:00:00-GMT"), Optional.of(false),
-                Optional.of(true), new String[] { "avg:laLoadInt1" });
+                Optional.of(true), Optional.<Map<String, String>> absent(),
+                new String[] { "avg:laLoadInt1" });
     }
 
     @Test
@@ -373,7 +377,8 @@ public abstract class ProviderTestBase extends ResourceTest {
         testQuery(Optional.of("my-client-id"),
                 Optional.of("2013/04/30-16:00:00-GMT"),
                 Optional.of("2013/04/30-18:00:00-GMT"), Optional.of(true),
-                Optional.of(true), new String[] { "avg:laLoadInt1" });
+                Optional.of(true), Optional.<Map<String, String>> absent(),
+                new String[] { "avg:laLoadInt1" });
     }
 
     @Test
@@ -381,7 +386,8 @@ public abstract class ProviderTestBase extends ResourceTest {
         testQuery(Optional.of("my-client-id"),
                 Optional.of("2013/04/30-16:00:00-GMT"),
                 Optional.of("2013/04/30-18:00:00-GMT"), Optional.of(true),
-                Optional.of(false), new String[] { "avg:laLoadInt1" });
+                Optional.of(false), Optional.<Map<String, String>> absent(),
+                new String[] { "avg:laLoadInt1" });
     }
 
     @Test
@@ -389,6 +395,7 @@ public abstract class ProviderTestBase extends ResourceTest {
         testQuery(Optional.of("my-client-id"),
                 Optional.of("2013/04/30-16:00:00-GMT"),
                 Optional.of("2013/04/30-18:00:00-GMT"), Optional.of(false),
-                Optional.of(false), new String[] { "avg:laLoadInt1" });
+                Optional.of(false), Optional.<Map<String, String>> absent(),
+                new String[] { "avg:laLoadInt1" });
     }
 }

@@ -165,11 +165,13 @@ public class MetricSpecification {
      * proposed to OpenTSDB, but is not yet committed. This format include
      * "rate" options to better support counter base metrics</em>
      * 
-     * @param ms
-     *            the metric specification to encode
+     * @param baseTags
+     *            specifies any base tags that should be applied to the metric
+     *            before overriding with any metric specific tags.
+     * 
      * @return OpenTSDB URL query formatted String instance
      */
-    public String toString() {
+    public String toString(Map<String, String> baseTags) {
         StringBuilder buf = new StringBuilder();
         if (getAggregator() != null) {
             buf.append(getAggregator()).append(':');
@@ -201,10 +203,18 @@ public class MetricSpecification {
             buf.append(':');
         }
         buf.append(getMetric());
-        if (getTags() != null && getTags().size() > 0) {
+        if ((baseTags != null && baseTags.size() > 0)
+                || (getTags() != null && getTags().size() > 0)) {
+            Map<String, String> joined = new HashMap<String, String>();
+            if (baseTags != null) {
+                joined.putAll(baseTags);
+            }
+            if (getTags() != null) {
+                joined.putAll(getTags());
+            }
             buf.append('{');
             boolean comma = false;
-            for (Map.Entry<String, String> tag : getTags().entrySet()) {
+            for (Map.Entry<String, String> tag : joined.entrySet()) {
                 if (comma) {
                     buf.append(',');
                 }
@@ -214,6 +224,20 @@ public class MetricSpecification {
             buf.append('}');
         }
         return buf.toString();
+    }
+
+    /**
+     * Encodes the current instance into the URL query parameter format that <a
+     * href="http://opentsdb.net/http-api.html#/q">OpenTSDB</a> supports.
+     * <p/>
+     * <em style="color: red">NOTE: This method supports a format that is
+     * proposed to OpenTSDB, but is not yet committed. This format include
+     * "rate" options to better support counter base metrics</em>
+     * 
+     * @return OpenTSDB URL query formatted String instance
+     */
+    public String toString() {
+        return this.toString(null);
     }
 
     /**

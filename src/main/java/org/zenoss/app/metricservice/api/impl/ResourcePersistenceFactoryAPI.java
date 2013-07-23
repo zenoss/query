@@ -28,49 +28,14 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.metricservice.health;
+package org.zenoss.app.metricservice.api.impl;
 
-import javax.ws.rs.WebApplicationException;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
-import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
-import org.zenoss.app.metricservice.api.impl.ResourcePersistenceAPI;
-import org.zenoss.app.metricservice.api.impl.ResourcePersistenceFactoryAPI;
-import org.zenoss.dropwizardspring.annotations.HealthCheck;
-
-@Configuration
-@HealthCheck
-public class ResourcePersistenceHealthCheck extends
-        com.yammer.metrics.core.HealthCheck {
-    @Autowired
-    MetricServiceAppConfiguration config;
-
-    @Autowired
-    ResourcePersistenceFactoryAPI persistenceFactory;
-
-    protected ResourcePersistenceHealthCheck() {
-        super("Resource Persistence");
-    }
-
-    @Override
-    protected Result check() throws Exception {
-        ResourcePersistenceAPI api = null;
-        try {
-
-            if (!persistenceFactory.isConnected()) {
-                return Result.unhealthy("Bad connection string");
-            }
-            api = persistenceFactory.getInstance("UNKNOWN");
-            api.ping();
-            return Result.healthy();
-        } catch (WebApplicationException wae) {
-            return Result.unhealthy(wae);
-        } catch (Throwable t) {
-            return Result.unhealthy(String.format("%s : %s", t.getClass()
-                    .getName(), t.getMessage()));
-        } finally {
-            persistenceFactory.returnInstance(api);
-        }
-    }
+/**
+ * @author David Bainbridge <dbainbridge@zenoss.com>
+ * 
+ */
+public interface ResourcePersistenceFactoryAPI {
+    public boolean isConnected();
+    public ResourcePersistenceAPI getInstance(String resourceType);
+    public void returnInstance(ResourcePersistenceAPI api);
 }

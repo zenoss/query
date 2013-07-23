@@ -37,8 +37,6 @@ import java.util.Map;
 
 import javax.ws.rs.WebApplicationException;
 
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.zenoss.app.metricservice.api.impl.ResourcePersistenceAPI;
 import org.zenoss.app.metricservice.api.impl.Utils;
 import org.zenoss.app.metricservice.api.model.Chart;
@@ -46,8 +44,6 @@ import org.zenoss.app.metricservice.api.model.Chart;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 
-@Configuration
-@Profile({ "dev" })
 public class MockResourcePersistence implements ResourcePersistenceAPI {
     private boolean connected = false;
     private List<String> list = new ArrayList<String>();
