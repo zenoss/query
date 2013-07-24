@@ -63,6 +63,9 @@ public class PerformanceQuery {
     @JsonProperty(required=false)
     private Map<String, String> tags = null;
     
+    @JsonProperty(required=false)
+    private String downsample = null;
+
     /**
      * @return the start
      */
@@ -145,5 +148,19 @@ public class PerformanceQuery {
      */
     public final void setTags(Map<String, String> tags) {
         this.tags = tags;
-    } 
+    }
+
+    /**
+     * @return the downsample
+     */
+    public final String getDownsample() {
+        return downsample;
+    }
+
+    /**
+     * @param downsample the downsample to set
+     */
+    public final void setDownsample(String downsample) {
+        this.downsample = downsample;
+    }
 }

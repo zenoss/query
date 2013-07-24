@@ -118,6 +118,7 @@ public class MetricService implements MetricServiceAPI {
         private final String endTime;
         private final Boolean exactTimeWindow;
         private final Boolean series;
+        private final String downsample;
         private final Map<String, String> tags;
         private final List<MetricSpecification> queries;
         private long start = -1;
@@ -125,12 +126,12 @@ public class MetricService implements MetricServiceAPI {
 
         public Worker(MetricServiceAppConfiguration config, String id,
                 String startTime, String endTime, Boolean exactTimeWindow,
-                Boolean series, Map<String, String> tags,
+                Boolean series, String downsample, Map<String, String> tags,
                 List<MetricSpecification> queries) {
             if (queries == null) {
                 RuntimeException t = new RuntimeException("WHAT???");
                 t.printStackTrace();
-                
+
                 throw t;
             }
             this.id = id;
@@ -139,6 +140,7 @@ public class MetricService implements MetricServiceAPI {
             this.exactTimeWindow = exactTimeWindow;
             this.series = series;
             this.tags = tags;
+            this.downsample = downsample;
             this.queries = queries;
         }
 
@@ -312,7 +314,6 @@ public class MetricService implements MetricServiceAPI {
             }
 
             // Validate that there is at least one (1) metric specification
-            System.err.println("QUERIES: " + queries);
             if (queries.size() == 0) {
                 log.error("No queries specified for request");
                 Map<String, Object> error = new HashMap<String, Object>();
@@ -366,8 +367,8 @@ public class MetricService implements MetricServiceAPI {
             BufferedReader reader = null;
             try {
                 reader = api.getReader(config, id, convertedStartTime,
-                        convertedEndTime, exactTimeWindow, series, tags,
-                        queries);
+                        convertedEndTime, exactTimeWindow, series, downsample,
+                        tags, queries);
             } catch (WebApplicationException wae) {
                 throw wae;
             } catch (Throwable t) {
@@ -433,7 +434,8 @@ public class MetricService implements MetricServiceAPI {
     @Override
     public Response query(Optional<String> id, Optional<String> startTime,
             Optional<String> endTime, Optional<Boolean> exactTimeWindow,
-            Optional<Boolean> series, Optional<Map<String, String>> tags,
+            Optional<Boolean> series, Optional<String> downsample,
+            Optional<Map<String, String>> tags,
             List<MetricSpecification> queries) {
 
         try {
@@ -445,8 +447,8 @@ public class MetricService implements MetricServiceAPI {
                             exactTimeWindow.or(config.getMetricServiceConfig()
                                     .getDefaultExactTimeWindow()), series
                                     .or(config.getMetricServiceConfig()
-                                            .getDefaultSeries()),
-                            tags.orNull(), queries)).build();
+                                            .getDefaultSeries()), downsample
+                                    .orNull(), tags.orNull(), queries)).build();
         } catch (Throwable t) {
             log.error(String.format(
                     "Error While attempting to query data soruce: %s : %s", t

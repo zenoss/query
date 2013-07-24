@@ -74,6 +74,7 @@ public class MetricResources {
             @QueryParam("series") Optional<Boolean> series) {
 
         return api.query(id, startTime, endTime, exactTimeWindow, series,
+                Optional.<String> absent(),
                 Optional.<Map<String, String>> absent(), queries);
     }
 
@@ -91,10 +92,12 @@ public class MetricResources {
                 .<Boolean> absent() : Optional.of(query.getExactTimeWindow());
         Optional<Boolean> series = (query.getSeries() == null ? Optional
                 .<Boolean> absent() : Optional.of(query.getSeries()));
+        Optional<String> downsample = query.getDownsample() == null ? Optional
+                .<String> absent() : Optional.of(query.getDownsample());
         Optional<Map<String, String>> tags = query.getTags() == null ? Optional
-                .<Map<String, String>> absent() : Optional.of(query.getTags());        
+                .<Map<String, String>> absent() : Optional.of(query.getTags());
 
-        return api.query(id, start, end, exact, series, tags,
+        return api.query(id, start, end, exact, series, downsample, tags,
                 query.getMetrics());
     }
 }

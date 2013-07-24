@@ -46,6 +46,6 @@ import com.google.common.base.Optional;
 public interface MetricServiceAPI {
     public Response query(Optional<String> id, Optional<String> startTime,
             Optional<String> endTime, Optional<Boolean> exactTimeWindow,
-            Optional<Boolean> series, Optional<Map<String, String>> tags,
+            Optional<Boolean> series, Optional<String> optional, Optional<Map<String, String>> tags,
             List<MetricSpecification> queries);
 }

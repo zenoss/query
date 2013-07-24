@@ -235,7 +235,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
      */
     public BufferedReader getReader(MetricServiceAppConfiguration config,
             String id, String startTime, String endTime,
-            Boolean exactTimeWindow, Boolean series,
+            Boolean exactTimeWindow, Boolean series, String downsample,
             Map<String, String> globalTags, List<MetricSpecification> queries)
             throws IOException {
         StringBuilder buf = new StringBuilder(config.getMetricServiceConfig()
@@ -249,7 +249,8 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         }
         for (MetricSpecification query : queries) {
             buf.append("&m=").append(
-                    URLEncoder.encode(query.toString(globalTags), "UTF-8"));
+                    URLEncoder.encode(query.toString(downsample, globalTags),
+                            "UTF-8"));
         }
         buf.append("&ascii");
 

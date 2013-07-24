@@ -79,7 +79,7 @@ public class MockMetricStorage implements MetricStorageAPI {
 
     public byte[] generateData(MetricServiceAppConfiguration config, String id,
             String startTime, String endTime, Boolean exactTimeWindow,
-            Boolean series, Map<String, String> tags,
+            Boolean series, String downsample, Map<String, String> tags,
             List<MetricSpecification> queries) throws IOException {
         log.debug("Generate data for '{}' to '{}' requested", startTime,
                 endTime);
@@ -175,10 +175,11 @@ public class MockMetricStorage implements MetricStorageAPI {
      */
     public BufferedReader getReader(MetricServiceAppConfiguration config,
             String id, String startTime, String endTime,
-            Boolean exactTimeWindow, Boolean series, Map<String, String> tags,
-            List<MetricSpecification> queries) throws IOException {
+            Boolean exactTimeWindow, Boolean series, String downsample,
+            Map<String, String> tags, List<MetricSpecification> queries)
+            throws IOException {
         byte[] data = generateData(config, id, startTime, endTime,
-                exactTimeWindow, series, tags, queries);
+                exactTimeWindow, series, downsample, tags, queries);
         return new BufferedReader(new InputStreamReader(
                 new ByteArrayInputStream(data)));
     }

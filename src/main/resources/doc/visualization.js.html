@@ -196,6 +196,27 @@ var zenoss = {
 		 * @namespace
 		 */
 		chart : {
+			/**
+			 * Looks up a chart instance by the given name and, if found,
+			 * updates the chart instance with the given changes. To remove an
+			 * item (at the first level or the change structure) set its values
+			 * to the negative '-' symbol.
+			 * 
+			 * @param {string}
+			 *            name the name of the chart to update
+			 * @param {object}
+			 *            changes a configuration object that holds the changes
+			 *            to the chart
+			 */
+			update : function(name, changes) {
+				var found = zenoss.visualization.__charts[name];
+				if (typeof found == 'undefined') {
+					console.warn('Attempt to modify (range) a chart, "' + name
+							+ '", that does not exist.');
+					return;
+				}
+				found.update(changes);
+			},
 
 			/**
 			 * Constructs a zenoss.visualization.Chart object, but first
@@ -274,9 +295,11 @@ var zenoss = {
 					if (typeof jQuery == 'undefined') {
 						zenoss.visualization.__bootstrap(function() {
 							loadChart(arg1, function(template) {
-								return new zenoss.visualization.Chart(name,
-										zenoss.visualization.__merge(template,
-												config));
+								var result = new zenoss.visualization.Chart(
+										name, zenoss.visualization.__merge(
+												template, config));
+								zenoss.visualization.__charts[name] = result;
+								return result;
 							}, function(err, detail) {
 								zenoss.visualization.__showError(name, err,
 										detail);
@@ -286,9 +309,11 @@ var zenoss = {
 					}
 					loadChart(arg1,
 							function(template) {
-								return new zenoss.visualization.Chart(name,
-										zenoss.visualization.__merge(template,
-												config));
+								var result = new zenoss.visualization.Chart(
+										name, zenoss.visualization.__merge(
+												template, config));
+								zenoss.visualization.__charts[name] = result;
+								return result;
 							}, function(err, detail) {
 								zenoss.visualization.__showError(name, err,
 										detail);
@@ -302,14 +327,18 @@ var zenoss = {
 				if (typeof jQuery == 'undefined') {
 					zenoss.visualization
 							.__bootstrap(function() {
-								return new zenoss.visualization.Chart(name,
-										zenoss.visualization.__merge(template,
-												config));
+								var result = new zenoss.visualization.Chart(
+										name, zenoss.visualization.__merge(
+												template, config));
+								zenoss.visualization.__charts[name] = result;
+								return result;
 							});
 					return;
 				}
-				new zenoss.visualization.Chart(name, zenoss.visualization
-						.__merge(template, config));
+				var result = new zenoss.visualization.Chart(name,
+						zenoss.visualization.__merge(template, config));
+				zenoss.visualization.__charts[name] = result;
+				return result;
 			}
 		},
 
@@ -321,6 +350,14 @@ var zenoss = {
 		 * @access private
 		 */
 		__dependencies : {},
+
+		/**
+		 * Used to track the charts that have been created and the names to
+		 * which they are associated
+		 * 
+		 * @access private
+		 */
+		__charts : {},
 
 		/**
 		 * Main entry point for web pages. This method is used to first
@@ -351,6 +388,91 @@ if (typeof String.prototype.startsWith != 'function') {
 }
 
 /**
+ * Updates a graph with the changes specified in the given change set. To remove
+ * a value from the configuration its value should be set to a negative sign,
+ * '-'.
+ * 
+ * @param {object}
+ *            changeset updates to the existing graph's configuration.
+ */
+zenoss.visualization.Chart.prototype.update = function(changeset) {
+	var self = this;
+	this.config = zenoss.visualization.__merge(this.config, changeset);
+
+	// A special check for the removal of items from the config. If the value
+	// for any item in the change set is '-', then we delete that key.
+	var kill = [];
+	for ( var property in this.config) {
+		if (this.config.hasOwnProperty(property)) {
+			if (this.config[property] == '-') {
+				kill.push(property);
+			}
+		}
+	}
+	kill.forEach(function(p) {
+		delete self.config[p];
+	});
+
+	this.request = this.__buildDataRequest(this.config);
+	$
+			.ajax({
+				'url' : zenoss.visualization.url + '/query/performance',
+				'type' : 'POST',
+				'data' : JSON.stringify(this.request),
+				'dataType' : 'json',
+				'contentType' : 'application/json',
+				'success' : function(data) {
+					self.plots = self.__processResult(self.request, data);
+					// Set default type of the chart if it was not
+					// set
+					if (typeof self.config.type == 'undefined') {
+						self.config.type = 'line';
+					}
+					self.__render();
+				},
+				'error' : function(res) {
+					// Many, many reasons that we might have gotten
+					// here, with most of them we are not able to
+					// detect why.
+					// If we have a readystate of 4 and an response
+					// code in the
+					// 200s that likely means we were unable to
+					// parse the JSON
+					// returned from the server. If not that then
+					// who knows
+					// ....
+					if (res.readyState == 4
+							&& Math.floor(res.status / 100) == 2) {
+						var detail = 'Severe: Unable to parse data returned from Zenoss metric service as JSON object. Please copy / paste the REQUEST and RESPONSE written to your browser\'s Java Console into an email to Zenoss Support';
+						console.group('Severe error, please report');
+						console.error('REQUEST : POST /query/performance: '
+								+ JSON.stringify(request));
+						console.error('RESPONSE: ' + res.responseText);
+						console.groupEnd();
+						zenoss.visualization.__showError(self.name, {}, detail);
+					} else {
+						try {
+							var err = JSON.parse(res.responseText);
+							var detail = 'An unexpected failure response was received from the server. The reported message is: '
+									+ err.errorSource
+									+ ' : '
+									+ err.errorMessage;
+							console.error(detail);
+							zenoss.visualization.__showError(self.name, err,
+									detail);
+						} catch (e) {
+							var detail = 'An unexpected failure response was received from the server. The reported message is: '
+									+ res.statusText + ' : ' + res.status;
+							console.error(detail);
+							zenoss.visualization.__showError(self.name, err,
+									detail);
+						}
+					}
+				}
+			});
+};
+
+/**
  * Constructs a request object that can be POSTed to the Zenoss Data API to
  * retrieve the data for a chart. The request is based on the information in the
  * given config.
@@ -376,7 +498,11 @@ zenoss.visualization.Chart.prototype.__buildDataRequest = function(config) {
 		if (typeof config.series != 'undefined') {
 			request.series = config.series;
 		}
-		
+
+		if (typeof config.downsample != 'undefined') {
+			request.downsample = config.downsample;
+		}
+
 		if (typeof config.tags != 'undefined') {
 			request.tags = config.tags;
 		}
@@ -882,7 +1008,7 @@ zenoss.visualization.__bootstrap = function(success, fail) {
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0-dev</a> on Tue Jul 23 2013 14:46:40 GMT-0700 (PDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0-dev</a> on Wed Jul 24 2013 12:00:53 GMT-0700 (PDT)
 </footer>
 
 <script> prettyPrint(); </script>

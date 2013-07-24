@@ -171,13 +171,15 @@ public class MetricSpecification {
      * 
      * @return OpenTSDB URL query formatted String instance
      */
-    public String toString(Map<String, String> baseTags) {
+    public String toString(String downsample, Map<String, String> baseTags) {
         StringBuilder buf = new StringBuilder();
         if (getAggregator() != null) {
             buf.append(getAggregator()).append(':');
         }
         if (getDownsample() != null) {
             buf.append(getDownsample()).append(':');
+        } else if (downsample != null) {
+            buf.append(downsample).append(':');
         }
         if (getRate()) {
             buf.append("rate");
@@ -237,7 +239,7 @@ public class MetricSpecification {
      * @return OpenTSDB URL query formatted String instance
      */
     public String toString() {
-        return this.toString(null);
+        return this.toString(null, null);
     }
 
     /**

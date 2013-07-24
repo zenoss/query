@@ -9,7 +9,7 @@ metrics:
   defaultSeries: false
   openTsdbUrl: http://tsdb.zenaas.com:4242
   defaultTsdTimeZone: UTC
-  connectionTimeoutMs: 1000
+  connectionTimeoutMs: 20000
 charts:
   redisConnection: localhost:6379
 http:

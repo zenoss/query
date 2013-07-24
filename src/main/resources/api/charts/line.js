@@ -9,7 +9,7 @@ zenoss.visualization.chart.line = {
 			return d3.time.format('%x %X')(new Date(ts));
 		});
 		nv.addGraph(function() {
-			chart.svg.datum(chart.plots).transition().duration(500)
+			chart.svg.datum(chart.plots).transition().duration(0)
 					.call(_chart);
 			nv.utils.windowResize(function() {
 				chart.svg.call(_chart)
