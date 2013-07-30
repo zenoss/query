@@ -24,9 +24,37 @@ var zenoss = {
 		 * metric service.
 		 * 
 		 * @access public
-		 * @default http://localhsot:8080
+		 * @default http://localhost:8080
 		 */
 		url : "http://localhost:8080",
+
+		/**
+		 * Used to format dates for the output display in the footer of a chart.
+		 * 
+		 * @returns a string representation of the date
+		 * @access public
+		 */
+		dateFormatter : function(date) {
+			return date.toLocaleString();
+		},
+
+		tickFormat : function(start, end, ts) {
+			if (start.getFullYear() == end.getFullYear()) {
+				if (start.getMonth() == end.getMonth()) {
+					if (start.getDate() == end.getDate()) {
+						if (start.getHours() == end.getHours()) {
+							if (start.getMinutes() == end.getMinutes()) {
+								return d3.time.format('::%S')(new Date(ts));
+							}
+							return d3.time.format(':%M:%S')(new Date(ts));
+						}
+						return d3.time.format('%H:%M:%S')(new Date(ts));
+					}
+				}
+				return d3.time.format('%m/%d %H:%M:%S')(new Date(ts));
+			}
+			return d3.time.format('%x %X')(new Date(ts));
+		},
 
 		/**
 		 * Used to augment the div element with an error message when an error
@@ -70,7 +98,22 @@ var zenoss = {
 			this.name = name;
 			this.config = config;
 			this.div = $('#' + this.name);
-			this.svg = d3.select('#' + this.name).append('svg');
+
+			this.svgwrapper = document.createElement('div');
+			$(this.svgwrapper).addClass('zenchart');
+			$(this.div).append($(this.svgwrapper));
+			this.containerSelector = '#' + name + ' .zenchart';
+
+			this.footer = document.createElement('div');
+			$(this.footer).addClass('zenfooter');
+			$(this.div).append($(this.footer));
+
+			/*
+			 * $(self.svgwrapper).outerHeight( $(self.div).height() -
+			 * $(self.footer).outerHeight());
+			 */
+
+			this.svg = d3.select(this.svgwrapper).append('svg');
 			this.request = this.__buildDataRequest(this.config);
 
 			if (zenoss.visualization.debug) {
@@ -80,17 +123,6 @@ var zenoss = {
 				console.groupEnd();
 			}
 
-			// If the width and/or height are set in the configuration then
-			// set those on the div. This really should be left to CSS and not
-			// part of the chart API.
-			if (typeof this.config != 'undefined') {
-				if (typeof this.config.width != 'undefined') {
-					this.div.width(this.config.width);
-				}
-				if (typeof this.config.height != 'undefined') {
-					this.div.height(this.config.height);
-				}
-			}
 			// Sanity Check. If the request contained no metrics to query then
 			// log this information as a warning, as it really does not make
 			// sense.
@@ -114,7 +146,7 @@ var zenoss = {
 								if (typeof self.config.type == 'undefined') {
 									self.config.type = 'line';
 								}
-								self.__render();
+								self.__render(data);
 							},
 							'error' : function(res) {
 								// Many, many reasons that we might have gotten
@@ -361,6 +393,116 @@ if (typeof String.prototype.startsWith != 'function') {
 }
 
 /**
+ * Constructs the chart footer for a given chart. The footer will contain
+ * information such as the date range and key values (ending, min, max, avg) of
+ * each plot on the chart.
+ * 
+ * @access private
+ * @param {object}
+ *            config the charts configuration
+ * @param {object}
+ *            data the data returned from the metric service that contains the
+ *            data to be charted
+ */
+zenoss.visualization.Chart.prototype.__buildFooter = function(config, data) {
+	this.table = document.createElement('table');
+	$(this.table).addClass('zenfooter_content');
+	$(this.table).addClass('zenfooter_text');
+	$(this.footer).append($(this.table));
+
+	var tr = document.createElement('tr');
+	var td = document.createElement('td');
+	var dates = document.createElement('span');
+	$(td).addClass('zenfooter_dates');
+	$(td).css('textAlign', 'center');
+	$(td).attr('colspan', 6);
+	$(dates).addClass('zenfooter_date_text');
+	$(dates).html(
+			zenoss.visualization.dateFormatter(new Date(data.startTimeActual))
+					+ ' to '
+					+ zenoss.visualization.dateFormatter(new Date(
+							data.endTimeActual)) + ' ('
+					+ jstz.determine().name() + ')');
+
+	$(this.table).append($(tr));
+	$(tr).append($(td));
+	$(td).append($(dates));
+
+	if (typeof config.footer == 'string' && config.footer == 'range') {
+		return;
+	}
+
+	var tr = document.createElement('tr');
+	[ '', 'Metric', 'Ending', 'Minimum', 'Maximum', 'Average' ]
+			.forEach(function(s) {
+				var th = document.createElement('th');
+				$(th).addClass('footer_header');
+				$(th).html(s);
+				if (s.length == 0) {
+					$(th).addClass('zenfooter_box_column');
+				}
+				$(tr).append($(th));
+			});
+	$(this.table).append($(tr));
+	
+	var self = this;
+	this.plots.forEach(function(p) {
+		var tr = document.createElement('tr');
+
+		// Color Indicator
+		var td = document.createElement('td');
+		$(td).addClass('zenfooter_box_column');
+		var d = document.createElement('div');
+		$(d).addClass('zenfooter_box');
+		$(d).css('backgroundColor', 'white');
+		$(td).append($(d));
+		$(tr).append($(td));
+
+		// Metric name
+		var label = p.key;
+		if (label.indexOf('{') > -1) {
+			label = label.substring(0, label.indexOf('{')) + '{*}'
+		}
+		td = document.createElement('td');
+		$(td).addClass('zenfooter_data');
+		$(td).addClass('zenfooter_data_text');
+		$(td).html(label);
+		$(tr).append($(td));
+
+		var vals = [ 0, -1, -1, 0 ];
+		var cur = 0;
+		var min = 1;
+		var max = 2;
+		var avg = 3;
+		var init = false;
+		p.values.forEach(function(v) {
+			if (!init) {
+				vals[min] = v.y;
+				vals[max] = v.y;
+				init = true;
+			} else {
+				vals[min] = Math.min(vals[min], v.y);
+				vals[max] = Math.max(vals[max], v.y);
+			}
+			vals[avg] += v.y;
+			vals[cur] = v.y;
+		});
+
+		vals[avg] = vals[avg] / p.values.length;
+
+		vals.forEach(function(v) {
+			td = document.createElement('td');
+			$(td).addClass('zenfooter_data');
+			$(td).addClass('zenfooter_data_number');
+			$(td).html(v.toFixed(2));
+			$(tr).append($(td));
+		});
+
+		$(self.table).append($(tr));
+	});
+}
+
+/**
  * Updates a graph with the changes specified in the given change set. To remove
  * a value from the configuration its value should be set to a negative sign,
  * '-'.
@@ -401,7 +543,7 @@ zenoss.visualization.Chart.prototype.update = function(changeset) {
 					if (typeof self.config.type == 'undefined') {
 						self.config.type = 'line';
 					}
-					self.__render();
+					self.__render(data);
 				},
 				'error' : function(res) {
 					// Many, many reasons that we might have gotten
@@ -802,22 +944,42 @@ zenoss.visualization.__loadDependencies = function(required, callback) {
  * chart.
  * 
  * @access private
+ * @param {object}
+ *            data the data that is being rendered in the graph
  */
-zenoss.visualization.Chart.prototype.__render = function() {
+zenoss.visualization.Chart.prototype.__render = function(data) {
 	var self = this;
-	zenoss.visualization.__loadDependencies({
-		'defined' : self.config.type.replace('.', '_'),
-		'source' : [ 'charts/' + self.config.type.replace('.', '/') + '.js' ]
-	}, function() {
-		self.impl = eval('zenoss.visualization.chart.' + self.config.type);
+	zenoss.visualization
+			.__loadDependencies(
+					{
+						'defined' : self.config.type.replace('.', '_'),
+						'source' : [ 'charts/'
+								+ self.config.type.replace('.', '/') + '.js' ]
+					},
+					function() {
 
-		// Check the impl to see if a dependency is listed and
-		// if so load that.
-		zenoss.visualization.__loadDependencies(self.impl.required, function() {
-			self.impl.build(self);
-			self.impl.render();
-		});
-	});
+						console.log(typeof self.config.footer);
+						if (typeof self.config.footer == 'undefined'
+								|| (typeof self.config.footer == 'boolean' && self.config.footer == true)
+								|| (typeof self.config.footer == 'string' && self.config.footer == 'range')) {
+							self.__buildFooter(self.config, data);
+						}
+
+						self.impl = eval('zenoss.visualization.chart.'
+								+ self.config.type);
+
+						// Check the impl to see if a dependency is listed and
+						// if so load that.
+						zenoss.visualization.__loadDependencies(
+								self.impl.required, function() {
+									$(self.svgwrapper).outerHeight(
+											$(self.div).height()
+													- $(self.footer)
+															.outerHeight());
+									self.impl.build(self, data);
+									self.impl.render();
+								});
+					});
 }
 
 /**
@@ -963,6 +1125,7 @@ zenoss.visualization.__bootstrap = function(success, fail) {
 	var js = [ 'jquery.min.js' ]
 	zenoss.visualization.__loadDependencies({
 		'defined' : 'd3',
-		'source' : [ 'jquery.min.js', 'd3.v3.min.js', 'css/zenoss.css' ]
+		'source' : [ 'jquery.min.js', 'd3.v3.min.js', 'jstz-1.0.4.min.js',
+				'css/zenoss.css' ]
 	}, success, fail);
 }

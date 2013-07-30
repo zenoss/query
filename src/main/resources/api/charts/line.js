@@ -3,18 +3,23 @@ zenoss.visualization.chart.line = {
 		defined : 'nv',
 		source : [ 'nv.d3.min.js', 'css/nv.d3.css' ]
 	},
-	build : function(chart) {
+	build : function(chart, data) {
 		var _chart = nv.models.lineChart();
+		var _start = new Date(data.startTimeActual);
+		var _end = new Date(data.endTimeActual);
 		_chart.xAxis.tickFormat(function(ts) {
-			return d3.time.format('%x %X')(new Date(ts));
+			return zenoss.visualization.tickFormat(_start, _end, ts);
 		});
+		_chart.height($(chart.svgwrapper).height());
+		_chart.width($(chart.svgwrapper).width());
+
 		nv.addGraph(function() {
-			chart.svg.datum(chart.plots).transition().duration(0)
-					.call(_chart);
+			chart.svg.datum(chart.plots).transition().duration(0).call(_chart);
 			nv.utils.windowResize(function() {
 				chart.svg.call(_chart)
 			});
 		});
+		return _chart;
 	},
 
 	render : function() {

@@ -23,7 +23,8 @@ zenoss.visualization.chart.discretebar = {
 				})
 			});
 		});
-		_chart.height($('#' + chart.name).height());
+		_chart.height($(chart.svgwrapper).height());
+		_chart.width($(chart.svgwrapper).width());
 
 		nv.addGraph(function() {
 			chart.svg.datum(__means).transition().duration(500).call(_chart);

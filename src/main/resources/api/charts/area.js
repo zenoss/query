@@ -4,7 +4,7 @@ zenoss.visualization.chart.area = {
 		source : [ 'nv.d3.min.js', 'css/nv.d3.css' ]
 	},
 
-	build : function(chart) {
+	build : function(chart, data) {
 		// Area plots don't seem to do well if there are multiple data point
 		// sets and there are not the same number of points in each set, so
 		// truncate the data point areas to the same number of points.
@@ -21,15 +21,20 @@ zenoss.visualization.chart.area = {
 			});
 
 		}
-		_chart = nv.models.stackedAreaChart().x(function(v) {
+		var _start = new Date(data.startTimeActual);
+		var _end = new Date(data.endTimeActual);
+		var _chart = nv.models.stackedAreaChart().x(function(v) {
 			return v.x;
 		}).y(function(v) {
 			return v.y;
 		}).clipEdge(true);
 
 		_chart.xAxis.tickFormat(function(ts) {
-			return d3.time.format('%x %X')(new Date(ts));
+			return zenoss.visualization.tickFormat(_start, _end, ts);
 		});
+		_chart.height($(chart.svgwrapper).height());
+		_chart.width($(chart.svgwrapper).width());
+
 		nv.addGraph(function() {
 			chart.svg.datum(chart.plots).transition().duration(500)
 					.call(_chart);

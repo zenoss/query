@@ -20,15 +20,48 @@ zenoss.visualization.chart.dc = {
 				_dims.push(_ndx[_ndx.length - 1].dimension(function(d) {
 					return d3.time.minute(d.dtimestamp);
 				}));
-				var ___l = _dims.length - 1;
-				_groups.push(_dims[_dims.length - 1].group().reduceSum(
-						function(d) {
-							return d.y;
+
+				_groups.push(_dims[_dims.length - 1].group().reduce(
+						function(p, v) {
+							if (typeof p.values[v.y] == 'undefined') {
+								p.values[v.y] = 1;
+							} else {
+								p.values[v.y] += 1;
+							}
+							p.max = Math.max(p.max, v.y);
+							return p;
+						}, function(p, v) {
+							// need to remove the value from the values array
+							p.values[v.y] -= 1;
+							if (p.values[v.y] <= 0) {
+								delete p.values[v.y];
+								if (max == v.y) {
+									// pick new max, by iterating over keys
+									// finding the largest.
+									max = -1;
+									for (k in p.values) {
+										if (p.values.hasOwnProperty(k)) {
+											max = Math.max(max, parseFloat(k));
+										}
+									}
+									p.max = max;
+								}
+							}
+							p.total -= v.y;
+							return p;
+						}, function() {
+							return {
+								values : {},
+								max : -1,
+								toString : function() {
+									return this.max;
+								}
+							};
 						}));
 				_all.push(_ndx[_ndx.length - 1].groupAll());
 			});
 
-			_chart = dc.compositeChart('#' + chart.name, "zenoss");
+			_chart = dc.compositeChart(chart.containerSelector, "zenoss");
 
 			var subs = [];
 			for ( var i = 0; i < _groups.length; ++i) {
@@ -50,8 +83,8 @@ zenoss.visualization.chart.dc = {
 								_groups[i]).xUnits(d3.time.second)
 						.renderHorizontalGridLines(true)
 						.renderVerticalGridLines(true).renderArea(true).width(
-								$('#' + chart.name).width()).height(
-								$('#' + chart.name).height()).brushOn(false)
+								$(chart.svgwrapper).width()).height(
+								$(chart.svgwrapper).height()).brushOn(false)
 						.title(function(d) {
 							return "Value: " + d.value;
 						}).renderTitle(true).dotRadius(10);
@@ -63,8 +96,8 @@ zenoss.visualization.chart.dc = {
 			chart.svg.datum(chart.plots);
 			_chart.dimension(_dims[0]);
 			_chart.group(_groups[0]);
-			_chart.width($('#' + chart.name).width());
-			_chart.height($('#' + chart.name).height());
+			_chart.width($(chart.svgwrapper).width());
+			_chart.height($(chart.svgwrapper).height());
 			_chart.transitionDuration(500);
 			_chart.elasticY(true);
 			_chart.elasticX(true);
