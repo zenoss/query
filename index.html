@@ -5,10 +5,18 @@
 <title>Sample Zenoss Charts - Non-Optimized Data Queries</title>
 <script type="text/javascript"
 	src="http://localhost:8888/api/visualization.js"></script>
+<!--
+  -- This can be useful to have around if you just want to debug some of the
+  -- div layouts without having to deal with the graph information
+  -- <script type="text/javascript"
+  --	src="http://localhost:8888/api/jquery.min.js"></script>
+  -->
+
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <style type="text/css">
 .left {
 	float: left;
+	clear: none;
 }
 
 .right {
@@ -23,17 +31,17 @@
 }
 
 .default {
-	width: 200px;
+	height: 300px;
 	width: 400px;
 }
 
 .large {
-	height: 300px;
+	height: 400px;
 	width: 500px;
 }
 
 .huge {
-	height: 550px;
+	height: 650px;
 	width: 1000px;
 }
 
@@ -48,7 +56,8 @@
 }
 
 .chart {
-	height: calc(100% -       18px -       50px);
+	height: calc(100% -           22px -   50px);
+	width: inherit;
 }
 
 .title {
@@ -73,6 +82,7 @@
 	<div class="tinted centered title">
 		<span>Sample Zenoss Charts - Non-Optimized Data Queries</span>
 	</div>
+
 	<div class="huge centered">
 		<div id="chart1" class="chart"></div>
 		<div class="label centered">
@@ -144,6 +154,7 @@
 	zenoss.visualization.chart.create("chart1", {
 		"type" : "focus",
 		"series" : true,
+		"footer" : false,
 		"range" : {
 			"start" : "1h-ago",
 			"end" : "now"
@@ -163,7 +174,6 @@
 	});
 
 	zenoss.visualization.chart.create("chart2", {
-		"height" : "200px",
 		"type" : "pie",
 		"series" : true,
 		"range" : {
@@ -189,6 +199,7 @@
 		"height" : "200px",
 		"series" : false,
 		"type" : "dc.area",
+		"footer" : "range",
 		"range" : {
 			"start" : "1h-ago",
 			"end" : "now"
@@ -263,5 +274,6 @@
 			"metric" : "laLoadInt15"
 		} ]
 	});
+
 </script>
 </html>
