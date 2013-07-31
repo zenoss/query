@@ -958,7 +958,6 @@ zenoss.visualization.Chart.prototype.__render = function(data) {
 					},
 					function() {
 
-						console.log(typeof self.config.footer);
 						if (typeof self.config.footer == 'undefined'
 								|| (typeof self.config.footer == 'boolean' && self.config.footer == true)
 								|| (typeof self.config.footer == 'string' && self.config.footer == 'range')) {
