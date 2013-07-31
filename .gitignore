@@ -12,6 +12,7 @@ target
 .classpath
 .project
 .settings
+maven-eclipse.xml
 
 # emacs
 *~
