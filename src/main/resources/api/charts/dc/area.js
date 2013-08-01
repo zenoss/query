@@ -4,13 +4,17 @@ zenoss.visualization.chart.dc = {
 			defined : 'dc',
 			source : [ 'crossfilter.min.js', 'dc.min.js', 'css/dc.css' ]
 		},
+		
+		color : function(impl, idx) {
+			return '#ff0000';
+		},
+
 		build : function(chart) {
 
 			var _chart = null;
 			var _groups = [];
 			var _ndx = [];
 			var _dims = [];
-			var _all = [];
 
 			chart.plots.forEach(function(plot) {
 				plot.values.forEach(function(e) {
@@ -18,51 +22,14 @@ zenoss.visualization.chart.dc = {
 				})
 				_ndx.push(crossfilter(plot.values));
 				_dims.push(_ndx[_ndx.length - 1].dimension(function(d) {
-					return d3.time.minute(d.dtimestamp);
+					return d3.time.second(d.dtimestamp);
 				}));
 
-				_groups.push(_dims[_dims.length - 1].group().reduce(
-						function(p, v) {
-							if (typeof p.values[v.y] == 'undefined') {
-								p.values[v.y] = 1;
-							} else {
-								p.values[v.y] += 1;
-							}
-							p.max = Math.max(p.max, v.y);
-							return p;
-						}, function(p, v) {
-							// need to remove the value from the values array
-							p.values[v.y] -= 1;
-							if (p.values[v.y] <= 0) {
-								delete p.values[v.y];
-								if (max == v.y) {
-									// pick new max, by iterating over keys
-									// finding the largest.
-									max = -1;
-									for (k in p.values) {
-										if (p.values.hasOwnProperty(k)) {
-											max = Math.max(max, parseFloat(k));
-										}
-									}
-									p.max = max;
-								}
-							}
-							p.total -= v.y;
-							return p;
-						}, function() {
-							return {
-								values : {},
-								max : -1,
-								toString : function() {
-									return this.max;
-								}
-							};
-						}));
-				_all.push(_ndx[_ndx.length - 1].groupAll());
+				_groups.push(zenoss.visualization.__reduceMax(
+						_dims[_dims.length - 1].group()));
 			});
 
 			_chart = dc.compositeChart(chart.containerSelector, "zenoss");
-
 			var subs = [];
 			for ( var i = 0; i < _groups.length; ++i) {
 				var c = dc
@@ -105,8 +72,8 @@ zenoss.visualization.chart.dc = {
 
 			_chart.x(d3.time.scale().domain(
 					[ new Date(chart.plots[0].values[0].x),
-							new Date(chart.plots[0].values[l - 1].x) ]))
-
+							new Date(chart.plots[0].values[l - 1].x) ]));
+			return _chart;
 		},
 
 		render : function() {

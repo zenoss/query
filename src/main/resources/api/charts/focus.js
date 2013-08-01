@@ -3,6 +3,10 @@ zenoss.visualization.chart.focus = {
 		defined : 'nv',
 		source : [ 'nv.d3.min.js', 'css/nv.d3.css' ]
 	},
+	
+	color : function(impl, idx) {
+		return impl.color()(0, idx);
+	},
 
 	build : function(chart, data) {
 		var _chart = nv.models.lineWithFocusChart();

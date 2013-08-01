@@ -31,6 +31,8 @@ var zenoss = {
 		/**
 		 * Used to format dates for the output display in the footer of a chart.
 		 * 
+		 * @param {Date}
+		 *            date the date to be formated
 		 * @returns a string representation of the date
 		 * @access public
 		 */
@@ -38,6 +40,20 @@ var zenoss = {
 			return date.toLocaleString();
 		},
 
+		/**
+		 * Used to generate the date/time to be displayed on a tick mark. This
+		 * takes into account the range of times being displayed so that common
+		 * data can be removed.
+		 * 
+		 * @param {Date}
+		 *            start the start date of the time range being considered
+		 * @param {Date}
+		 *            end the end of the time range being considerd
+		 * @param {timestamp}
+		 *            ts the timestamp to be formated in ms since epoch
+		 * @returns string representation of the timestamp
+		 * @access public
+		 */
 		tickFormat : function(start, end, ts) {
 			if (start.getFullYear() == end.getFullYear()) {
 				if (start.getMonth() == end.getMonth()) {
@@ -54,6 +70,84 @@ var zenoss = {
 				return d3.time.format('%m/%d %H:%M:%S')(new Date(ts));
 			}
 			return d3.time.format('%x %X')(new Date(ts));
+		},
+
+		/**
+		 * Culls the plots in a chart so that only data points with a common
+		 * time stamp remain.
+		 * 
+		 * @param the
+		 *            chart that contains the plots to cull
+		 * @access private
+		 */
+		__cull : function(chart) {
+			// If there is only one plot in the chart we are done, there is
+			// nothing
+			// to do.
+			if (chart.plots.length < 2) {
+				return;
+			}
+
+			var keys = [];
+			chart.plots.forEach(function(plot) {
+				plot.values.forEach(function(v) {
+					if (typeof keys[v.x] == 'undefined') {
+						keys[v.x] = 1;
+					} else {
+						keys[v.x] += 1;
+					}
+				});
+			});
+
+			// At this point, any entry in the keys array with a count of
+			// chart.plots.length is a key in every plot and we can use, so now
+			// we walk through the plots again removing any invalid key
+			chart.plots.forEach(function(plot) {
+				for ( var i = plot.values.length - 1; i >= 0; --i) {
+					if (keys[plot.values[i].x] != chart.plots.length) {
+						plot.values.splice(i, 1);
+					}
+				}
+			});
+		},
+
+		__reduceMax : function(group) {
+			return group.reduce(function(p, v) {
+				if (typeof p.values[v.y] == 'undefined') {
+					p.values[v.y] = 1;
+				} else {
+					p.values[v.y] += 1;
+				}
+				p.max = Math.max(p.max, v.y);
+				return p;
+			}, function(p, v) {
+				// need to remove the value from the values array
+				p.values[v.y] -= 1;
+				if (p.values[v.y] <= 0) {
+					delete p.values[v.y];
+					if (max == v.y) {
+						// pick new max, by iterating over keys
+						// finding the largest.
+						max = -1;
+						for (k in p.values) {
+							if (p.values.hasOwnProperty(k)) {
+								max = Math.max(max, parseFloat(k));
+							}
+						}
+						p.max = max;
+					}
+				}
+				p.total -= v.y;
+				return p;
+			}, function() {
+				return {
+					values : {},
+					max : -1,
+					toString : function() {
+						return this.max;
+					}
+				};
+			});
 		},
 
 		/**
@@ -393,6 +487,22 @@ if (typeof String.prototype.startsWith != 'function') {
 }
 
 /**
+ * Sets the box in the footer for the given plot (specified by index) to the
+ * specified color. The implementation of this is dependent on how the footer is
+ * constructed (see __buildFooter).
+ * 
+ * @access private
+ * @param {int}
+ *            idx the index of the plot whose color should be set, corresponds
+ *            to which row in the table + 2
+ * @param {color}
+ *            the color to which the box should be set.
+ */
+zenoss.visualization.Chart.prototype.__setFooterBoxColor = function(idx, color) {
+	$($(this.table).find('.zenfooter_box')[idx]).css('backgroundColor', color);
+}
+
+/**
  * Constructs the chart footer for a given chart. The footer will contain
  * information such as the date range and key values (ending, min, max, avg) of
  * each plot on the chart.
@@ -414,9 +524,8 @@ zenoss.visualization.Chart.prototype.__buildFooter = function(config, data) {
 	var td = document.createElement('td');
 	var dates = document.createElement('span');
 	$(td).addClass('zenfooter_dates');
-	$(td).css('textAlign', 'center');
 	$(td).attr('colspan', 6);
-	$(dates).addClass('zenfooter_date_text');
+	$(dates).addClass('zenfooter_dates_text');
 	$(dates).html(
 			zenoss.visualization.dateFormatter(new Date(data.startTimeActual))
 					+ ' to '
@@ -444,7 +553,7 @@ zenoss.visualization.Chart.prototype.__buildFooter = function(config, data) {
 				$(tr).append($(th));
 			});
 	$(this.table).append($(tr));
-	
+
 	var self = this;
 	this.plots.forEach(function(p) {
 		var tr = document.createElement('tr');
@@ -969,15 +1078,33 @@ zenoss.visualization.Chart.prototype.__render = function(data) {
 
 						// Check the impl to see if a dependency is listed and
 						// if so load that.
-						zenoss.visualization.__loadDependencies(
-								self.impl.required, function() {
-									$(self.svgwrapper).outerHeight(
-											$(self.div).height()
-													- $(self.footer)
-															.outerHeight());
-									self.impl.build(self, data);
-									self.impl.render();
-								});
+						zenoss.visualization
+								.__loadDependencies(
+										self.impl.required,
+										function() {
+											$(self.svgwrapper)
+													.outerHeight(
+															$(self.div)
+																	.height()
+																	- $(
+																			self.footer)
+																			.outerHeight());
+											var _c = self.impl
+													.build(self, data);
+											self.impl.render();
+
+											// Set the colors in the footer
+											// based on the
+											// chart that was created.
+											if (typeof self.config.footer == 'undefined'
+													|| (typeof self.config.footer == 'boolean' && self.config.footer == true)) {
+												for ( var i = 0; i < self.plots.length; ++i) {
+													self.__setFooterBoxColor(i,
+															self.impl.color(_c,
+																	i));
+												}
+											}
+										});
 					});
 }
 

@@ -3,31 +3,23 @@ zenoss.visualization.chart.area = {
 		defined : 'nv',
 		source : [ 'nv.d3.min.js', 'css/nv.d3.css' ]
 	},
+	
+	color : function(impl, idx) {
+		return impl.color()(0, idx);
+	},
 
 	build : function(chart, data) {
-		// Area plots don't seem to do well if there are multiple data point
-		// sets and there are not the same number of points in each set, so
-		// truncate the data point areas to the same number of points.
-		if (chart.plots.length > 1) {
-			// get minmum length
-			var minLength = chart.plots[0].values.length;
-			chart.plots.forEach(function(plot) {
-				minLength = Math.min(minLength, plot.values.length);
-			});
+		var _chart = null;
 
-			// Truncate
-			chart.plots.forEach(function(plot) {
-				plot.values.length = minLength;
-			});
 
-		}
+		// OK. Area charts really want data points to match up on keys, which
+		// makes sense as this is how they stack things. To make this work we
+		// going to walk the points and make sure they match
+		zenoss.visualization.__cull(chart);
+
 		var _start = new Date(data.startTimeActual);
 		var _end = new Date(data.endTimeActual);
-		var _chart = nv.models.stackedAreaChart().x(function(v) {
-			return v.x;
-		}).y(function(v) {
-			return v.y;
-		}).clipEdge(true);
+		var _chart = nv.models.stackedAreaChart().clipEdge(true);
 
 		_chart.xAxis.tickFormat(function(ts) {
 			return zenoss.visualization.tickFormat(_start, _end, ts);
@@ -42,6 +34,7 @@ zenoss.visualization.chart.area = {
 				chart.svg.call(_chart)
 			});
 		});
+		return _chart;
 	},
 	render : function() {
 
