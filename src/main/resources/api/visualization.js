@@ -499,7 +499,9 @@ if (typeof String.prototype.startsWith != 'function') {
  *            the color to which the box should be set.
  */
 zenoss.visualization.Chart.prototype.__setFooterBoxColor = function(idx, color) {
-	$($(this.table).find('.zenfooter_box')[idx]).css('backgroundColor', color);
+	var box = $($(this.table).find('.zenfooter_box')[idx]);
+	box.css('background-color', color.color);
+	box.css('opacity', color.opacity);
 }
 
 /**
@@ -1091,7 +1093,7 @@ zenoss.visualization.Chart.prototype.__render = function(data) {
 																			.outerHeight());
 											var _c = self.impl
 													.build(self, data);
-											self.impl.render();
+											self.impl.render(self);
 
 											// Set the colors in the footer
 											// based on the
@@ -1100,7 +1102,7 @@ zenoss.visualization.Chart.prototype.__render = function(data) {
 													|| (typeof self.config.footer == 'boolean' && self.config.footer == true)) {
 												for ( var i = 0; i < self.plots.length; ++i) {
 													self.__setFooterBoxColor(i,
-															self.impl.color(_c,
+															self.impl.color(self, _c,
 																	i));
 												}
 											}
@@ -1232,7 +1234,7 @@ zenoss.visualization.__load = function(js, css, success, fail) {
 										+ uri
 										+ '", with error "'
 										+ exception
-										+ '". Loding halted, will continue, but additional errors likely.');
+										+ '". Loading halted, will continue, but additional errors likely.');
 						self.__load(_js, _css, success, fail);
 					});
 }

@@ -5,8 +5,11 @@ zenoss.visualization.chart.dc = {
 			source : [ 'crossfilter.min.js', 'dc.min.js', 'css/dc.css' ]
 		},
 
-		color : function(impl, idx) {
-			return $($(impl.svg()[0][0]).find('.area')[idx]).css('fill');
+		color : function(chart, impl, idx) {
+			return {
+				'color' : d3.scale.category10().range()[idx],
+				'opacity' : 1,
+			}
 		},
 
 		build : function(chart) {
@@ -50,7 +53,7 @@ zenoss.visualization.chart.dc = {
 			_chart.brushOn(false);
 			_chart.renderArea(true);
 			_chart.title(function(d) {
-				return "Value: " + d.value;
+				return d.value + ' at ' + d.key;
 			});
 			_chart.renderTitle(true);
 			_chart.dotRadius(10);
@@ -70,7 +73,7 @@ zenoss.visualization.chart.dc = {
 
 		},
 
-		render : function() {
+		render : function(chart) {
 			dc.renderAll('zenoss');
 		}
 	}

@@ -4,8 +4,11 @@ zenoss.visualization.chart.bar = {
 		source : [ 'nv.d3.min.js', 'css/nv.d3.css' ]
 	},
 
-	color : function(impl, idx) {
-		return impl.color()(0, idx);
+	color : function(chart, impl, idx) {
+		return {
+			'color' : impl.color()(0, idx),
+			'opacity' : 1,
+		}
 	},
 
 	build : function(chart, data) {

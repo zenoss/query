@@ -4,9 +4,12 @@ zenoss.visualization.chart.dc = {
 			defined : 'dc',
 			source : [ 'crossfilter.min.js', 'dc.min.js', 'css/dc.css' ]
 		},
-		
-		color : function(impl, idx) {
-			return '#ff0000';
+
+		color : function(chart, impl, idx) {
+			return {
+				'color' : d3.scale.category10().range()[idx],
+				'opacity' : 1
+			}
 		},
 
 		build : function(chart) {
@@ -25,15 +28,17 @@ zenoss.visualization.chart.dc = {
 					return d3.time.second(d.dtimestamp);
 				}));
 
-				_groups.push(zenoss.visualization.__reduceMax(
-						_dims[_dims.length - 1].group()));
+				_groups.push(zenoss.visualization
+						.__reduceMax(_dims[_dims.length - 1].group()));
 			});
 
 			_chart = dc.compositeChart(chart.containerSelector, "zenoss");
+			_chart.renderHorizontalGridLines(true);
+			_chart.renderVerticalGridLines(true);
 			var subs = [];
 			for ( var i = 0; i < _groups.length; ++i) {
 				var c = dc
-						.lineChart(_chart)
+						.lineChart(_chart, "zenoss")
 						.transitionDuration(500)
 						.elasticY(true)
 						.elasticX(true)
@@ -48,12 +53,12 @@ zenoss.visualization.chart.dc = {
 																chart.plots[i].values[chart.plots[i].values.length - 1].x) ]))
 						.round(d3.time.second.round).dimension(_dims[i]).group(
 								_groups[i]).xUnits(d3.time.second)
-						.renderHorizontalGridLines(true)
-						.renderVerticalGridLines(true).renderArea(true).width(
+						.renderHorizontalGridLines(false)
+						.renderVerticalGridLines(false).renderArea(true).width(
 								$(chart.svgwrapper).width()).height(
 								$(chart.svgwrapper).height()).brushOn(false)
 						.title(function(d) {
-							return "Value: " + d.value;
+							return d.value + ' at ' + d.key;
 						}).renderTitle(true).dotRadius(10);
 				subs.push(c);
 			}
@@ -76,7 +81,7 @@ zenoss.visualization.chart.dc = {
 			return _chart;
 		},
 
-		render : function() {
+		render : function(chart) {
 			dc.renderAll('zenoss');
 		}
 	}

@@ -3,14 +3,16 @@ zenoss.visualization.chart.area = {
 		defined : 'nv',
 		source : [ 'nv.d3.min.js', 'css/nv.d3.css' ]
 	},
-	
-	color : function(impl, idx) {
-		return impl.color()(0, idx);
+
+	color : function(chart, impl, idx) {
+		return {
+			'color' : impl.color()(0, idx),
+			'opacity' : 1,
+		}
 	},
 
 	build : function(chart, data) {
 		var _chart = null;
-
 
 		// OK. Area charts really want data points to match up on keys, which
 		// makes sense as this is how they stack things. To make this work we
