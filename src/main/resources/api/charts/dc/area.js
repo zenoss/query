@@ -1,83 +1,169 @@
 zenoss.visualization.chart.dc = {
 	area : {
+
 		required : {
 			defined : 'dc',
 			source : [ 'crossfilter.min.js', 'dc.min.js', 'css/dc.css' ]
 		},
 
-		color : function(chart, impl, idx) {
+		Chart : function() {
+			var _compositeChart = null;
+			var _datasets = [];
+
+			this.compositeChart = function(_) {
+				if (!arguments.length) {
+					return _compositeChart;
+				}
+				_compositeChart = _;
+			}
+
+			this.add = function(ds) {
+				_datasets.push(ds);
+			}
+
+			this.dataset = function(n) {
+				return _datasets[n];
+			}
+
+			this.compose = function() {
+				var subs = [];
+				this.forEach(function(ds) {
+					subs.push(ds.lineChart());
+				});
+
+				_compositeChart.compose(subs);
+			}
+
+			this.forEach = function(f) {
+				_datasets.forEach(function(ds) {
+					f(ds);
+				});
+			}
+		},
+
+		DataSet : function(plot) {
+			var _plot = null;
+			var _crossfilter = null;
+			var _dimension = null;
+			var _group = null;
+			var _lineChart = null;
+
+			this.crossfilter = function(_) {
+				if (!arguments.length) {
+					return _crossfilter;
+				}
+
+				_crossfilter = crossfilter(_);
+				_dimension = _crossfilter.dimension(function(d) {
+					return d.x;
+				});
+
+				// Remove the old group
+				if (_group != null) {
+					_group.remove();
+				}
+				_group = zenoss.visualization.__reduceMax(_dimension.group());
+			}
+
+			this.plot = function(_) {
+				if (!arguments.length) {
+					return _plot;
+				}
+				_plot = _;
+				this.crossfilter(_plot.values);
+			}
+
+			this.lineChart = function(_) {
+				if (!arguments.length) {
+					return _lineChart;
+				}
+				_lineChart = _;
+			}
+
+			this.dimension = function() {
+				return _dimension;
+			}
+
+			this.group = function() {
+				return _group;
+			}
+
+			this.plot(plot);
+		},
+
+		color : function(chart, closure, idx) {
 			return {
 				'color' : d3.scale.category10().range()[idx],
 				'opacity' : 1
 			}
 		},
 
-		build : function(chart) {
+		update : function(chart, data) {
+			var _chart = chart.closure;
 
-			var _chart = null;
-			var _groups = [];
-			var _ndx = [];
-			var _dims = [];
+			// Update the svg data
+			chart.svg.datum(chart.plots);
+
+			// Replace the plot data on each of the charts with the new data
+			for ( var i = 0; i < chart.plots.length; ++i) {
+				var ds = _chart.dataset(i);
+				ds.plot(chart.plots[i]);
+				ds.lineChart().group(ds.group());
+			}
+			
+			// Update the primary dimension and group
+			var cc = _chart.compositeChart();
+			cc.dimension(_chart.dataset(0).dimension());
+			cc.group(_chart.dataset(0).group());
+
+			dc.renderAll('zenoss');
+		},
+
+		build : function(chart) {
+			var _chart = new zenoss.visualization.chart.dc.area.Chart();
 
 			chart.plots.forEach(function(plot) {
-				plot.values.forEach(function(e) {
-					e.dtimestamp = new Date(e.x);
-				})
-				_ndx.push(crossfilter(plot.values));
-				_dims.push(_ndx[_ndx.length - 1].dimension(function(d) {
-					return d3.time.second(d.dtimestamp);
-				}));
-
-				_groups.push(zenoss.visualization
-						.__reduceMax(_dims[_dims.length - 1].group()));
+				_chart
+						.add(new zenoss.visualization.chart.dc.area.DataSet(
+								plot));
 			});
 
-			_chart = dc.compositeChart(chart.containerSelector, "zenoss");
-			_chart.renderHorizontalGridLines(true);
-			_chart.renderVerticalGridLines(true);
-			var subs = [];
-			for ( var i = 0; i < _groups.length; ++i) {
-				var c = dc
-						.lineChart(_chart, "zenoss")
-						.transitionDuration(500)
-						.elasticY(true)
-						.elasticX(true)
-						.x(
-								d3.time
-										.scale()
-										.domain(
-												[
-														new Date(
-																chart.plots[i].values[0].x),
-														new Date(
-																chart.plots[i].values[chart.plots[i].values.length - 1].x) ]))
-						.round(d3.time.second.round).dimension(_dims[i]).group(
-								_groups[i]).xUnits(d3.time.second)
-						.renderHorizontalGridLines(false)
-						.renderVerticalGridLines(false).renderArea(true).width(
-								$(chart.svgwrapper).width()).height(
-								$(chart.svgwrapper).height()).brushOn(false)
-						.title(function(d) {
-							return d.value + ' at ' + d.key;
-						}).renderTitle(true).dotRadius(10);
-				subs.push(c);
-			}
-			_chart.compose(subs);
+			var cc = dc.compositeChart(chart.containerSelector, "zenoss");
+			_chart.compositeChart(cc);
 
-			var l = chart.plots[0].values.length;
-			chart.svg.datum(chart.plots);
-			_chart.dimension(_dims[0]);
-			_chart.group(_groups[0]);
-			_chart.width($(chart.svgwrapper).width());
-			_chart.height($(chart.svgwrapper).height());
-			_chart.transitionDuration(500);
-			_chart.elasticY(true);
-			_chart.elasticX(true);
-			_chart.brushOn(false);
+			_chart.forEach(function(ds) {
+				var lc = dc.lineChart(_chart.compositeChart(), 'zenoss');
+				lc.group(ds.group());
+				lc.renderArea(true);
+				lc.title(function(d) {
+					return d.value + ' at ' + new Date(d.key).toLocaleString();
+				});
+				lc.renderTitle(true);
+				lc.dotRadius(10);
+				ds.lineChart(lc);
+			});
+			_chart.compose();
+			cc.renderHorizontalGridLines(true);
+			cc.renderVerticalGridLines(true);
+			cc.dimension(_chart.dataset(0).dimension());
+			cc.group(_chart.dataset(0).group());
+			cc.width($(chart.svgwrapper).width());
+			cc.height($(chart.svgwrapper).height());
+			cc.transitionDuration(500);
+			cc.round(d3.time.second);
+			cc.xUnits(d3.time.second);
+			cc.elasticY(true);
+			cc.elasticX(true);
+			cc.brushOn(false);
+			cc
+					.x(d3.time
+							.scale()
+							.domain(
+									[
+											new Date(chart.plots[0].values[0].x),
+											new Date(
+													chart.plots[0].values[chart.plots[0].values.length - 1].x) ]));
 
-			_chart.x(d3.time.scale().domain(
-					[ new Date(chart.plots[0].values[0].x),
-							new Date(chart.plots[0].values[l - 1].x) ]));
 			return _chart;
 		},
 

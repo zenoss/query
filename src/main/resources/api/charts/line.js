@@ -3,30 +3,59 @@ zenoss.visualization.chart.line = {
 		defined : 'nv',
 		source : [ 'nv.d3.min.js', 'css/nv.d3.css' ]
 	},
-	
+
+	Chart : function() {
+		var _model = null;
+
+		this.model = function(_) {
+			if (!arguments.length) {
+				return _model;
+			}
+			_model = _;
+		}
+	},
+
 	color : function(chart, impl, idx) {
 		return {
-			'color' : impl.color()(0, idx),
+			'color' : impl.model().color()(0, idx),
 			'opacity' : 1,
 		}
 	},
 
-	build : function(chart, data) {
-		var _chart = nv.models.lineChart();
+	update : function(chart, data) {
+		var _chart = chart.closure;
+
 		var _start = new Date(data.startTimeActual);
 		var _end = new Date(data.endTimeActual);
-		_chart.xAxis.tickFormat(function(ts) {
+		_chart.model().xAxis.tickFormat(function(ts) {
 			return zenoss.visualization.tickFormat(_start, _end, ts);
 		});
-		_chart.height($(chart.svgwrapper).height());
-		_chart.width($(chart.svgwrapper).width());
+
+		chart.svg.datum(chart.plots).transition().duration(0).call(
+				_chart.model());
+	},
+
+	build : function(chart, data) {
+		var _chart = new zenoss.visualization.chart.line.Chart();
+		var model = nv.models.lineChart();
+		_chart.model(model);
+
+		var _start = new Date(data.startTimeActual);
+		var _end = new Date(data.endTimeActual);
+		model.xAxis.tickFormat(function(ts) {
+			return zenoss.visualization.tickFormat(_start, _end, ts);
+		});
+		model.height($(chart.svgwrapper).height());
+		model.width($(chart.svgwrapper).width());
+		chart.svg.datum(chart.plots);
 
 		nv.addGraph(function() {
-			chart.svg.datum(chart.plots).transition().duration(0).call(_chart);
+			chart.svg.transition().duration(0).call(model);
 			nv.utils.windowResize(function() {
-				chart.svg.call(_chart)
+				chart.svg.call(model)
 			});
 		});
+
 		return _chart;
 	},
 
