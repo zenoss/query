@@ -1,0 +1,328 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<title>Sample Zenoss Charts - Non-Optimized Data Queries</title>
+<script type="text/javascript"
+	src="http://localhost:8888/api/visualization.js"></script>
+<!--
+  -- This can be useful to have around if you just want to debug some of the
+  -- div layouts without having to deal with the graph information
+
+<script type="text/javascript"
+  	src="http://localhost:8888/api/jquery.min.js"></script>
+<script type="text/javascript"
+  	src="http://localhost:8888/api/d3.v3.js"></script>
+<script type="text/javascript"
+  	src="http://localhost:8888/api/jstz-1.0.4.min.js"></script>
+<script type="text/javascript"
+  	src="http://localhost:8888/api/crossfilter.min.js"></script>
+<script type="text/javascript"
+  	src="http://localhost:8888/api/charts/area.js"></script>
+<script type="text/javascript"
+  	src="http://localhost:8888/api/nv.d3.js"></script>
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+
+-->
+<style type="text/css">
+.left {
+	float: left;
+	clear: none;
+}
+
+.right {
+	float: right;
+	clear: none;
+}
+
+.centered {
+	clear: both;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.default {
+	height: 300px;
+	width: 400px;
+}
+
+.large {
+	height: 400px;
+	width: 500px;
+}
+
+.huge {
+	height: 650px;
+	width: 1000px;
+}
+
+.tinted {
+	background-color: #f0f0f0;
+}
+
+.bordered {
+	border-style: solid;
+	border-width: 2px;
+	border-color: green;
+}
+
+.chart {
+	height: calc(100% -                               22px -                      
+		50px);
+	width: inherit;
+}
+
+.title {
+	font-size: 18pt;
+	text-align: center;
+	margin-bottom: 50px;
+}
+
+.label {
+	font-size: 14pt;
+	font-style: italic;
+	text-align: center;
+	margin-bottom: 50px;
+	width: auto;
+	margin-right: auto;
+	margin-left: auto;
+	background-color: #f5f5f5;
+}
+</style>
+</head>
+<body>
+	<div class="tinted centered title">
+		<span>Sample Zenoss Charts - Non-Optimized Data Queries</span>
+	</div>
+	<!-- -->
+	<div class="huge centered">
+		<div id="chart1" class="chart"></div>
+		<div class="label centered">
+			<span>NVD3 Line Chart with Domain Selector</span>
+		</div>
+	</div>
+	<!-- -->
+	<!-- -->
+	<div class="default left">
+		<div id="chart2" class="chart tinted bordered"></div>
+		<div class="label centered">
+			<span>NVDS Pie Chart</span>
+		</div>
+	</div>
+	<!-- -->
+	<!-- -->
+	<div class="default right">
+		<div id="chart3" class="chart"></div>
+		<div class="label centered">
+			<span>DCJ2 Area Chart</span>
+		</div>
+	</div>
+	<!-- -->
+	<!-- -->
+	<div class="large centered">
+		<div id="chart4" class="chart bordered"></div>
+		<div class="label centered">
+			<span>NVD3 Line Chart</span>
+		</div>
+	</div>
+	<!-- -->
+	<!-- -->
+	<div class="large centered">
+		<div id="chart5" class="chart bordered"></div>
+		<div class="label centered">
+			<span>NVD3 Line Chart - Reduced Time Range</span>
+		</div>
+	</div>
+	<!-- -->
+	<!-- -->
+	<div class="huge centered">
+		<div id="chart6" class="chart"></div>
+		<div class="label centered">
+			<span>NVD3 Bar Chart</span>
+		</div>
+	</div>
+	<!-- -->
+	<!-- -->
+	<div class="huge centered">
+		<div id="chart7" class="chart"></div>
+		<div class="label centered">
+			<span>NVD3 Stacked Area Chart</span>
+		</div>
+	</div>
+	<!-- -->
+	<!-- -->
+	<div class="huge centered">
+		<div id="chart8" class="chart"></div>
+		<div class="label centered">
+			<span>NVD3 Discrete Bar Chart</span>
+		</div>
+	</div>
+	<!-- -->
+	<!-- -->
+	<div class="large left">
+		<div id="chart9" class="chart bordered tinted"></div>
+		<div class="label centered">
+			<span>DCJS Stacked Area Chart</span>
+		</div>
+	</div>
+	<!-- -->
+	<!-- -->
+	<div class="large right">
+		<div id="chart10" class="chart bordered tinted"></div>
+		<div class="label centered">
+			<span>Default Stacked Area Chart</span>
+		</div>
+	</div>
+	<!-- -->
+	<!-- -->
+</body>
+
+<script type="text/javascript">
+	zenoss.visualization.url = "http://localhost:8888";
+	zenoss.visualization.debug = false;
+
+	/**/
+	zenoss.visualization.chart.create("chart1", {
+		"type" : "focus",
+		"series" : true,
+		"footer" : false,
+		"range" : {
+			"start" : "1h-ago",
+			"end" : "now"
+		},
+		"datapoints" : [ {
+			"type" : "line",
+			"metric" : "laLoadInt1",
+		}, {
+			"type" : "line",
+			"metric" : "laLoadInt5",
+			"aggregator" : "sum",
+			"downsample" : "5m-avg"
+		}, {
+			"type" : "line",
+			"metric" : "laLoadInt15",
+		} ]
+	});
+	/**/
+	/**/
+	zenoss.visualization.chart.create("chart2", {
+		"type" : "pie",
+		"series" : true,
+		"range" : {
+			"start" : "1h-ago",
+			"end" : "now"
+		},
+		"datapoints" : [ {
+			"metric" : "laLoadInt1",
+			"rate" : false,
+			"tags" : {
+				"device_class" : "*"
+			}
+		}, {
+			"metric" : "laLoadInt5",
+			"rate" : false,
+		}, , {
+			"metric" : "laLoadInt15",
+			"rate" : false,
+		} ]
+	});
+	/**/
+	/**/
+	zenoss.visualization.chart.create("chart3", {
+		"height" : "200px",
+		"series" : false,
+		"type" : "dc.area",
+		"range" : {
+			"start" : "1h-ago",
+			"end" : "now"
+		},
+		"datapoints" : [ {
+			"metric" : "laLoadInt5",
+			"rate" : false,
+		}, {
+			"metric" : "laLoadInt1",
+			"rate" : false,
+		}, {
+			"metric" : "laLoadInt15",
+			"rate" : false,
+		} ]
+	});
+	/**/
+	/**/
+	zenoss.visualization.chart.create("chart4", "mychart");
+
+	zenoss.visualization.chart.create("chart5", "mychart", {
+		"range" : {
+			"start" : "15m-ago"
+		}
+	});
+	/**/
+	/**/
+	zenoss.visualization.chart.create("chart6", {
+		"type" : "bar",
+		"datapoints" : [ {
+			"metric" : "laLoadInt1",
+			"downsample" : "30m-avg"
+		}, {
+			"metric" : "laLoadInt5",
+			"downsample" : "30m-avg"
+		} ]
+	});
+	/**/
+	/**/
+	zenoss.visualization.chart.create("chart7", {
+		"type" : "area",
+		"datapoints" : [ {
+			"metric" : "laLoadInt1",
+			"downsample" : "30m-avg"
+		}, {
+			"metric" : "laLoadInt5",
+			"downsample" : "30m-avg"
+		} ]
+	});
+	/**/
+	/**/
+	zenoss.visualization.chart.create("chart8", {
+		"type" : "discretebar",
+		"series" : true,
+		"datapoints" : [ {
+			"metric" : "laLoadInt1",
+			"downsample" : "30m-avg",
+			"tags" : {
+				"device_class" : "*"
+			}
+		}, {
+			"metric" : "laLoadInt5",
+			"downsample" : "30m-avg",
+			"tags" : {
+				"device_class" : "*"
+			}
+		} ]
+	});
+	/**/
+	/**/
+	zenoss.visualization.chart.create("chart9", {
+		"type" : "dc.stacked",
+		"datapoints" : [ {
+			"metric" : "laLoadInt1"
+		}, {
+			"metric" : "laLoadInt5"
+		}, {
+			"metric" : "laLoadInt15"
+		} ]
+	});
+	/**/
+	/**/
+	zenoss.visualization.chart.create("chart10", {
+		"type" : "area",
+		"datapoints" : [ {
+			"metric" : "laLoadInt1"
+		}, {
+			"metric" : "laLoadInt5"
+		}, {
+			"metric" : "laLoadInt15"
+		} ]
+	});
+	/**/
+</script>
+</html>

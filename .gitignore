@@ -2,3 +2,5 @@
 .project
 .settings
 .externalToolBuilders
+maven-eclipse.xml
+target
