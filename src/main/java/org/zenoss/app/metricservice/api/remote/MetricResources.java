@@ -55,7 +55,7 @@ import com.yammer.metrics.annotation.Timed;
  * @author David Bainbridge <dbainbridge@zenoss.com>
  * 
  */
-@Resource
+@Resource(name="query")
 @Path("query")
 @Produces(MediaType.APPLICATION_JSON)
 public class MetricResources {
