@@ -206,7 +206,6 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
             return new WebApplicationException(Response.status(code).build());
         } catch (Throwable t) {
-            t.printStackTrace();
             log.error(
                     "Unexpected error while attempting to parse response from OpenTSDB: {} : {}",
                     t.getClass().getName(), t.getMessage());

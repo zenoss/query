@@ -35,6 +35,8 @@ import java.util.List;
 
 import javax.ws.rs.WebApplicationException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zenoss.app.metricservice.api.model.Chart;
 
 import redis.clients.jedis.Jedis;
@@ -44,6 +46,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 
 public class RedisResourcePersistence implements ResourcePersistenceAPI {
+    private static final Logger log = LoggerFactory
+            .getLogger(RedisResourcePersistence.class);
 
     private Jedis jedis = null;
     private String idHashName = null;
@@ -124,12 +128,13 @@ public class RedisResourcePersistence implements ResourcePersistenceAPI {
     @Override
     public String getResourceByName(String name) {
         // No good way to deal with this in redis
-        System.err.println("JEDIS JVALS " + idHashName);
         List<String> charts = null;
         try {
             charts = new ArrayList<String>(jedis.hvals(idHashName));
         } catch (Throwable t) {
-            t.printStackTrace();
+            log.error(
+                    "Unexpected error while attempting to fetch names from persistence: {} : {}",
+                    t.getClass().getName(), t.getMessage());
         }
 
         // Walk the list of charts and if we find one with the attribute
@@ -138,15 +143,9 @@ public class RedisResourcePersistence implements ResourcePersistenceAPI {
         ObjectReader reader = om.reader(Chart.class);
         Chart chart = null;
 
-        System.err.println("CONTENT:");
-        for (String c : charts) {
-            System.err.println("    " + c);
-        }
-
         for (String content : charts) {
             try {
                 chart = reader.readValue(content);
-                System.err.println("CONVERTED: " + chart);
                 if (name.equals(chart.getName())) {
                     return content;
                 }

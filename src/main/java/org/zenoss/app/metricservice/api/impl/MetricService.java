@@ -129,9 +129,11 @@ public class MetricService implements MetricServiceAPI {
                 Boolean series, String downsample, Map<String, String> tags,
                 List<MetricSpecification> queries) {
             if (queries == null) {
-                RuntimeException t = new RuntimeException("WHAT???");
-                t.printStackTrace();
-
+                // This really should never happen as the query check should
+                // happen in our calling routine, but just in case.
+                log.error("Attempt to create query worker without any queries specified");
+                IllegalArgumentException t = new IllegalArgumentException(
+                        "No queries specified");
                 throw t;
             }
             this.id = id;
