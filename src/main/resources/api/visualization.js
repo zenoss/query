@@ -6,11 +6,11 @@
 /**
  * @namespace
  */
-var zenoss = {
+var zenoss = new function() {
 	/**
 	 * @namespace
 	 */
-	visualization : {
+	this.visualization = {
 		/**
 		 * Used to enable (true) or disable (false) debug output to the browser
 		 * console
@@ -472,7 +472,7 @@ var zenoss = {
 			zenoss.visualization.__bootstrap(callback);
 		}
 	}
-}
+}();
 
 if (typeof String.prototype.endsWith !== 'function') {
 	String.prototype.endsWith = function(suffix) {
