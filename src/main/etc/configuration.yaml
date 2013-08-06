@@ -15,6 +15,7 @@ charts:
 http:
   connectorType: nonblocking
   port: 8888
+  adminPort: 58888
   ssl:
       #Example is using a java keystore in the target directory.
       keyStore: ${ssl.cert.dir}/ssl.pfx
