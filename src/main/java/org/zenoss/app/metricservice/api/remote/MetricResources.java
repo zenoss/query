@@ -55,7 +55,7 @@ import com.yammer.metrics.annotation.Timed;
  * @author David Bainbridge <dbainbridge@zenoss.com>
  * 
  */
-@Resource(name="query")
+@Resource(name = "query")
 @Path("query")
 @Produces(MediaType.APPLICATION_JSON)
 public class MetricResources {
@@ -84,18 +84,17 @@ public class MetricResources {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response query2(PerformanceQuery query) {
         Optional<String> id = Optional.<String> absent();
-        Optional<String> start = query.getStart() != null ? Optional.of(query
-                .getStart()) : Optional.<String> absent();
-        Optional<String> end = query.getEnd() != null ? Optional.of(query
-                .getEnd()) : Optional.<String> absent();
-        Optional<Boolean> exact = query.getExactTimeWindow() == null ? Optional
-                .<Boolean> absent() : Optional.of(query.getExactTimeWindow());
-        Optional<Boolean> series = (query.getSeries() == null ? Optional
-                .<Boolean> absent() : Optional.of(query.getSeries()));
-        Optional<String> downsample = query.getDownsample() == null ? Optional
-                .<String> absent() : Optional.of(query.getDownsample());
-        Optional<Map<String, String>> tags = query.getTags() == null ? Optional
-                .<Map<String, String>> absent() : Optional.of(query.getTags());
+        Optional<String> start = Optional.<String> fromNullable(query
+                .getStart());
+        Optional<String> end = Optional.<String> fromNullable(query.getEnd());
+        Optional<Boolean> exact = Optional.<Boolean> fromNullable(query
+                .getExactTimeWindow());
+        Optional<Boolean> series = Optional.<Boolean> fromNullable(query
+                .getSeries());
+        Optional<String> downsample = Optional.<String> fromNullable(query
+                .getDownsample());
+        Optional<Map<String, String>> tags = Optional
+                .<Map<String, String>> fromNullable(query.getTags());
 
         return api.query(id, start, end, exact, series, downsample, tags,
                 query.getMetrics());

@@ -72,6 +72,70 @@ var zenoss = new function() {
 			return d3.time.format('%x %X')(new Date(ts));
 		},
 
+		__group : function() {
+			if (typeof console != 'undefined') {
+				if (typeof console.group != 'undefined') {
+					console.group.apply(console, arguments);
+				} else if (typeof console.log != 'undefined') {
+					console.log.apply(console, arguments);
+				}
+				// Oh well
+			}
+		},
+
+		__groupCollapsed : function() {
+			if (typeof console != 'undefined') {
+				if (typeof console.groupCollapsed != 'undefined') {
+					console.groupCollapsed.apply(console, arguments);
+				} else if (typeof console.log != 'undefined') {
+					console.log.apply(console, arguments);
+				}
+				// Oh well
+			}
+		},
+
+		__groupEnd : function() {
+			if (typeof console != 'undefined') {
+				if (typeof console.groupEnd != 'undefined') {
+					console.groupEnd.apply(console, arguments);
+				} else if (typeof console.log != 'undefined') {
+					console.log.apply(console, [ "END" ]);
+				}
+				// Oh well
+			}
+		},
+
+		__error : function() {
+			if (typeof console != 'undefined') {
+				if (typeof console.error != 'undefined') {
+					console.error.apply(console, arguments);
+				} else if (typeof console.log != 'undefined') {
+					console.log.apply(console, arguments);
+				}
+				// If neither of those exists, oh well ....
+			}
+		},
+
+		__warn : function() {
+			if (typeof console != 'undefined') {
+				if (typeof console.warn != 'undefined') {
+					console.warn.apply(console, arguments);
+				} else if (typeof console.log != 'undefined') {
+					console.log.apply(console, arguments);
+				}
+				// If neither of those exists, oh well ....
+			}
+		},
+
+		__log : function() {
+			if (typeof console != 'undefined') {
+				if (typeof console.log != 'undefined') {
+					console.log.apply(console, arguments);
+				}
+				// Oh well
+			}
+		},
+
 		/**
 		 * Culls the plots in a chart so that only data points with a common
 		 * time stamp remain.
@@ -166,6 +230,14 @@ var zenoss = new function() {
 			$('#' + name).html('<span class="zenerror">' + detail + '</span>');
 		},
 
+		Error : function(name, message) {
+			this.name = name;
+			this.message = message;
+			this.toString = function() {
+				return this.name + ' : ' + this.message;
+			}
+		},
+
 		/**
 		 * This class should not be instantiated directly unless the caller
 		 * really understand what is going on behind the scenes as there is a
@@ -192,6 +264,10 @@ var zenoss = new function() {
 			this.name = name;
 			this.config = config;
 			this.div = $('#' + this.name);
+			if (typeof this.div[0] == 'undefined') {
+				throw new zenoss.visualization.Error('SelectorError',
+						'unknown selector specified, "' + this.name + '"');
+			}
 
 			this.svgwrapper = document.createElement('div');
 			$(this.svgwrapper).addClass('zenchart');
@@ -211,18 +287,19 @@ var zenoss = new function() {
 			this.request = this.__buildDataRequest(this.config);
 
 			if (zenoss.visualization.debug) {
-				console.groupCollapsed('POST Request Object');
-				console.log(zenoss.visualization.url + '/query/performance')
-				console.log(this.request);
-				console.groupEnd();
+				zenoss.visualization.__groupCollapsed('POST Request Object');
+				zenoss.visualization.__log(zenoss.visualization.url
+						+ '/query/performance');
+				zenoss.visualization.__log(this.request);
+				zenoss.visualization.__groupEnd();
 			}
 
 			// Sanity Check. If the request contained no metrics to query then
 			// log this information as a warning, as it really does not make
 			// sense.
 			if (typeof this.request.metrics == 'undefined') {
-				console
-						.warn('Chart configuration contains no metric sepcifications. No data will be displayed.');
+				zenoss.visualization
+						.__warn('Chart configuration contains no metric sepcifications. No data will be displayed.');
 			} else {
 				$
 						.ajax({
@@ -256,14 +333,14 @@ var zenoss = new function() {
 								if (res.readyState == 4
 										&& Math.floor(res.status / 100) == 2) {
 									var detail = 'Severe: Unable to parse data returned from Zenoss metric service as JSON object. Please copy / paste the REQUEST and RESPONSE written to your browser\'s Java Console into an email to Zenoss Support';
-									console
-											.group('Severe error, please report');
-									console
-											.error('REQUEST : POST /query/performance: '
+									zenoss.visualization
+											.__group('Severe error, please report');
+									zenoss.visualization
+											.__error('REQUEST : POST /query/performance: '
 													+ JSON.stringify(request));
-									console.error('RESPONSE: '
+									zenoss.visualization.__error('RESPONSE: '
 											+ res.responseText);
-									console.groupEnd();
+									zenoss.visualization.__groupEnd();
 									zenoss.visualization.__showError(self.name,
 											{}, detail);
 								} else {
@@ -273,7 +350,7 @@ var zenoss = new function() {
 												+ err.errorSource
 												+ ' : '
 												+ err.errorMessage;
-										console.error(detail);
+										zenoss.visualization.__error(detail);
 										zenoss.visualization.__showError(
 												self.name, err, detail);
 									} catch (e) {
@@ -281,7 +358,7 @@ var zenoss = new function() {
 												+ res.statusText
 												+ ' : '
 												+ res.status;
-										console.error(detail);
+										zenoss.visualization.__error(detail);
 										zenoss.visualization.__showError(
 												self.name, err, detail);
 									}
@@ -310,8 +387,9 @@ var zenoss = new function() {
 			update : function(name, changes) {
 				var found = zenoss.visualization.__charts[name];
 				if (typeof found == 'undefined') {
-					console.warn('Attempt to modify (range) a chart, "' + name
-							+ '", that does not exist.');
+					zenoss.visualization
+							.__warn('Attempt to modify (range) a chart, "'
+									+ name + '", that does not exist.');
 					return;
 				}
 				found.update(changes);
@@ -352,7 +430,7 @@ var zenoss = new function() {
 
 				function loadChart(name, callback, onerror) {
 					if (zenoss.visualization.debug) {
-						console.log('Loading chart from: '
+						zenoss.visualization.__log('Loading chart from: '
 								+ zenoss.visualization.url + '/chart/name/'
 								+ name)
 					}
@@ -367,7 +445,8 @@ var zenoss = new function() {
 									callback(data);
 								},
 								'error' : function(response) {
-									console.error(response.responseText);
+									zenoss.visualization
+											.__error(response.responseText);
 									var err = JSON.parse(response.responseText);
 									var detail = 'Error while attempting to fetch chart resource with the name "'
 											+ name
@@ -701,11 +780,14 @@ zenoss.visualization.Chart.prototype.update = function(changeset) {
 					if (res.readyState == 4
 							&& Math.floor(res.status / 100) == 2) {
 						var detail = 'Severe: Unable to parse data returned from Zenoss metric service as JSON object. Please copy / paste the REQUEST and RESPONSE written to your browser\'s Java Console into an email to Zenoss Support';
-						console.group('Severe error, please report');
-						console.error('REQUEST : POST /query/performance: '
-								+ JSON.stringify(request));
-						console.error('RESPONSE: ' + res.responseText);
-						console.groupEnd();
+						zenoss.visualization
+								.__group('Severe error, please report');
+						zenoss.visualization
+								.__error('REQUEST : POST /query/performance: '
+										+ JSON.stringify(request));
+						zenoss.visualization.__error('RESPONSE: '
+								+ res.responseText);
+						zenoss.visualization.__groupEnd();
 						zenoss.visualization.__showError(self.name, {}, detail);
 					} else {
 						try {
@@ -714,13 +796,13 @@ zenoss.visualization.Chart.prototype.update = function(changeset) {
 									+ err.errorSource
 									+ ' : '
 									+ err.errorMessage;
-							console.error(detail);
+							zenoss.visualization.__error(detail);
 							zenoss.visualization.__showError(self.name, err,
 									detail);
 						} catch (e) {
 							var detail = 'An unexpected failure response was received from the server. The reported message is: '
 									+ res.statusText + ' : ' + res.status;
-							console.error(detail);
+							zenoss.visualization.__error(detail);
 							zenoss.visualization.__showError(self.name, err,
 									detail);
 						}
@@ -935,26 +1017,26 @@ zenoss.visualization.Chart.prototype.__processResult = function(request, data) {
  */
 zenoss.visualization.__merge = function(base, extend) {
 	if (zenoss.visualization.debug) {
-		console.groupCollapsed('Object Merge');
-		console.group('SOURCES');
-		console.log(base);
-		console.log(extend);
-		console.groupEnd();
+		zenoss.visualization.__groupCollapsed('Object Merge');
+		zenoss.visualization.__group('SOURCES');
+		zenoss.visualization.__log(base);
+		zenoss.visualization.__log(extend);
+		zenoss.visualization.__groupEnd();
 	}
 
 	if (typeof base == 'undefined' || base == null) {
 		var m = $.extend(true, {}, extend);
 		if (zenoss.visualization.debug) {
-			console.log(m);
-			console.groupEnd();
+			zenoss.visualization.__log(m);
+			zenoss.visualization.__groupEnd();
 		}
 		return m;
 	}
 	if (typeof extend == 'undefined' || extend == null) {
 		var m = $.extend(true, {}, base);
 		if (zenoss.visualization.debug) {
-			console.log(m);
-			console.groupEnd();
+			zenoss.visualization.__log(m);
+			zenoss.visualization.__groupEnd();
 		}
 		return m;
 	}
@@ -981,8 +1063,8 @@ zenoss.visualization.__merge = function(base, extend) {
 	}
 
 	if (zenoss.visualization.debug) {
-		console.log(m);
-		console.groupEnd();
+		zenoss.visualization.__log(m);
+		zenoss.visualization.__groupEnd();
 	}
 	return m;
 }
@@ -1011,16 +1093,15 @@ zenoss.visualization.__loadDependencies = function(required, callback) {
 	// Check if it is already loaded, using the value in the 'defined' field
 	var o;
 	try {
-		o = eval('zenoss.visualization.__dependencies.' + required.defined
-				+ '.state');
+		o = zenoss.visualization.__dependencies[required.defined].state;
 	} catch (e) {
 		// noop
 	}
 	if (typeof o != 'undefined') {
 		if (o == 'loaded') {
 			if (zenoss.visualization.debug) {
-				console.log('Dependencies for "' + required.defined
-						+ '" already loaded, continuing.');
+				zenoss.visualization.__log('Dependencies for "'
+						+ required.defined + '" already loaded, continuing.');
 			}
 			// Already loaded, so just invoke the callback
 			callback();
@@ -1028,22 +1109,21 @@ zenoss.visualization.__loadDependencies = function(required, callback) {
 			// It is in the process of being loaded, so add our callback to the
 			// list of callbacks to call when it is loaded.
 			if (zenoss.visualization.debug) {
-				console
-						.log('Dependencies for "'
+				zenoss.visualization
+						.__log('Dependencies for "'
 								+ required.defined
 								+ '" in process of being loaded, queuing until loaded.');
 			}
 
-			var c = eval('zenoss.visualization.__dependencies.'
-					+ required.defined + '.callbacks');
+			var c = zenoss.visualization.__dependencies[required.defined].callbacks;
 			c.push(callback);
 		}
 		return;
 	} else {
 		// OK, not yet loaded or being loaded, so it is ours.
 		if (zenoss.visualization.debug) {
-			console
-					.log('Dependencies for "'
+			zenoss.visualization
+					.__log('Dependencies for "'
 							+ required.defined
 							+ '" not loaded nor in process of loading, initiate loading.');
 		}
@@ -1065,7 +1145,7 @@ zenoss.visualization.__loadDependencies = function(required, callback) {
 		} else if (v.endsWith('.css')) {
 			css.push(v);
 		} else {
-			console.warn('Unknown required file type, "' + v
+			zenoss.visualization.__warn('Unknown required file type, "' + v
 					+ '" when loading dependencies for "' + 'unknown'
 					+ '". Ignored.')
 		}
@@ -1111,8 +1191,19 @@ zenoss.visualization.Chart.prototype.__render = function(data) {
 							self.__buildFooter(self.config, data);
 						}
 
-						self.impl = eval('zenoss.visualization.chart.'
-								+ self.config.type);
+						try {
+							var i = zenoss.visualization.chart;
+							self.config.type.split('\.').forEach(function(seg) {
+								i = i[seg];
+							});
+							self.impl = i;
+						} catch (err) {
+							throw new zenoss.visualization.Error(
+									'DependencyError',
+									'Unable to locate loaded chart type, "'
+											+ self.config.type + '", error: '
+											+ err);
+						}
 
 						// Check the impl to see if a dependency is listed and
 						// if so load that.
@@ -1234,14 +1325,15 @@ zenoss.visualization.__bootstrapScriptLoader = function(url, callback) {
  */
 zenoss.visualization.__load = function(js, css, success, fail) {
 	if (zenoss.visualization.debug) {
-		console.log('Request to load "' + js + '" and "' + css + '".');
+		zenoss.visualization.__log('Request to load "' + js + '" and "' + css
+				+ '".');
 	}
 	if (js.length == 0) {
 		// All JavaScript files are loaded, now the loading of CSS can begin
 		css.forEach(function(uri) {
 			zenoss.visualization.__loadCSS(uri);
 			if (zenoss.visualization.debug) {
-				console.log('Loaded dependency "' + uri + '".');
+				zenoss.visualization.__log('Loaded dependency "' + uri + '".');
 			}
 		});
 		if (typeof success == 'function') {
@@ -1265,14 +1357,14 @@ zenoss.visualization.__load = function(js, css, success, fail) {
 	}
 	loader(uri, function() {
 		if (zenoss.visualization.debug) {
-			console.log('Loaded dependency "' + uri + '".');
+			zenoss.visualization.__log('Loaded dependency "' + uri + '".');
 		}
 		self.__load(_js, _css, success, fail);
 	})
 			.fail(
 					function(jqxhr, settings, exception) {
-						console
-								.error('Unable to load dependency "'
+						zenoss.visualization
+								.__error('Unable to load dependency "'
 										+ uri
 										+ '", with error "'
 										+ exception

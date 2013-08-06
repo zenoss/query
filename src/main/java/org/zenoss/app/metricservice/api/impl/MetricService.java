@@ -341,16 +341,16 @@ public class MetricService implements MetricServiceAPI {
             if (serverTimeZone == null) {
                 try {
                     serverTimeZone = api.getServerTimeZone();
-                } catch (Throwable t) {
+                } catch (Exception e) {
                     log.error(
                             "Unable to determine timezone of the performance metric server: {} : {}",
-                            t.getClass().getName(), t.getMessage());
+                            e.getClass().getName(), e.getMessage());
                     throw new WebApplicationException(
                             Utils.getErrorResponse(
                                     id,
                                     500,
                                     String.format("Unable to determine timezone of the performance metric server"),
-                                    t.getMessage()));
+                                    e.getMessage()));
                 }
             }
 
@@ -373,15 +373,15 @@ public class MetricService implements MetricServiceAPI {
                         tags, queries);
             } catch (WebApplicationException wae) {
                 throw wae;
-            } catch (Throwable t) {
-                log.error("Failed to connect to metric data source: {} : {}", t
-                        .getClass().getName(), t.getMessage());
+            } catch (Exception e) {
+                log.error("Failed to connect to metric data source: {} : {}", e
+                        .getClass().getName(), e.getMessage());
                 throw new WebApplicationException(
                         Utils.getErrorResponse(
                                 id,
                                 500,
                                 String.format("Unable to connect to performance metric data source"),
-                                t.getMessage()));
+                                e.getMessage()));
 
             }
 
@@ -410,11 +410,11 @@ public class MetricService implements MetricServiceAPI {
 
                 writer.arrayE().objectE(); // end the whole thing
                 writer.flush();
-            } catch (Throwable t) {
+            } catch (Exception e) {
                 log.error(
                         "Server error while processing metric source {} : {}:{}",
-                        api.getSourceId(), t.getClass().getName(),
-                        t.getMessage());
+                        api.getSourceId(), e.getClass().getName(),
+                        e.getMessage());
                 throw new WebApplicationException(Response.status(500).build());
             } finally {
                 if (reader != null) {
@@ -451,10 +451,10 @@ public class MetricService implements MetricServiceAPI {
                                     .or(config.getMetricServiceConfig()
                                             .getDefaultSeries()), downsample
                                     .orNull(), tags.orNull(), queries)).build();
-        } catch (Throwable t) {
+        } catch (Exception e) {
             log.error(String.format(
-                    "Error While attempting to query data soruce: %s : %s", t
-                            .getClass().getName(), t.getMessage()));
+                    "Error While attempting to query data soruce: %s : %s", e
+                            .getClass().getName(), e.getMessage()));
             return Response.status(500).build();
         }
     }

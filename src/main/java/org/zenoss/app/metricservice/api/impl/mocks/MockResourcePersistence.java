@@ -95,7 +95,7 @@ public class MockResourcePersistence implements ResourcePersistenceAPI {
                 if (name.equals(chart.getName())) {
                     return content;
                 }
-            } catch (Throwable t) {
+            } catch (Exception e) {
                 throw new WebApplicationException(Utils.getErrorResponse(null,
                         500, "unable to read chart from persistence",
                         "persistence"));

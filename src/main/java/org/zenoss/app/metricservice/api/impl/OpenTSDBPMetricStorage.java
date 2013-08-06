@@ -205,20 +205,20 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             }
 
             return new WebApplicationException(Response.status(code).build());
-        } catch (Throwable t) {
+        } catch (Exception e) {
             log.error(
                     "Unexpected error while attempting to parse response from OpenTSDB: {} : {}",
-                    t.getClass().getName(), t.getMessage());
+                    e.getClass().getName(), e.getMessage());
             try {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 JsonWriter writer = new JsonWriter(new OutputStreamWriter(baos));
                 writer.objectS();
-                writer.value(Utils.ERROR_MESSAGE, t.getMessage());
+                writer.value(Utils.ERROR_MESSAGE, e.getMessage());
                 writer.objectE();
                 writer.close();
                 return new WebApplicationException(Response.status(code)
                         .entity(baos.toString()).build());
-            } catch (Throwable i) {
+            } catch (Exception ee) {
                 return new WebApplicationException(code);
             }
         }

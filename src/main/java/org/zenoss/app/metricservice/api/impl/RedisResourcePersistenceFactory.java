@@ -82,10 +82,10 @@ public class RedisResourcePersistenceFactory implements
                                     config.getChartServiceConfig()
                                             .getRedisConnection()));
                         }
-                    } catch (Throwable t) {
+                    } catch (Exception e) {
                         log.error(String
                                 .format("Unable to connect to Redis for resource storage, %s : %s",
-                                        t.getClass().getName(), t.getMessage()));
+                                        e.getClass().getName(), e.getMessage()));
                         pool = null;
                     }
                 }

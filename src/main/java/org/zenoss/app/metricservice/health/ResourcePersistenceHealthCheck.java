@@ -66,9 +66,9 @@ public class ResourcePersistenceHealthCheck extends
             return Result.healthy();
         } catch (WebApplicationException wae) {
             return Result.unhealthy(wae);
-        } catch (Throwable t) {
-            return Result.unhealthy(String.format("%s : %s", t.getClass()
-                    .getName(), t.getMessage()));
+        } catch (Exception e) {
+            return Result.unhealthy(String.format("%s : %s", e.getClass()
+                    .getName(), e.getMessage()));
         } finally {
             persistenceFactory.returnInstance(api);
         }

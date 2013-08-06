@@ -80,14 +80,14 @@ public class RedisResourcePersistence implements ResourcePersistenceAPI {
             }
             try {
                 jedis.ping();
-            } catch (Throwable t) {
+            } catch (Exception e) {
                 try {
                     jedis.disconnect();
-                } catch (Throwable ignore) {
+                } catch (Exception ignore) {
                     // ignore
                 }
                 jedis = null;
-                throw t;
+                throw e;
             }
         }
     }
@@ -131,10 +131,10 @@ public class RedisResourcePersistence implements ResourcePersistenceAPI {
         List<String> charts = null;
         try {
             charts = new ArrayList<String>(jedis.hvals(idHashName));
-        } catch (Throwable t) {
+        } catch (Exception e) {
             log.error(
                     "Unexpected error while attempting to fetch names from persistence: {} : {}",
-                    t.getClass().getName(), t.getMessage());
+                    e.getClass().getName(), e.getMessage());
         }
 
         // Walk the list of charts and if we find one with the attribute
@@ -149,10 +149,10 @@ public class RedisResourcePersistence implements ResourcePersistenceAPI {
                 if (name.equals(chart.getName())) {
                     return content;
                 }
-            } catch (Throwable t) {
+            } catch (Exception e) {
                 throw new WebApplicationException(Utils.getErrorResponse(null,
-                        500, "unable to read chart from persistence", t
-                                .getClass().getName() + ":" + t.getMessage()));
+                        500, "unable to read chart from persistence", e
+                                .getClass().getName() + ":" + e.getMessage()));
             }
         }
         return null;

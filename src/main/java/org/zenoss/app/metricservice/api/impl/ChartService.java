@@ -96,10 +96,10 @@ public class ChartService implements ChartServiceAPI {
          * @param api
          *            handle to the persistence
          * @return resource response
-         * @throws Throwable
+         * @throws Exception
          *             any exception thrown but the logic.
          */
-        public Response execute(ResourcePersistenceAPI api) throws Throwable;
+        public Response execute(ResourcePersistenceAPI api) throws Exception;
     }
 
     /**
@@ -121,11 +121,11 @@ public class ChartService implements ChartServiceAPI {
             return worker.execute(api);
         } catch (WebApplicationException w) {
             throw w;
-        } catch (Throwable t) {
+        } catch (Exception e) {
             // Turn the exception into a WebApplication Exception
             throw new WebApplicationException(Utils.getErrorResponse(
                     Utils.NOT_SPECIFIED, 500,
-                    "Exception while accessing resource", t.getMessage()));
+                    "Exception while accessing resource", e.getMessage()));
         } finally {
 
             // Clean up the reference to the persistence
@@ -145,7 +145,7 @@ public class ChartService implements ChartServiceAPI {
         return execute(new Worker() {
             @Override
             public Response execute(ResourcePersistenceAPI api)
-                    throws Throwable {
+                    throws Exception {
                 String content = api.getResourceById(id);
 
                 if (content == null) {
@@ -170,7 +170,7 @@ public class ChartService implements ChartServiceAPI {
         return execute(new Worker() {
             @Override
             public Response execute(ResourcePersistenceAPI api)
-                    throws Throwable {
+                    throws Exception {
                 if (!api.delete(id)) {
                     return Response.status(404).build();
                 }
@@ -190,14 +190,14 @@ public class ChartService implements ChartServiceAPI {
 
             @Override
             public Response execute(ResourcePersistenceAPI api)
-                    throws Throwable {
+                    throws Exception {
                 String uuid = Utils.createUuid();
                 String content = objectMapper.writeValueAsString(chart);
                 if (!api.add(uuid, content)) {
                     // Attempt to clean up partials
                     try {
                         // persistence.delete(uuid);
-                    } catch (Throwable t) {
+                    } catch (Exception e) {
                         // ignore;
                     }
                     log.error("Error while creating resource");
@@ -222,7 +222,7 @@ public class ChartService implements ChartServiceAPI {
 
             @Override
             public Response execute(ResourcePersistenceAPI api)
-                    throws Throwable {
+                    throws Exception {
                 if (!api.exists(id)) {
                     // Not found, and we don't allow clients to pick there own
                     // UUIDs, so return not found.
@@ -247,7 +247,7 @@ public class ChartService implements ChartServiceAPI {
 
             @Override
             public Response execute(ResourcePersistenceAPI api)
-                    throws Throwable {
+                    throws Exception {
                 ChartList list = new ChartList();
                 list.setStart(start.or(0));
                 list.setEnd(end.or(list.getStart() + 9));
@@ -271,7 +271,7 @@ public class ChartService implements ChartServiceAPI {
 
             @Override
             public Response execute(ResourcePersistenceAPI api)
-                    throws Throwable {
+                    throws Exception {
                 String content = api.getResourceByName(name);
 
                 if (content == null) {

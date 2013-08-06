@@ -357,10 +357,10 @@ public class MetricSpecification {
                 if (terms[1].indexOf('{') > -1) {
                     try {
                         rateOptions = parseRateOptions(terms[1].trim());
-                    } catch (Throwable t) {
+                    } catch (Exception e) {
                         throw new WebApplicationException(
                                 Utils.getErrorResponse(null, 400,
-                                        t.getMessage(), t.getClass().getName()));
+                                        e.getMessage(), e.getClass().getName()));
                     }
                 }
                 if (terms.length > 3) {
@@ -373,10 +373,10 @@ public class MetricSpecification {
                     if (terms[2].indexOf('{') > -1) {
                         try {
                             rateOptions = parseRateOptions(terms[2].trim());
-                        } catch (Throwable t) {
+                        } catch (Exception e) {
                             throw new WebApplicationException(
-                                    Utils.getErrorResponse(null, 400, t
-                                            .getMessage(), t.getClass()
+                                    Utils.getErrorResponse(null, 400, e
+                                            .getMessage(), e.getClass()
                                             .getName()));
                         }
                     }
