@@ -80,7 +80,7 @@ public class Utils {
             response.objectE();
             response.close();
             return Response.status(status).entity(baos.toString()).build();
-        } catch (Throwable t) {
+        } catch (Exception e) {
             return Response.status(status).build();
         }
     }

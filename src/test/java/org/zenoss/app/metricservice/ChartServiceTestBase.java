@@ -73,16 +73,16 @@ public abstract class ChartServiceTestBase extends ResourceTest {
         addResource(resource);
     }
 
-    private List<Chart> createCharts(int numFilters, int numDatapoints,
+    private List<Chart> createCharts(int numTags, int numDatapoints,
             int numCharts) {
         // Add 100 charts so we can list them in groups of 10
         Range range = new Range();
         range.setStart("1h-ago");
         range.setEnd("now");
 
-        Map<String, String> filter = new HashMap<String, String>();
-        for (int i = 0; i < numFilters; ++i) {
-            filter.put("Name=" + i, "Value=" + i);
+        Map<String, String> tags = new HashMap<String, String>();
+        for (int i = 0; i < numTags; ++i) {
+            tags.put("Name=" + i, "Value=" + i);
         }
 
         List<Datapoint> datapoints = new ArrayList<Datapoint>();
@@ -98,7 +98,7 @@ public abstract class ChartServiceTestBase extends ResourceTest {
             Chart chart = new Chart();
             chart.setName("chart-" + i);
             chart.setRange(range);
-            chart.setFilter(filter);
+            chart.setTags(tags);
             chart.setDatapoints(datapoints);
             charts.add(chart);
         }
@@ -239,8 +239,8 @@ public abstract class ChartServiceTestBase extends ResourceTest {
                 Chart chart = response.getEntity(Chart.class);
                 Assert.assertEquals("name was not updated",
                         id.substring("/chart/".length()), chart.getName());
-                Assert.assertEquals("filters were not updated", 1, chart
-                        .getFilter().size());
+                Assert.assertEquals("tags were not updated", 1, chart
+                        .getTags().size());
                 Assert.assertEquals("data points were not updated", 1, chart
                         .getDatapoints().size());
             }

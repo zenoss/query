@@ -31,6 +31,7 @@
 package org.zenoss.app.metricservice.api.remote;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -54,7 +55,7 @@ import com.yammer.metrics.annotation.Timed;
  * @author David Bainbridge <dbainbridge@zenoss.com>
  * 
  */
-@Resource
+@Resource(name = "query")
 @Path("query")
 @Produces(MediaType.APPLICATION_JSON)
 public class MetricResources {
@@ -73,7 +74,8 @@ public class MetricResources {
             @QueryParam("series") Optional<Boolean> series) {
 
         return api.query(id, startTime, endTime, exactTimeWindow, series,
-                queries);
+                Optional.<String> absent(),
+                Optional.<Map<String, String>> absent(), queries);
     }
 
     @Path("/performance")
@@ -82,15 +84,19 @@ public class MetricResources {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response query2(PerformanceQuery query) {
         Optional<String> id = Optional.<String> absent();
-        Optional<String> start = query.getStart() != null ? Optional.of(query
-                .getStart()) : Optional.<String> absent();
-        Optional<String> end = query.getEnd() != null ? Optional.of(query
-                .getEnd()) : Optional.<String> absent();
-        Optional<Boolean> exact = query.getExactTimeWindow() == null ? Optional
-                .<Boolean> absent() : Optional.of(query.getExactTimeWindow());
-        Optional<Boolean> series = (query.getSeries() == null ? Optional
-                .<Boolean> absent() : Optional.of(query.getSeries()));
+        Optional<String> start = Optional.<String> fromNullable(query
+                .getStart());
+        Optional<String> end = Optional.<String> fromNullable(query.getEnd());
+        Optional<Boolean> exact = Optional.<Boolean> fromNullable(query
+                .getExactTimeWindow());
+        Optional<Boolean> series = Optional.<Boolean> fromNullable(query
+                .getSeries());
+        Optional<String> downsample = Optional.<String> fromNullable(query
+                .getDownsample());
+        Optional<Map<String, String>> tags = Optional
+                .<Map<String, String>> fromNullable(query.getTags());
 
-        return api.query(id, start, end, exact, series, query.getMetrics());
+        return api.query(id, start, end, exact, series, downsample, tags,
+                query.getMetrics());
     }
 }

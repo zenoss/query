@@ -59,7 +59,7 @@ public class RateFormatException extends RuntimeException {
     /**
      * @param cause
      */
-    public RateFormatException(Throwable cause) {
+    public RateFormatException(Exception cause) {
         super(cause);
         // TODO Auto-generated constructor stub
     }
@@ -68,7 +68,7 @@ public class RateFormatException extends RuntimeException {
      * @param message
      * @param cause
      */
-    public RateFormatException(String message, Throwable cause) {
+    public RateFormatException(String message, Exception cause) {
         super(message, cause);
         // TODO Auto-generated constructor stub
     }

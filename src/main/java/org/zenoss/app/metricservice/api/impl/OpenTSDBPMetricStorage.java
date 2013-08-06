@@ -40,6 +40,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -204,21 +205,20 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             }
 
             return new WebApplicationException(Response.status(code).build());
-        } catch (Throwable t) {
-            t.printStackTrace();
+        } catch (Exception e) {
             log.error(
                     "Unexpected error while attempting to parse response from OpenTSDB: {} : {}",
-                    t.getClass().getName(), t.getMessage());
+                    e.getClass().getName(), e.getMessage());
             try {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 JsonWriter writer = new JsonWriter(new OutputStreamWriter(baos));
                 writer.objectS();
-                writer.value(Utils.ERROR_MESSAGE, t.getMessage());
+                writer.value(Utils.ERROR_MESSAGE, e.getMessage());
                 writer.objectE();
                 writer.close();
                 return new WebApplicationException(Response.status(code)
                         .entity(baos.toString()).build());
-            } catch (Throwable i) {
+            } catch (Exception ee) {
                 return new WebApplicationException(code);
             }
         }
@@ -234,8 +234,9 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
      */
     public BufferedReader getReader(MetricServiceAppConfiguration config,
             String id, String startTime, String endTime,
-            Boolean exactTimeWindow, Boolean series,
-            List<MetricSpecification> queries) throws IOException {
+            Boolean exactTimeWindow, Boolean series, String downsample,
+            Map<String, String> globalTags, List<MetricSpecification> queries)
+            throws IOException {
         StringBuilder buf = new StringBuilder(config.getMetricServiceConfig()
                 .getOpenTsdbUrl());
         buf.append("/q?");
@@ -247,7 +248,8 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         }
         for (MetricSpecification query : queries) {
             buf.append("&m=").append(
-                    URLEncoder.encode(query.toString(), "UTF-8"));
+                    URLEncoder.encode(query.toString(downsample, globalTags),
+                            "UTF-8"));
         }
         buf.append("&ascii");
 

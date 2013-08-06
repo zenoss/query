@@ -31,6 +31,7 @@
 package org.zenoss.app.metricservice.api.model;
 
 import java.util.List;
+import java.util.Map;
 
 import org.zenoss.app.metricservice.api.impl.Utils;
 
@@ -58,6 +59,12 @@ public class PerformanceQuery {
     
     @JsonProperty(value="series")
     private Boolean series = null;
+    
+    @JsonProperty(required=false)
+    private Map<String, String> tags = null;
+    
+    @JsonProperty(required=false)
+    private String downsample = null;
 
     /**
      * @return the start
@@ -127,5 +134,33 @@ public class PerformanceQuery {
      */
     public final void setMetrics(List<MetricSpecification> metrics) {
         this.metrics = metrics;
-    } 
+    }
+
+    /**
+     * @return the tags
+     */
+    public final Map<String, String> getTags() {
+        return tags;
+    }
+
+    /**
+     * @param tags the tags to set
+     */
+    public final void setTags(Map<String, String> tags) {
+        this.tags = tags;
+    }
+
+    /**
+     * @return the downsample
+     */
+    public final String getDownsample() {
+        return downsample;
+    }
+
+    /**
+     * @param downsample the downsample to set
+     */
+    public final void setDownsample(String downsample) {
+        this.downsample = downsample;
+    }
 }

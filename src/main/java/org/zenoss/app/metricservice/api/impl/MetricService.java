@@ -112,25 +112,37 @@ public class MetricService implements MetricServiceAPI {
 
     protected TimeZone serverTimeZone = null;
 
-    
     private class Worker implements StreamingOutput {
         private final String id;
         private final String startTime;
         private final String endTime;
         private final Boolean exactTimeWindow;
         private final Boolean series;
+        private final String downsample;
+        private final Map<String, String> tags;
         private final List<MetricSpecification> queries;
         private long start = -1;
         private long end = -1;
 
         public Worker(MetricServiceAppConfiguration config, String id,
                 String startTime, String endTime, Boolean exactTimeWindow,
-                Boolean series, List<MetricSpecification> queries) {
+                Boolean series, String downsample, Map<String, String> tags,
+                List<MetricSpecification> queries) {
+            if (queries == null) {
+                // This really should never happen as the query check should
+                // happen in our calling routine, but just in case.
+                log.error("Attempt to create query worker without any queries specified");
+                IllegalArgumentException t = new IllegalArgumentException(
+                        "No queries specified");
+                throw t;
+            }
             this.id = id;
             this.startTime = startTime;
             this.endTime = endTime;
             this.exactTimeWindow = exactTimeWindow;
             this.series = series;
+            this.tags = tags;
+            this.downsample = downsample;
             this.queries = queries;
         }
 
@@ -141,14 +153,14 @@ public class MetricService implements MetricServiceAPI {
             long ts = 0;
             double val = 0;
             boolean comma = false;
-            
+
             // Because TSDB gives data that is outside the exact time range
-            // requested it is not always known at any point if the further 
+            // requested it is not always known at any point if the further
             // data is "valid" if we are triming to the exact time range. As
             // such we have to delay the comma before a new "series" until we
             // know we will actually have one.
             boolean precomma = false;
-            
+
             boolean needHeader = true;
 
             while ((line = reader.readLine()) != null) {
@@ -329,16 +341,16 @@ public class MetricService implements MetricServiceAPI {
             if (serverTimeZone == null) {
                 try {
                     serverTimeZone = api.getServerTimeZone();
-                } catch (Throwable t) {
+                } catch (Exception e) {
                     log.error(
                             "Unable to determine timezone of the performance metric server: {} : {}",
-                            t.getClass().getName(), t.getMessage());
+                            e.getClass().getName(), e.getMessage());
                     throw new WebApplicationException(
                             Utils.getErrorResponse(
                                     id,
                                     500,
                                     String.format("Unable to determine timezone of the performance metric server"),
-                                    t.getMessage()));
+                                    e.getMessage()));
                 }
             }
 
@@ -357,18 +369,19 @@ public class MetricService implements MetricServiceAPI {
             BufferedReader reader = null;
             try {
                 reader = api.getReader(config, id, convertedStartTime,
-                        convertedEndTime, exactTimeWindow, series, queries);
+                        convertedEndTime, exactTimeWindow, series, downsample,
+                        tags, queries);
             } catch (WebApplicationException wae) {
                 throw wae;
-            } catch (Throwable t) {
-                log.error("Failed to connect to metric data source: {} : {}", t
-                        .getClass().getName(), t.getMessage());
+            } catch (Exception e) {
+                log.error("Failed to connect to metric data source: {} : {}", e
+                        .getClass().getName(), e.getMessage());
                 throw new WebApplicationException(
                         Utils.getErrorResponse(
                                 id,
                                 500,
                                 String.format("Unable to connect to performance metric data source"),
-                                t.getMessage()));
+                                e.getMessage()));
 
             }
 
@@ -397,10 +410,11 @@ public class MetricService implements MetricServiceAPI {
 
                 writer.arrayE().objectE(); // end the whole thing
                 writer.flush();
-            } catch (Throwable t) {
+            } catch (Exception e) {
                 log.error(
                         "Server error while processing metric source {} : {}:{}",
-                        api.getSourceId(), t.getClass().getName(), t.getMessage());
+                        api.getSourceId(), e.getClass().getName(),
+                        e.getMessage());
                 throw new WebApplicationException(Response.status(500).build());
             } finally {
                 if (reader != null) {
@@ -422,20 +436,25 @@ public class MetricService implements MetricServiceAPI {
     @Override
     public Response query(Optional<String> id, Optional<String> startTime,
             Optional<String> endTime, Optional<Boolean> exactTimeWindow,
-            Optional<Boolean> series, List<MetricSpecification> queries) {
+            Optional<Boolean> series, Optional<String> downsample,
+            Optional<Map<String, String>> tags,
+            List<MetricSpecification> queries) {
 
         try {
             return Response.ok(
                     new Worker(config, id.or(NOT_SPECIFIED), startTime
                             .or(config.getMetricServiceConfig()
                                     .getDefaultStartTime()), endTime.or(config
-                            .getMetricServiceConfig()
-                            .getDefaultEndTime()), exactTimeWindow.or(config
-                            .getMetricServiceConfig()
-                            .getDefaultExactTimeWindow()), series.or(config
-                            .getMetricServiceConfig()
-                            .getDefaultSeries()), queries)).build();
-        } catch (Throwable t) {
+                            .getMetricServiceConfig().getDefaultEndTime()),
+                            exactTimeWindow.or(config.getMetricServiceConfig()
+                                    .getDefaultExactTimeWindow()), series
+                                    .or(config.getMetricServiceConfig()
+                                            .getDefaultSeries()), downsample
+                                    .orNull(), tags.orNull(), queries)).build();
+        } catch (Exception e) {
+            log.error(String.format(
+                    "Error While attempting to query data soruce: %s : %s", e
+                            .getClass().getName(), e.getMessage()));
             return Response.status(500).build();
         }
     }

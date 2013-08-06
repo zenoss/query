@@ -30,13 +30,13 @@
  */
 package org.zenoss.app.metricservice.api.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.ws.rs.WebApplicationException;
 
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
-import org.zenoss.app.annotations.API;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zenoss.app.metricservice.api.model.Chart;
 
 import redis.clients.jedis.Jedis;
@@ -45,14 +45,23 @@ import redis.clients.jedis.Transaction;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 
-@API
-@Configuration
-@Profile({ "default", "prod" })
 public class RedisResourcePersistence implements ResourcePersistenceAPI {
+    private static final Logger log = LoggerFactory
+            .getLogger(RedisResourcePersistence.class);
 
     private Jedis jedis = null;
     private String idHashName = null;
     private String listName = null;
+
+    public RedisResourcePersistence(String resourceType, Jedis impl) {
+        jedis = impl;
+        idHashName = resourceType + "_HASH";
+        listName = resourceType + "_LIST";
+    }
+
+    public Jedis getImplementation() {
+        return jedis;
+    }
 
     @Override
     public void connect(String prefix, String host) {
@@ -65,20 +74,20 @@ public class RedisResourcePersistence implements ResourcePersistenceAPI {
             idHashName = prefix + "_HASH";
             listName = prefix + "_LIST";
             if (port == -1) {
-                jedis = new Jedis(host);
+                jedis = new Jedis(host, 6379, 10000);
             } else {
-                jedis = new Jedis(host, port);
+                jedis = new Jedis(host, port, 10000);
             }
             try {
                 jedis.ping();
-            } catch (Throwable t) {
+            } catch (Exception e) {
                 try {
                     jedis.disconnect();
-                } catch (Throwable ignore) {
+                } catch (Exception ignore) {
                     // ignore
                 }
                 jedis = null;
-                throw t;
+                throw e;
             }
         }
     }
@@ -119,7 +128,14 @@ public class RedisResourcePersistence implements ResourcePersistenceAPI {
     @Override
     public String getResourceByName(String name) {
         // No good way to deal with this in redis
-        List<String> charts = jedis.hvals(idHashName);
+        List<String> charts = null;
+        try {
+            charts = new ArrayList<String>(jedis.hvals(idHashName));
+        } catch (Exception e) {
+            log.error(
+                    "Unexpected error while attempting to fetch names from persistence: {} : {}",
+                    e.getClass().getName(), e.getMessage());
+        }
 
         // Walk the list of charts and if we find one with the attribute
         // name and value specified
@@ -133,10 +149,10 @@ public class RedisResourcePersistence implements ResourcePersistenceAPI {
                 if (name.equals(chart.getName())) {
                     return content;
                 }
-            } catch (Throwable t) {
+            } catch (Exception e) {
                 throw new WebApplicationException(Utils.getErrorResponse(null,
-                        500, "unable to read chart from persistence",
-                        t.getClass().getName() + ":" + t.getMessage()));
+                        500, "unable to read chart from persistence", e
+                                .getClass().getName() + ":" + e.getMessage()));
             }
         }
         return null;
