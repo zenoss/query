@@ -374,17 +374,7 @@
                     <updatePolicy>always</updatePolicy>
                </snapshots>
           </repository>
-          <repository>
-               <id>jsdoctk1</id>
-               <url>http://jsdoctk-plugin.googlecode.com/svn/repo</url>
-          </repository>
      </repositories>
-     <pluginRepositories>
-          <pluginRepository>
-               <id>jsdoctk2</id>
-               <url>http://jsdoctk-plugin.googlecode.com/svn/repo</url>
-          </pluginRepository>
-     </pluginRepositories>
      <profiles>
           <profile>
                <id>assemble</id>
