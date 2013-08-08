@@ -590,10 +590,12 @@ zenoss.visualization.Chart.prototype.__updateFooter = function(data) {
 	var rows = $(this.table).find('tr');
 
 	$($(rows[0]).find('td')).html(
-			zenoss.visualization.dateFormatter(new Date(data.startTimeActual))
+			zenoss.visualization.dateFormatter(new Date(data.startTimeActual
+					.replace('-', ' ')))
 					+ ' to '
 					+ zenoss.visualization.dateFormatter(new Date(
-							data.endTimeActual)) + ' ('
+							data.endTimeActual.replace('-', ' ')))
+					+ ' ('
 					+ jstz.determine().name() + ')');
 
 	// Calculate the summary values from the data and place the date in the
