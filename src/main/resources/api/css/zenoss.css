@@ -4,3 +4,73 @@
 	color: red;
 }
 
+/*****************************************************************************
+ * Styles to handle graph footers
+ */
+.zenchart {
+	/*background-color: red;/**/
+	/*border: dashed 5px blue;/**/
+	
+}
+
+.zenfooter {
+	/*background-color: purple;/**/
+	/*border: solid 5px green;/**/
+	
+}
+
+.zenfooter_content {
+	/*background-color: yellow;/**/
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.zenfooter_box_column {
+	width: 12px;
+}
+
+.zenfooter_box {
+	width: 10px;
+	height: 10px;
+	border: solid 1px black;
+	float: left;
+	margin: 2px 2px 2px 2px;
+}
+
+.zenfooter_data {
+	padding-left: 20px;
+}
+
+.zenfooter_data_number {
+	text-align: right;
+    font-family: sans-serif;
+    font-size: 8pt;
+}
+
+.zenfooter_data_text {
+	text-align: left;
+    font-family: sans-serif;
+    font-size: 8pt;
+}
+
+.zenfooter_header {
+	padding-left: 20px;
+	text-align: left;
+}
+
+.zenfooter_text {
+	font-family: sans-serif;
+	font-size: 8pt;
+}
+
+.zenfooter_dates {
+	font-weight: bold;
+	text-align: center;
+}
+
+.zenfooter_dates_text {
+    font-weight: bold;
+    font-family: sans-serif;
+    font-size: 8pt;
+    text-align: center;
+}

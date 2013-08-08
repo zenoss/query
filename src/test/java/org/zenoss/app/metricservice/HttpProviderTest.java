@@ -84,10 +84,12 @@ public class HttpProviderTest extends ProviderTestBase {
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(WireMockConfiguration
             .wireMockConfig().port(8089));
-    
+
     protected Map<?, ?> testQuery(Optional<String> id, Optional<String> start,
             Optional<String> end, Optional<Boolean> exact,
-            Optional<Boolean> series, String[] queries) throws Exception {
+            Optional<Boolean> series, Optional<String> downsample,
+            Optional<Map<String, String>> globalTags, String[] queries)
+            throws Exception {
         MetricServiceAppConfiguration config = new ContextConfiguration()
                 .getQueryAppConfiguration();
         MetricServiceConfig pref = config.getMetricServiceConfig();
@@ -103,7 +105,8 @@ public class HttpProviderTest extends ProviderTestBase {
                 id.or("not-specified"), start.or(pref.getDefaultStartTime()),
                 end.or(pref.getDefaultEndTime()),
                 exact.or(pref.getDefaultExactTimeWindow()),
-                series.or(pref.getDefaultSeries()), queryList);
+                series.or(pref.getDefaultSeries()), downsample.orNull(),
+                globalTags.orNull(), queryList);
 
         WireMock.stubFor(WireMock.head(WireMock.urlMatching(".*")).willReturn(
                 WireMock.aResponse().withStatus(200)
@@ -113,6 +116,7 @@ public class HttpProviderTest extends ProviderTestBase {
                         .withHeader("Content-type", "text/plain")
                         .withHeader("Date", "Tue, 30 Apr 2013 14:12:34 GMT")
                         .withBody(new String(data))));
-        return super.testQuery(id, start, end, exact, series, queries);
+        return super.testQuery(id, start, end, exact, series, downsample,
+                globalTags, queries);
     }
 }

@@ -31,7 +31,6 @@
 package org.zenoss.app.metricservice.api.model;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -51,7 +50,7 @@ public class Chart {
     private Range range = null;
     
     @JsonProperty
-    private Map<String, String> filter = new HashMap<String, String>();
+    private Map<String, String> tags = null;
     
     @JsonProperty
     private List<Datapoint> datapoints = new ArrayList<Datapoint>();
@@ -100,17 +99,17 @@ public class Chart {
     }
 
     /**
-     * @return the filters
+     * @return the tags
      */
-    public final Map<String, String> getFilter() {
-        return filter;
+    public final Map<String, String> getTags() {
+        return tags;
     }
 
     /**
-     * @param filters the filters to set
+     * @param tags the tags to set
      */
-    public final void setFilter(Map<String, String> filter) {
-        this.filter = filter;
+    public final void setTags(Map<String, String> tags) {
+        this.tags = tags;
     }
 
     /**

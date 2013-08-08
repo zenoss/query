@@ -1,9 +1,51 @@
-Zenoss Central Query Service
-=====
+Zenoss Central Query Service and JavaScript Library
+====
 This project provides a HTTP/JSON based metric service capability for the information 
-that Zenoss stores in its central repository.
+that Zenoss stores in its central repository as well as a JavaScript library that allows
+a user to easily embed standard graphs in their own web page.
 
-The resources this service provides are:
+JavaScript Library
+----
+The purpose of the Zenoss Visualization JavaScript Library is to allow users and
+Zenoss developers to quickly and easily define and insert graphs into web pages.
+It is this library that Zenoss uses internally to provide the graphs that are
+part of the Zenoss application.
+
+In its most basic form the user should only have to include two JavaScript statements
+to embed Zenoss Visualizations on their web page. The first loads the Zenoss
+Visualization library and the second creates a chart.
+
+        <script type="text/javascript" src="http://zenoss.company.com:8888/api/visualization.js"></script>
+        zenoss.visualization.chart.create("id-of-div-to-augment", "name-of-saved-chart");
+
+From this initial starting point the user can expand to override the default values
+from a stored chart or even create a complete chart from within the HTML page.
+
+        zenoss.visualization.chart.create("chart1", {
+            "type" : "focus",
+            "series" : true,
+            "type" : "line",
+            "range" : {
+                "start" : "1h-ago",
+                "end" : "now"
+            },
+            "datapoints" : [ {
+                "metric" : "laLoadInt1",
+            }, {
+                "metric" : "laLoadInt5",
+                "aggregator" : "sum",
+                "downsample" : "5m-avg"
+            }, {
+                "metric" : "laLoadInt15",
+            } ]
+        }); 
+
+The complete documentation for the for the public API can be found by accessing
+the `doc/index.html` from a running instance. The complete API documentation,
+including "private" methods can be found at `doc/full/index.html`.
+
+Resources
+----
 
   - `GET /chart` - return a list of chart resources.
   
@@ -28,6 +70,7 @@ The resources this service provides are:
 
         {
             "name" : "<chart-name>",
+            "type" : <type of chart>,
             "range" : { [optional]
                 "start" : <datetime>,
                 "end"   : <datetime>,
@@ -37,12 +80,14 @@ The resources this service provides are:
             },
             "datapoints" : [
                 {
-                    "type" : i.e. line, bar, etc
                     "consolidator" : avg, sum, etc
                     "metric" : metric name
                 }, ...
             ]
         }
+
+
+    __Currently supported chart types are: `line`, `bar`, `pie`, `focus`, `discretebar`, `area`, `dc.stacked`, and `dc.area`.__
 
   - `POST /query/performance` - return the performance metrics that match the search criteria. The results are the same as for the get request below, the difference is that instead of specifying the criteria as query parameters the criteria is specified as an JSON object in the POST data. The JSON structure that is supported on this POST call follows the following format:
 

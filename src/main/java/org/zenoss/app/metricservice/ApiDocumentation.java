@@ -28,49 +28,48 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.metricservice.health;
+package org.zenoss.app.metricservice;
 
-import javax.ws.rs.WebApplicationException;
+import org.zenoss.app.annotations.Bundle;
+import org.zenoss.app.autobundle.AutoBundle;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
-import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
-import org.zenoss.app.metricservice.api.impl.ResourcePersistenceAPI;
-import org.zenoss.app.metricservice.api.impl.ResourcePersistenceFactoryAPI;
-import org.zenoss.dropwizardspring.annotations.HealthCheck;
+import com.google.common.base.Optional;
+import com.yammer.dropwizard.assets.AssetsBundle;
 
-@Configuration
-@HealthCheck
-public class ResourcePersistenceHealthCheck extends
-        com.yammer.metrics.core.HealthCheck {
-    @Autowired
-    MetricServiceAppConfiguration config;
+/**
+ * @author David Bainbridge <dbainbridge@zenoss.com>
+ * 
+ */
+@Bundle
+public class ApiDocumentation implements AutoBundle {
 
-    @Autowired
-    ResourcePersistenceFactoryAPI persistenceFactory;
-
-    protected ResourcePersistenceHealthCheck() {
-        super("Resource Persistence");
+    /**
+     * 
+     */
+    public ApiDocumentation() {
+        // TODO Auto-generated constructor stub
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.zenoss.app.autobundle.AutoBundle#getBundle()
+     */
     @Override
-    protected Result check() throws Exception {
-        ResourcePersistenceAPI api = null;
-        try {
-
-            if (!persistenceFactory.isConnected()) {
-                return Result.unhealthy("Bad connection string");
-            }
-            api = persistenceFactory.getInstance("UNKNOWN");
-            api.ping();
-            return Result.healthy();
-        } catch (WebApplicationException wae) {
-            return Result.unhealthy(wae);
-        } catch (Exception e) {
-            return Result.unhealthy(String.format("%s : %s", e.getClass()
-                    .getName(), e.getMessage()));
-        } finally {
-            persistenceFactory.returnInstance(api);
-        }
+    public com.yammer.dropwizard.Bundle getBundle() {
+        return new AssetsBundle("/doc", "/doc/", "index.html");
     }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.zenoss.app.autobundle.AutoBundle#getRequiredConfig()
+     */
+    @SuppressWarnings("rawtypes")
+    @Override
+    public Optional<Class> getRequiredConfig() {
+        return Optional.<Class> absent();
+
+    }
+
 }

@@ -9,12 +9,13 @@ metrics:
   defaultSeries: false
   openTsdbUrl: http://tsdb.zenaas.com:4242
   defaultTsdTimeZone: UTC
-  connectionTimeoutMs: 1000
+  connectionTimeoutMs: 20000
 charts:
   redisConnection: localhost:6379
 http:
   connectorType: nonblocking
   port: 8888
+  adminPort: 58888
   ssl:
       #Example is using a java keystore in the target directory.
       keyStore: ${ssl.cert.dir}/ssl.pfx

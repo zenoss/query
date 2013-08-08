@@ -74,8 +74,8 @@ public class OpenTsdbHealthCheck extends com.yammer.metrics.core.HealthCheck {
                     .readValue(connection.getInputStream()).toString();
 
             return Result.healthy();
-        } catch (Throwable t) {
-            return Result.unhealthy(t);
+        } catch (Exception e) {
+            return Result.unhealthy(e);
         }
     }
 }

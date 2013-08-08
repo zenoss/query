@@ -50,7 +50,7 @@ import org.zenoss.dropwizardspring.annotations.Resource;
 import com.google.common.base.Optional;
 import com.yammer.metrics.annotation.Timed;
 
-@Resource
+@Resource(name="chart")
 @Path("chart")
 @Produces(MediaType.APPLICATION_JSON)
 public class ChartResources {

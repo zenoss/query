@@ -28,49 +28,57 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.metricservice.health;
+package org.zenoss.app.metricservice.api.impl.mocks;
 
-import javax.ws.rs.WebApplicationException;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
-import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
+import org.springframework.context.annotation.Profile;
+import org.zenoss.app.annotations.API;
 import org.zenoss.app.metricservice.api.impl.ResourcePersistenceAPI;
 import org.zenoss.app.metricservice.api.impl.ResourcePersistenceFactoryAPI;
-import org.zenoss.dropwizardspring.annotations.HealthCheck;
 
+/**
+ * @author David Bainbridge <dbainbridge@zenoss.com>
+ * 
+ */
+@API
 @Configuration
-@HealthCheck
-public class ResourcePersistenceHealthCheck extends
-        com.yammer.metrics.core.HealthCheck {
-    @Autowired
-    MetricServiceAppConfiguration config;
-
-    @Autowired
-    ResourcePersistenceFactoryAPI persistenceFactory;
-
-    protected ResourcePersistenceHealthCheck() {
-        super("Resource Persistence");
+@Profile({ "dev" })
+public class MockResourcePersistenceFactory implements
+        ResourcePersistenceFactoryAPI {
+    
+    private final ResourcePersistenceAPI persistence;
+    
+    public MockResourcePersistenceFactory() {
+        persistence = new MockResourcePersistence();
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.zenoss.app.metricservice.api.impl.ResourcePersistenceFactoryAPI#
+     * getInstance()
+     */
     @Override
-    protected Result check() throws Exception {
-        ResourcePersistenceAPI api = null;
-        try {
+    public ResourcePersistenceAPI getInstance(String resourceType) {
+        return persistence;
+    }
 
-            if (!persistenceFactory.isConnected()) {
-                return Result.unhealthy("Bad connection string");
-            }
-            api = persistenceFactory.getInstance("UNKNOWN");
-            api.ping();
-            return Result.healthy();
-        } catch (WebApplicationException wae) {
-            return Result.unhealthy(wae);
-        } catch (Exception e) {
-            return Result.unhealthy(String.format("%s : %s", e.getClass()
-                    .getName(), e.getMessage()));
-        } finally {
-            persistenceFactory.returnInstance(api);
-        }
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.zenoss.app.metricservice.api.impl.ResourcePersistenceFactoryAPI#
+     * returnInstance
+     * (org.zenoss.app.metricservice.api.impl.ResourcePersistenceAPI)
+     */
+    @Override
+    public void returnInstance(ResourcePersistenceAPI api) {
+    }
+
+    /* (non-Javadoc)
+     * @see org.zenoss.app.metricservice.api.impl.ResourcePersistenceFactoryAPI#isConnected()
+     */
+    @Override
+    public boolean isConnected() {
+        return true;
     }
 }

@@ -36,6 +36,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.ParseException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -78,8 +79,8 @@ public class MockMetricStorage implements MetricStorageAPI {
 
     public byte[] generateData(MetricServiceAppConfiguration config, String id,
             String startTime, String endTime, Boolean exactTimeWindow,
-            Boolean series, List<MetricSpecification> queries)
-            throws IOException {
+            Boolean series, String downsample, Map<String, String> tags,
+            List<MetricSpecification> queries) throws IOException {
         log.debug("Generate data for '{}' to '{}' requested", startTime,
                 endTime);
 
@@ -139,9 +140,17 @@ public class MockMetricStorage implements MetricStorageAPI {
                     buf.append(2.0);
                 }
 
-                if (query.getTags() != null) {
-                    for (Map.Entry<String, String> tag : query.getTags()
-                            .entrySet()) {
+                // Need to join the global tags with the per metric tags,
+                // overriding any global tag with that specified per metric
+                if (tags != null || query.getTags() != null) {
+                    Map<String, String> joined = new HashMap<String, String>();
+                    if (tags != null) {
+                        joined.putAll(tags);
+                    }
+                    if (query.getTags() != null) {
+                        joined.putAll(query.getTags());
+                    }
+                    for (Map.Entry<String, String> tag : joined.entrySet()) {
                         buf.append(' ').append(tag.getKey()).append(EQ)
                                 .append(MOCK_VALUE);
                     }
@@ -166,10 +175,11 @@ public class MockMetricStorage implements MetricStorageAPI {
      */
     public BufferedReader getReader(MetricServiceAppConfiguration config,
             String id, String startTime, String endTime,
-            Boolean exactTimeWindow, Boolean series,
-            List<MetricSpecification> queries) throws IOException {
+            Boolean exactTimeWindow, Boolean series, String downsample,
+            Map<String, String> tags, List<MetricSpecification> queries)
+            throws IOException {
         byte[] data = generateData(config, id, startTime, endTime,
-                exactTimeWindow, series, queries);
+                exactTimeWindow, series, downsample, tags, queries);
         return new BufferedReader(new InputStreamReader(
                 new ByteArrayInputStream(data)));
     }
