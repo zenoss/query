@@ -1,109 +1,90 @@
-zenoss.visualization.chart.pie = {
-	required : {
-		defined : 'nv',
-		source : [ 'nv.d3.min.js', 'css/nv.d3.css' ]
-	},
+(function() {
+    "use strict";
 
-	Chart : function() {
-		var _model = null;
-		var _averages = {
-			'key' : 'Average',
-			'values' : []
-		};
+    var pie = {
+        required : {
+            defined : 'nv',
+            source : [ 'nv.d3.min.js', 'css/nv.d3.css' ]
+        },
 
-		this.model = function(_) {
-			if (!arguments.length) {
-				return _model;
-			}
-			_model = _;
-		}
+        Chart : function() {
+            var _model = null;
+            var _averages = {
+                'key' : 'Average',
+                'values' : []
+            };
 
-		this.averages = function(_) {
-			if (!arguments.length) {
-				return [ _averages ];
-			}
-			var plots = _;
+            this.model = function(_) {
+                if (!arguments.length) {
+                    return _model;
+                }
+                _model = _;
+            };
 
-			_averages.values = [];
-			plots.forEach(function(plot) {
-				_averages.values.push({
-					'label' : plot.key,
-					'value' : d3.mean(plot.values, function(d) {
-						return d.y;
-					})
-				});
-			});
-			return [ _averages ];
-		}
-	},
+            this.averages = function(_) {
+                if (!arguments.length) {
+                    return [ _averages ];
+                }
+                var plots = _;
 
-	color : function(chart, impl, idx) {
-		return {
-			'color' : impl.model().color()(0, idx),
-			'opacity' : 1,
-		}
-	},
+                _averages.values = [];
+                plots.forEach(function(plot) {
+                    _averages.values.push({
+                        'label' : plot.key,
+                        'value' : d3.mean(plot.values, function(d) {
+                            return d.y;
+                        })
+                    });
+                });
+                return [ _averages ];
+            };
+        },
 
-	update : function(chart, data) {
-		var _chart = chart.closure;
+        color : function(chart, impl, idx) {
+            return {
+                'color' : impl.model().color()(0, idx),
+                'opacity' : 1
+            };
+        },
 
-		chart.svg.datum(_chart.averages(chart.plots)).transition().duration(0)
-				.call(_chart.model());
-	},
+        update : function(chart, data) {
+            var _chart = chart.closure;
 
-	build : function(chart) {
-		var _chart = new zenoss.visualization.chart.pie.Chart();
-		var model = nv.models.pie();
-		_chart.model(model);
+            chart.svg.datum(_chart.averages(chart.plots)).transition()
+                    .duration(0).call(_chart.model());
+        },
 
-		model.x(function(d) {
-			return d.label;
-		});
-		model.y(function(d) {
-			return d.value;
-		});
-		model.showLabels(false);
-		model.height($(chart.svgwrapper).height());
-		model.width($(chart.svgwrapper).width());
-		chart.svg.datum(_chart.averages(chart.plots));
+        build : function(chart) {
+            var _chart = new zenoss.visualization.chart.pie.Chart();
+            var model = nv.models.pie();
+            _chart.model(model);
 
-		nv.addGraph(function() {
-			chart.svg.transition().duration(500).call(model);
-			nv.utils.windowResize(function() {
-				chart.svg.call(model.update)
-			});
-		});
+            model.x(function(d) {
+                return d.label;
+            });
+            model.y(function(d) {
+                return d.value;
+            });
+            model.showLabels(false);
+            model.height($(chart.svgwrapper).height());
+            model.width($(chart.svgwrapper).width());
+            chart.svg.datum(_chart.averages(chart.plots));
 
-		return _chart;
+            nv.addGraph(function() {
+                chart.svg.transition().duration(500).call(model);
+                nv.utils.windowResize(function() {
+                    chart.svg.call(model.update);
+                });
+            });
 
-		// var _chart = nv.models.pie();
-		// _chart.x(function(d) {
-		// return d.label;
-		// }).y(function(d) {
-		// return d.value;
-		// }).showLabels(true);
-		// var __means = [ {
-		// 'key' : 'Cumlative',
-		// 'values' : []
-		// } ];
-		// chart.plots.forEach(function(plot) {
-		// __means[0].values.push({
-		// 'label' : plot.key,
-		// 'value' : d3.mean(plot.values, function(d) {
-		// return d.y;
-		// })
-		// });
-		// });
-		// _chart.height($(chart.svgwrapper).height());
-		// _chart.width($(chart.svgwrapper).width());
-		// nv.addGraph(function() {
-		// chart.svg.datum(__means).transition().duration(500).call(_chart);
-		// nv.utils.windowResize(function() {
-		// chart.svg.call(_chart)
-		// });
-		// });
-		// return _chart;
-	},
-	render : function() {
-	}
-}
+            return _chart;
+        },
+
+        render : function() {
+        }
+    };
+    
+    $.extend(true, zenoss.visualization.chart, {
+        pie : pie
+    });
+}());

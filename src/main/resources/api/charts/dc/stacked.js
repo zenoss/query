@@ -1,186 +1,195 @@
-zenoss.visualization.chart.dc = {
-	stacked : {
-		required : {
-			defined : 'dc',
-			source : [ 'crossfilter.min.js', 'dc.min.js', 'css/dc.css' ]
-		},
+(function() {
+    "use strict";
+    var stacked = {
+        required : {
+            defined : 'dc',
+            source : [ 'crossfilter.min.js', 'dc.min.js', 'css/dc.css' ]
+        },
 
-		Chart : function() {
-			var _lineChart = null;
-			var _datasets = [];
+        Chart : function() {
+            var _lineChart = null, _datasets = [], i;
 
-			this.lineChart = function(_) {
-				if (!arguments.length) {
-					return _lineChart;
-				}
-				_lineChart = _;
-			}
+            this.lineChart = function(_) {
+                if (!arguments.length) {
+                    return _lineChart;
+                }
+                _lineChart = _;
+            };
 
-			this.add = function(ds) {
-				_datasets.push(ds);
-			}
+            this.add = function(ds) {
+                _datasets.push(ds);
+            };
 
-			this.dataset = function(n) {
-				return _datasets[n];
-			}
+            this.dataset = function(n) {
+                return _datasets[n];
+            };
 
-			this.stack = function() {
-				if (_datasets.length < 2) {
-					return;
-				}
+            this.stack = function() {
+                if (_datasets.length < 2) {
+                    return;
+                }
 
-				for ( var i = 1; i < _datasets.length; ++i) {
-					_lineChart.stack(_datasets[i].group());
-				}
-			}
+                for (i = 1; i < _datasets.length; i += 1) {
+                    _lineChart.stack(_datasets[i].group());
+                }
+            };
 
-			this.forEach = function(f) {
-				_datasets.forEach(function(ds) {
-					f(ds);
-				});
-			}
-		},
+            this.forEach = function(f) {
+                _datasets.forEach(function(ds) {
+                    f(ds);
+                });
+            };
+        },
 
-		DataSet : function(plot) {
-			var _plot = null;
-			var _crossfilter = null;
-			var _dimension = null;
-			var _group = null;
-			var _lineChart = null;
+        DataSet : function(plot) {
+            var _plot = null;
+            var _crossfilter = null;
+            var _dimension = null;
+            var _group = null;
+            var _lineChart = null;
 
-			this.crossfilter = function(_) {
-				if (!arguments.length) {
-					return _crossfilter;
-				}
+            this.crossfilter = function(_) {
+                if (!arguments.length) {
+                    return _crossfilter;
+                }
 
-				_crossfilter = crossfilter(_);
-				_dimension = _crossfilter.dimension(function(d) {
-					return d.x;
-				});
+                _crossfilter = crossfilter(_);
+                _dimension = _crossfilter.dimension(function(d) {
+                    return d.x;
+                });
 
-				// Remove the old group
-				if (_group != null) {
-					_group.remove();
-				}
-				
-				_group = zenoss.visualization.__reduceMax(_dimension
-						.group(function(v) {
-							// Round down to the nearest 15 second
-							// boundary.
-							var d = new Date(Math.ceil(v / 15000) * 15000);
-							return d;
-						}));
+                // Remove the old group
+                if (_group !== null) {
+                    _group.remove();
+                }
 
-			}
+                _group = zenoss.visualization.__reduceMax(_dimension
+                        .group(function(v) {
+                            // Round down to the
+                            // nearest 15 second
+                            // boundary.
+                            var d = new Date(Math.ceil(v / 15000) * 15000);
+                            return d;
+                        }));
 
-			this.plot = function(_) {
-				if (!arguments.length) {
-					return _plot;
-				}
-				_plot = _;
-				this.crossfilter(_plot.values);
-			}
+            };
 
-			this.lineChart = function(_) {
-				if (!arguments.length) {
-					return _lineChart;
-				}
-				_lineChart = _;
-			}
+            this.plot = function(_) {
+                if (!arguments.length) {
+                    return _plot;
+                }
+                _plot = _;
+                this.crossfilter(_plot.values);
+            };
 
-			this.dimension = function() {
-				return _dimension;
-			}
+            this.lineChart = function(_) {
+                if (!arguments.length) {
+                    return _lineChart;
+                }
+                _lineChart = _;
+            };
 
-			this.group = function() {
-				return _group;
-			}
+            this.dimension = function() {
+                return _dimension;
+            };
 
-			this.plot(plot);
-		},
+            this.group = function() {
+                return _group;
+            };
 
-		color : function(chart, impl, idx) {
-			return {
-				'color' : d3.scale.category10().range()[idx],
-				'opacity' : 1,
-			}
-		},
+            this.plot(plot);
+        },
 
-		update : function(chart, data) {
-			
-			var _chart = chart.closure;
-			
-			// Cull to common data points so that stacking works correctly
-			zenoss.visualization.__cull(chart);
-			chart.svg.datum(chart.plots);
+        color : function(chart, impl, idx) {
+            return {
+                'color' : d3.scale.category10().range()[idx],
+                'opacity' : 1
+            };
+        },
 
-			// Clear the existing groups
-			_chart.lineChart().getChartStack().clear();
+        update : function(chart, data) {
 
-			// Replace the plot data on each of the charts with the new data
-			for ( var i = 0; i < chart.plots.length; ++i) {
-				var ds = _chart.dataset(i);
-				ds.plot(chart.plots[i]);
-			}
-			// Update the primary dimension and group
-			var lc = _chart.lineChart();
-			lc.dimension(_chart.dataset(0).dimension());
-			lc.group(_chart.dataset(0).group());
-			
-			// Stack the rest
-			_chart.stack();
-			dc.renderAll('zenoss');
-		},
+            var _chart = chart.closure, i;
 
-		build : function(chart) {
-			// Cull to common data points so that stacking works correctly
-			zenoss.visualization.__cull(chart);
-			chart.svg.datum(chart.plots);
+            // Cull to common data points so that stacking
+            // works correctly
+            zenoss.visualization.__cull(chart);
+            chart.svg.datum(chart.plots);
 
-			var _chart = new zenoss.visualization.chart.dc.stacked.Chart();
+            // Clear the existing groups
+            _chart.lineChart().getChartStack().clear();
 
-			chart.plots.forEach(function(plot) {
-				_chart.add(new zenoss.visualization.chart.dc.stacked.DataSet(
-						plot));
-			});
+            // Replace the plot data on each of the charts
+            // with the new data
+            for (i = 0; i < chart.plots.length; i += 1) {
+                _chart.dataset(i).plot(chart.plots[i]);
+            }
+            // Update the primary dimension and group
+            var lc = _chart.lineChart();
+            lc.dimension(_chart.dataset(0).dimension());
+            lc.group(_chart.dataset(0).group());
 
-			var lc = dc.lineChart(chart.containerSelector, "zenoss");
-			_chart.lineChart(lc);
+            // Stack the rest
+            _chart.stack();
+            dc.renderAll('zenoss');
+        },
 
-			lc.dimension(_chart.dataset(0).dimension());
-			lc.group(_chart.dataset(0).group());
-			lc.width($(chart.svgwrapper).width());
-			lc.height($(chart.svgwrapper).height());
-			lc.transitionDuration(500);
-			lc.elasticY(true);
-			lc.elasticX(true);
-			lc.brushOn(false);
-			lc.renderArea(true);
-			lc.title(function(d) {
-				return d.value + ' at ' + new Date(d.key).toLocaleString();
-			});
-			lc.renderTitle(true);
-			lc.dotRadius(10);
-			lc.round(d3.time.second.round);
-			lc.xUnits(d3.time.second);
-			lc.renderHorizontalGridLines(true);
-			lc.renderVerticalGridLines(true);
-			lc
-					.x(d3.time
-							.scale()
-							.domain(
-									[
-											new Date(chart.plots[0].values[0].x),
-											new Date(
-													chart.plots[0].values[chart.plots[0].values.length - 1].x) ]));
+        build : function(chart) {
+            // Cull to common data points so that stacking
+            // works correctly
+            zenoss.visualization.__cull(chart);
+            chart.svg.datum(chart.plots);
 
-			_chart.stack();
+            var _chart = new zenoss.visualization.chart.dc.stacked.Chart();
 
-			return _chart;
-		},
+            chart.plots.forEach(function(plot) {
+                _chart.add(new zenoss.visualization.chart.dc.stacked.DataSet(
+                        plot));
+            });
 
-		render : function(chart) {
-			dc.renderAll('zenoss');
-		}
-	}
-}
+            var lc = dc.lineChart(chart.containerSelector, "zenoss");
+            _chart.lineChart(lc);
+
+            lc.dimension(_chart.dataset(0).dimension());
+            lc.group(_chart.dataset(0).group());
+            lc.width($(chart.svgwrapper).width());
+            lc.height($(chart.svgwrapper).height());
+            lc.transitionDuration(500);
+            lc.elasticY(true);
+            lc.elasticX(true);
+            lc.brushOn(false);
+            lc.renderArea(true);
+            lc.title(function(d) {
+                return d.value + ' at ' + new Date(d.key).toLocaleString();
+            });
+            lc.renderTitle(true);
+            lc.dotRadius(10);
+            lc.round(d3.time.second.round);
+            lc.xUnits(d3.time.second);
+            lc.renderHorizontalGridLines(true);
+            lc.renderVerticalGridLines(true);
+            lc
+                    .x(d3.time
+                            .scale()
+                            .domain(
+                                    [
+                                            new Date(chart.plots[0].values[0].x),
+                                            new Date(
+                                                    chart.plots[0].values[chart.plots[0].values.length - 1].x) ]));
+
+            _chart.stack();
+
+            return _chart;
+        },
+
+        render : function(chart) {
+            dc.renderAll('zenoss');
+        }
+    };
+
+    $.extend(true, zenoss.visualization.chart, {
+        dc : {
+            stacked : stacked
+        }
+    });
+}());
