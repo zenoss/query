@@ -55,6 +55,7 @@ import org.zenoss.app.annotations.API;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.MetricServiceAPI;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
+import org.zenoss.app.metricservice.api.model.ReturnSet;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -86,7 +87,7 @@ public class MetricService implements MetricServiceAPI {
     protected static final String RATE = "rate";
     protected static final String DOWNSAMPLE = "downsample";
     protected static final String METRIC = "metric";
-    protected static final String EXACT_TIME_WINDOW = "exactTimeWindow";
+    protected static final String RETURN_SET = "returnset";
     protected static final String TIMESTAMP = "timestamp";
     protected static final String SERIES = "series";
     protected static final String VALUE = "value";
@@ -116,7 +117,7 @@ public class MetricService implements MetricServiceAPI {
         private final String id;
         private final String startTime;
         private final String endTime;
-        private final Boolean exactTimeWindow;
+        private final ReturnSet returnset;
         private final Boolean series;
         private final String downsample;
         private final Map<String, String> tags;
@@ -125,7 +126,7 @@ public class MetricService implements MetricServiceAPI {
         private long end = -1;
 
         public Worker(MetricServiceAppConfiguration config, String id,
-                String startTime, String endTime, Boolean exactTimeWindow,
+                String startTime, String endTime, ReturnSet returnset,
                 Boolean series, String downsample, Map<String, String> tags,
                 List<MetricSpecification> queries) {
             if (queries == null) {
@@ -139,7 +140,7 @@ public class MetricService implements MetricServiceAPI {
             this.id = id;
             this.startTime = startTime;
             this.endTime = endTime;
-            this.exactTimeWindow = exactTimeWindow;
+            this.returnset = returnset;
             this.series = series;
             this.tags = tags;
             this.downsample = downsample;
@@ -180,7 +181,7 @@ public class MetricService implements MetricServiceAPI {
                     precomma = true;
                 }
                 t = ts;
-                if (!exactTimeWindow || (ts >= start && ts <= end)) {
+                if (returnset == ReturnSet.ALL || (ts >= start && ts <= end)) {
                     if (needHeader) {
                         if (precomma) {
                             writer.write(',');
@@ -240,7 +241,7 @@ public class MetricService implements MetricServiceAPI {
                 // Check the timestamp and if we went backwards in time that
                 // means that we are onto the next query.
                 ts = Long.valueOf(terms[1]);
-                if (!exactTimeWindow || (ts >= start && ts <= end)) {
+                if (returnset == ReturnSet.ALL || (ts >= start && ts <= end)) {
                     if (comma) {
                         writer.write(',');
                     }
@@ -369,7 +370,7 @@ public class MetricService implements MetricServiceAPI {
             BufferedReader reader = null;
             try {
                 reader = api.getReader(config, id, convertedStartTime,
-                        convertedEndTime, exactTimeWindow, series, downsample,
+                        convertedEndTime, returnset, series, downsample,
                         tags, queries);
             } catch (WebApplicationException wae) {
                 throw wae;
@@ -395,7 +396,7 @@ public class MetricService implements MetricServiceAPI {
                         .value(START_TIME_ACTUAL, actual.format(startDate),
                                 true).value(END_TIME, endTime, true)
                         .value(END_TIME_ACTUAL, actual.format(endDate), true)
-                        .value(EXACT_TIME_WINDOW, exactTimeWindow, true)
+                        .value(RETURN_SET, returnset, true)
                         .value(SERIES, series, true).arrayS(RESULTS);
 
                 // convert the start / end times to longs so we can determine if
@@ -435,7 +436,7 @@ public class MetricService implements MetricServiceAPI {
      */
     @Override
     public Response query(Optional<String> id, Optional<String> startTime,
-            Optional<String> endTime, Optional<Boolean> exactTimeWindow,
+            Optional<String> endTime, Optional<ReturnSet> returnset,
             Optional<Boolean> series, Optional<String> downsample,
             Optional<Map<String, String>> tags,
             List<MetricSpecification> queries) {
@@ -446,8 +447,8 @@ public class MetricService implements MetricServiceAPI {
                             .or(config.getMetricServiceConfig()
                                     .getDefaultStartTime()), endTime.or(config
                             .getMetricServiceConfig().getDefaultEndTime()),
-                            exactTimeWindow.or(config.getMetricServiceConfig()
-                                    .getDefaultExactTimeWindow()), series
+                            returnset.or(config.getMetricServiceConfig()
+                                    .getDefaultReturnSet()), series
                                     .or(config.getMetricServiceConfig()
                                             .getDefaultSeries()), downsample
                                     .orNull(), tags.orNull(), queries)).build();

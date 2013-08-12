@@ -3,7 +3,7 @@ logging:
   loggers:
     "org.zenoss": DEBUG
 metrics: 
-  defaultExactTimeWindow: true
+  defaultReturnSet: EXACT
   defaultStartTime: 1h-ago
   defaultEndTime: now
   defaultSeries: false

@@ -46,6 +46,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zenoss.app.metricservice.api.MetricServiceAPI;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.PerformanceQuery;
+import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.dropwizardspring.annotations.Resource;
 
 import com.google.common.base.Optional;
@@ -70,10 +71,10 @@ public class MetricResources {
             @QueryParam("query") List<MetricSpecification> queries,
             @QueryParam("start") Optional<String> startTime,
             @QueryParam("end") Optional<String> endTime,
-            @QueryParam("exact") Optional<Boolean> exactTimeWindow,
+            @QueryParam("returnset") Optional<ReturnSet> returnset,
             @QueryParam("series") Optional<Boolean> series) {
-
-        return api.query(id, startTime, endTime, exactTimeWindow, series,
+        
+        return api.query(id, startTime, endTime, returnset, series,
                 Optional.<String> absent(),
                 Optional.<Map<String, String>> absent(), queries);
     }
@@ -87,16 +88,16 @@ public class MetricResources {
         Optional<String> start = Optional.<String> fromNullable(query
                 .getStart());
         Optional<String> end = Optional.<String> fromNullable(query.getEnd());
-        Optional<Boolean> exact = Optional.<Boolean> fromNullable(query
-                .getExactTimeWindow());
+        Optional<ReturnSet> returnset = Optional.<ReturnSet> fromNullable(query
+                .getReturnset());
         Optional<Boolean> series = Optional.<Boolean> fromNullable(query
                 .getSeries());
         Optional<String> downsample = Optional.<String> fromNullable(query
                 .getDownsample());
         Optional<Map<String, String>> tags = Optional
                 .<Map<String, String>> fromNullable(query.getTags());
-
-        return api.query(id, start, end, exact, series, downsample, tags,
+        
+        return api.query(id, start, end, returnset, series, downsample, tags,
                 query.getMetrics());
     }
 }

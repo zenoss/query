@@ -308,6 +308,26 @@
                                         <pluginExecution>
                                              <pluginExecutionFilter>
                                                   <groupId>
+                                                       com.github.phasebash
+                                                  </groupId>
+                                                  <artifactId>
+                                                       jsdoc3-maven-plugin
+                                                  </artifactId>
+                                                  <versionRange>
+                                                       [1.0.4,)
+                                                  </versionRange>
+                                                  <goals>
+                                                       <goal>generate-resources</goal>
+                                                       <goal>jsdoc3</goal>
+                                                  </goals>
+                                             </pluginExecutionFilter>
+                                             <action>
+                                                  <ignore></ignore>
+                                             </action>
+                                        </pluginExecution>
+                                        <pluginExecution>
+                                             <pluginExecutionFilter>
+                                                  <groupId>
                                                        org.jacoco
                                                   </groupId>
                                                   <artifactId>
