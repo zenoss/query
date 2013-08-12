@@ -133,7 +133,8 @@ public abstract class ProviderTestBase extends ResourceTest {
             Assert.assertEquals(end.get(), json.get("endTime"));
         }
         if (returnset.isPresent()) {
-            Assert.assertEquals(returnset.get(), json.get("returnset"));
+            Assert.assertEquals(returnset.get(), ReturnSet
+                    .fromJson((String) json.get("returnset")));
         }
         if (series.isPresent()) {
             Assert.assertEquals(series.get(), json.get("series"));
@@ -182,7 +183,7 @@ public abstract class ProviderTestBase extends ResourceTest {
                     Object[] dps = (Object[]) value.get("datapoints");
                     Assert.assertTrue(dps.length > 0);
                     // if ("mock".equals(json.get("source"))) {
-                    if ((ReturnSet) json.get("returnset") == ReturnSet.EXACT) {
+                    if (ReturnSet.fromJson((String) json.get("returnset")) == ReturnSet.EXACT) {
                         Assert.assertEquals("number of data points found",
                                 count, dps.length);
                     }
@@ -195,7 +196,7 @@ public abstract class ProviderTestBase extends ResourceTest {
                 }
             } else {
 
-                if ((ReturnSet) json.get("returnset") == ReturnSet.EXACT) {
+                if (ReturnSet.fromJson((String) json.get("returnset")) == ReturnSet.EXACT) {
                     // count is * queries.length because the mock generates
                     // a data point for each step in the time span for each
                     // query

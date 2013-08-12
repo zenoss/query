@@ -213,14 +213,14 @@
                     <version>1.0</version>
                     <executions>
                          <execution>
-                              <phase>generate-resources</phase>
+                              <phase>package</phase>
                               <id>clean</id>
                               <goals>
                                    <goal>clean</goal>
                               </goals>
                          </execution>
                          <execution>
-                              <phase>generate-resources</phase>
+                              <phase>package</phase>
                               <id>genkey</id>
                               <goals>
                                    <goal>genkey</goal>
@@ -264,7 +264,7 @@
                     <executions>
                          <execution>
                               <id>Generate Public JS Documentation</id>
-                              <phase>generate-resources</phase>
+                              <phase>prepare-package</phase>
                               <goals>
                                    <goal>jsdoc3</goal>
                               </goals>
@@ -278,7 +278,7 @@
                          </execution>
                          <execution>
                               <id>Generate Private JS Documentation</id>
-                              <phase>generate-resources</phase>
+                              <phase>prepare-package</phase>
                               <goals>
                                    <goal>jsdoc3</goal>
                               </goals>
@@ -317,7 +317,6 @@
                                                        [1.0.4,)
                                                   </versionRange>
                                                   <goals>
-                                                       <goal>generate-resources</goal>
                                                        <goal>jsdoc3</goal>
                                                   </goals>
                                              </pluginExecutionFilter>

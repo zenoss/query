@@ -30,6 +30,19 @@
  */
 package org.zenoss.app.metricservice.api.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public enum ReturnSet {
-	ALL, EXACT, LAST;
+    ALL, EXACT, LAST;
+
+    @JsonValue
+    public String toJson() {
+        return toString().toLowerCase();
+    }
+
+    @JsonCreator
+    public static ReturnSet fromJson(final String name) {
+        return valueOf(name.toUpperCase());
+    }
 }

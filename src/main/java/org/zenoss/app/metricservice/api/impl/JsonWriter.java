@@ -324,8 +324,9 @@ public class JsonWriter extends BufferedWriter {
             throws IOException {
         write('\"');
         write(name);
-        write("\":");
-        write(value.toString());
+        write("\":\"");
+        write(value.toString().toLowerCase());
+        write('\"');
         if (appendComma) {
             write(',');
         }

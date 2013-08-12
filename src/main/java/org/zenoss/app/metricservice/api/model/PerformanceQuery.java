@@ -64,7 +64,7 @@ public class PerformanceQuery {
     private String downsample = null;
     
     @JsonProperty(value="returnset")
-    private ReturnSet returnset = ReturnSet.EXACT;
+    private ReturnSet returnset = null;
 
     /**
      * @return the start
