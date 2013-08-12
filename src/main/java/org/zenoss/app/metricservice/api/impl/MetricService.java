@@ -34,6 +34,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.Reader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -113,6 +114,53 @@ public class MetricService implements MetricServiceAPI {
 
     protected TimeZone serverTimeZone = null;
 
+    /**
+     * Used as a buffer filter class when return the "last" values for a
+     * query. This essentially only return the next line from the underlying
+     * reader when the timestamp delta goes negative (indicating that the
+     * tags have changes in a query) this would mean the last value in a 
+     * given series and the value is returned as the next line in the file.
+     */
+    private class LastFilter extends BufferedReader {
+        private String lastLine = null;
+        private long lastTs = -1;
+        
+        /**
+         * @param in
+         */
+        public LastFilter(Reader in) {
+            super(in);
+        }
+
+        /*
+         * (non-Javadoc)
+         * 
+         * @see java.io.BufferedReader#readLine()
+         */
+        @Override
+        public String readLine() throws IOException {
+            // Read from the input stream until we see the timestamp
+            // go backward and then return the previous value
+            String line = null, result = null;
+            long ts = -1;
+
+            while ((line = super.readLine()) != null) {
+                ts = Long.parseLong(line.split(" ", 4)[1]);
+                if (ts < lastTs) {
+                    lastTs = ts;
+                    result = lastLine;
+                    lastLine = line;
+                    return result;
+                }
+                lastLine = line;
+                lastTs = ts;
+            }
+            result = lastLine;
+            lastLine = null;
+            return result;
+        }
+    }
+
     private class Worker implements StreamingOutput {
         private final String id;
         private final String startTime;
@@ -170,7 +218,7 @@ public class MetricService implements MetricServiceAPI {
                 // Check the timestamp and if we went backwards in time that
                 // means that we are onto the next query.
                 ts = Long.valueOf(terms[1]);
-                if (ts < t) {
+                if ((t >= 0 && returnset == ReturnSet.LAST) || ts < t) {
                     // If we have written a header then we need to close
                     // out the JSON object
                     if (!needHeader) {
@@ -370,8 +418,11 @@ public class MetricService implements MetricServiceAPI {
             BufferedReader reader = null;
             try {
                 reader = api.getReader(config, id, convertedStartTime,
-                        convertedEndTime, returnset, series, downsample,
-                        tags, queries);
+                        convertedEndTime, returnset, series, downsample, tags,
+                        queries);
+                if (returnset == ReturnSet.LAST) {
+                    reader = new LastFilter(reader);
+                }
             } catch (WebApplicationException wae) {
                 throw wae;
             } catch (Exception e) {
@@ -448,10 +499,10 @@ public class MetricService implements MetricServiceAPI {
                                     .getDefaultStartTime()), endTime.or(config
                             .getMetricServiceConfig().getDefaultEndTime()),
                             returnset.or(config.getMetricServiceConfig()
-                                    .getDefaultReturnSet()), series
-                                    .or(config.getMetricServiceConfig()
-                                            .getDefaultSeries()), downsample
-                                    .orNull(), tags.orNull(), queries)).build();
+                                    .getDefaultReturnSet()), series.or(config
+                                    .getMetricServiceConfig()
+                                    .getDefaultSeries()), downsample.orNull(),
+                            tags.orNull(), queries)).build();
         } catch (Exception e) {
             log.error(String.format(
                     "Error While attempting to query data soruce: %s : %s", e
