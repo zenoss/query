@@ -133,8 +133,8 @@ public abstract class ProviderTestBase extends ResourceTest {
             Assert.assertEquals(end.get(), json.get("endTime"));
         }
         if (returnset.isPresent()) {
-            Assert.assertEquals(returnset.get(), ReturnSet
-                    .fromJson((String) json.get("returnset")));
+            Assert.assertEquals(returnset.get(),
+                    ReturnSet.fromJson((String) json.get("returnset")));
         }
         if (series.isPresent()) {
             Assert.assertEquals(series.get(), json.get("series"));
@@ -182,10 +182,22 @@ public abstract class ProviderTestBase extends ResourceTest {
                             value.get("datapoints"));
                     Object[] dps = (Object[]) value.get("datapoints");
                     Assert.assertTrue(dps.length > 0);
-                    // if ("mock".equals(json.get("source"))) {
-                    if (ReturnSet.fromJson((String) json.get("returnset")) == ReturnSet.EXACT) {
+
+                    switch (ReturnSet.fromJson((String) json.get("returnset"))) {
+                    case EXACT:
                         Assert.assertEquals("number of data points found",
                                 count, dps.length);
+                        break;
+                    case ALL:
+                        Assert.assertTrue("number of data points found",
+                                dps.length >= count);
+                        break;
+                    case LAST:
+                        Assert.assertEquals("number of data points found", 1,
+                                dps.length);
+                        break;
+                    default:
+                        break;
                     }
                     for (Object dpo : dps) {
                         Map<?, ?> dp = (Map<?, ?>) dpo;
@@ -195,13 +207,24 @@ public abstract class ProviderTestBase extends ResourceTest {
                     }
                 }
             } else {
-
-                if (ReturnSet.fromJson((String) json.get("returnset")) == ReturnSet.EXACT) {
-                    // count is * queries.length because the mock generates
+                switch (ReturnSet.fromJson((String) json.get("returnset"))) {
+                case EXACT:
+                    // count is queries.length because the mock generates
                     // a data point for each step in the time span for each
                     // query
-                    Assert.assertEquals(count * queries.length, results.length);
+                    Assert.assertEquals("number of data points found", count
+                            * queries.length, results.length);
+                    break;
+                case LAST:
+                    // If the request was for the "last" value then there should
+                    // be exactly one data point per metric requested
+                    Assert.assertEquals(queries.length, results.length);
+                    break;
+                case ALL:
+                default:
+                    break;
                 }
+
                 for (Object r : results) {
                     Map<?, ?> value = (Map<?, ?>) r;
                     Assert.assertNotNull(value.get("metric"));
@@ -416,5 +439,43 @@ public abstract class ProviderTestBase extends ResourceTest {
                 Optional.<String> absent(),
                 Optional.<Map<String, String>> absent(),
                 new String[] { "avg:laLoadInt1" });
+    }
+
+    @Test
+    public void queryTestLastValue() throws Exception {
+        testQuery(Optional.of("my-client-id"), Optional.of("1h-ago"),
+                Optional.<String> absent(), Optional.of(ReturnSet.LAST),
+                Optional.of(false), Optional.<String> absent(),
+                Optional.<Map<String, String>> absent(),
+                new String[] { "avg:laLoadInt1" });
+    }
+
+    @Test
+    public void queryTestLastValueWithTags() throws Exception {
+        testQuery(Optional.of("my-client-id"), Optional.of("1h-ago"),
+                Optional.<String> absent(), Optional.of(ReturnSet.LAST),
+                Optional.of(false), Optional.<String> absent(),
+                Optional.<Map<String, String>> absent(), new String[] {
+                        "avg:laLoadInt1{tag1=value1,tag2=value2}",
+                        "sum:laLoadInt5{tag1=value1,tag2=value2}" });
+    }
+
+    @Test
+    public void queryTestLastValueSeries() throws Exception {
+        testQuery(Optional.of("my-client-id"), Optional.of("1h-ago"),
+                Optional.<String> absent(), Optional.of(ReturnSet.LAST),
+                Optional.of(true), Optional.<String> absent(),
+                Optional.<Map<String, String>> absent(),
+                new String[] { "avg:laLoadInt1" });
+    }
+
+    @Test
+    public void queryTestLastValueSeriesWithTags() throws Exception {
+        testQuery(Optional.of("my-client-id"), Optional.of("1h-ago"),
+                Optional.<String> absent(), Optional.of(ReturnSet.LAST),
+                Optional.of(true), Optional.<String> absent(),
+                Optional.<Map<String, String>> absent(), new String[] {
+                        "avg:laLoadInt1{tag1=value1,tag2=value2}",
+                        "sum:laLoadInt5{tag1=value1,tag2=value2}" });
     }
 }

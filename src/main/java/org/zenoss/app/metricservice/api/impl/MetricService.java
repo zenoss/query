@@ -115,21 +115,25 @@ public class MetricService implements MetricServiceAPI {
     protected TimeZone serverTimeZone = null;
 
     /**
-     * Used as a buffer filter class when return the "last" values for a
-     * query. This essentially only return the next line from the underlying
-     * reader when the timestamp delta goes negative (indicating that the
-     * tags have changes in a query) this would mean the last value in a 
-     * given series and the value is returned as the next line in the file.
+     * Used as a buffer filter class when return the "last" values for a query.
+     * This essentially only return the next line from the underlying reader
+     * when the timestamp delta goes negative (indicating that the tags have
+     * changes in a query) this would mean the last value in a given series and
+     * the value is returned as the next line in the file.
      */
     private class LastFilter extends BufferedReader {
         private String lastLine = null;
         private long lastTs = -1;
-        
+        private final long startTs;
+        private final long endTs;
+
         /**
          * @param in
          */
-        public LastFilter(Reader in) {
+        public LastFilter(Reader in, Date startTs, Date endTs) {
             super(in);
+            this.startTs = startTs.getTime() / 1000;
+            this.endTs = endTs.getTime() / 1000;
         }
 
         /*
@@ -146,6 +150,10 @@ public class MetricService implements MetricServiceAPI {
 
             while ((line = super.readLine()) != null) {
                 ts = Long.parseLong(line.split(" ", 4)[1]);
+                // Remove any TS that is outside the start/end range
+                if (ts < startTs || ts > endTs) {
+                    continue;
+                }
                 if (ts < lastTs) {
                     lastTs = ts;
                     result = lastLine;
@@ -199,6 +207,7 @@ public class MetricService implements MetricServiceAPI {
                 throws NumberFormatException, IOException {
             long t = -1;
             String line = null;
+            String lastMetric = null;
             long ts = 0;
             double val = 0;
             boolean comma = false;
@@ -215,10 +224,12 @@ public class MetricService implements MetricServiceAPI {
             while ((line = reader.readLine()) != null) {
                 String terms[] = line.split(" ", 4);
 
-                // Check the timestamp and if we went backwards in time that
-                // means that we are onto the next query.
+                // Check the timestamp and if we went backwards in time or there
+                // is a new metric name that means that we are onto the next
+                // query.
                 ts = Long.valueOf(terms[1]);
-                if ((t >= 0 && returnset == ReturnSet.LAST) || ts < t) {
+                if (ts < t
+                        || (lastMetric != null && !lastMetric.equals(terms[0]))) {
                     // If we have written a header then we need to close
                     // out the JSON object
                     if (!needHeader) {
@@ -229,6 +240,7 @@ public class MetricService implements MetricServiceAPI {
                     precomma = true;
                 }
                 t = ts;
+                lastMetric = terms[0];
                 if (returnset == ReturnSet.ALL || (ts >= start && ts <= end)) {
                     if (needHeader) {
                         if (precomma) {
@@ -421,7 +433,7 @@ public class MetricService implements MetricServiceAPI {
                         convertedEndTime, returnset, series, downsample, tags,
                         queries);
                 if (returnset == ReturnSet.LAST) {
-                    reader = new LastFilter(reader);
+                    reader = new LastFilter(reader, startDate, endDate);
                 }
             } catch (WebApplicationException wae) {
                 throw wae;
