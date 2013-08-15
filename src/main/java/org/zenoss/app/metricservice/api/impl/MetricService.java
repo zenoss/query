@@ -121,7 +121,7 @@ public class MetricService implements MetricServiceAPI {
      * changes in a query) this would mean the last value in a given series and
      * the value is returned as the next line in the file.
      */
-    private class LastFilter extends BufferedReader {
+    private static class LastFilter extends BufferedReader {
         private String lastLine = null;
         private long lastTs = -1;
         private final long startTs;
