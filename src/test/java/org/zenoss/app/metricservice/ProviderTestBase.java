@@ -47,6 +47,7 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.PerformanceQuery;
+import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.app.metricservice.api.remote.MetricResources;
 
 import com.google.common.base.Optional;
@@ -110,7 +111,7 @@ public abstract class ProviderTestBase extends ResourceTest {
 
     protected Map<?, ?> parseAndVerifyResponse(Optional<String> id,
             Optional<String> start, Optional<String> end,
-            Optional<Boolean> exact, Optional<Boolean> series,
+            Optional<ReturnSet> returnset, Optional<Boolean> series,
             String[] queries, ClientResponse response) throws Exception {
         Object o;
         try (InputStreamReader reader = new InputStreamReader(
@@ -131,8 +132,9 @@ public abstract class ProviderTestBase extends ResourceTest {
         if (end.isPresent()) {
             Assert.assertEquals(end.get(), json.get("endTime"));
         }
-        if (exact.isPresent()) {
-            Assert.assertEquals(exact.get(), json.get("exactTimeWindow"));
+        if (returnset.isPresent()) {
+            Assert.assertEquals(returnset.get(),
+                    ReturnSet.fromJson((String) json.get("returnset")));
         }
         if (series.isPresent()) {
             Assert.assertEquals(series.get(), json.get("series"));
@@ -180,10 +182,22 @@ public abstract class ProviderTestBase extends ResourceTest {
                             value.get("datapoints"));
                     Object[] dps = (Object[]) value.get("datapoints");
                     Assert.assertTrue(dps.length > 0);
-                    // if ("mock".equals(json.get("source"))) {
-                    if ((Boolean) json.get("exactTimeWindow")) {
+
+                    switch (ReturnSet.fromJson((String) json.get("returnset"))) {
+                    case EXACT:
                         Assert.assertEquals("number of data points found",
                                 count, dps.length);
+                        break;
+                    case ALL:
+                        Assert.assertTrue("number of data points found",
+                                dps.length >= count);
+                        break;
+                    case LAST:
+                        Assert.assertEquals("number of data points found", 1,
+                                dps.length);
+                        break;
+                    default:
+                        break;
                     }
                     for (Object dpo : dps) {
                         Map<?, ?> dp = (Map<?, ?>) dpo;
@@ -193,13 +207,24 @@ public abstract class ProviderTestBase extends ResourceTest {
                     }
                 }
             } else {
-
-                if ((Boolean) json.get("exactTimeWindow")) {
-                    // count is * queries.length because the mock generates
+                switch (ReturnSet.fromJson((String) json.get("returnset"))) {
+                case EXACT:
+                    // count is queries.length because the mock generates
                     // a data point for each step in the time span for each
                     // query
-                    Assert.assertEquals(count * queries.length, results.length);
+                    Assert.assertEquals("number of data points found", count
+                            * queries.length, results.length);
+                    break;
+                case LAST:
+                    // If the request was for the "last" value then there should
+                    // be exactly one data point per metric requested
+                    Assert.assertEquals(queries.length, results.length);
+                    break;
+                case ALL:
+                default:
+                    break;
                 }
+
                 for (Object r : results) {
                     Map<?, ?> value = (Map<?, ?>) r;
                     Assert.assertNotNull(value.get("metric"));
@@ -214,8 +239,8 @@ public abstract class ProviderTestBase extends ResourceTest {
 
     protected Map<?, ?> testPostQuery(Optional<String> id,
             Optional<String> start, Optional<String> end,
-            Optional<Boolean> exact, Optional<Boolean> series, String[] queries)
-            throws Exception {
+            Optional<ReturnSet> returnset, Optional<Boolean> series,
+            String[] queries) throws Exception {
         // Build up a query object to post
         PerformanceQuery pq = new PerformanceQuery();
         if (start.isPresent()) {
@@ -224,8 +249,8 @@ public abstract class ProviderTestBase extends ResourceTest {
         if (end.isPresent()) {
             pq.setEnd(end.get());
         }
-        if (exact.isPresent()) {
-            pq.setExactTimeWindow(exact.get());
+        if (returnset.isPresent()) {
+            pq.setReturnset(returnset.get());
         }
         if (series.isPresent()) {
             pq.setSeries(series.get());
@@ -246,7 +271,7 @@ public abstract class ProviderTestBase extends ResourceTest {
         Assert.assertEquals("Invalid response code", 200, response.getStatus());
 
         return parseAndVerifyResponse(Optional.<String> absent(), start, end,
-                exact, series, queries, response);
+                returnset, series, queries, response);
     }
 
     /**
@@ -260,7 +285,7 @@ public abstract class ProviderTestBase extends ResourceTest {
      *            the start date/time of the request
      * @param end
      *            the end date/time of the request
-     * @param exact
+     * @param returnset
      *            should the time window be honored
      * @param series
      *            should the results be separated into series
@@ -271,7 +296,7 @@ public abstract class ProviderTestBase extends ResourceTest {
      *             if the process encounters an exception
      */
     protected Map<?, ?> testQuery(Optional<String> id, Optional<String> start,
-            Optional<String> end, Optional<Boolean> exact,
+            Optional<String> end, Optional<ReturnSet> returnset,
             Optional<Boolean> series, Optional<String> downsample,
             Optional<Map<String, String>> globalTags, String[] queries)
             throws Exception {
@@ -282,7 +307,7 @@ public abstract class ProviderTestBase extends ResourceTest {
         prefix = addArgument(buf, "id", id, prefix);
         prefix = addArgument(buf, "start", start, prefix);
         prefix = addArgument(buf, "end", end, prefix);
-        prefix = addArgument(buf, "exact", exact, prefix);
+        prefix = addArgument(buf, "returnset", returnset, prefix);
         prefix = addArgument(buf, "series", series, prefix);
         for (String query : queries) {
             prefix = addArgument(buf, "query", Optional.of(query), prefix);
@@ -294,14 +319,14 @@ public abstract class ProviderTestBase extends ResourceTest {
         ClientResponse response = wr.get(ClientResponse.class);
         Assert.assertNotNull(response);
         Assert.assertEquals("Invalid response code", 200, response.getStatus());
-        return parseAndVerifyResponse(id, start, end, exact, series, queries,
-                response);
+        return parseAndVerifyResponse(id, start, end, returnset, series,
+                queries, response);
     }
 
     @Test
     public void queryTest10sAgo1QuerySeries() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
-                Optional.<String> absent(), Optional.of(true),
+                Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
                 Optional.of(true), Optional.<String> absent(),
                 Optional.<Map<String, String>> absent(),
                 new String[] { "avg:laLoadInt1" });
@@ -310,7 +335,7 @@ public abstract class ProviderTestBase extends ResourceTest {
     @Test
     public void queryTest10sAgo1QueryNoSeries() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
-                Optional.<String> absent(), Optional.of(true),
+                Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
                 Optional.of(false), Optional.<String> absent(),
                 Optional.<Map<String, String>> absent(),
                 new String[] { "avg:laLoadInt1" });
@@ -319,7 +344,7 @@ public abstract class ProviderTestBase extends ResourceTest {
     @Test
     public void queryTest10sAgo2QuerySeries() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
-                Optional.<String> absent(), Optional.of(true),
+                Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
                 Optional.of(true), Optional.<String> absent(),
                 Optional.<Map<String, String>> absent(), new String[] {
                         "avg:laLoadInt1", "sum:laLoadInt5" });
@@ -328,7 +353,7 @@ public abstract class ProviderTestBase extends ResourceTest {
     @Test
     public void queryTest10sAgo2QueryNoSeries() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
-                Optional.<String> absent(), Optional.of(true),
+                Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
                 Optional.of(false), Optional.<String> absent(),
                 Optional.<Map<String, String>> absent(), new String[] {
                         "avg:laLoadInt1", "sum:laLoadInt5" });
@@ -337,7 +362,7 @@ public abstract class ProviderTestBase extends ResourceTest {
     @Test
     public void queryTest10sAgo1QuerySeriesWithTags() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
-                Optional.<String> absent(), Optional.of(true),
+                Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
                 Optional.of(true), Optional.<String> absent(),
                 Optional.<Map<String, String>> absent(),
                 new String[] { "avg:laLoadInt1{btag1=value1,tag2=value2}" });
@@ -346,7 +371,7 @@ public abstract class ProviderTestBase extends ResourceTest {
     @Test
     public void queryTest10sAgo1QueryNoSeriesWithTags() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
-                Optional.<String> absent(), Optional.of(true),
+                Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
                 Optional.of(false), Optional.<String> absent(),
                 Optional.<Map<String, String>> absent(),
                 new String[] { "avg:laLoadInt1{tag1=value1,tag2=value2}" });
@@ -355,7 +380,7 @@ public abstract class ProviderTestBase extends ResourceTest {
     @Test
     public void queryTest10sAgo2QuerySeriesWithTags() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
-                Optional.<String> absent(), Optional.of(true),
+                Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
                 Optional.of(true), Optional.<String> absent(),
                 Optional.<Map<String, String>> absent(), new String[] {
                         "avg:laLoadInt1{tag1=value1,tag2=value2}",
@@ -365,7 +390,7 @@ public abstract class ProviderTestBase extends ResourceTest {
     @Test
     public void queryTest10sAgo2QueryNoSeriesWithTags() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
-                Optional.<String> absent(), Optional.of(true),
+                Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
                 Optional.of(false), Optional.<String> absent(),
                 Optional.<Map<String, String>> absent(), new String[] {
                         "avg:laLoadInt1{tag1=value1,tag2=value2}",
@@ -376,8 +401,9 @@ public abstract class ProviderTestBase extends ResourceTest {
     public void queryTestTimeRange() throws Exception {
         testQuery(Optional.of("my-client-id"),
                 Optional.of("2013/04/30-16:00:00-GMT"),
-                Optional.of("2013/04/30-18:00:00-GMT"), Optional.of(false),
-                Optional.of(true), Optional.<String> absent(),
+                Optional.of("2013/04/30-18:00:00-GMT"),
+                Optional.of(ReturnSet.ALL), Optional.of(true),
+                Optional.<String> absent(),
                 Optional.<Map<String, String>> absent(),
                 new String[] { "avg:laLoadInt1" });
     }
@@ -386,8 +412,9 @@ public abstract class ProviderTestBase extends ResourceTest {
     public void queryTestTimeRangeNoSeries() throws Exception {
         testQuery(Optional.of("my-client-id"),
                 Optional.of("2013/04/30-16:00:00-GMT"),
-                Optional.of("2013/04/30-18:00:00-GMT"), Optional.of(true),
-                Optional.of(true), Optional.<String> absent(),
+                Optional.of("2013/04/30-18:00:00-GMT"),
+                Optional.of(ReturnSet.EXACT), Optional.of(true),
+                Optional.<String> absent(),
                 Optional.<Map<String, String>> absent(),
                 new String[] { "avg:laLoadInt1" });
     }
@@ -396,8 +423,9 @@ public abstract class ProviderTestBase extends ResourceTest {
     public void queryTestOutsideExactTimeRange() throws Exception {
         testQuery(Optional.of("my-client-id"),
                 Optional.of("2013/04/30-16:00:00-GMT"),
-                Optional.of("2013/04/30-18:00:00-GMT"), Optional.of(true),
-                Optional.of(false), Optional.<String> absent(),
+                Optional.of("2013/04/30-18:00:00-GMT"),
+                Optional.of(ReturnSet.EXACT), Optional.of(false),
+                Optional.<String> absent(),
                 Optional.<Map<String, String>> absent(),
                 new String[] { "avg:laLoadInt1" });
     }
@@ -406,9 +434,48 @@ public abstract class ProviderTestBase extends ResourceTest {
     public void queryTestOutsideTimeRange() throws Exception {
         testQuery(Optional.of("my-client-id"),
                 Optional.of("2013/04/30-16:00:00-GMT"),
-                Optional.of("2013/04/30-18:00:00-GMT"), Optional.of(false),
+                Optional.of("2013/04/30-18:00:00-GMT"),
+                Optional.of(ReturnSet.ALL), Optional.of(false),
+                Optional.<String> absent(),
+                Optional.<Map<String, String>> absent(),
+                new String[] { "avg:laLoadInt1" });
+    }
+
+    @Test
+    public void queryTestLastValue() throws Exception {
+        testQuery(Optional.of("my-client-id"), Optional.of("1h-ago"),
+                Optional.<String> absent(), Optional.of(ReturnSet.LAST),
                 Optional.of(false), Optional.<String> absent(),
                 Optional.<Map<String, String>> absent(),
                 new String[] { "avg:laLoadInt1" });
+    }
+
+    @Test
+    public void queryTestLastValueWithTags() throws Exception {
+        testQuery(Optional.of("my-client-id"), Optional.of("1h-ago"),
+                Optional.<String> absent(), Optional.of(ReturnSet.LAST),
+                Optional.of(false), Optional.<String> absent(),
+                Optional.<Map<String, String>> absent(), new String[] {
+                        "avg:laLoadInt1{tag1=value1,tag2=value2}",
+                        "sum:laLoadInt5{tag1=value1,tag2=value2}" });
+    }
+
+    @Test
+    public void queryTestLastValueSeries() throws Exception {
+        testQuery(Optional.of("my-client-id"), Optional.of("1h-ago"),
+                Optional.<String> absent(), Optional.of(ReturnSet.LAST),
+                Optional.of(true), Optional.<String> absent(),
+                Optional.<Map<String, String>> absent(),
+                new String[] { "avg:laLoadInt1" });
+    }
+
+    @Test
+    public void queryTestLastValueSeriesWithTags() throws Exception {
+        testQuery(Optional.of("my-client-id"), Optional.of("1h-ago"),
+                Optional.<String> absent(), Optional.of(ReturnSet.LAST),
+                Optional.of(true), Optional.<String> absent(),
+                Optional.<Map<String, String>> absent(), new String[] {
+                        "avg:laLoadInt1{tag1=value1,tag2=value2}",
+                        "sum:laLoadInt5{tag1=value1,tag2=value2}" });
     }
 }

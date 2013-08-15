@@ -171,7 +171,7 @@ public class MetricSpecification {
      * 
      * @return OpenTSDB URL query formatted String instance
      */
-    public String toString(String downsample, Map<String, String> baseTags) {
+    public String toString(String downsample, Map<String, String> baseTags, boolean withRateOptions) {
         StringBuilder buf = new StringBuilder();
         if (getAggregator() != null) {
             buf.append(getAggregator()).append(':');
@@ -182,8 +182,8 @@ public class MetricSpecification {
             buf.append(downsample).append(':');
         }
         if (getRate()) {
-            buf.append("rate");
-            if (getRateOptions() != null) {
+            buf.append("rate");   
+            if (withRateOptions && getRateOptions() != null) {
                 buf.append('{');
                 if (getRateOptions().getCounter() != null) {
                     if (getRateOptions().getCounter()) {
@@ -239,7 +239,11 @@ public class MetricSpecification {
      * @return OpenTSDB URL query formatted String instance
      */
     public String toString() {
-        return this.toString(null, null);
+        return this.toString(null, null, false);
+    }
+    
+    public String toString(boolean sendRateOptions) {
+        return this.toString(null, null, sendRateOptions);
     }
 
     /**

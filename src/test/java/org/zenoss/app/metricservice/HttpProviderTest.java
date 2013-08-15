@@ -48,6 +48,7 @@ import org.springframework.test.context.support.AnnotationConfigContextLoader;
 import org.zenoss.app.metricservice.api.configs.MetricServiceConfig;
 import org.zenoss.app.metricservice.api.impl.mocks.MockMetricStorage;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
+import org.zenoss.app.metricservice.api.model.ReturnSet;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
@@ -86,7 +87,7 @@ public class HttpProviderTest extends ProviderTestBase {
             .wireMockConfig().port(8089));
 
     protected Map<?, ?> testQuery(Optional<String> id, Optional<String> start,
-            Optional<String> end, Optional<Boolean> exact,
+            Optional<String> end, Optional<ReturnSet> returnset,
             Optional<Boolean> series, Optional<String> downsample,
             Optional<Map<String, String>> globalTags, String[] queries)
             throws Exception {
@@ -104,7 +105,7 @@ public class HttpProviderTest extends ProviderTestBase {
                 new ContextConfiguration().getQueryAppConfiguration(),
                 id.or("not-specified"), start.or(pref.getDefaultStartTime()),
                 end.or(pref.getDefaultEndTime()),
-                exact.or(pref.getDefaultExactTimeWindow()),
+                returnset.or(pref.getDefaultReturnSet()),
                 series.or(pref.getDefaultSeries()), downsample.orNull(),
                 globalTags.orNull(), queryList);
 
@@ -116,7 +117,7 @@ public class HttpProviderTest extends ProviderTestBase {
                         .withHeader("Content-type", "text/plain")
                         .withHeader("Date", "Tue, 30 Apr 2013 14:12:34 GMT")
                         .withBody(new String(data))));
-        return super.testQuery(id, start, end, exact, series, downsample,
+        return super.testQuery(id, start, end, returnset, series, downsample,
                 globalTags, queries);
     }
 }

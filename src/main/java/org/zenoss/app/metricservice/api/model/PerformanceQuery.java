@@ -53,10 +53,7 @@ public class PerformanceQuery {
     
     @JsonProperty(required=true)
     private List<MetricSpecification> metrics = null;
-    
-    @JsonProperty(value="exact")
-    private Boolean exactTimeWindow = null;
-    
+        
     @JsonProperty(value="series")
     private Boolean series = null;
     
@@ -65,6 +62,9 @@ public class PerformanceQuery {
     
     @JsonProperty(required=false)
     private String downsample = null;
+    
+    @JsonProperty(value="returnset")
+    private ReturnSet returnset = null;
 
     /**
      * @return the start
@@ -92,20 +92,6 @@ public class PerformanceQuery {
      */
     public final void setEnd(String end) {
         this.end = end;
-    }
-
-    /**
-     * @return the exactTimeWindow
-     */
-    public final Boolean getExactTimeWindow() {
-        return exactTimeWindow;
-    }
-
-    /**
-     * @param exactTimeWindow the exactTimeWindow to set
-     */
-    public final void setExactTimeWindow(Boolean exactTimeWindow) {
-        this.exactTimeWindow = exactTimeWindow;
     }
 
     /**
@@ -163,4 +149,18 @@ public class PerformanceQuery {
     public final void setDownsample(String downsample) {
         this.downsample = downsample;
     }
+
+	/**
+	 * @return the resturnset
+	 */
+	public ReturnSet getReturnset() {
+		return returnset;
+	}
+
+	/**
+	 * @param returnset the returnset to set
+	 */
+	public void setReturnset(ReturnSet returnset) {
+		this.returnset = returnset;
+	}
 }

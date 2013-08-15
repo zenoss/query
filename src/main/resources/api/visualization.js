@@ -895,6 +895,10 @@
             if (config.tags !== undefined) {
                 request.tags = config.tags;
             }
+            
+            if (config.returnset !== undefined) {
+                request.returnset = config.returnset;
+            }
 
             if (config.datapoints !== undefined) {
                 request.metrics = [];
