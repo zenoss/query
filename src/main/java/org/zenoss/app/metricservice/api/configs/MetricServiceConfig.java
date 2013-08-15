@@ -59,6 +59,9 @@ public class MetricServiceConfig {
     
     @JsonProperty
     private int connectionTimeoutMs = 1000;
+    
+    @JsonProperty
+    private Boolean sendRateOptions = Boolean.FALSE;
 
     /**
      * @return the defaultReturnSet
@@ -156,5 +159,19 @@ public class MetricServiceConfig {
 
     public final void setConnectionTimeoutMs(int connectionTimeoutMs) {
         this.connectionTimeoutMs = connectionTimeoutMs;
+    }
+
+    /**
+     * @return the sendRateOptions
+     */
+    public Boolean getSendRateOptions() {
+        return sendRateOptions;
+    }
+
+    /**
+     * @param sendRateOptions the sendRateOptions to set
+     */
+    public void setSendRateOptions(Boolean sendRateOptions) {
+        this.sendRateOptions = sendRateOptions;
     }
 }

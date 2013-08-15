@@ -234,10 +234,9 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
      * java.lang.String, java.lang.Boolean, java.lang.Boolean, java.util.List)
      */
     public BufferedReader getReader(MetricServiceAppConfiguration config,
-            String id, String startTime, String endTime,
-            ReturnSet returnset, Boolean series, String downsample,
-            Map<String, String> globalTags, List<MetricSpecification> queries)
-            throws IOException {
+            String id, String startTime, String endTime, ReturnSet returnset,
+            Boolean series, String downsample, Map<String, String> globalTags,
+            List<MetricSpecification> queries) throws IOException {
         StringBuilder buf = new StringBuilder(config.getMetricServiceConfig()
                 .getOpenTsdbUrl());
         buf.append("/q?");
@@ -248,8 +247,12 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             buf.append("&end=").append(URLEncoder.encode(endTime, "UTF-8"));
         }
         for (MetricSpecification query : queries) {
-            buf.append("&m=").append(
-                    URLEncoder.encode(query.toString(downsample, globalTags),
+            buf.append("&m=")
+                    .append(URLEncoder.encode(
+                            query.toString(
+                                    downsample,
+                                    globalTags,
+                                    this.config.getMetricServiceConfig().getSendRateOptions()),
                             "UTF-8"));
         }
         buf.append("&ascii");
