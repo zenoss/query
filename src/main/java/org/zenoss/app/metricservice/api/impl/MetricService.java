@@ -34,6 +34,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.Reader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -55,6 +56,7 @@ import org.zenoss.app.annotations.API;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.MetricServiceAPI;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
+import org.zenoss.app.metricservice.api.model.ReturnSet;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -86,7 +88,7 @@ public class MetricService implements MetricServiceAPI {
     protected static final String RATE = "rate";
     protected static final String DOWNSAMPLE = "downsample";
     protected static final String METRIC = "metric";
-    protected static final String EXACT_TIME_WINDOW = "exactTimeWindow";
+    protected static final String RETURN_SET = "returnset";
     protected static final String TIMESTAMP = "timestamp";
     protected static final String SERIES = "series";
     protected static final String VALUE = "value";
@@ -112,11 +114,66 @@ public class MetricService implements MetricServiceAPI {
 
     protected TimeZone serverTimeZone = null;
 
+    /**
+     * Used as a buffer filter class when return the "last" values for a query.
+     * This essentially only return the next line from the underlying reader
+     * when the timestamp delta goes negative (indicating that the tags have
+     * changes in a query) this would mean the last value in a given series and
+     * the value is returned as the next line in the file.
+     */
+    private static class LastFilter extends BufferedReader {
+        private String lastLine = null;
+        private long lastTs = -1;
+        private final long startTs;
+        private final long endTs;
+
+        /**
+         * @param in
+         */
+        public LastFilter(Reader in, Date startTs, Date endTs) {
+            super(in);
+            this.startTs = startTs.getTime() / 1000;
+            this.endTs = endTs.getTime() / 1000;
+        }
+
+        /*
+         * (non-Javadoc)
+         * 
+         * @see java.io.BufferedReader#readLine()
+         */
+        @Override
+        public String readLine() throws IOException {
+            // Read from the input stream until we see the timestamp
+            // go backward and then return the previous value
+            String line = null, result = null;
+            long ts = -1;
+
+            while ((line = super.readLine()) != null) {
+                ts = Long.parseLong(line.split(" ", 4)[1]);
+                // Remove any TS that is outside the start/end range
+                if (ts < startTs || ts > endTs) {
+                    continue;
+                }
+                if (ts < lastTs) {
+                    lastTs = ts;
+                    result = lastLine;
+                    lastLine = line;
+                    return result;
+                }
+                lastLine = line;
+                lastTs = ts;
+            }
+            result = lastLine;
+            lastLine = null;
+            return result;
+        }
+    }
+
     private class Worker implements StreamingOutput {
         private final String id;
         private final String startTime;
         private final String endTime;
-        private final Boolean exactTimeWindow;
+        private final ReturnSet returnset;
         private final Boolean series;
         private final String downsample;
         private final Map<String, String> tags;
@@ -125,7 +182,7 @@ public class MetricService implements MetricServiceAPI {
         private long end = -1;
 
         public Worker(MetricServiceAppConfiguration config, String id,
-                String startTime, String endTime, Boolean exactTimeWindow,
+                String startTime, String endTime, ReturnSet returnset,
                 Boolean series, String downsample, Map<String, String> tags,
                 List<MetricSpecification> queries) {
             if (queries == null) {
@@ -139,7 +196,7 @@ public class MetricService implements MetricServiceAPI {
             this.id = id;
             this.startTime = startTime;
             this.endTime = endTime;
-            this.exactTimeWindow = exactTimeWindow;
+            this.returnset = returnset;
             this.series = series;
             this.tags = tags;
             this.downsample = downsample;
@@ -150,6 +207,7 @@ public class MetricService implements MetricServiceAPI {
                 throws NumberFormatException, IOException {
             long t = -1;
             String line = null;
+            String lastMetric = null;
             long ts = 0;
             double val = 0;
             boolean comma = false;
@@ -166,10 +224,12 @@ public class MetricService implements MetricServiceAPI {
             while ((line = reader.readLine()) != null) {
                 String terms[] = line.split(" ", 4);
 
-                // Check the timestamp and if we went backwards in time that
-                // means that we are onto the next query.
+                // Check the timestamp and if we went backwards in time or there
+                // is a new metric name that means that we are onto the next
+                // query.
                 ts = Long.valueOf(terms[1]);
-                if (ts < t) {
+                if (ts < t
+                        || (lastMetric != null && !lastMetric.equals(terms[0]))) {
                     // If we have written a header then we need to close
                     // out the JSON object
                     if (!needHeader) {
@@ -180,7 +240,8 @@ public class MetricService implements MetricServiceAPI {
                     precomma = true;
                 }
                 t = ts;
-                if (!exactTimeWindow || (ts >= start && ts <= end)) {
+                lastMetric = terms[0];
+                if (returnset == ReturnSet.ALL || (ts >= start && ts <= end)) {
                     if (needHeader) {
                         if (precomma) {
                             writer.write(',');
@@ -240,7 +301,7 @@ public class MetricService implements MetricServiceAPI {
                 // Check the timestamp and if we went backwards in time that
                 // means that we are onto the next query.
                 ts = Long.valueOf(terms[1]);
-                if (!exactTimeWindow || (ts >= start && ts <= end)) {
+                if (returnset == ReturnSet.ALL || (ts >= start && ts <= end)) {
                     if (comma) {
                         writer.write(',');
                     }
@@ -369,8 +430,11 @@ public class MetricService implements MetricServiceAPI {
             BufferedReader reader = null;
             try {
                 reader = api.getReader(config, id, convertedStartTime,
-                        convertedEndTime, exactTimeWindow, series, downsample,
-                        tags, queries);
+                        convertedEndTime, returnset, series, downsample, tags,
+                        queries);
+                if (returnset == ReturnSet.LAST) {
+                    reader = new LastFilter(reader, startDate, endDate);
+                }
             } catch (WebApplicationException wae) {
                 throw wae;
             } catch (Exception e) {
@@ -395,7 +459,7 @@ public class MetricService implements MetricServiceAPI {
                         .value(START_TIME_ACTUAL, actual.format(startDate),
                                 true).value(END_TIME, endTime, true)
                         .value(END_TIME_ACTUAL, actual.format(endDate), true)
-                        .value(EXACT_TIME_WINDOW, exactTimeWindow, true)
+                        .value(RETURN_SET, returnset, true)
                         .value(SERIES, series, true).arrayS(RESULTS);
 
                 // convert the start / end times to longs so we can determine if
@@ -435,7 +499,7 @@ public class MetricService implements MetricServiceAPI {
      */
     @Override
     public Response query(Optional<String> id, Optional<String> startTime,
-            Optional<String> endTime, Optional<Boolean> exactTimeWindow,
+            Optional<String> endTime, Optional<ReturnSet> returnset,
             Optional<Boolean> series, Optional<String> downsample,
             Optional<Map<String, String>> tags,
             List<MetricSpecification> queries) {
@@ -446,11 +510,11 @@ public class MetricService implements MetricServiceAPI {
                             .or(config.getMetricServiceConfig()
                                     .getDefaultStartTime()), endTime.or(config
                             .getMetricServiceConfig().getDefaultEndTime()),
-                            exactTimeWindow.or(config.getMetricServiceConfig()
-                                    .getDefaultExactTimeWindow()), series
-                                    .or(config.getMetricServiceConfig()
-                                            .getDefaultSeries()), downsample
-                                    .orNull(), tags.orNull(), queries)).build();
+                            returnset.or(config.getMetricServiceConfig()
+                                    .getDefaultReturnSet()), series.or(config
+                                    .getMetricServiceConfig()
+                                    .getDefaultSeries()), downsample.orNull(),
+                            tags.orNull(), queries)).build();
         } catch (Exception e) {
             log.error(String.format(
                     "Error While attempting to query data soruce: %s : %s", e

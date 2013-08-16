@@ -52,6 +52,7 @@ import org.zenoss.app.metricservice.api.impl.MetricStorageAPI;
 import org.zenoss.app.metricservice.api.impl.OpenTSDBPMetricStorage;
 import org.zenoss.app.metricservice.api.impl.Utils;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
+import org.zenoss.app.metricservice.api.model.ReturnSet;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
@@ -78,7 +79,7 @@ public class MockMetricStorage implements MetricStorageAPI {
     }
 
     public byte[] generateData(MetricServiceAppConfiguration config, String id,
-            String startTime, String endTime, Boolean exactTimeWindow,
+            String startTime, String endTime, ReturnSet returnset,
             Boolean series, String downsample, Map<String, String> tags,
             List<MetricSpecification> queries) throws IOException {
         log.debug("Generate data for '{}' to '{}' requested", startTime,
@@ -174,12 +175,11 @@ public class MockMetricStorage implements MetricStorageAPI {
      * java.lang.String, java.lang.Boolean, java.lang.Boolean, java.util.List)
      */
     public BufferedReader getReader(MetricServiceAppConfiguration config,
-            String id, String startTime, String endTime,
-            Boolean exactTimeWindow, Boolean series, String downsample,
-            Map<String, String> tags, List<MetricSpecification> queries)
-            throws IOException {
-        byte[] data = generateData(config, id, startTime, endTime,
-                exactTimeWindow, series, downsample, tags, queries);
+            String id, String startTime, String endTime, ReturnSet returnset,
+            Boolean series, String downsample, Map<String, String> tags,
+            List<MetricSpecification> queries) throws IOException {
+        byte[] data = generateData(config, id, startTime, endTime, returnset,
+                series, downsample, tags, queries);
         return new BufferedReader(new InputStreamReader(
                 new ByteArrayInputStream(data)));
     }

@@ -43,6 +43,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
+import org.zenoss.app.metricservice.api.model.ReturnSet;
 
 import com.google.common.base.Optional;
 
@@ -68,8 +69,8 @@ public class MockPostProviderTest extends ProviderTestBase {
     }
 
     protected Map<?, ?> testQuery(Optional<String> id, Optional<String> start,
-            Optional<String> end, Optional<Boolean> exact,
+            Optional<String> end, Optional<ReturnSet> returnset,
             Optional<Boolean> series, String[] queries) throws Exception {
-        return testPostQuery(id, start, end, exact, series, queries);
+        return testPostQuery(id, start, end, returnset, series, queries);
     }
 }
