@@ -80,7 +80,7 @@ public class MockMetricStorage implements MetricStorageAPI {
 
     public byte[] generateData(MetricServiceAppConfiguration config, String id,
             String startTime, String endTime, ReturnSet returnset,
-            Boolean series, String downsample, Map<String, String> tags,
+            Boolean series, String downsample, Map<String, List<String>> tags,
             List<MetricSpecification> queries) throws IOException {
         log.debug("Generate data for '{}' to '{}' requested", startTime,
                 endTime);
@@ -144,14 +144,14 @@ public class MockMetricStorage implements MetricStorageAPI {
                 // Need to join the global tags with the per metric tags,
                 // overriding any global tag with that specified per metric
                 if (tags != null || query.getTags() != null) {
-                    Map<String, String> joined = new HashMap<String, String>();
+                    Map<String, List<String>> joined = new HashMap<String, List<String>>();
                     if (tags != null) {
                         joined.putAll(tags);
                     }
                     if (query.getTags() != null) {
                         joined.putAll(query.getTags());
                     }
-                    for (Map.Entry<String, String> tag : joined.entrySet()) {
+                    for (Map.Entry<String, List<String>> tag : joined.entrySet()) {
                         buf.append(' ').append(tag.getKey()).append(EQ)
                                 .append(MOCK_VALUE);
                     }
@@ -176,7 +176,7 @@ public class MockMetricStorage implements MetricStorageAPI {
      */
     public BufferedReader getReader(MetricServiceAppConfiguration config,
             String id, String startTime, String endTime, ReturnSet returnset,
-            Boolean series, String downsample, Map<String, String> tags,
+            Boolean series, String downsample, Map<String, List<String>> tags,
             List<MetricSpecification> queries) throws IOException {
         byte[] data = generateData(config, id, startTime, endTime, returnset,
                 series, downsample, tags, queries);

@@ -58,7 +58,7 @@ public class PerformanceQuery {
     private Boolean series = null;
     
     @JsonProperty(required=false)
-    private Map<String, String> tags = null;
+    private Map<String, List<String>> tags = null;
     
     @JsonProperty(required=false)
     private String downsample = null;
@@ -125,14 +125,14 @@ public class PerformanceQuery {
     /**
      * @return the tags
      */
-    public final Map<String, String> getTags() {
+    public final Map<String, List<String>> getTags() {
         return tags;
     }
 
     /**
      * @param tags the tags to set
      */
-    public final void setTags(Map<String, String> tags) {
+    public final void setTags(Map<String, List<String>> tags) {
         this.tags = tags;
     }
 
