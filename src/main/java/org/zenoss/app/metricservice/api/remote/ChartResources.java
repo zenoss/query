@@ -51,7 +51,7 @@ import com.google.common.base.Optional;
 import com.yammer.metrics.annotation.Timed;
 
 @Resource(name="chart")
-@Path("chart")
+@Path("/api/performance/chart")
 @Produces(MediaType.APPLICATION_JSON)
 public class ChartResources {
 

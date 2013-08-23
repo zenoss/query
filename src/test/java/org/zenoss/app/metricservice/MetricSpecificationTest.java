@@ -30,6 +30,7 @@
  */
 package org.zenoss.app.metricservice;
 
+import java.util.List;
 import java.util.Map;
 
 import org.junit.Assert;
@@ -51,15 +52,15 @@ public class MetricSpecificationTest {
             String base = mq.toString();
             Assert.assertEquals(expected, base.substring(0, base.indexOf('{')));
 
-            Map<String, String> tags = mq.getTags();
+            Map<String, List<String>> tags = mq.getTags();
             Assert.assertNotNull(tags);
             Assert.assertEquals(2, tags.size());
-            Assert.assertEquals("value1", tags.get("tag1"));
-            Assert.assertEquals("value2", tags.get("tag2"));
+            Assert.assertEquals("value1", tags.get("tag1").get(0));
+            Assert.assertEquals("value2", tags.get("tag2").get(0));
 
         } else {
             Assert.assertEquals(expected, mq.toString());
-            Map<String, String> tags = mq.getTags();
+            Map<String, List<String>> tags = mq.getTags();
             Assert.assertNotNull(tags);
             Assert.assertEquals(0, tags.size());
         }

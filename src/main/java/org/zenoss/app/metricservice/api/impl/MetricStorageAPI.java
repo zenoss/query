@@ -14,7 +14,7 @@ public interface MetricStorageAPI {
     public BufferedReader getReader(MetricServiceAppConfiguration config,
             String id, String startTime, String endTime,
             ReturnSet returnset, Boolean series, String downsample,
-            Map<String, String> tags, List<MetricSpecification> queries)
+            Map<String, List<String>> tags, List<MetricSpecification> queries)
             throws IOException;
 
     public String getSourceId();
