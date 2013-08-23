@@ -261,7 +261,7 @@ public abstract class ProviderTestBase extends ResourceTest {
         }
         pq.setMetrics(list);
 
-        WebResource wr = client().resource("/query/performance");
+        WebResource wr = client().resource("/api/performance/query");
         Assert.assertNotNull(wr);
         wr.accept(MediaType.APPLICATION_JSON);
         Builder request = wr.type(MediaType.APPLICATION_JSON);
@@ -303,7 +303,7 @@ public abstract class ProviderTestBase extends ResourceTest {
 
         // Build up the URI query
         char prefix = '?';
-        StringBuilder buf = new StringBuilder("/query/performance");
+        StringBuilder buf = new StringBuilder("/api/performance/query");
         prefix = addArgument(buf, "id", id, prefix);
         prefix = addArgument(buf, "start", start, prefix);
         prefix = addArgument(buf, "end", end, prefix);
