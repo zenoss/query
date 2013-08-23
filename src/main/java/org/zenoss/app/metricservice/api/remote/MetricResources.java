@@ -57,14 +57,13 @@ import com.yammer.metrics.annotation.Timed;
  * 
  */
 @Resource(name = "query")
-@Path("/api/performance")
+@Path("/api/performance/query")
 @Produces(MediaType.APPLICATION_JSON)
 public class MetricResources {
 
     @Autowired
     MetricServiceAPI api;
 
-    @Path("query")
     @Timed
     @GET
     public Response query(@QueryParam("id") Optional<String> id,
@@ -79,7 +78,6 @@ public class MetricResources {
                 Optional.<Map<String, List<String>>> absent(), queries);
     }
 
-    @Path("query")
     @Timed
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
