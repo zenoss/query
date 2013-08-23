@@ -89,7 +89,7 @@ public class HttpPostProviderTest extends ProviderTestBase {
     protected Map<?, ?> testQuery(Optional<String> id, Optional<String> start,
             Optional<String> end, Optional<ReturnSet> returnset,
             Optional<Boolean> series, Optional<String> downsample,
-            Optional<Map<String, String>> globalTags, String[] queries)
+            Optional<Map<String, List<String>>> globalTags, String[] queries)
             throws Exception {
         MetricServiceAppConfiguration config = new ContextConfiguration()
                 .getQueryAppConfiguration();

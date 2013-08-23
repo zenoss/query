@@ -30,7 +30,9 @@
  */
 package org.zenoss.app.metricservice.api.model;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.WebApplicationException;
@@ -40,6 +42,7 @@ import org.zenoss.app.metricservice.api.impl.Utils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import static org.springframework.util.StringUtils.arrayToDelimitedString;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
@@ -65,7 +68,7 @@ public class MetricSpecification {
     private RateOptions rateOptions = null;
 
     @JsonProperty
-    private Map<String, String> tags = null;
+    private Map<String, List<String>> tags = null;
 
     /**
      * @return the metric
@@ -145,7 +148,7 @@ public class MetricSpecification {
     /**
      * @return the tags
      */
-    public final Map<String, String> getTags() {
+    public final Map<String, List<String>> getTags() {
         return tags;
     }
 
@@ -153,7 +156,7 @@ public class MetricSpecification {
      * @param tags
      *            the tags to set
      */
-    public final void setTags(Map<String, String> tags) {
+    public final void setTags(Map<String, List<String>> tags) {
         this.tags = tags;
     }
 
@@ -171,7 +174,7 @@ public class MetricSpecification {
      * 
      * @return OpenTSDB URL query formatted String instance
      */
-    public String toString(String downsample, Map<String, String> baseTags, boolean withRateOptions) {
+    public String toString(String downsample, Map<String, List<String>> baseTags, boolean withRateOptions) {
         StringBuilder buf = new StringBuilder();
         if (getAggregator() != null) {
             buf.append(getAggregator()).append(':');
@@ -207,7 +210,7 @@ public class MetricSpecification {
         buf.append(getMetric());
         if ((baseTags != null && baseTags.size() > 0)
                 || (getTags() != null && getTags().size() > 0)) {
-            Map<String, String> joined = new HashMap<String, String>();
+            Map<String, List<String>> joined = new HashMap<String, List<String>>();
             if (baseTags != null) {
                 joined.putAll(baseTags);
             }
@@ -216,12 +219,12 @@ public class MetricSpecification {
             }
             buf.append('{');
             boolean comma = false;
-            for (Map.Entry<String, String> tag : joined.entrySet()) {
+            for (Map.Entry<String, List<String>> tag : joined.entrySet()) {
                 if (comma) {
                     buf.append(',');
                 }
                 comma = true;
-                buf.append(tag.getKey()).append('=').append(tag.getValue());
+                buf.append(tag.getKey()).append('=').append(arrayToDelimitedString(tag.getValue().toArray(), "|"));
             }
             buf.append('}');
         }
@@ -250,8 +253,8 @@ public class MetricSpecification {
      * @param value
      * @return
      */
-    private static Map<String, String> parseTags(String value) {
-        Map<String, String> tags = new HashMap<String, String>();
+    private static Map<String, List<String>> parseTags(String value) {
+        Map<String, List<String>> tags = new HashMap<String, List<String>>();
 
         if (value == null || (value = value.trim()).length() == 0) {
             return tags;
@@ -259,7 +262,9 @@ public class MetricSpecification {
         String[] pairs = value.substring(1, value.length() - 1).split(",");
         for (String pair : pairs) {
             String[] terms = pair.split("=", 2);
-            tags.put(terms[0].trim(), terms[1].trim());
+            List<String> vals = new ArrayList<String>();
+            vals.add(terms[1].trim());
+            tags.put(terms[0].trim(), vals);
         }
         return tags;
     }
@@ -338,13 +343,13 @@ public class MetricSpecification {
         int idx = terms[terms.length - 1].indexOf('{');
 
         String metric = null;
-        Map<String, String> tags = null;
+        Map<String, List<String>> tags = null;
         if (idx >= 0) {
             tags = MetricSpecification.parseTags(terms[terms.length - 1]
                     .substring(idx).trim());
             metric = terms[terms.length - 1].substring(0, idx);
         } else {
-            tags = new HashMap<String, String>();
+            tags = new HashMap<String, List<String>>();
             metric = terms[terms.length - 1];
         }
 

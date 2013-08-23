@@ -235,7 +235,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
      */
     public BufferedReader getReader(MetricServiceAppConfiguration config,
             String id, String startTime, String endTime, ReturnSet returnset,
-            Boolean series, String downsample, Map<String, String> globalTags,
+            Boolean series, String downsample, Map<String, List<String>> globalTags,
             List<MetricSpecification> queries) throws IOException {
         StringBuilder buf = new StringBuilder(config.getMetricServiceConfig()
                 .getOpenTsdbUrl());

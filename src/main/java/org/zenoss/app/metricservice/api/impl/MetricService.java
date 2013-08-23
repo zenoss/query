@@ -176,14 +176,14 @@ public class MetricService implements MetricServiceAPI {
         private final ReturnSet returnset;
         private final Boolean series;
         private final String downsample;
-        private final Map<String, String> tags;
+        private final Map<String, List<String>> tags;
         private final List<MetricSpecification> queries;
         private long start = -1;
         private long end = -1;
 
         public Worker(MetricServiceAppConfiguration config, String id,
                 String startTime, String endTime, ReturnSet returnset,
-                Boolean series, String downsample, Map<String, String> tags,
+                Boolean series, String downsample, Map<String, List<String>> tags,
                 List<MetricSpecification> queries) {
             if (queries == null) {
                 // This really should never happen as the query check should
@@ -501,7 +501,7 @@ public class MetricService implements MetricServiceAPI {
     public Response query(Optional<String> id, Optional<String> startTime,
             Optional<String> endTime, Optional<ReturnSet> returnset,
             Optional<Boolean> series, Optional<String> downsample,
-            Optional<Map<String, String>> tags,
+            Optional<Map<String, List<String>>> tags,
             List<MetricSpecification> queries) {
 
         try {
