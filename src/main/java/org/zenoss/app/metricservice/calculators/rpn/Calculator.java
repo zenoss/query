@@ -33,6 +33,7 @@ package org.zenoss.app.metricservice.calculators.rpn;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import org.zenoss.app.metricservice.calculators.MetricCalculator;
@@ -117,7 +118,7 @@ public class Calculator extends MetricCalculator {
      * @see org.zenoss.app.metricservice.rpn.Calculator#isUnknown()
      */
     public void isUnknown() {
-        throw new UnsupportedOperationException();
+        push((double) (Double.isNaN(pop()) ? 1 : 0));
     }
 
     /*
@@ -126,7 +127,7 @@ public class Calculator extends MetricCalculator {
      * @see org.zenoss.app.metricservice.rpn.Calculator#isInfinity()
      */
     public void isInfinity() {
-        throw new UnsupportedOperationException();
+        push((double) (Double.isInfinite(pop()) ? 1 : 0));
     }
 
     /*
@@ -209,7 +210,7 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#modulo()
      */
-    
+
     public void modulo() {
         Double r = pop(), l = pop();
         push(l % r);
@@ -220,7 +221,7 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#addnan()
      */
-    
+
     public void addnan() {
         throw new UnsupportedOperationException();
     }
@@ -230,7 +231,7 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#sin()
      */
-    
+
     public void sin() {
         push(Math.sin(pop()));
     }
@@ -240,7 +241,7 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#cos()
      */
-    
+
     public void cos() {
         push(Math.cos(pop()));
     }
@@ -250,7 +251,7 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#tan()
      */
-    
+
     public void tan() {
         push(Math.tan(pop()));
     }
@@ -260,7 +261,7 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#log()
      */
-    
+
     public void log() {
         push(Math.log(pop()));
     }
@@ -270,7 +271,7 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#exp()
      */
-    
+
     public void exp() {
         push(Math.exp(pop()));
     }
@@ -280,7 +281,7 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#sqrt()
      */
-    
+
     public void sqrt() {
         push(Math.sqrt(pop()));
     }
@@ -290,7 +291,7 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#atan()
      */
-    
+
     public void atan() {
         push(Math.atan(pop()));
     }
@@ -300,7 +301,7 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#atan2()
      */
-    
+
     public void atan2() {
         Double x = pop(), y = pop();
         push(Math.atan2(y, x));
@@ -311,7 +312,7 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#floor()
      */
-    
+
     public void floor() {
         push(Math.floor(pop()));
     }
@@ -321,7 +322,7 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#ceil()
      */
-    
+
     public void ceil() {
         push(Math.ceil(pop()));
     }
@@ -331,7 +332,7 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#deg2rad()
      */
-    
+
     public void deg2rad() {
         push(pop() * Math.PI / 180.0);
     }
@@ -341,7 +342,7 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#rad2deg()
      */
-    
+
     public void rad2deg() {
         push(pop() * 180.0 / Math.PI);
     }
@@ -351,7 +352,7 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#abs()
      */
-    
+
     public void abs() {
         push(Math.abs(pop()));
     }
@@ -361,7 +362,7 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#sort()
      */
-    
+
     public void sort() {
         int count = (int) Math.floor(pop());
         double[] list = new double[count];
@@ -379,7 +380,7 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#rev()
      */
-    
+
     public void rev() {
         int count = (int) Math.floor(pop());
         double[] list = new double[count];
@@ -396,7 +397,7 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#avg()
      */
-    
+
     public void avg() {
         int count = (int) Math.floor(pop());
         double sum = 0.0;
@@ -412,7 +413,7 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#trend()
      */
-    
+
     public void trend() {
         throw new UnsupportedOperationException();
     }
@@ -422,7 +423,7 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#trendnan()
      */
-    
+
     public void trendnan() {
         throw new UnsupportedOperationException();
     }
@@ -432,9 +433,9 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#unknown()
      */
-    
+
     public void unknown() {
-        throw new UnsupportedOperationException();
+        push(Double.NaN);
     }
 
     /*
@@ -442,9 +443,9 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#infinity()
      */
-    
+
     public void infinity() {
-        throw new UnsupportedOperationException();
+        push(Double.POSITIVE_INFINITY);
     }
 
     /*
@@ -452,9 +453,9 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#negInfinity()
      */
-    
+
     public void negInfinity() {
-        throw new UnsupportedOperationException();
+        push(Double.NEGATIVE_INFINITY);
     }
 
     /*
@@ -462,7 +463,7 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#prev()
      */
-    
+
     public void prev() {
         throw new UnsupportedOperationException();
     }
@@ -472,9 +473,13 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#duplicate()
      */
-    
+
     public void duplicate() {
         push(peek());
+    }
+
+    public void now() {
+        push(Math.floor(new Date().getTime() / 1000));
     }
 
     /*
@@ -482,7 +487,6 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#pop()
      */
-    
     public Double pop() {
         return stack.remove(stack.size() - 1);
     }
@@ -496,41 +500,41 @@ public class Calculator extends MetricCalculator {
      * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#exchange()
      */
-    
+
     public void exchange() {
         Double a = pop(), b = pop();
         push(a);
         push(b);
     }
-    
+
     public List<Double> getStack() {
         return stack;
     }
-    
+
     public void clear() {
         stack.clear();
     }
-    
+
     @Override
     public double evaluate(String expression) {
         clear();
         return doEvaluate(expression);
-    }    
-    
+    }
+
     @Override
     public double evaluate(double value) {
         clear();
         push(value);
         return doEvaluate(getExpression());
     }
-    
+
     @Override
     public double evaluate(double value, String expression) {
         clear();
         push(value);
         return doEvaluate(expression);
     }
-    
+
     private double doEvaluate(String expression) {
         String[] terms = expression.split(",");
         String term;
@@ -613,6 +617,10 @@ public class Calculator extends MetricCalculator {
                     ifte();
                 } else if ("isinf".equals(term)) {
                     isInfinity();
+                } else if ("isunkn".equals(term)) {
+                    isInfinity();
+                } else if ("inf".equals(term)) {
+                    infinity();
                 } else {
                     throw new UnsupportedOperationException(term);
                 }
@@ -631,6 +639,15 @@ public class Calculator extends MetricCalculator {
                     min();
                 } else if ("max".equals(term)) {
                     max();
+                } else {
+                    throw new UnsupportedOperationException(term);
+                }
+                break;
+            case 'n':
+                if ("neginf".equals(term)) {
+                    negInfinity();
+                } else if ("now".equals(term)) {
+                    now();
                 } else {
                     throw new UnsupportedOperationException(term);
                 }
@@ -662,6 +679,15 @@ public class Calculator extends MetricCalculator {
                     trendnan();
                 } else if ("tan".equals(term)) {
                     tan();
+                } else {
+                    throw new UnsupportedOperationException(term);
+                }
+                break;
+            case 'u':
+                if ("unkn".equals(term)) {
+                    unknown();
+                } else if ("un".equals(term)) {
+                    isUnknown();
                 } else {
                     throw new UnsupportedOperationException(term);
                 }

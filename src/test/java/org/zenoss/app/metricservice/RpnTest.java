@@ -31,6 +31,8 @@
 
 package org.zenoss.app.metricservice;
 
+import java.util.Date;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -189,5 +191,29 @@ public class RpnTest {
                 "foo.bar.does.not.exist:"
                         + MetricCalculator.DEFAULT_CALCULATOR_PATH);
         MetricCalculator.create("rpn");
+    }
+
+    @Test
+    public void NanAndInfinityTest() throws ClassNotFoundException {
+        MetricCalculator calc = MetricCalculator.create("rpn");
+        Assert.assertEquals("Positive infinity", 1.0,
+                calc.evaluate("inf, isinf"), 0.0);
+        Assert.assertEquals("Unknown", 1.0, calc.evaluate("unkn, un"), 0.0);
+        Assert.assertEquals("Negative infinity", 1.0,
+                calc.evaluate("neginf, isinf"), 0.0);
+        Assert.assertEquals("Not Infinity", 0.0, calc.evaluate("234.2, isinf"),
+                0.0);
+        Assert.assertEquals("Not Unknown", 0.0, calc.evaluate("234.2, un"), 0.0);
+        Assert.assertEquals("Infinity, Not Unknown", 0.0,
+                calc.evaluate("inf, un"), 0.0);
+        Assert.assertEquals("Unknown, Not Infinity", 0.0,
+                calc.evaluate("unkn, isinf"), 0.0);
+    }
+
+    @Test
+    public void TimeTest() throws ClassNotFoundException {
+        MetricCalculator calc = MetricCalculator.create("rpn");
+        Assert.assertEquals("Now", new Date().getTime() / 1000,
+                calc.evaluate("now"), 5.0);
     }
 }
