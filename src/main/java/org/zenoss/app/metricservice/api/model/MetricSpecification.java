@@ -66,6 +66,9 @@ public class MetricSpecification {
 
     @JsonProperty
     private RateOptions rateOptions = null;
+    
+    @JsonProperty
+    private String expression = null;
 
     @JsonProperty
     private Map<String, List<String>> tags = null;
@@ -143,6 +146,20 @@ public class MetricSpecification {
      */
     public final void setRateOptions(RateOptions rateOptions) {
         this.rateOptions = rateOptions;
+    }
+    
+    /**
+     * @return the expression
+     */
+    public String getExpression() {
+        return expression;
+    }
+
+    /**
+     * @param expression the expression to set
+     */
+    public void setExpression(String expression) {
+        this.expression = expression;
     }
 
     /**
