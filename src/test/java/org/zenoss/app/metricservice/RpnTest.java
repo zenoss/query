@@ -216,4 +216,27 @@ public class RpnTest {
         Assert.assertEquals("Now", new Date().getTime() / 1000,
                 calc.evaluate("now"), 5.0);
     }
+
+    @Test
+    public void LimitTest() throws ClassNotFoundException {
+        MetricCalculator calc = MetricCalculator.create("rpn");
+        Assert.assertEquals("In Limit", 5.0, calc.evaluate("5, 0, 10, limit"),
+                0.0);
+        Assert.assertEquals("Below Limit", 1.0,
+                calc.evaluate("-5, 0, 10, limit, un"), 0.0);
+        Assert.assertEquals("Above Limit", 1.0,
+                calc.evaluate("15, 0, 10, limit, un"), 0.0);
+    }
+
+    @Test
+    public void AddNanTest() throws ClassNotFoundException {
+        MetricCalculator calc = MetricCalculator.create("rpn");
+        Assert.assertEquals("Left side unknown", 5.0,
+                calc.evaluate("unkn, 5, addnan"), 0.0);
+        Assert.assertEquals("Right side unknown", 5.0,
+                calc.evaluate("5, unkn, addnan"), 0.0);
+        Assert.assertEquals("Both sides unknown", 1.0,
+                calc.evaluate("unkn, unkn, addnan, un"), 0.0);
+
+    }
 }

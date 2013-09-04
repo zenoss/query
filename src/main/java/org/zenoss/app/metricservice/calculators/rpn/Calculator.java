@@ -164,7 +164,15 @@ public class Calculator extends MetricCalculator {
      * @see org.zenoss.app.metricservice.rpn.Calculator#limit()
      */
     public void limit() {
-        throw new UnsupportedOperationException();
+        Double b1 = pop(), b2 = pop(), val = pop();
+        Double lower = Math.min(b1, b2);
+        Double upper = Math.max(b1, b2);
+
+        if (val < lower || val > upper) {
+            push(Double.NaN);
+        } else {
+            push(val);
+        }
     }
 
     /*
@@ -223,7 +231,16 @@ public class Calculator extends MetricCalculator {
      */
 
     public void addnan() {
-        throw new UnsupportedOperationException();
+        Double r = pop(), l = pop();
+        if (Double.isNaN(r) && Double.isNaN(l)) {
+            push(Double.NaN);
+        } else if (Double.isNaN(r)) {
+            push(l + 0.0);
+        } else if (Double.isNaN(l)) {
+            push(0.0 + r);
+        } else {
+            push(l + r);
+        }
     }
 
     /*
@@ -411,26 +428,6 @@ public class Calculator extends MetricCalculator {
     /*
      * (non-Javadoc)
      * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#trend()
-     */
-
-    public void trend() {
-        throw new UnsupportedOperationException();
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#trendnan()
-     */
-
-    public void trendnan() {
-        throw new UnsupportedOperationException();
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
      * @see org.zenoss.app.metricservice.rpn.Calculator#unknown()
      */
 
@@ -456,16 +453,6 @@ public class Calculator extends MetricCalculator {
 
     public void negInfinity() {
         push(Double.NEGATIVE_INFINITY);
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#prev()
-     */
-
-    public void prev() {
-        throw new UnsupportedOperationException();
     }
 
     /*
@@ -545,7 +532,11 @@ public class Calculator extends MetricCalculator {
                 add();
                 break;
             case '-':
-                subtract();
+                if (term.length() == 1) {
+                    subtract();
+                } else {
+                    push(Double.valueOf(term));
+                }
                 break;
             case '/':
                 divide();
@@ -565,6 +556,8 @@ public class Calculator extends MetricCalculator {
                     atan();
                 } else if ("atan2".equals(term)) {
                     atan2();
+                } else if ("addnan".equals(term)) {
+                    addnan();
                 } else {
                     throw new UnsupportedOperationException(term);
                 }
@@ -673,11 +666,7 @@ public class Calculator extends MetricCalculator {
                 }
                 break;
             case 't':
-                if ("trend".equals(term)) {
-                    trend();
-                } else if ("trendnan".equals(term)) {
-                    trendnan();
-                } else if ("tan".equals(term)) {
+                if ("tan".equals(term)) {
                     tan();
                 } else {
                     throw new UnsupportedOperationException(term);
