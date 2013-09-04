@@ -37,8 +37,6 @@ import java.util.List;
 
 import org.zenoss.app.metricservice.calculators.MetricCalculator;
 
-import com.sun.corba.se.spi.legacy.connection.GetEndPointInfoAgainException;
-
 /**
  * @author david
  * 
