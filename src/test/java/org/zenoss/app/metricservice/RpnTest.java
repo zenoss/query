@@ -37,6 +37,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.zenoss.app.metricservice.calculators.MetricCalculator;
+import org.zenoss.app.metricservice.calculators.MetricCalculatorFactory;
 import org.zenoss.app.metricservice.calculators.rpn.Calculator;
 
 /**
@@ -47,97 +48,110 @@ public class RpnTest {
 
     @Before
     public void before() {
-        System.setProperty(MetricCalculator.CALCULATOR_PATH_PROPERTY,
-                MetricCalculator.DEFAULT_CALCULATOR_PATH);
+        System.setProperty(MetricCalculatorFactory.CALCULATOR_PATH_PROPERTY,
+                MetricCalculatorFactory.DEFAULT_CALCULATOR_PATH);
     }
 
     @Test
     public void basicAddition() throws ClassNotFoundException {
-        MetricCalculator calc = MetricCalculator.create("rpn");
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
         double result = calc.evaluate("5,1,10,+,+");
         Assert.assertEquals(16.0, result, 0.0);
     }
 
     @Test
     public void basicSubtraction() throws ClassNotFoundException {
-        MetricCalculator calc = MetricCalculator.create("rpn");
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
         double result = calc.evaluate("5,1,10,-,-");
         Assert.assertEquals(14.0, result, 0.0);
     }
 
     @Test
     public void basicMultiplication() throws ClassNotFoundException {
-        MetricCalculator calc = MetricCalculator.create("rpn");
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
         double result = calc.evaluate("5,1,10,*,*");
         Assert.assertEquals(50.0, result, 0.0);
     }
 
     @Test
     public void basicDivision() throws ClassNotFoundException {
-        MetricCalculator calc = MetricCalculator.create("rpn");
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
         double result = calc.evaluate("5,1,10,/,/");
         Assert.assertEquals(50.0, result, 0.0);
     }
 
     @Test
     public void min() throws ClassNotFoundException {
-        MetricCalculator calc = MetricCalculator.create("rpn");
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
         double result = calc.evaluate("5, 10, min");
         Assert.assertEquals(5.0, result, 0.0);
     }
 
     @Test
     public void max() throws ClassNotFoundException {
-        MetricCalculator calc = MetricCalculator.create("rpn");
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
         double result = calc.evaluate("5, 10, max");
         Assert.assertEquals(10.0, result, 0.0);
     }
 
     @Test
     public void dup() throws ClassNotFoundException {
-        MetricCalculator calc = MetricCalculator.create("rpn");
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
         double result = calc.evaluate("5, dup, +");
         Assert.assertEquals(10.0, result, 0.0);
     }
 
     @Test
     public void example1() throws ClassNotFoundException {
-        MetricCalculator calc = MetricCalculator.create("rpn");
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
         double result = calc.evaluate("128,8,*");
         Assert.assertEquals(1024.0, result, 0.0);
     }
 
     @Test
     public void example2() throws ClassNotFoundException {
-        MetricCalculator calc = MetricCalculator.create("rpn");
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
         double result = calc.evaluate("1024,7000,gt");
         Assert.assertEquals(0.0, result, 0.0);
     }
 
     @Test
     public void example3() throws ClassNotFoundException {
-        MetricCalculator calc = MetricCalculator.create("rpn");
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
         double result = calc.evaluate("0, 7000,2024,if");
         Assert.assertEquals(7000.0, result, 0.0);
     }
 
     @Test
     public void example4() throws ClassNotFoundException {
-        MetricCalculator calc = MetricCalculator.create("rpn");
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
         double result = calc.evaluate("128,8,*,7000,GT,7000,128,8,*,IF");
         Assert.assertEquals(7000.0, result, 0.0);
     }
 
     @Test
     public void mod() throws ClassNotFoundException {
-        MetricCalculator calc = MetricCalculator.create("rpn");
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
         double result = calc.evaluate("1234,100,%");
         Assert.assertEquals(34.0, result, 0.0);
     }
 
     @Test
     public void sort() throws ClassNotFoundException {
-        MetricCalculator calc = MetricCalculator.create("rpn");
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
         String in = "9, 3, 4, 5, 1, 2, 8, 6, 7, 0, 10, sort";
         double[] out = { 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
 
@@ -151,7 +165,8 @@ public class RpnTest {
 
     @Test
     public void rev() throws ClassNotFoundException {
-        MetricCalculator calc = MetricCalculator.create("rpn");
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
         String in = "9, 3, 4, 5, 1, 2, 8, 6, 7, 0, 10, rev";
         double[] out = { 9, 3, 4, 5, 1, 2, 8, 6, 7, 0 };
 
@@ -166,7 +181,7 @@ public class RpnTest {
     @Test
     public void UnknownType() {
         try {
-            MetricCalculator.create("foo");
+            new MetricCalculatorFactory().newInstance("foo");
             Assert.fail("Found class where none should exist");
         } catch (ClassNotFoundException e) {
             // ignore, expected
@@ -175,10 +190,10 @@ public class RpnTest {
 
     @Test
     public void CustomPathFail() {
-        System.setProperty(MetricCalculator.CALCULATOR_PATH_PROPERTY,
+        System.setProperty(MetricCalculatorFactory.CALCULATOR_PATH_PROPERTY,
                 "foo.bar.does.not.exist");
         try {
-            MetricCalculator.create("rpn");
+            new MetricCalculatorFactory().newInstance("rpn");
             Assert.fail("Found class where none should exist");
         } catch (ClassNotFoundException e) {
             // ignore, expected
@@ -187,15 +202,16 @@ public class RpnTest {
 
     @Test
     public void CustomPathSucceed() throws ClassNotFoundException {
-        System.setProperty(MetricCalculator.CALCULATOR_PATH_PROPERTY,
+        System.setProperty(MetricCalculatorFactory.CALCULATOR_PATH_PROPERTY,
                 "foo.bar.does.not.exist:"
-                        + MetricCalculator.DEFAULT_CALCULATOR_PATH);
-        MetricCalculator.create("rpn");
+                        + MetricCalculatorFactory.DEFAULT_CALCULATOR_PATH);
+        new MetricCalculatorFactory().newInstance("rpn");
     }
 
     @Test
     public void NanAndInfinityTest() throws ClassNotFoundException {
-        MetricCalculator calc = MetricCalculator.create("rpn");
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
         Assert.assertEquals("Positive infinity", 1.0,
                 calc.evaluate("inf, isinf"), 0.0);
         Assert.assertEquals("Unknown", 1.0, calc.evaluate("unkn, un"), 0.0);
@@ -212,14 +228,16 @@ public class RpnTest {
 
     @Test
     public void TimeTest() throws ClassNotFoundException {
-        MetricCalculator calc = MetricCalculator.create("rpn");
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
         Assert.assertEquals("Now", new Date().getTime() / 1000,
                 calc.evaluate("now"), 5.0);
     }
 
     @Test
     public void LimitTest() throws ClassNotFoundException {
-        MetricCalculator calc = MetricCalculator.create("rpn");
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
         Assert.assertEquals("In Limit", 5.0, calc.evaluate("5, 0, 10, limit"),
                 0.0);
         Assert.assertEquals("Below Limit", 1.0,
@@ -230,7 +248,8 @@ public class RpnTest {
 
     @Test
     public void AddNanTest() throws ClassNotFoundException {
-        MetricCalculator calc = MetricCalculator.create("rpn");
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
         Assert.assertEquals("Left side unknown", 5.0,
                 calc.evaluate("unkn, 5, addnan"), 0.0);
         Assert.assertEquals("Right side unknown", 5.0,

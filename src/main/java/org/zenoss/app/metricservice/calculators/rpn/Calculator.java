@@ -36,132 +36,156 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import org.zenoss.app.metricservice.calculators.MetricCalculator;
+import org.zenoss.app.metricservice.calculators.BaseMetricCalculator;
 
 /**
- * @author david
- * 
+ * A RPN expression metric calculator.
  */
-public class Calculator extends MetricCalculator {
+public class Calculator extends BaseMetricCalculator {
+    /**
+     * Maintains the stack used for RPN evaluation
+     */
     private List<Double> stack = new ArrayList<Double>();
 
-    /*
-     * (non-Javadoc)
+    /**
+     * push the given value on to the top of the evaluation stack
      * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#push(java.lang.Double)
+     * @param value
+     *            value to push onto the stack
      */
     public void push(Double value) {
         stack.add(value);
     }
 
-    /*
-     * (non-Javadoc)
+    /**
+     * Removes and returns the top entry from the evaluation stack
      * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#lt()
+     * @return the top entry of the evaluation stack
+     */
+    public Double pop() {
+        return stack.remove(stack.size() - 1);
+    }
+
+    /**
+     * Returns, but does not remove, the top entry from the evaluation stack
+     * 
+     * @return the top entry of the evaluation stack
+     */
+    public Double peek() {
+        return stack.get(stack.size() - 1);
+    }
+
+    /**
+     * Pops two values from the stack and compares them with the 'less than'
+     * operator. If the comparison is true 1 is pushed back onto the stack, else
+     * 0. The first value popped from the stack is considered the right hand
+     * side and the second is considered the left hand side.
      */
     public void lt() {
         Double r = pop(), l = pop();
         push((double) (l < r ? 1 : 0));
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#le()
+    /**
+     * Pops two values from the stack and compares them with the 'less than or
+     * equal to' operator. If the comparison is true 1 is pushed back onto the
+     * stack, else 0. The first value popped from the stack is considered the
+     * right hand side and the second is considered the left hand side.
      */
     public void le() {
         Double r = pop(), l = pop();
         push((double) (l <= r ? 1 : 0));
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#gt()
+    /**
+     * Pops two values from the stack and compares them with the 'greater than'
+     * operator. If the comparison is true 1 is pushed back onto the stack, else
+     * 0. The first value popped from the stack is considered the right hand
+     * side and the second is considered the left hand side.
      */
     public void gt() {
         Double r = pop(), l = pop();
         push((double) (l > r ? 1 : 0));
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#ge()
+    /**
+     * Pops two values from the stack and compares them with the 'greater than
+     * or equal to' operator. If the comparison is true 1 is pushed back onto
+     * the stack, else 0. The first value popped from the stack is considered
+     * the right hand side and the second is considered the left hand side.
      */
     public void ge() {
         Double r = pop(), l = pop();
         push((double) (l >= r ? 1 : 0));
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#eq()
+    /**
+     * Pops two values from the stack and compares them with the 'equals'
+     * operator. If the comparison is true 1 is pushed back onto the stack, else
+     * 0. The first value popped from the stack is considered the right hand
+     * side and the second is considered the left hand side.
      */
     public void eq() {
         push((double) (pop() == pop() ? 1 : 0));
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#ne()
+    /**
+     * Pops two values from the stack and compares them with the 'not equals'
+     * operator. If the comparison is true 1 is pushed back onto the stack, else
+     * 0. The first value popped from the stack is considered the right hand
+     * side and the second is considered the left hand side.
      */
     public void ne() {
         push((double) (pop() != pop() ? 1 : 0));
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#isUnknown()
+    /**
+     * Pops a single value from the stack and if that value is Unknown/NaN then
+     * pushes 1 onto the stack, else 0.
      */
     public void isUnknown() {
         push((double) (Double.isNaN(pop()) ? 1 : 0));
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#isInfinity()
+    /**
+     * Pops a single value from the stack and if that value is positive or
+     * negative infinity than pushes 1 onto the stack, else 0.
      */
     public void isInfinity() {
         push((double) (Double.isInfinite(pop()) ? 1 : 0));
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#ifte()
+    /**
+     * Pops three values from the stack and if the third value popped is greater
+     * than 0, then the first value popped is pushed back on the stack, else the
+     * second item popped is pushed back on the stack.
      */
     public void ifte() {
         Double a = pop(), b = pop(), c = pop();
         push(c > 0 ? a : b);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#min()
+    /**
+     * Pops two values from the stack and then pushes the minimum of those two
+     * values back on the stack.
      */
     public void min() {
         push(Math.min(pop(), pop()));
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#max()
+    /**
+     * Pops two values from the stack and then pushes the maximum of those two
+     * values back on the stack.
      */
     public void max() {
         push(Math.max(pop(), pop()));
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#limit()
+    /**
+     * Pops two values from the stack and uses those to define a range. A third
+     * value is popped from the stack and if the value is outside the defined
+     * range Unknown/Nan is pushed on to the stack. If the value is within the
+     * range it is pushed back on the stack.
      */
     public void limit() {
         Double b1 = pop(), b2 = pop(), val = pop();
@@ -175,61 +199,20 @@ public class Calculator extends MetricCalculator {
         }
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#add()
+    /**
+     * Pops two values from the stack, adds them together and pushes the result
+     * back on the stack.
      */
     public void add() {
         push(pop() + pop());
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#subtract()
+    /**
+     * Pops two values from the stack, adds them together and pushes the result
+     * on the stack. If both of the values are Unknown/NaN then Unknown/NaN is
+     * the result. If only a single value is Unknown/NaN it is treated as a
+     * value of 0 in the addition.
      */
-    public void subtract() {
-        Double r = pop(), l = pop();
-        push(l - r);
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#multiply()
-     */
-    public void multiply() {
-        push(pop() * pop());
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#divide()
-     */
-    public void divide() {
-        Double r = pop(), l = pop();
-        push(l / r);
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#modulo()
-     */
-
-    public void modulo() {
-        Double r = pop(), l = pop();
-        push(l % r);
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#addnan()
-     */
-
     public void addnan() {
         Double r = pop(), l = pop();
         if (Double.isNaN(r) && Double.isNaN(l)) {
@@ -243,143 +226,157 @@ public class Calculator extends MetricCalculator {
         }
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#sin()
+    /**
+     * Pops two values from the stack, subtracts the first popped value from the
+     * second and pushes the result back on the stack.
      */
+    public void subtract() {
+        Double r = pop(), l = pop();
+        push(l - r);
+    }
 
+    /**
+     * Pops two values from the stack and pushes their product back on the
+     * stack.
+     */
+    public void multiply() {
+        push(pop() * pop());
+    }
+
+    /**
+     * Pops two values from the stack, divides the second by the first and
+     * pushes the result onto the stack.
+     */
+    public void divide() {
+        Double r = pop(), l = pop();
+        push(l / r);
+    }
+
+    /**
+     * Pops two values from the stack, calculate the modulo of the second by the
+     * first and pushes the result onto the stack.
+     */
+    public void modulo() {
+        Double r = pop(), l = pop();
+        push(l % r);
+    }
+
+    /**
+     * Pops a single value from the stack, calculate the sine value of that
+     * value, and pushes the result on the stack. The calculation is done in
+     * radians.
+     */
     public void sin() {
         push(Math.sin(pop()));
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#cos()
+    /**
+     * Pops a single value from the stack, calculate the cosine value of that
+     * value, and pushes the result on the stack. The calculation is done in
+     * radians.
      */
-
     public void cos() {
         push(Math.cos(pop()));
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#tan()
+    /**
+     * Pops a single value from the stack, calculate the tangent value of that
+     * value, and pushes the result on the stack. The calculation is done in
+     * radians.
      */
-
     public void tan() {
         push(Math.tan(pop()));
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#log()
+    /**
+     * Pops a single value from the stack, calculate the arctangent value of
+     * that value, and pushes the result on the stack. The calculation is done
+     * in radians.
      */
-
-    public void log() {
-        push(Math.log(pop()));
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#exp()
-     */
-
-    public void exp() {
-        push(Math.exp(pop()));
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#sqrt()
-     */
-
-    public void sqrt() {
-        push(Math.sqrt(pop()));
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#atan()
-     */
-
     public void atan() {
         push(Math.atan(pop()));
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#atan2()
+    /**
+     * Pops two values from the stack, uses them to calculate sine, cosine
+     * arctangent, and pushes the result on the stack. The first value popped is
+     * the x or cosine value, the second value is the y or sine value. The
+     * calculation is done in radians.
      */
-
     public void atan2() {
         Double x = pop(), y = pop();
         push(Math.atan2(y, x));
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#floor()
+    /**
+     * Pops a single value from the stack, converts it to radians, and pushes
+     * the result on to the stack.
      */
-
-    public void floor() {
-        push(Math.floor(pop()));
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#ceil()
-     */
-
-    public void ceil() {
-        push(Math.ceil(pop()));
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#deg2rad()
-     */
-
     public void deg2rad() {
         push(pop() * Math.PI / 180.0);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#rad2deg()
+    /**
+     * Pops a single value from the stack, converts it to degress, and pushes
+     * the result on to the stack.
      */
-
     public void rad2deg() {
         push(pop() * 180.0 / Math.PI);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#abs()
+    /**
+     * Pops a single value from the stack, calculate the log value of that
+     * value, and pushes the result on the stack.
      */
+    public void log() {
+        push(Math.log(pop()));
+    }
 
+    /**
+     * Pops a single value from the stack, calculate the exponential log value
+     * of that value, and pushes the result on the stack.
+     */
+    public void exp() {
+        push(Math.exp(pop()));
+    }
+
+    /**
+     * Pops a single value from the stack, calculate the square root of that
+     * value, and pushes the result on the stack.
+     */
+    public void sqrt() {
+        push(Math.sqrt(pop()));
+    }
+
+    /**
+     * Pops a single value from the stack, rounds down the value to the nearest
+     * integer value, and pushes that value onto the stack.
+     */
+    public void floor() {
+        push(Math.floor(pop()));
+    }
+
+    /**
+     * Pops a single value from the stack, rounds up the value to the nearest
+     * integer value, and pushes that value onto the stack.
+     */
+    public void ceil() {
+        push(Math.ceil(pop()));
+    }
+
+    /**
+     * Pops a single value from the stack, calculates its absolute value, and
+     * pushes the result on the stack.
+     */
     public void abs() {
         push(Math.abs(pop()));
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#sort()
+    /**
+     * Pops a single value from the stack that is used as a count and then pops
+     * that many more values from the the stack, sorts them and then pushes them
+     * back on the stack in ascending order.
      */
-
     public void sort() {
         int count = (int) Math.floor(pop());
         double[] list = new double[count];
@@ -392,12 +389,11 @@ public class Calculator extends MetricCalculator {
         }
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#rev()
+    /**
+     * Pops a single value from the stack that is used as a count and then pops
+     * that many more values from the the stack and then pushes them back on the
+     * stack in reverse order.
      */
-
     public void rev() {
         int count = (int) Math.floor(pop());
         double[] list = new double[count];
@@ -409,12 +405,11 @@ public class Calculator extends MetricCalculator {
         }
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#avg()
+    /**
+     * Pops a single value from the stack that is used as a count and then pops
+     * that many more values from the the stack, calculates the average of the
+     * values, and pushes the result onto the stack.
      */
-
     public void avg() {
         int count = (int) Math.floor(pop());
         double sum = 0.0;
@@ -425,89 +420,89 @@ public class Calculator extends MetricCalculator {
         push(sum / (double) count);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#unknown()
+    /**
+     * Pushes the Unknown/NaN value onto the stack.
      */
-
     public void unknown() {
         push(Double.NaN);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#infinity()
+    /**
+     * Pushes the positive infinity value onto the stack.
      */
-
     public void infinity() {
         push(Double.POSITIVE_INFINITY);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#negInfinity()
+    /**
+     * Pushes the negative infinity value onto the stack.
      */
-
     public void negInfinity() {
         push(Double.NEGATIVE_INFINITY);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#duplicate()
+    /**
+     * Duplicates the top value of the stack back on to the stack.
      */
-
     public void duplicate() {
         push(peek());
     }
 
+    /**
+     * Pushes the current time as expressed as seconds since the unix epoch onto
+     * the stack.
+     */
     public void now() {
         push(Math.floor(new Date().getTime() / 1000));
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#pop()
+    /**
+     * Swaps the first two values on the stack.
      */
-    public Double pop() {
-        return stack.remove(stack.size() - 1);
-    }
-
-    public Double peek() {
-        return stack.get(stack.size() - 1);
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.rpn.Calculator#exchange()
-     */
-
     public void exchange() {
         Double a = pop(), b = pop();
         push(a);
         push(b);
     }
 
+    /**
+     * Returns a copy of the current stack.
+     * 
+     * @return a copy of the current stack.
+     */
     public List<Double> getStack() {
-        return stack;
+        List<Double> copy = new ArrayList<Double>();
+        copy.addAll(stack);
+        return copy;
     }
 
+    /**
+     * Clears the current stack.
+     */
     public void clear() {
         stack.clear();
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.zenoss.app.metricservice.calculators.MetricCalculator#evaluate(java
+     * .lang.String)
+     */
     @Override
     public double evaluate(String expression) {
         clear();
         return doEvaluate(expression);
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.zenoss.app.metricservice.calculators.MetricCalculator#evaluate(double
+     * )
+     */
     @Override
     public double evaluate(double value) {
         clear();
@@ -515,6 +510,13 @@ public class Calculator extends MetricCalculator {
         return doEvaluate(getExpression());
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.zenoss.app.metricservice.calculators.MetricCalculator#evaluate(double
+     * , java.lang.String)
+     */
     @Override
     public double evaluate(double value, String expression) {
         clear();
@@ -522,6 +524,16 @@ public class Calculator extends MetricCalculator {
         return doEvaluate(expression);
     }
 
+    /**
+     * Evaluates the given expression based on the current state of the stack.
+     * The expression is assumed to be a comma separated list of terms in a
+     * format similar to that leveraged by RRDTool's RPN evaluation.
+     * 
+     * @param expression
+     *            expression to evaluate
+     * @return the value on the top of the stack at the end of the evaluation,
+     *         the value is not removed from the stack.
+     */
     private double doEvaluate(String expression) {
         String[] terms = expression.split(",");
         String term;

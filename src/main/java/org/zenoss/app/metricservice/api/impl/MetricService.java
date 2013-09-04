@@ -58,7 +58,7 @@ import org.zenoss.app.metricservice.api.MetricServiceAPI;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.app.metricservice.calculators.MetricCalculator;
-import org.zenoss.app.metricservice.calculators.rpn.Calculator;
+import org.zenoss.app.metricservice.calculators.MetricCalculatorFactory;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -207,7 +207,8 @@ public class MetricService implements MetricServiceAPI {
         }
 
         private void writeAsSeries(JsonWriter writer, BufferedReader reader)
-                throws NumberFormatException, IOException, ClassNotFoundException {
+                throws NumberFormatException, IOException,
+                ClassNotFoundException {
             long t = -1;
             String line = null;
             String lastMetric = null;
@@ -217,16 +218,16 @@ public class MetricService implements MetricServiceAPI {
             String expr = null;
             MetricCalculator calc = null;
             Map<String, MetricCalculator> calcs = new HashMap<String, MetricCalculator>();
+            MetricCalculatorFactory calcFactory = new MetricCalculatorFactory();
 
             // Walk the queries and build up a map of metric name to RPN
             // expressions
             for (MetricSpecification spec : this.queries) {
                 if ((expr = spec.getExpression()) != null
                         && (expr = expr.trim()).length() > 0) {
-                    calcs.put(spec.getMetric(), MetricCalculator.create(expr));
+                    calcs.put(spec.getMetric(), calcFactory.newInstance(expr));
                 }
             }
-
 
             // Because TSDB gives data that is outside the exact time range
             // requested it is not always known at any point if the further
@@ -317,13 +318,14 @@ public class MetricService implements MetricServiceAPI {
             String expr = null;
             MetricCalculator calc = null;
             Map<String, MetricCalculator> calcs = new HashMap<String, MetricCalculator>();
+            MetricCalculatorFactory calcFactory = new MetricCalculatorFactory();
 
             // Walk the queries and build up a map of metric name to RPN
             // expressions
             for (MetricSpecification spec : this.queries) {
                 if ((expr = spec.getExpression()) != null
                         && (expr = expr.trim()).length() > 0) {
-                    calcs.put(spec.getMetric(), MetricCalculator.create(expr));
+                    calcs.put(spec.getMetric(), calcFactory.newInstance(expr));
                 }
             }
 

@@ -28,94 +28,64 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package org.zenoss.app.metricservice.calculators;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
- * @author david
- * 
+ * Interface to be implemented by all expression calculators. This interfaces
+ * defines the methods required to execute expressions on performance metrics.
  */
-public abstract class MetricCalculator {
-    private static final Logger log = LoggerFactory
-            .getLogger(MetricCalculator.class);
+public interface MetricCalculator {
 
-    abstract public double evaluate(double value, String expression);
+    /**
+     * Stores an expression so that the calculator can evaluate the expression
+     * multiple times with out having to set the expression each time.
+     * 
+     * @param expression
+     *            the expression to save
+     */
+    public void setExpression(String expression);
 
-    abstract public double evaluate(String expression);
+    /**
+     * Retrieve the stored expression
+     * 
+     * @return the stored expression
+     */
+    public String getExpression();
 
-    abstract public double evaluate(double value);
+    /**
+     * Evaluate the given expression using the given value as an initial value
+     * into that expression. i.e. in the case of an RPN evaluator the value
+     * might be pushed on the stack before the expression is evaluated and in
+     * the case of a precedence evaluation the value might be considered the
+     * left had side.
+     * 
+     * @param value
+     *            the initial value in the evaluation
+     * @param expression
+     *            the expression to evaluate
+     * @return result of the expression evaluation
+     */
+    public double evaluate(double value, String expression);
 
-    private String expr = null;
+    /**
+     * Evaluate the given expression.
+     * 
+     * @param expression
+     *            the expression to evaluate
+     * @return result of the expression evaluation
+     */
+    public double evaluate(String expression);
 
-    public void setExpression(String expr) {
-        this.expr = expr;
-    }
-
-    public String getExpression() {
-        return this.expr;
-    }
-
-    public static final String CALCULATOR_PATH_PROPERTY = "org.zenoss.app.metricservice.calculator.path";
-    public static final String DEFAULT_CALCULATOR_PATH = "org.zenoss.app.metricservice.calculators";
-
-    @SuppressWarnings("unchecked")
-    public static MetricCalculator create(String expr)
-            throws ClassNotFoundException {
-
-        String[] terms = expr.split(":", 2);
-        String[] paths = System.getProperty(CALCULATOR_PATH_PROPERTY,
-                DEFAULT_CALCULATOR_PATH).split(":");
-
-        if (log.isDebugEnabled()) {
-            StringBuilder buf = new StringBuilder("Search for '");
-            buf.append(terms[0]);
-            buf.append('.');
-            buf.append("Calculator");
-            buf.append("' in ");
-            char prefix = '[';
-            for (String path : paths) {
-                buf.append(prefix);
-                buf.append(path);
-                prefix = ',';
-            }
-            buf.append(']');
-            log.error(buf.toString());
-        }
-        StringBuilder classname = new StringBuilder();
-        Class<? extends MetricCalculator> clazz = null;
-        MetricCalculator calc = null;
-        for (String path : paths) {
-            classname.setLength(0);
-            classname.append(path);
-            classname.append('.');
-            classname.append(terms[0]);
-            classname.append('.');
-            classname.append("Calculator");
-            clazz = null;
-            try {
-                clazz = (Class<? extends MetricCalculator>) Class
-                        .forName(classname.toString());
-                calc = clazz.newInstance();
-                if (terms.length > 1) {
-                    calc.setExpression(terms[1]);
-                }
-                log.debug(
-                        "Found class '{}' to evaluate expressions of type '{}'",
-                        classname, terms[0]);
-                return calc;
-            } catch (Exception e) {
-                log.debug(
-                        "Expression evaluation implementation '{}' does not exist",
-                        classname.toString());
-                // ignore, maybe on the next path segment
-            }
-        }
-        throw new ClassNotFoundException(
-                String.format(
-                        "Unable to find a class that implementations the expression evaluation for type '{}'",
-                        terms[0]));
-    }
+    /**
+     * Evaluate the saved expression using the given value as an initial value
+     * into that expression. i.e. in the case of an RPN evaluator the value
+     * might be pushed on the stack before the expression is evaluated and in
+     * the case of a precedence evaluation the value might be considered the
+     * left had side.
+     * 
+     * @param value
+     *            the initial value in the evaluation
+     * @return result of the saved expression evaluation
+     */
+    public double evaluate(double value);
 }
