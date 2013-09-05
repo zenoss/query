@@ -13,6 +13,9 @@ metrics:
   sendRateOptions: false
 charts:
   redisConnection: localhost:6379
+proxyConfiguration:
+  hostname: 10.87.110.247
+  port: 8080
 http:
   connectorType: nonblocking
   port: 8888
