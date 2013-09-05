@@ -539,6 +539,9 @@ public class Calculator extends BaseMetricCalculator {
         String term;
         for (int i = 0; i < terms.length; ++i) {
             term = terms[i].trim().toLowerCase();
+            if (term.length() == 0) {
+                continue;
+            }
             switch (term.charAt(0)) {
             case '+':
                 add();
@@ -593,10 +596,12 @@ public class Calculator extends BaseMetricCalculator {
                 }
                 break;
             case 'e':
-                if ("exchange".equals(term)) {
+                if ("exc".equals(term)) {
                     exchange();
                 } else if ("exp".equals(term)) {
                     exp();
+                } else if ("eq".equals(term)) {
+                    eq();
                 } else {
                     throw new UnsupportedOperationException(term);
                 }
@@ -630,11 +635,15 @@ public class Calculator extends BaseMetricCalculator {
                     throw new UnsupportedOperationException(term);
                 }
                 break;
-            case 'l':
+            case 'l':               
                 if ("limit".equals(term)) {
                     limit();
                 } else if ("log".equals(term)) {
                     log();
+                } else if ("lt".equals(term)) {
+                    lt();
+                } else if ("le".equals(term)) {
+                    le();
                 } else {
                     throw new UnsupportedOperationException(term);
                 }
@@ -653,6 +662,8 @@ public class Calculator extends BaseMetricCalculator {
                     negInfinity();
                 } else if ("now".equals(term)) {
                     now();
+                } else if ("ne".equals(term)) {
+                    ne();
                 } else {
                     throw new UnsupportedOperationException(term);
                 }

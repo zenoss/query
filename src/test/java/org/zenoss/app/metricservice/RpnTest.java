@@ -32,6 +32,7 @@
 package org.zenoss.app.metricservice;
 
 import java.util.Date;
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -257,5 +258,33 @@ public class RpnTest {
         Assert.assertEquals("Both sides unknown", 1.0,
                 calc.evaluate("unkn, unkn, addnan, un"), 0.0);
 
+    }
+
+    @Test
+    public void exchangeTest() throws ClassNotFoundException {
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
+        Assert.assertEquals(1.0, calc.evaluate("1,2,exc"), 0.0);
+        List<Double> stack = ((Calculator) calc).getStack();
+        Assert.assertEquals("stack length", 2, stack.size());
+        Assert.assertEquals("top", 1.0, stack.get(1), 0.0);
+        Assert.assertEquals("under top", 2.0, stack.get(0), 0.0);
+    }
+
+    @Test
+    public void regression1() throws ClassNotFoundException {
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
+        Assert.assertEquals(
+                0.0,
+                calc.evaluate(100.0,
+                        "1024,*,DUP,2146787328,LT,EXC,2146787328,/,1.0,-,-100,*,0.0,IF"),
+                0.0);
+        // 2146738 1024 * DUP 2146787328 LT EXC 2146787328 / 1.0 - -100 * 0.0 IF
+        Assert.assertEquals(
+                -2.39,
+                calc.evaluate(2146738.0,
+                        "1024,*,DUP,2146787328,LT,EXC,2146787328,/,1.0,-,-100,*,0.0,IF"),
+                0.5);
     }
 }
