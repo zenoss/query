@@ -46,6 +46,7 @@
              * @default /static/performance/query
              */
             urlPath : "/static/performance/query/",
+            
             /**
              * The url path where metrics are fetched from the server
              *
@@ -53,6 +54,7 @@
              * @default /api/performance/query
              */
             urlPerformance: "/api/performance/query/",
+            
             /**
              * Used to format dates for the output display in the footer of a
              * chart.
@@ -914,7 +916,7 @@
             if (config.returnset !== undefined) {
                 request.returnset = config.returnset;
             }
-
+            
             if (config.datapoints !== undefined) {
                 request.metrics = [];
                 config.datapoints.forEach(function(dp) {
@@ -928,6 +930,9 @@
                     }
                     if (dp.downsample !== undefined) {
                         m.downsample = dp.downsample;
+                    }
+                    if (dp.expression != undefined) {
+                        m.expression = dp.expression;
                     }
                     if (dp.tags !== undefined) {
                         m.tags = {};
@@ -1342,7 +1347,7 @@
         css.type = 'text/css';
 
         if (!url.startsWith("http")) {
-            css.href = zenoss.visualization.url + '/' + zenoss.visualization.urlPath + url;
+            css.href = zenoss.visualization.url + zenoss.visualization.urlPath + url;
         } else {
             css.href = url;
         }
