@@ -23,7 +23,7 @@
             /**
              * Used to enable (true) or disable (false) debug output to the
              * browser console
-             *
+             * 
              * @access public
              * @default false
              */
@@ -32,33 +32,33 @@
             /**
              * Used to specify the base URL that is the endpoint for the Zenoss
              * metric service.
-             *
+             * 
              * @access public
              * @default http://localhost:8080
              */
             url : "http://localhost:8080",
 
             /**
-             * The url path where the static javascript dependencies can be found.
-             * This includes library dependencies like jquery.
-             *
+             * The url path where the static javascript dependencies can be
+             * found. This includes library dependencies like jquery.
+             * 
              * @access public
              * @default /static/performance/query
              */
             urlPath : "/static/performance/query/",
-            
+
             /**
              * The url path where metrics are fetched from the server
-             *
+             * 
              * @access public
              * @default /api/performance/query
              */
-            urlPerformance: "/api/performance/query/",
-            
+            urlPerformance : "/api/performance/query/",
+
             /**
              * Used to format dates for the output display in the footer of a
              * chart.
-             *
+             * 
              * @param {Date}
              *            date the date to be formated
              * @returns a string representation of the date
@@ -72,7 +72,7 @@
              * Used to generate the date/time to be displayed on a tick mark.
              * This takes into account the range of times being displayed so
              * that common data can be removed.
-             *
+             * 
              * @param {Date}
              *            start the start date of the time range being
              *            considered
@@ -168,7 +168,7 @@
             /**
              * Culls the plots in a chart so that only data points with a common
              * time stamp remain.
-             *
+             * 
              * @param the
              *            chart that contains the plots to cull
              * @access private
@@ -248,7 +248,7 @@
             /**
              * Used to augment the div element with an error message when an
              * error is encountered while creating a chart.
-             *
+             * 
              * @access private
              * @param {string}
              *            name the ID of the HTML div element to augment
@@ -275,10 +275,10 @@
              * really understand what is going on behind the scenes as there is
              * a lot of concurrent processing involved as many components are
              * loaded dynamically with a delayed creation or realization.
-             *
+             * 
              * Instead instance of this class are better created with the
              * zenoss.visualization.chart.create method.
-             *
+             * 
              * @access private
              * @constructor
              * @param {string}
@@ -310,11 +310,6 @@
                 this.footer = document.createElement('div');
                 $(this.footer).addClass('zenfooter');
                 $(this.div).append($(this.footer));
-
-                /*
-                 * $(self.svgwrapper).outerHeight( $(self.div).height() -
-                 * $(self.footer).outerHeight());
-                 */
 
                 this.svg = d3.select(this.svgwrapper).append('svg');
                 this.request = this.__buildDataRequest(this.config);
@@ -377,8 +372,11 @@
                                         zenoss.visualization
                                                 .__group('Severe error, please report');
                                         zenoss.visualization
-                                                .__error('REQUEST : POST ' +  zenoss.visualization.urlPerformance + ' ',
-                                                        + JSON
+                                                .__error(
+                                                        'REQUEST : POST '
+                                                                + zenoss.visualization.urlPerformance
+                                                                + ' ',
+                                                        +JSON
                                                                 .stringify(self.request));
                                         zenoss.visualization
                                                 .__error('RESPONSE: '
@@ -424,7 +422,7 @@
                  * updates the chart instance with the given changes. To remove
                  * an item (at the first level or the change structure) set its
                  * values to the negative '-' symbol.
-                 *
+                 * 
                  * @param {string}
                  *            name the name of the chart to update
                  * @param {object}
@@ -448,7 +446,7 @@
                  * dynamically loading all dependencies, and finally creating
                  * the chart object. This method should be used to create a
                  * chart as opposed to calling "new" directly on the class.
-                 *
+                 * 
                  * @param {string}
                  *            name the name of the HTML div element to augment
                  *            with the chart
@@ -580,7 +578,7 @@
              * Used to track dependency loading, including the load state
              * (loaded / loading) as well as the callback that will be called
              * when a dependency load has been completed.
-             *
+             * 
              * @access private
              */
             __dependencies : {},
@@ -588,7 +586,7 @@
             /**
              * Used to track the charts that have been created and the names to
              * which they are associated
-             *
+             * 
              * @access private
              */
             __charts : {},
@@ -599,7 +597,7 @@
              * charts. Because of the updated dependency loading capability,
              * this method is not strictly needed any more, but will be left
              * around for posterity.
-             *
+             * 
              * @param {callback}
              *            callback method called after all the pre-requisite
              *            JavaScript libraries are loaded.
@@ -626,7 +624,7 @@
      * Sets the box in the footer for the given plot (specified by index) to the
      * specified color. The implementation of this is dependent on how the
      * footer is constructed (see __buildFooter).
-     *
+     * 
      * @access private
      * @param {int}
      *            idx the index of the plot whose color should be set,
@@ -642,10 +640,18 @@
     };
 
     zenoss.visualization.Chart.prototype.__updateFooter = function(data) {
+        var plot, vals, cur, min, max, avg, cols, init, label, legend, i, v, ll, dp, k, key, rows;
+
+        // Build up a map of metric name to legend label.
+        legend = {};
+        for (i in this.config.datapoints) {
+            dp = this.config.datapoints[i];
+            legend[dp.metric] = dp.legend || dp.metric;
+        }
 
         // The first table row is for the dates, the second is a header and then
         // a row for each plot.
-        var rows = $(this.table).find('tr');
+        rows = $(this.table).find('tr');
 
         $($(rows[0]).find('td')).html(
                 zenoss.visualization.dateFormatter(new Date(
@@ -658,8 +664,8 @@
 
         // Calculate the summary values from the data and place the date in the
         // the table.
-        var plot, vals, cur, min, max, avg, cols, init, label, i, v;
-        for (i = 0; i < this.plots.length; i += 1) {
+        ll = this.plots.length;
+        for (i = 0; i < ll; i += 1) {
             plot = this.plots[i];
             vals = [ 0, -1, -1, 0 ];
             cur = 0;
@@ -686,9 +692,11 @@
             cols = $(rows[2 + i]).find('td');
 
             // Metric name
-            label = plot.key;
-            if (label.indexOf('{') > -1) {
-                label = label.substring(0, label.indexOf('{')) + '{*}';
+            key = plot.key;
+            if ((k = key.indexOf('{')) > -1) {
+                label = legend[key.substring(0, k)] + '{*}';
+            } else {
+                label = legend[key];
             }
             $(cols[1]).html(label);
 
@@ -702,7 +710,7 @@
      * Constructs the chart footer for a given chart. The footer will contain
      * information such as the date range and key values (ending, min, max, avg)
      * of each plot on the chart.
-     *
+     * 
      * @access private
      * @param {object}
      *            config the charts configuration
@@ -786,7 +794,7 @@
      * Updates a graph with the changes specified in the given change set. To
      * remove a value from the configuration its value should be set to a
      * negative sign, '-'.
-     *
+     * 
      * @param {object}
      *            changeset updates to the existing graph's configuration.
      */
@@ -818,7 +826,8 @@
         this.request = this.__buildDataRequest(this.config);
         $
                 .ajax({
-                    'url' : zenoss.visualization.url + zenoss.visualization.urlPerformance,
+                    'url' : zenoss.visualization.url
+                            + zenoss.visualization.urlPerformance,
                     'type' : 'POST',
                     'data' : JSON.stringify(this.request),
                     'dataType' : 'json',
@@ -849,9 +858,9 @@
                             detail = 'Severe: Unable to parse data returned from Zenoss metric service as JSON object. Please copy / paste the REQUEST and RESPONSE written to your browser\'s Java Console into an email to Zenoss Support';
                             zenoss.visualization
                                     .__group('Severe error, please report');
-                            zenoss.visualization
-                                    .__error('REQUEST : POST ' + zenoss.visualization.urlPerformance + '  '
-                                            + JSON.stringify(self.request));
+                            zenoss.visualization.__error('REQUEST : POST '
+                                    + zenoss.visualization.urlPerformance
+                                    + '  ' + JSON.stringify(self.request));
                             zenoss.visualization.__error('RESPONSE: '
                                     + res.responseText);
                             zenoss.visualization.__groupEnd();
@@ -882,7 +891,7 @@
      * Constructs a request object that can be POSTed to the Zenoss Data API to
      * retrieve the data for a chart. The request is based on the information in
      * the given config.
-     *
+     * 
      * @access private
      * @param {object}
      *            config the config from which to build a request
@@ -916,7 +925,7 @@
             if (config.returnset !== undefined) {
                 request.returnset = config.returnset;
             }
-            
+
             if (config.datapoints !== undefined) {
                 request.metrics = [];
                 config.datapoints.forEach(function(dp) {
@@ -954,7 +963,7 @@
      * Processes the result from the Zenoss performance metric query that is in
      * the series format into the data that can be utilized by the chart
      * library.
-     *
+     * 
      * @access private
      * @param {object}
      *            request the request which generated the data
@@ -1004,7 +1013,7 @@
      * Processes the result from the Zenoss performance metric query that is in
      * the default format into the data that can be utilized by the chart
      * library.
-     *
+     * 
      * @access private
      * @param {object}
      *            request the request which generated the data
@@ -1069,7 +1078,7 @@
      * Wrapper function that redirects to the proper implementation to processes
      * the result from the Zenoss performance metric query into the data that
      * can be utilized by the chart library. *
-     *
+     * 
      * @access private
      * @param {object}
      *            request the request which generated the data
@@ -1091,7 +1100,7 @@
      * method provide by jQuery in that it will merge the value of arrays, but
      * concatenating the arrays together using the jQuery method "merge".
      * Neither of the objects passed are modified and a new object is returned.
-     *
+     * 
      * @access private
      * @param {object}
      *            base the object to which values are to be merged into
@@ -1158,7 +1167,7 @@
      * Given a dependency object, checks if the dependencies are already loaded
      * and if so, calls the callback, else loads the dependencies and then calls
      * the callback.
-     *
+     * 
      * @access private
      * @param {object}
      *            required the dependency object that contains a "defined" key
@@ -1257,7 +1266,7 @@
     /**
      * Loads the chart renderer as a dependency and then constructs and renders
      * the chart.
-     *
+     * 
      * @access private
      * @param {object}
      *            data the data that is being rendered in the graph
@@ -1336,7 +1345,7 @@
 
     /**
      * Loads the CSS specified by the URL.
-     *
+     * 
      * @access private
      * @param {url}
      *            url the url, in string format, of the CSS file to load.
@@ -1347,7 +1356,8 @@
         css.type = 'text/css';
 
         if (!url.startsWith("http")) {
-            css.href = zenoss.visualization.url + zenoss.visualization.urlPath + url;
+            css.href = zenoss.visualization.url + zenoss.visualization.urlPath
+                    + url;
         } else {
             css.href = url;
         }
@@ -1361,7 +1371,7 @@
      * will load the JavaScript file specified by the URL by creating a new HTML
      * script element on the page and then call the callback once the script has
      * been loaded.
-     *
+     * 
      * @access private
      * @param {url}
      *            url URL, in string form, of the JavaScript file to load
@@ -1420,7 +1430,7 @@
     /**
      * Loads the array of JavaScript URLs followed by the array of CSS URLs and
      * calls the appropriate callback if the operations succeeded or failed.
-     *
+     * 
      * @access private
      * @param {uri[]}
      *            js an array of JavaScript files to load
@@ -1485,7 +1495,7 @@
     /**
      * Loads jQuery and D3 as a dependencies and then calls the appripriate
      * callback.
-     *
+     * 
      * @access private
      * @param {function}
      *            [success] called if the core dependencies are loaded
