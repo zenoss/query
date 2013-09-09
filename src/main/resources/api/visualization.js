@@ -276,7 +276,7 @@
                     $('#' + name + ' .message').html(message);
                 }
                 zenoss.visualization.__hideChart(name);                
-                
+
                 // Center the message in the div
                 $('#' + name + ' .message').css('display', 'block');
                 $('#' + name + ' .message span').css('position', 'relative');
@@ -336,7 +336,7 @@
              *            to specify the entire chart definition.
              */
             Chart : function(name, config) {
-                var self = this;
+                var self = this, dp, i;
 
                 this.name = name;
                 this.config = config;
@@ -344,6 +344,13 @@
                 if (this.div[0] === undefined) {
                     throw new zenoss.visualization.Error('SelectorError',
                             'unknown selector specified, "' + this.name + '"');
+                }
+                
+                // Build up a map of metric name to legend label.
+                this.legend = {};
+                for (i in this.config.datapoints) {
+                    dp = this.config.datapoints[i];
+                    this.legend[dp.metric] = dp.legend || dp.metric;
                 }
 
                 this.svgwrapper = document.createElement('div');
@@ -359,11 +366,6 @@
                 this.footer = document.createElement('div');
                 $(this.footer).addClass('zenfooter');
                 $(this.div).append($(this.footer));
-
-                /*
-                 * $(self.svgwrapper).outerHeight( $(self.div).height() -
-                 * $(self.footer).outerHeight());
-                 */
 
                 this.svg = d3.select(this.svgwrapper).append('svg');
                 this.request = this.__buildDataRequest(this.config);
@@ -694,10 +696,11 @@
     };
 
     zenoss.visualization.Chart.prototype.__updateFooter = function(data) {
+        var plot, vals, cur, min, max, avg, cols, init, label, i, v, ll, k, rows;
 
         // The first table row is for the dates, the second is a header and then
         // a row for each plot.
-        var rows = $(this.table).find('tr');
+        rows = $(this.table).find('tr');
 
         $($(rows[0]).find('td')).html(
                 zenoss.visualization.dateFormatter(new Date(
@@ -710,8 +713,8 @@
 
         // Calculate the summary values from the data and place the date in the
         // the table.
-        var plot, vals, cur, min, max, avg, cols, init, label, i, v;
-        for (i = 0; i < this.plots.length; i += 1) {
+        ll = this.plots.length;
+        for (i = 0; i < ll; i += 1) {
             plot = this.plots[i];
             vals = [ 0, -1, -1, 0 ];
             cur = 0;
@@ -739,8 +742,8 @@
 
             // Metric name
             label = plot.key;
-            if (label.indexOf('{') > -1) {
-                label = label.substring(0, label.indexOf('{')) + '{*}';
+            if ((k = label.indexOf('{')) > -1) {
+                label = label.substring(0, k) + '{*}';
             }
             $(cols[1]).html(label);
 
@@ -984,7 +987,7 @@
                     if (dp.downsample !== undefined) {
                         m.downsample = dp.downsample;
                     }
-                    if (dp.expression != undefined) {
+                    if (dp.expression !== undefined) {
                         m.expression = dp.expression;
                     }
                     if (dp.tags !== undefined) {
@@ -1018,13 +1021,14 @@
      */
     zenoss.visualization.Chart.prototype.__processResultAsSeries = function(
             request, data) {
-        var plots = [];
+        var self = this, plots = [];
 
         data.results.forEach(function(result) {
             // The key for a series plot will be its distinguishing
             // characteristics, which is the metric name and the
-            // tags
-            var key = result.metric;
+            // tags. We will use any mapping from metric name to legend value
+            // that was part of the original request.
+            var key = self.legend[result.metric];
             if (result.tags !== undefined) {
                 key += '{';
                 var prefix = '';
@@ -1069,7 +1073,7 @@
     zenoss.visualization.Chart.prototype.__processResultAsDefault = function(
             request, data) {
 
-        var plotMap = [];
+        var self = this, plotMap = [];
 
         // Create a plot for each metric name, this is essentially
         // grouping the results by metric name. This can cause problems
@@ -1081,7 +1085,7 @@
             var plot = plotMap[result.metric];
             if (plot === undefined) {
                 plot = {
-                    'key' : result.metric,
+                    'key' : self.legend[result.metric],
                     'values' : []
                 };
                 plotMap[result.metric] = plot;
