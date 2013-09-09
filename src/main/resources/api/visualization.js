@@ -704,10 +704,10 @@
 
         $($(rows[0]).find('td')).html(
                 zenoss.visualization.dateFormatter(new Date(
-                        data.startTimeActual.replace('-', ' ')))
+                        data.startTimeActual))
                         + ' to '
                         + zenoss.visualization.dateFormatter(new Date(
-                                data.endTimeActual.replace('-', ' ')))
+                                data.endTimeActual))
                         + ' ('
                         + jstz.determine().name() + ')');
 
@@ -1137,6 +1137,14 @@
      */
     zenoss.visualization.Chart.prototype.__processResult = function(request,
             data) {
+        // firefox date doesn't work with the hyphen
+        if (data.startTimeActual) {
+            data.startTimeActual = data.startTimeActual.replace('-', ' ');
+        }
+        if (data.endTimeActual) {
+            data.endTimeActual = data.endTimeActual.replace('-', ' ');
+        }
+
         if (data.series) {
             return this.__processResultAsSeries(request, data);
         }
