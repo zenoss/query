@@ -258,8 +258,52 @@
              *            detail the detailed error message
              */
             __showError : function(name, detail) {
-                $('#' + name).html(
+                zenoss.visualization.__showMessage(name,
                         '<span class="zenerror">' + detail + '</span>');
+            },
+
+            __showNoData : function(name) {
+                zenoss.visualization.__showMessage(name,
+                        '<span class="nodata"></span>');
+            },
+
+            __hideMessage : function(name) {
+                $('#' + name + ' .message').css('display', 'none');
+            },
+
+            __showMessage : function(name, message) {
+                if (message) {
+                    $('#' + name + ' .message').html(message);
+                }
+                zenoss.visualization.__hideChart(name);                
+                
+                // Center the message in the div
+                $('#' + name + ' .message').css('display', 'block');
+                $('#' + name + ' .message span').css('position', 'relative');
+                $('#' + name + ' .message span').width(
+                        $('#' + name + ' .message').width()
+                                - parseInt($('#' + name + ' .message span')
+                                        .css('margin-left'))
+                                - parseInt($('#' + name + ' .message span')
+                                        .css('margin-right')));
+                $('#' + name + ' .message span').css('top', '50%');
+                $('#' + name + ' .message span')
+                        .css(
+                                'margin-top',
+                                -parseInt($('#' + name + ' .message span')
+                                        .height()) / 2);
+            },
+
+            __hideChart : function(name) {
+                $('#' + name + ' .zenchart').css('display', 'none');
+                $('#' + name + ' .zenfooter').css('display', 'none');
+            },
+
+            __showChart : function(name) {
+                zenoss.visualization.__hideMessage(name);
+                $('#' + name + ' .zenchart').css('display', 'block');
+                $('#' + name + ' .zenfooter').css('display', 'block');
+
             },
 
             Error : function(name, message) {
@@ -306,6 +350,11 @@
                 $(this.svgwrapper).addClass('zenchart');
                 $(this.div).append($(this.svgwrapper));
                 this.containerSelector = '#' + name + ' .zenchart';
+
+                this.message = document.createElement('div');
+                $(this.message).addClass('message');
+                $(this.message).css('display', 'none');
+                $(this.div).append($(this.message));
 
                 this.footer = document.createElement('div');
                 $(this.footer).addClass('zenfooter');
@@ -433,7 +482,7 @@
                     var found = zenoss.visualization.__charts[name];
                     if (found === undefined) {
                         zenoss.visualization
-                                .__warn('Attempt to modify (range) a chart, "'
+                                .__warn('Attempt to modify a chart, "'
                                         + name + '", that does not exist.');
                         return;
                     }
@@ -822,7 +871,7 @@
         kill.forEach(function(p) {
             delete self.config[p];
         });
-
+        
         this.request = this.__buildDataRequest(this.config);
         $
                 .ajax({
@@ -1259,8 +1308,13 @@
     };
 
     zenoss.visualization.Chart.prototype.__updateData = function(data) {
-        this.impl.update(this, data);
-        this.__updateFooter(data);
+        if (this.plots.length === 0) {
+            zenoss.visualization.__showNoData(this.name);
+        } else {
+            zenoss.visualization.__showChart(this.name);
+            this.impl.update(this, data);
+            this.__updateFooter(data);
+        }
     };
 
     /**
