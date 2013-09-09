@@ -27,13 +27,13 @@
         update : function(chart, data) {
             var _chart = chart.closure;
 
-            var _start = new Date(data.startTimeActual);
-            var _end = new Date(data.endTimeActual);
             _chart.model().xAxis.tickFormat(function(ts) {
-                return zenoss.visualization.tickFormat(_start, _end, ts);
+                return zenoss.visualization.tickFormat(data.startTimeActual,
+                        data.endTimeActual, ts);
             });
             _chart.model().x2Axis.tickFormat(function(ts) {
-                return zenoss.visualization.tickFormat(_start, _end, ts);
+                return zenoss.visualization.tickFormat(data.startTimeActual,
+                        data.endTimeActual, ts);
             });
 
             chart.svg.datum(chart.plots).transition().duration(0).call(
@@ -46,14 +46,13 @@
             var model = nv.models.lineWithFocusChart();
             _chart.model(model);
 
-            var _start = new Date(data.startTimeActual);
-            var _end = new Date(data.endTimeActual);
-
             model.xAxis.tickFormat(function(ts) {
-                return zenoss.visualization.tickFormat(_start, _end, ts);
+                return zenoss.visualization.tickFormat(data.startTimeActual,
+                        data.endTimeActual, ts);
             });
             model.x2Axis.tickFormat(function(ts) {
-                return zenoss.visualization.tickFormat(_start, _end, ts);
+                return zenoss.visualization.tickFormat(data.startTimeActual,
+                        data.endTimeActual, ts);
             });
 
             model.yAxis.tickFormat(d3.format('f'));

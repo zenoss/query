@@ -65,7 +65,7 @@
              * @access public
              */
             dateFormatter : function(date) {
-                return date.toLocaleString();
+                return d3.time.format('%-m/%-d/%Y %-I:%M:%S %p')(date);
             },
 
             /**
@@ -84,11 +84,31 @@
              * @access public
              */
             tickFormat : function(start, end, ts) {
-                if (start.getFullYear() === end.getFullYear()) {
-                    if (start.getMonth() === end.getMonth()) {
-                        if (start.getDate() === end.getDate()) {
-                            if (start.getHours() === end.getHours()) {
-                                if (start.getMinutes() === end.getMinutes()) {
+                var _start, _end;
+
+                /*
+                 * Convert the strings to date instances, with the understanding
+                 * that that data strings may be the one passed back from the
+                 * metric service that have '-' instead of spaces
+                 */
+                if (typeof start === 'string') {
+                    _start = new Date(start.replace(/-([^-])/g, ' $1'));
+                } else {
+                    _start = start;
+                }
+
+                if (typeof end === 'string') {
+                    _end = new Date(end.replace(/-([^-])/g, ' $1'));
+                } else {
+                    _end = end;
+                }
+
+                // Select a date/time format based on the range
+                if (_start.getFullYear() === _end.getFullYear()) {
+                    if (_start.getMonth() === _end.getMonth()) {
+                        if (_start.getDate() === _end.getDate()) {
+                            if (_start.getHours() === _end.getHours()) {
+                                if (_start.getMinutes() === _end.getMinutes()) {
                                     return d3.time.format('::%S')(new Date(ts));
                                 }
                                 return d3.time.format(':%M:%S')(new Date(ts));
@@ -275,7 +295,7 @@
                 if (message) {
                     $('#' + name + ' .message').html(message);
                 }
-                zenoss.visualization.__hideChart(name);                
+                zenoss.visualization.__hideChart(name);
 
                 // Center the message in the div
                 $('#' + name + ' .message').css('display', 'block');
@@ -345,7 +365,7 @@
                     throw new zenoss.visualization.Error('SelectorError',
                             'unknown selector specified, "' + this.name + '"');
                 }
-                
+
                 // Build up a map of metric name to legend label.
                 this.legend = {};
                 for (i in this.config.datapoints) {
@@ -489,8 +509,8 @@
                     var found = zenoss.visualization.__charts[name];
                     if (found === undefined) {
                         zenoss.visualization
-                                .__warn('Attempt to modify a chart, "'
-                                        + name + '", that does not exist.');
+                                .__warn('Attempt to modify a chart, "' + name
+                                        + '", that does not exist.');
                         return;
                     }
                     found.update(changes);
@@ -704,12 +724,11 @@
 
         $($(rows[0]).find('td')).html(
                 zenoss.visualization.dateFormatter(new Date(
-                        data.startTimeActual.replace('-', ' ')))
+                        data.startTimeActual.replace(/-([^-])/g, ' $1')))
                         + ' to '
                         + zenoss.visualization.dateFormatter(new Date(
-                                data.endTimeActual.replace('-', ' ')))
-                        + ' ('
-                        + jstz.determine().name() + ')');
+                                data.endTimeActual.replace(/-([^-])/g, ' $1')))
+                        + ' (' + jstz.determine().name() + ')');
 
         // Calculate the summary values from the data and place the date in the
         // the table.
@@ -869,7 +888,7 @@
         kill.forEach(function(p) {
             delete self.config[p];
         });
-        
+
         this.request = this.__buildDataRequest(this.config);
         $
                 .ajax({
