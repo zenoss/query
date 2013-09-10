@@ -360,6 +360,7 @@
 
                 this.name = name;
                 this.config = config;
+                this.yAxisLabel = config.yAxisLabel;
                 this.div = $('#' + this.name);
                 if (this.div[0] === undefined) {
                     throw new zenoss.visualization.Error('SelectorError',
