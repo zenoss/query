@@ -715,11 +715,56 @@
         box.css('opacity', color.opacity);
     };
 
+    function __createTableRow(self) {
+        var tr, td, d;
+
+        tr = document.createElement('tr');
+        $(tr).addClass('zenfooter_data_row');
+
+        // One column for the color
+        td = document.createElement('td');
+        $(td).addClass('zenfooter_box_column');
+        d = document.createElement('div');
+        $(d).addClass('zenfooter_box');
+        $(d).css('backgroundColor', 'white');
+        $(td).append($(d));
+        $(tr).append($(td));
+
+        // One column for the metric name
+        td = document.createElement('td');
+        $(td).addClass('zenfooter_data');
+        $(td).addClass('zenfooter_data_text');
+        $(tr).append($(td));
+
+        // One col for each of the metrics stats
+        [ 1, 2, 3, 4 ].forEach(function() {
+            td = document.createElement('td');
+            $(td).addClass('zenfooter_data');
+            $(td).addClass('zenfooter_data_number');
+            $(tr).append($(td));
+        });
+
+        $(self.table).append($(tr));
+    }
+
     zenoss.visualization.Chart.prototype.__updateFooter = function(data) {
-        var plot, vals, cur, min, max, avg, cols, init, label, i, v, ll, k, rows;
+        var plot, vals, cur, min, max, avg, cols, init, label, i, v, ll, k, rows, needResize = false;
 
         // The first table row is for the dates, the second is a header and then
         // a row for each plot.
+        rows = $(this.table).find('tr.zenfooter_data_row');
+        if (rows.length < this.plots.length) {
+            // not enough rows in table, so
+            for (i = rows.length; i < this.plots.length; i += 1) {
+                __createTableRow(this);
+            }
+            needResize = true;
+        } else if (rows.length > this.plots.length) {
+            for (i = rows.length; i > this.plots.length; i -= 1) {
+                $(rows[i - 1]).remove();
+            }
+            needResize = true;
+        }
         rows = $(this.table).find('tr');
 
         $($(rows[0]).find('td')).html(
@@ -770,6 +815,7 @@
                 $(cols[2 + v]).html(vals[v].toFixed(2));
             }
         }
+        return needResize;
     };
 
     /**
@@ -825,6 +871,7 @@
         var d;
         this.plots.forEach(function() {
             tr = document.createElement('tr');
+            $(tr).addClass('zenfooter_data_row');
 
             // One column for the color
             td = document.createElement('td');
@@ -1331,7 +1378,12 @@
         } else {
             zenoss.visualization.__showChart(this.name);
             this.impl.update(this, data);
-            this.__updateFooter(data);
+            if (this.__updateFooter(data)) {
+                $(this.svgwrapper).outerHeight(
+                        parseInt($(this.div).height())
+                                - parseInt($(this.table).outerHeight()));
+                this.impl.resize(this);
+            }
         }
     };
 

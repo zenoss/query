@@ -58,6 +58,12 @@
             return _chart;
         },
 
+        resize : function(chart) {
+            var _chart = chart.closure, model = _chart.model();
+            model.height($(chart.svgwrapper).height());
+            chart.svg.transition().duration(0).call(model);
+        },
+
         render : function() {
         }
     };
