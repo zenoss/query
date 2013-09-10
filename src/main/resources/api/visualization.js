@@ -729,8 +729,8 @@
     zenoss.visualization.Chart.prototype.__isOverlay = function(plot) {
         var i;
         if (this.overlays.length) {
-            for (i=0; i<this.overlays.length; i++) {
-                if (this.overlays[i].legend == plot.key) {
+            for (i=0; i<this.overlays.length; i+=1) {
+                if (this.overlays[i].legend === plot.key) {
                     return true;
                 }
             }
@@ -758,43 +758,42 @@
         ll = this.plots.length;
         for (i = 0; i < ll; i += 1) {
             plot = this.plots[i];
-            if (this.__isOverlay(plot)) {
-                continue;
-            }
+            // do not add a footer box for overlays
+            if (!this.__isOverlay(plot)) {
+                vals = [ 0, -1, -1, 0 ];
+                cur = 0;
+                min = 1;
+                max = 2;
+                avg = 3;
+                init = false;
+                plot.values.forEach(function(v) {
+                    if (!init) {
+                        vals[min] = v.y;
+                        vals[max] = v.y;
+                        init = true;
+                    } else {
+                        vals[min] = Math.min(vals[min], v.y);
+                        vals[max] = Math.max(vals[max], v.y);
+                    }
+                    vals[avg] += v.y;
+                    vals[cur] = v.y;
+                });
+                vals[avg] = vals[avg] / plot.values.length;
 
-            vals = [ 0, -1, -1, 0 ];
-            cur = 0;
-            min = 1;
-            max = 2;
-            avg = 3;
-            init = false;
-            plot.values.forEach(function(v) {
-                if (!init) {
-                    vals[min] = v.y;
-                    vals[max] = v.y;
-                    init = true;
-                } else {
-                    vals[min] = Math.min(vals[min], v.y);
-                    vals[max] = Math.max(vals[max], v.y);
+                // The first column is the color, the second is the metric name,
+                // followed byt the values
+                cols = $(rows[2 + i]).find('td');
+
+                // Metric name
+                label = plot.key;
+                if ((k = label.indexOf('{')) > -1) {
+                    label = label.substring(0, k) + '{*}';
                 }
-                vals[avg] += v.y;
-                vals[cur] = v.y;
-            });
-            vals[avg] = vals[avg] / plot.values.length;
+                $(cols[1]).html(label);
 
-            // The first column is the color, the second is the metric name,
-            // followed byt the values
-            cols = $(rows[2 + i]).find('td');
-
-            // Metric name
-            label = plot.key;
-            if ((k = label.indexOf('{')) > -1) {
-                label = label.substring(0, k) + '{*}';
-            }
-            $(cols[1]).html(label);
-
-            for (v = 0; v < vals.length; v += 1) {
-                $(cols[2 + v]).html(vals[v].toFixed(2));
+                for (v = 0; v < vals.length; v += 1) {
+                    $(cols[2 + v]).html(vals[v].toFixed(2));
+                }
             }
         }
     };
@@ -849,39 +848,39 @@
 
         // One row for each of the metrics
         var self = this;
-        var d;
-        this.plots.forEach(function(plot) {
-            if (self.__isOverlay(plot)) {
-                return;
-            }
-            tr = document.createElement('tr');
+        var d, i;
+        for (i in this.plots) {
 
-            // One column for the color
-            td = document.createElement('td');
-            $(td).addClass('zenfooter_box_column');
-            d = document.createElement('div');
-            $(d).addClass('zenfooter_box');
-            $(d).css('backgroundColor', 'white');
-            $(td).append($(d));
-            $(tr).append($(td));
+            if (!self.__isOverlay(this.plots[i])) {
 
-            // One column for the metric name
-            td = document.createElement('td');
-            $(td).addClass('zenfooter_data');
-            $(td).addClass('zenfooter_data_text');
-            $(tr).append($(td));
+                tr = document.createElement('tr');
 
-            // One col for each of the metrics stats
-            [ 1, 2, 3, 4 ].forEach(function() {
+                // One column for the color
+                td = document.createElement('td');
+                $(td).addClass('zenfooter_box_column');
+                d = document.createElement('div');
+                $(d).addClass('zenfooter_box');
+                $(d).css('backgroundColor', 'white');
+                $(td).append($(d));
+                $(tr).append($(td));
+
+                // One column for the metric name
                 td = document.createElement('td');
                 $(td).addClass('zenfooter_data');
-                $(td).addClass('zenfooter_data_number');
+                $(td).addClass('zenfooter_data_text');
                 $(tr).append($(td));
-            });
 
-            $(self.table).append($(tr));
-        });
+                // One col for each of the metrics stats
+                [ 1, 2, 3, 4 ].forEach(function() {
+                    td = document.createElement('td');
+                    $(td).addClass('zenfooter_data');
+                    $(td).addClass('zenfooter_data_number');
+                    $(tr).append($(td));
+                });
 
+                $(self.table).append($(tr));
+            }
+        }
         // Fill in the stats table
         this.__updateFooter(data);
     };
@@ -1189,7 +1188,7 @@
      */
     zenoss.visualization.Chart.prototype.__processResult = function(request,
             data) {
-        var self = this, plots;
+        var self = this, plots, i, overlay;
 
 
         if (data.series) {
@@ -1199,7 +1198,8 @@
 
         // add overlays
         if (this.overlays.length && plots.length) {
-            this.overlays.forEach(function(overlay) {
+            for (i in this.overlays) {
+                overlay = this.overlays[i];
                 // get the date range
                 var minDate, maxDate, plot, i, firstMetric = plots[0];
                 plot = {
@@ -1210,7 +1210,7 @@
                 };
                 minDate = firstMetric.values[0].x;
                 maxDate = firstMetric.values[firstMetric.values.length - 1].x;
-                for (i=0; i<overlay.values.length;i++) {
+                for (i=0; i<overlay.values.length;i+=1) {
 
                     // create a line by putting a point at the start and a point at the end
                     plot.values.push({
@@ -1223,7 +1223,7 @@
                     });
                 }
                 plots.push(plot);
-            });
+            }
         }
         return plots;
     };
