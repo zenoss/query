@@ -1210,6 +1210,8 @@
                 minDate = firstMetric.values[0].x;
                 maxDate = firstMetric.values[firstMetric.values.length - 1].x;
                 for (i=0; i<overlay.values.length;i++) {
+
+                    // create a line by putting a point at the start and a point at the end
                     plot.values.push({
                         x: minDate,
                         y: overlay.values[i]
@@ -1218,8 +1220,8 @@
                         x: maxDate,
                         y: overlay.values[i]
                     });
-                    plots.push(plot);
                 }
+                plots.push(plot);
             });
         }
         return plots;
