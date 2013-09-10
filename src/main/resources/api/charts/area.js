@@ -62,6 +62,10 @@
             model.clipEdge(true);
             model.height($(chart.svgwrapper).height());
             model.width($(chart.svgwrapper).width());
+            model.yAxis.axisLabel(chart.yAxisLabel);
+            // magic to make the yaxis label show up
+            // see https://github.com/novus/nvd3/issues/17
+            model.margin({left: 100});
             chart.svg.datum(chart.plots);
 
             nv.addGraph(function() {
