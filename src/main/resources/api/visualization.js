@@ -1029,6 +1029,9 @@
                     if (dp.rate !== undefined) {
                         m.rate = dp.rate;
                     }
+                    if (dp.format != undefined) {
+                        m.format = dp.format;
+                    }
                     if (dp.aggregator !== undefined) {
                         m.aggregator = dp.aggregator;
                     }

@@ -73,6 +73,9 @@ public class MetricSpecification {
     @JsonProperty
     private Map<String, List<String>> tags = null;
 
+    @JsonProperty
+    private String format = null;
+
     /**
      * @return the metric
      */
@@ -116,6 +119,22 @@ public class MetricSpecification {
      */
     public final void setDownsample(String downsample) {
         this.downsample = downsample;
+    }
+
+
+    /**
+     * @return the format
+     */
+    public final String getFormat() {
+        return format;
+    }
+
+    /**
+     *
+     * @param format the format to set. This is how the resulting datapoints will be formatted.
+     */
+    public final void setFormat(String format) {
+        this.format = format;
     }
 
     /**

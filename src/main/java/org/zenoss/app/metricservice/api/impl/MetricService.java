@@ -37,12 +37,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
@@ -316,16 +311,21 @@ public class MetricService implements MetricServiceAPI {
             double val = 0;
             boolean comma = false;
             String expr = null;
+            String format = null;
             MetricCalculator calc = null;
             Map<String, MetricCalculator> calcs = new HashMap<String, MetricCalculator>();
             MetricCalculatorFactory calcFactory = new MetricCalculatorFactory();
-
+            Map<String, String> formats = new HashMap<String, String>();
             // Walk the queries and build up a map of metric name to RPN
             // expressions
+            // also store the formats in a map so we can access them later
             for (MetricSpecification spec : this.queries) {
                 if ((expr = spec.getExpression()) != null
                         && (expr = expr.trim()).length() > 0) {
                     calcs.put(spec.getMetric(), calcFactory.newInstance(expr));
+                }
+                if (spec.getFormat() != null) {
+                    formats.put(spec.getMetric(), spec.getFormat());
                 }
             }
 
@@ -343,6 +343,15 @@ public class MetricService implements MetricServiceAPI {
                     val = Double.valueOf(terms[2]);
                     if ((calc = calcs.get(terms[0])) != null) {
                         val = calc.evaluate(val);
+                    }
+                    // if they passed in a format apply it
+                    if ((format = formats.get(terms[0])) != null) {
+                        try {
+                            val = Double.valueOf(String.format(format, val));
+                        } catch(NumberFormatException|UnknownFormatConversionException|MissingFormatArgumentException e) {
+                            // if we can't parse the value then don't attempt to format it
+                            log.warn("Unable to format number {} with format {} ", val, format);
+                        }
                     }
                     writer.objectS().value(METRIC, terms[0], true)
                             .value(TIMESTAMP, ts, true)
