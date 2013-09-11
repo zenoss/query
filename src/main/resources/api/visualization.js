@@ -370,10 +370,12 @@
                 // Build up a map of metric name to legend label.
                 this.legend = {};
                 this.colors = {};
+                this.formats = {};
                 for (i in this.config.datapoints) {
                     dp = this.config.datapoints[i];
                     this.legend[dp.metric] = dp.legend || dp.metric;
                     this.colors[dp.metric] = dp.color;
+                    this.formats[dp.metric] = dp.format;
                 }
                 this.overlays = config.overlays || [];
 
@@ -720,6 +722,27 @@
     };
 
     /**
+     * @access private
+     * @param {number}
+     *             The number we are formatting
+     * @param {string}
+     *             The format string for example "%2f";
+     **/
+    zenoss.visualization.Chart.prototype.__formatValue = function(value, format) {
+        try{
+            var rval =  parseFloat(sprintf(format,value));
+            if ($.isNumeric(rval)) {
+                return rval;
+            }
+        } catch (x) {
+            // unfortunately the sprinf library throws an exception when an
+            // invalid format string is specified.
+        }
+
+        // we weren't able to parse it, return the original value.
+        return value;
+    };
+    /**
      * Checks to see if the passed in plot is actually an overlay.
      * @access private
      * @param {object}
@@ -1029,9 +1052,6 @@
                     if (dp.rate !== undefined) {
                         m.rate = dp.rate;
                     }
-                    if (dp.format != undefined) {
-                        m.format = dp.format;
-                    }
                     if (dp.aggregator !== undefined) {
                         m.aggregator = dp.aggregator;
                     }
@@ -1101,7 +1121,7 @@
             result.datapoints.forEach(function(dp) {
                 plot.values.push({
                     'x' : dp.timestamp * 1000,
-                    'y' : dp.value
+                    'y' : self.__formatValue(dp.value, self.formats[key])
                 });
             });
             plots.push(plot);
@@ -1147,7 +1167,7 @@
 
             plot.values.push({
                 'x' : result.timestamp * 1000,
-                'y' : result.value
+                'y' : self.__formatValue(result.value, self.formats[result.metric])
             });
         });
 
@@ -1646,7 +1666,7 @@
         zenoss.visualization.__loadDependencies({
             'defined' : 'd3',
             'source' : [ 'jquery.min.js', 'd3.v3.min.js', 'jstz-1.0.4.min.js',
-                    'css/zenoss.css' ]
+                    'css/zenoss.css', 'sprintf.min.js' ]
         }, success, fail);
     };
     window.zenoss = zenoss;
