@@ -8,6 +8,9 @@
  */
 (function(window) {
     "use strict";
+
+    var DEFAULT_NUMBER_FORMAT = "%6.2f";
+
     /**
      * @namespace zenoss
      */
@@ -54,7 +57,6 @@
              * @default /api/performance/query
              */
             urlPerformance : "/api/performance/query/",
-
             /**
              * Used to format dates for the output display in the footer of a
              * chart.
@@ -378,7 +380,7 @@
                 }
                 this.overlays = config.overlays || [];
                 // set the format or a default
-                this.format = config.format || "%6.2f";
+                this.format = config.format || zenoss.visualization.defaultNumberFormat;
                 this.svgwrapper = document.createElement('div');
                 $(this.svgwrapper).addClass('zenchart');
                 $(this.div).append($(this.svgwrapper));
@@ -735,13 +737,15 @@
             if ($.isNumeric(rval)) {
                 return rval;
             }
+            // if the result is a NaN just return the original value
+            return value;
         } catch (x) {
-            // unfortunately the sprinf library throws an exception when an
-            // invalid format string is specified.
+            // override the number format for this chart
+            // since this method could be called several times to render a chart.
+            this.format = DEFAULT_NUMBER_FORMAT;
+            zenoss.visualization.__warn('Invalid format string  ' + format + ' using the default format.');
+            return parseFloat(sprintf(this.format, value));
         }
-
-        // we weren't able to parse it, return the original value.
-        return value;
     };
     /**
      * Checks to see if the passed in plot is actually an overlay.
