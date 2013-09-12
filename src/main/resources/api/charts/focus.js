@@ -54,9 +54,12 @@
                 return zenoss.visualization.tickFormat(data.startTimeActual,
                         data.endTimeActual, ts);
             });
-
-            model.yAxis.tickFormat(d3.format('f'));
-            model.y2Axis.tickFormat(d3.format('f'));
+            model.yAxis.tickFormat(function(value){
+                return chart.formatValue(value);
+            });
+            model.y2Axis.tickFormat(function(value){
+                return chart.formatValue(value);
+            });
             model.height($(chart.svgwrapper).height());
             model.width($(chart.svgwrapper).width());
             chart.svg.datum(chart.plots);

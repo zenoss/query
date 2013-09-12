@@ -370,15 +370,15 @@
                 // Build up a map of metric name to legend label.
                 this.legend = {};
                 this.colors = {};
-                this.formats = {};
+
                 for (i in this.config.datapoints) {
                     dp = this.config.datapoints[i];
                     this.legend[dp.metric] = dp.legend || dp.metric;
                     this.colors[dp.metric] = dp.color;
-                    this.formats[dp.metric] = dp.format;
                 }
                 this.overlays = config.overlays || [];
-
+                // set the format or a default
+                this.format = config.format || "%6.2f";
                 this.svgwrapper = document.createElement('div');
                 $(this.svgwrapper).addClass('zenchart');
                 $(this.div).append($(this.svgwrapper));
@@ -728,9 +728,10 @@
      * @param {string}
      *             The format string for example "%2f";
      **/
-    zenoss.visualization.Chart.prototype.__formatValue = function(value, format) {
+    zenoss.visualization.Chart.prototype.formatValue = function(value) {
+        var format = this.format;
         try{
-            var rval =  parseFloat(sprintf(format,value));
+            var rval =  parseFloat(sprintf(format, value));
             if ($.isNumeric(rval)) {
                 return rval;
             }
@@ -815,7 +816,7 @@
                 $(cols[1]).html(label);
 
                 for (v = 0; v < vals.length; v += 1) {
-                    $(cols[2 + v]).html(vals[v].toFixed(2));
+                    $(cols[2 + v]).html(this.formatValue(vals[v]));
                 }
             }
         }
@@ -1121,7 +1122,7 @@
             result.datapoints.forEach(function(dp) {
                 plot.values.push({
                     'x' : dp.timestamp * 1000,
-                    'y' : self.__formatValue(dp.value, self.formats[key])
+                    'y' : dp.value
                 });
             });
             plots.push(plot);
@@ -1167,7 +1168,7 @@
 
             plot.values.push({
                 'x' : result.timestamp * 1000,
-                'y' : self.__formatValue(result.value, self.formats[result.metric])
+                'y' : result.value
             });
         });
 
