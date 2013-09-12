@@ -8,6 +8,9 @@
  */
 (function(window) {
     "use strict";
+
+    var DEFAULT_NUMBER_FORMAT = "%6.2f";
+
     /**
      * @namespace zenoss
      */
@@ -54,7 +57,6 @@
              * @default /api/performance/query
              */
             urlPerformance : "/api/performance/query/",
-
             /**
              * Used to format dates for the output display in the footer of a
              * chart.
@@ -370,13 +372,15 @@
                 // Build up a map of metric name to legend label.
                 this.legend = {};
                 this.colors = {};
+
                 for (i in this.config.datapoints) {
                     dp = this.config.datapoints[i];
                     this.legend[dp.metric] = dp.legend || dp.metric;
                     this.colors[dp.metric] = dp.color;
                 }
                 this.overlays = config.overlays || [];
-
+                // set the format or a default
+                this.format = config.format || DEFAULT_NUMBER_FORMAT;
                 this.svgwrapper = document.createElement('div');
                 $(this.svgwrapper).addClass('zenchart');
                 $(this.div).append($(this.svgwrapper));
@@ -720,6 +724,30 @@
     };
 
     /**
+     * @access private
+     * @param {number}
+     *             The number we are formatting
+     * @param {string}
+     *             The format string for example "%2f";
+     **/
+    zenoss.visualization.Chart.prototype.formatValue = function(value) {
+        var format = this.format;
+        try{
+            var rval =  parseFloat(sprintf(format, value));
+            if ($.isNumeric(rval)) {
+                return rval;
+            }
+            // if the result is a NaN just return the original value
+            return value;
+        } catch (x) {
+            // override the number format for this chart
+            // since this method could be called several times to render a chart.
+            this.format = DEFAULT_NUMBER_FORMAT;
+            zenoss.visualization.__warn('Invalid format string  ' + format + ' using the default format.');
+            return parseFloat(sprintf(this.format, value));
+        }
+    };
+    /**
      * Checks to see if the passed in plot is actually an overlay.
      * @access private
      * @param {object}
@@ -792,7 +820,7 @@
                 $(cols[1]).html(label);
 
                 for (v = 0; v < vals.length; v += 1) {
-                    $(cols[2 + v]).html(vals[v].toFixed(2));
+                    $(cols[2 + v]).html(this.formatValue(vals[v]));
                 }
             }
         }
@@ -1028,9 +1056,6 @@
                     m.metric = dp.metric;
                     if (dp.rate !== undefined) {
                         m.rate = dp.rate;
-                    }
-                    if (dp.format != undefined) {
-                        m.format = dp.format;
                     }
                     if (dp.aggregator !== undefined) {
                         m.aggregator = dp.aggregator;
@@ -1646,7 +1671,7 @@
         zenoss.visualization.__loadDependencies({
             'defined' : 'd3',
             'source' : [ 'jquery.min.js', 'd3.v3.min.js', 'jstz-1.0.4.min.js',
-                    'css/zenoss.css' ]
+                    'css/zenoss.css', 'sprintf.min.js' ]
         }, success, fail);
     };
     window.zenoss = zenoss;

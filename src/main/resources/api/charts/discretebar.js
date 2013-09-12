@@ -70,6 +70,9 @@
             model.y(function(d) {
                 return d.value;
             });
+            model.yAxis.tickFormat(function(value){
+                return chart.formatValue(value);
+            });
             model.staggerLabels(true);
             model.tooltips(true);
             model.showValues(true);

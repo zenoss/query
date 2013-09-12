@@ -59,6 +59,9 @@
                 return zenoss.visualization.tickFormat(data.startTimeActual,
                         data.endTimeActual, ts);
             });
+            model.yAxis.tickFormat(function(value){
+                return chart.formatValue(value);
+            });
             model.clipEdge(true);
             model.height($(chart.svgwrapper).height());
             model.width($(chart.svgwrapper).width());

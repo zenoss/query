@@ -44,6 +44,9 @@
                 return zenoss.visualization.tickFormat(data.startTimeActual,
                         data.endTimeActual, ts);
             });
+            model.yAxis.tickFormat(function(value){
+                return chart.formatValue(value);
+            });
             model.yAxis.axisLabel(chart.yAxisLabel);
             // magic to make the yaxis label show up
             // see https://github.com/novus/nvd3/issues/17
