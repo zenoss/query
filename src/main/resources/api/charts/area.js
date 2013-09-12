@@ -66,6 +66,9 @@
             model.height($(chart.svgwrapper).height());
             model.width($(chart.svgwrapper).width());
             model.yAxis.axisLabel(chart.yAxisLabel);
+            if (chart.maxy !== undefined && chart.miny !== undefined) {
+                model.forceY([chart.miny, chart.maxy]);
+            }
             // magic to make the yaxis label show up
             // see https://github.com/novus/nvd3/issues/17
             model.margin({left: 100});
