@@ -380,7 +380,7 @@
                 }
                 this.overlays = config.overlays || [];
                 // set the format or a default
-                this.format = config.format || zenoss.visualization.defaultNumberFormat;
+                this.format = config.format || DEFAULT_NUMBER_FORMAT;
                 this.svgwrapper = document.createElement('div');
                 $(this.svgwrapper).addClass('zenchart');
                 $(this.div).append($(this.svgwrapper));
