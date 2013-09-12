@@ -381,6 +381,12 @@
                 this.overlays = config.overlays || [];
                 // set the format or a default
                 this.format = config.format || DEFAULT_NUMBER_FORMAT;
+                if ($.isNumeric(config.miny)){
+                    this.miny = config.miny;
+                }
+                if ($.isNumeric(config.maxy)){
+                    this.maxy = config.maxy;
+                }
                 this.svgwrapper = document.createElement('div');
                 $(this.svgwrapper).addClass('zenchart');
                 $(this.div).append($(this.svgwrapper));
