@@ -73,6 +73,9 @@
             model.yAxis.tickFormat(function(value){
                 return chart.formatValue(value);
             });
+            if (chart.maxy !== undefined && chart.miny !== undefined) {
+                model.forceY([chart.miny, chart.maxy]);
+            }
             model.staggerLabels(true);
             model.tooltips(true);
             model.showValues(true);
