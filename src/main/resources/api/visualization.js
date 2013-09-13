@@ -8,6 +8,9 @@
  */
 (function(window) {
     "use strict";
+
+    var DEFAULT_NUMBER_FORMAT = "%6.2f";
+
     /**
      * @namespace zenoss
      */
@@ -54,7 +57,6 @@
              * @default /api/performance/query
              */
             urlPerformance : "/api/performance/query/",
-
             /**
              * Used to format dates for the output display in the footer of a
              * chart.
@@ -360,6 +362,7 @@
 
                 this.name = name;
                 this.config = config;
+                this.yAxisLabel = config.yAxisLabel;
                 this.div = $('#' + this.name);
                 if (this.div[0] === undefined) {
                     throw new zenoss.visualization.Error('SelectorError',
@@ -368,11 +371,22 @@
 
                 // Build up a map of metric name to legend label.
                 this.legend = {};
+                this.colors = {};
+
                 for (i in this.config.datapoints) {
                     dp = this.config.datapoints[i];
                     this.legend[dp.metric] = dp.legend || dp.metric;
+                    this.colors[dp.metric] = dp.color;
                 }
-
+                this.overlays = config.overlays || [];
+                // set the format or a default
+                this.format = config.format || DEFAULT_NUMBER_FORMAT;
+                if ($.isNumeric(config.miny)) {
+                    this.miny = config.miny;
+                }
+                if ($.isNumeric(config.maxy)) {
+                    this.maxy = config.maxy;
+                }
                 this.svgwrapper = document.createElement('div');
                 $(this.svgwrapper).addClass('zenchart');
                 $(this.div).append($(this.svgwrapper));
@@ -697,29 +711,91 @@
     }
 
     /**
-     * Sets the box in the footer for the given plot (specified by index) to the
-     * specified color. The implementation of this is dependent on how the
-     * footer is constructed (see __buildFooter).
+     * Formats the given value according to the format specified by the
+     * configuration or a default and returns the result.
      * 
      * @access private
-     * @param {int}
-     *            idx the index of the plot whose color should be set,
-     *            corresponds to which row in the table + 2
-     * @param {color}
-     *            the color to which the box should be set.
+     * @param {number}
+     *            The number we are formatting
+     * @param {string}
+     *            The format string for example "%2f";
      */
-    zenoss.visualization.Chart.prototype.__setFooterBoxColor = function(idx,
-            color) {
-        var box = $($(this.table).find('.zenfooter_box')[idx]);
-        box.css('background-color', color.color);
-        box.css('opacity', color.opacity);
+    zenoss.visualization.Chart.prototype.formatValue = function(value) {
+        var format = this.format;
+
+        /*
+         * If we were given a undefined value, Infinity, of NaN (all things that
+         * can't be formatted, then just return the value.
+         */
+        if (!$.isNumeric(value)) {
+            return value;
+        }
+        try {
+            var rval = sprintf(format, value);
+            if ($.isNumeric(rval)) {
+                return rval;
+            }
+            // if the result is a NaN just return the original value
+            return value;
+        } catch (x) {
+            // override the number format for this chart
+            // since this method could be called several times to render a
+            // chart.
+            this.format = DEFAULT_NUMBER_FORMAT;
+            zenoss.visualization.__warn('Invalid format string  ' + format
+                    + ' using the default format.');
+            try {
+                return sprintf(this.format, value);
+            } catch (x) {
+                return value;
+            }
+        }
     };
 
-    function __createTableRow(self) {
-        var tr, td, d;
+    /**
+     * Checks to see if the passed in plot is actually an overlay.
+     * 
+     * @access private
+     * @param {object}
+     *            plot the object representing the plot
+     * @return boolean if the plot is an overlay
+     */
+    zenoss.visualization.Chart.prototype.__isOverlay = function(plot) {
+        var i;
+        if (this.overlays.length) {
+            for (i = 0; i < this.overlays.length; i += 1) {
+                if (this.overlays[i].legend === plot.key) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+
+    /**
+     * Set the relative size of the chart and footer, if configured for a
+     * footer, and then resizes the underlying chart.
+     * 
+     * @access private
+     */
+    zenoss.visualization.Chart.prototype.__resize = function() {
+        var fheight = this.__hasFooter() ? parseInt($(this.table).outerHeight())
+                : 0;
+        var height = parseInt($(this.div).height()) - fheight;
+        $(this.svgwrapper).outerHeight(height);
+        this.impl.resize(this, height);
+    }
+
+    /**
+     * Constructs and appends a footer row onto the footer table
+     * 
+     * @access private
+     */
+    zenoss.visualization.Chart.prototype.__appendFooterRow = function() {
+        var tr, td, d, i;
 
         tr = document.createElement('tr');
-        $(tr).addClass('zenfooter_data_row');
+        $(tr).addClass('zenfooter_value_row');
 
         // One column for the color
         td = document.createElement('td');
@@ -737,36 +813,29 @@
         $(tr).append($(td));
 
         // One col for each of the metrics stats
-        [ 1, 2, 3, 4 ].forEach(function() {
+        for (i = 0; i < 4; i += 1) {
             td = document.createElement('td');
             $(td).addClass('zenfooter_data');
             $(td).addClass('zenfooter_data_number');
             $(tr).append($(td));
-        });
+        }
 
-        $(self.table).append($(tr));
+        $(this.table).append($(tr));
+        return $(tr);
     }
 
+    /**
+     * Updates the chart footer based on updated data. This includes adding or
+     * removing footer rows as well as filling in colors and data.
+     * 
+     * @access private
+     * @return true if the changes to the footer necesitates a resize of the
+     *         chart, else false.
+     */
     zenoss.visualization.Chart.prototype.__updateFooter = function(data) {
-        var plot, vals, cur, min, max, avg, cols, init, label, i, v, ll, k, rows, needResize = false;
+        var plot, vals, cur, min, max, avg, cols, init, label, i, v, ll, k, rows, row, key, box, color, resize = false;
 
-        // The first table row is for the dates, the second is a header and then
-        // a row for each plot.
-        rows = $(this.table).find('tr.zenfooter_data_row');
-        if (rows.length < this.plots.length) {
-            // not enough rows in table, so
-            for (i = rows.length; i < this.plots.length; i += 1) {
-                __createTableRow(this);
-            }
-            needResize = true;
-        } else if (rows.length > this.plots.length) {
-            for (i = rows.length; i > this.plots.length; i -= 1) {
-                $(rows[i - 1]).remove();
-            }
-            needResize = true;
-        }
         rows = $(this.table).find('tr');
-
         $($(rows[0]).find('td')).html(
                 zenoss.visualization.dateFormatter(new Date(
                         data.startTimeActual.replace(/-([^-])/g, ' $1')))
@@ -775,48 +844,108 @@
                                 data.endTimeActual.replace(/-([^-])/g, ' $1')))
                         + ' (' + jstz.determine().name() + ')');
 
-        // Calculate the summary values from the data and place the date in the
-        // the table.
+        /*
+         * The class on the value rows was set when they were created so get a
+         * list of all those.
+         */
+        rows = $(this.table).find('tr.zenfooter_value_row');
+
+        /*
+         * Calculate the summary values from the data and place the date in the
+         * the table.
+         */
         ll = this.plots.length;
-        for (i = 0; i < ll; i += 1) {
-            plot = this.plots[i];
-            vals = [ 0, -1, -1, 0 ];
-            cur = 0;
-            min = 1;
-            max = 2;
-            avg = 3;
-            init = false;
-            plot.values.forEach(function(v) {
-                if (!init) {
-                    vals[min] = v.y;
-                    vals[max] = v.y;
-                    init = true;
-                } else {
-                    vals[min] = Math.min(vals[min], v.y);
-                    vals[max] = Math.max(vals[max], v.y);
+        row = 0;
+        if (!this.__footerRangeOnly()) {
+            for (i = 0; i < ll; i += 1) {
+                plot = this.plots[i];
+                // do not add a footer box for overlays
+                if (!this.__isOverlay(plot)) {
+                    if (row >= rows.length) {
+                        rows.push(this.__appendFooterRow());
+                        resize = true;
+                    }
+                    vals = [ 0, -1, -1, 0 ];
+                    cur = 0;
+                    min = 1;
+                    max = 2;
+                    avg = 3;
+                    init = false;
+                    plot.values.forEach(function(v) {
+                        if (!init) {
+                            vals[min] = v.y;
+                            vals[max] = v.y;
+                            init = true;
+                        } else {
+                            vals[min] = Math.min(vals[min], v.y);
+                            vals[max] = Math.max(vals[max], v.y);
+                        }
+                        vals[avg] += v.y;
+                        vals[cur] = v.y;
+                    });
+                    vals[avg] = vals[avg] / plot.values.length;
+
+                    // The first column is the color, the second is the metric
+                    // name,
+                    // followed byt the values
+                    cols = $(rows[row]).find('td');
+
+                    // footer color
+                    color = this.impl.color(this, this.closure, i);
+                    if (plot.color) {
+                        color.color = plot.color;
+                    }
+                    box = $(cols[0]).find('div.zenfooter_box');
+                    box.css('background-color', color.color);
+                    box.css('opacity', color.opacity);
+
+                    // Metric name
+                    label = plot.key;
+                    if ((k = label.indexOf('{')) > -1) {
+                        label = label.substring(0, k) + '{*}';
+                    }
+                    $(cols[1]).html(label);
+
+                    for (v = 0; v < vals.length; v += 1) {
+                        $(cols[2 + v]).html(this.formatValue(vals[v]));
+                    }
+                    row += 1;
                 }
-                vals[avg] += v.y;
-                vals[cur] = v.y;
-            });
-            vals[avg] = vals[avg] / plot.values.length;
-
-            // The first column is the color, the second is the metric name,
-            // followed byt the values
-            cols = $(rows[2 + i]).find('td');
-
-            // Metric name
-            label = plot.key;
-            if ((k = label.indexOf('{')) > -1) {
-                label = label.substring(0, k) + '{*}';
-            }
-            $(cols[1]).html(label);
-
-            for (v = 0; v < vals.length; v += 1) {
-                $(cols[2 + v]).html(vals[v].toFixed(2));
             }
         }
-        return needResize;
+
+        // Extra rows exit in the table and need to be remove
+        if (row < rows.length - 1) {
+            for (i = rows.length - 1; i >= row; i -= 1) {
+                rows[i].remove();
+            }
+            resize = true;
+        }
+        return resize;
     };
+
+    /**
+     * Returns true if this chart is displaying a footer, else false
+     * 
+     * @access private
+     * @return true if this chart is displaying a footer, else false
+     */
+    zenoss.visualization.Chart.prototype.__hasFooter = function() {
+        return (this.config.footer === undefined
+                || (typeof this.config.footer === 'boolean' && this.config.footer === true) || (typeof this.config.footer === 'string' && this.config.footer === 'range'));
+    }
+
+    /**
+     * Returns true if this chart is displaying only the range in the footer,
+     * else false
+     * 
+     * @access private
+     * @return true if this chart is displaying only the range in the footer,
+     *         else false
+     */
+    zenoss.visualization.Chart.prototype.__footerRangeOnly = function() {
+        return (typeof this.config.footer === 'string' && this.config.footer === 'range');
+    }
 
     /**
      * Constructs the chart footer for a given chart. The footer will contain
@@ -843,61 +972,27 @@
         $(td).addClass('zenfooter_dates');
         $(td).attr('colspan', 6);
         $(dates).addClass('zenfooter_dates_text');
-        $(this.table).append($(tr));
         $(tr).append($(td));
         $(td).append($(dates));
-
-        if (typeof config.footer === 'string' && config.footer === 'range') {
-            return;
-        }
-
-        // One row for the stats table header
-        tr = document.createElement('tr');
-        var th;
-        [ '', 'Metric', 'Ending', 'Minimum', 'Maximum', 'Average' ]
-                .forEach(function(s) {
-                    th = document.createElement('th');
-                    $(th).addClass('footer_header');
-                    $(th).html(s);
-                    if (s.length === 0) {
-                        $(th).addClass('zenfooter_box_column');
-                    }
-                    $(tr).append($(th));
-                });
         $(this.table).append($(tr));
 
-        // One row for each of the metrics
-        var self = this;
-        var d;
-        this.plots.forEach(function() {
+        if (!this.__footerRangeOnly()) {
+
+            // One row for the stats table header
             tr = document.createElement('tr');
-            $(tr).addClass('zenfooter_data_row');
-
-            // One column for the color
-            td = document.createElement('td');
-            $(td).addClass('zenfooter_box_column');
-            d = document.createElement('div');
-            $(d).addClass('zenfooter_box');
-            $(d).css('backgroundColor', 'white');
-            $(td).append($(d));
-            $(tr).append($(td));
-
-            // One column for the metric name
-            td = document.createElement('td');
-            $(td).addClass('zenfooter_data');
-            $(td).addClass('zenfooter_data_text');
-            $(tr).append($(td));
-
-            // One col for each of the metrics stats
-            [ 1, 2, 3, 4 ].forEach(function() {
-                td = document.createElement('td');
-                $(td).addClass('zenfooter_data');
-                $(td).addClass('zenfooter_data_number');
-                $(tr).append($(td));
-            });
-
-            $(self.table).append($(tr));
-        });
+            var th;
+            [ '', 'Metric', 'Ending', 'Minimum', 'Maximum', 'Average' ]
+                    .forEach(function(s) {
+                        th = document.createElement('th');
+                        $(th).addClass('footer_header');
+                        $(th).html(s);
+                        if (s.length === 0) {
+                            $(th).addClass('zenfooter_box_column');
+                        }
+                        $(tr).append($(th));
+                    });
+            $(this.table).append($(tr));
+        }
 
         // Fill in the stats table
         this.__updateFooter(data);
@@ -912,19 +1007,17 @@
      *            changeset updates to the existing graph's configuration.
      */
     zenoss.visualization.Chart.prototype.update = function(changeset) {
+        var self = this, kill = [], property, i, dp;
 
         // This function is really meant to only handle given types of changes,
         // i.e. we don't expect that you can change the type of the graph but
         // you
         // should be able to change the date range.
-        var self = this;
         this.config = zenoss.visualization.__merge(this.config, changeset);
 
         // A special check for the removal of items from the config. If the
         // value
         // for any item in the change set is '-', then we delete that key.
-        var kill = [];
-        var property;
         for (property in this.config) {
             if (this.config.hasOwnProperty(property)) {
                 if (this.config[property] === '-') {
@@ -935,6 +1028,20 @@
         kill.forEach(function(p) {
             delete self.config[p];
         });
+
+        /*
+         * Rebuild the legend and color tables
+         */
+        this.legend = {};
+        this.colors = {};
+
+        for (i in this.config.datapoints) {
+            if (this.config.datapoints.hasOwnProperty(i)) {
+                dp = this.config.datapoints[i];
+                this.legend[dp.metric] = dp.legend || dp.metric;
+                this.colors[dp.metric] = dp.color;
+            }
+        }
 
         this.request = this.__buildDataRequest(this.config);
         $
@@ -1067,6 +1174,7 @@
                     }
                     request.metrics.push(m);
                 });
+
             }
         }
         return request;
@@ -1109,6 +1217,7 @@
             }
             var plot = {
                 'key' : key,
+                'color' : self.colors[result.metric],
                 'values' : []
             };
             result.datapoints.forEach(function(dp) {
@@ -1152,6 +1261,7 @@
             if (plot === undefined) {
                 plot = {
                     'key' : self.legend[result.metric],
+                    'color' : self.colors[result.metric],
                     'values' : []
                 };
                 plotMap[result.metric] = plot;
@@ -1203,10 +1313,45 @@
      */
     zenoss.visualization.Chart.prototype.__processResult = function(request,
             data) {
+        var self = this, plots, i, overlay;
+
         if (data.series) {
-            return this.__processResultAsSeries(request, data);
+            plots = this.__processResultAsSeries(request, data);
+        } else {
+            plots = this.__processResultAsDefault(request, data);
         }
-        return this.__processResultAsDefault(request, data);
+
+        // add overlays
+        if (this.overlays.length && plots.length) {
+            for (i in this.overlays) {
+                overlay = this.overlays[i];
+                // get the date range
+                var minDate, maxDate, plot, i, firstMetric = plots[0];
+                plot = {
+                    'key' : overlay.legend,
+                    'disabled' : true,
+                    'values' : [],
+                    'color' : overlay.color
+                };
+                minDate = firstMetric.values[0].x;
+                maxDate = firstMetric.values[firstMetric.values.length - 1].x;
+                for (i = 0; i < overlay.values.length; i += 1) {
+
+                    // create a line by putting a point at the start and a point
+                    // at the end
+                    plot.values.push({
+                        x : minDate,
+                        y : overlay.values[i]
+                    });
+                    plot.values.push({
+                        x : maxDate,
+                        y : overlay.values[i]
+                    });
+                }
+                plots.push(plot);
+            }
+        }
+        return plots;
     };
 
     /**
@@ -1373,17 +1518,34 @@
     };
 
     zenoss.visualization.Chart.prototype.__updateData = function(data) {
+        this.plots = this.__processResult(this.request, data);
         if (this.plots.length === 0) {
             zenoss.visualization.__showNoData(this.name);
         } else {
             zenoss.visualization.__showChart(this.name);
             this.impl.update(this, data);
             if (this.__updateFooter(data)) {
-                $(this.svgwrapper).outerHeight(
-                        parseInt($(this.div).height())
-                                - parseInt($(this.table).outerHeight()));
-                this.impl.resize(this);
+                this.__resize();
             }
+        }
+    };
+
+    /**
+     * Constructs a chart from the given data
+     * 
+     * @param data
+     *            the data returned from a metric query
+     * @access private
+     */
+    zenoss.visualization.Chart.prototype.__buildChart = function(data) {
+        $(this.svgwrapper).outerHeight(
+                $(this.div).height() - $(this.footer).outerHeight());
+        this.closure = this.impl.build(this, data);
+        this.impl.render(this);
+
+        // If there is not data, let the user know
+        if (this.plots.length == 0) {
+            zenoss.visualization.__showNoData(this.name);
         }
     };
 
@@ -1398,21 +1560,13 @@
     zenoss.visualization.Chart.prototype.__render = function(data) {
         var self = this;
         zenoss.visualization
-                .__loadDependencies(
-                        {
-                            'defined' : self.config.type.replace('.', '_'),
-                            'source' : [ 'charts/'
-                                    + self.config.type.replace('.', '/')
-                                    + '.js' ]
-                        },
+                .__loadDependencies({
+                    'defined' : self.config.type.replace('.', '_'),
+                    'source' : [ 'charts/' + self.config.type.replace('.', '/')
+                            + '.js' ]
+                },
                         function() {
                             var i;
-                            if (self.config.footer === undefined
-                                    || (typeof self.config.footer === 'boolean' && self.config.footer === true)
-                                    || (typeof self.config.footer === 'string' && self.config.footer === 'range')) {
-                                self.__buildFooter(self.config, data);
-                            }
-
                             try {
                                 i = zenoss.visualization.chart;
                                 self.config.type.split('.').forEach(
@@ -1431,39 +1585,15 @@
                             // Check the impl to see if a dependency is listed
                             // and
                             // if so load that.
-                            zenoss.visualization
-                                    .__loadDependencies(
-                                            self.impl.required,
-                                            function() {
-                                                $(self.svgwrapper)
-                                                        .outerHeight(
-                                                                $(self.div)
-                                                                        .height()
-                                                                        - $(
-                                                                                self.footer)
-                                                                                .outerHeight());
-                                                self.closure = self.impl.build(
-                                                        self, data);
-                                                var _closure = self.closure;
-                                                self.impl.render(self);
-
-                                                // Set the colors in the footer
-                                                // based on the
-                                                // chart that was created.
-                                                if (self.config.footer === undefined
-                                                        || (typeof self.config.footer === 'boolean' && self.config.footer === true)) {
-                                                    for (i = 0; i < self.plots.length; i += 1) {
-                                                        self
-                                                                .__setFooterBoxColor(
-                                                                        i,
-                                                                        self.impl
-                                                                                .color(
-                                                                                        self,
-                                                                                        _closure,
-                                                                                        i));
-                                                    }
-                                                }
-                                            });
+                            zenoss.visualization.__loadDependencies(
+                                    self.impl.required, function() {
+                                        self.__buildChart(data)
+                                        if (self.__hasFooter()) {
+                                            self.__buildFooter(self.config,
+                                                    data);
+                                        }
+                                        self.__resize();
+                                    });
                         });
     };
 
@@ -1630,7 +1760,7 @@
         zenoss.visualization.__loadDependencies({
             'defined' : 'd3',
             'source' : [ 'jquery.min.js', 'd3.v3.min.js', 'jstz-1.0.4.min.js',
-                    'css/zenoss.css' ]
+                    'css/zenoss.css', 'sprintf.min.js' ]
         }, success, fail);
     };
     window.zenoss = zenoss;

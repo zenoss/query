@@ -59,6 +59,12 @@
                     .duration(0).call(_chart.model());
         },
 
+        resize : function(chart) {
+            var _chart = chart.closure, model = _chart.model();
+            model.height($(chart.svgwrapper).height());
+            chart.svg.transition().duration(0).call(model);
+        },
+
         build : function(chart) {
             var _chart = new zenoss.visualization.chart.discretebar.Chart();
             var model = nv.models.discreteBarChart();
@@ -70,6 +76,12 @@
             model.y(function(d) {
                 return d.value;
             });
+            model.yAxis.tickFormat(function(value){
+                return chart.formatValue(value);
+            });
+            if (chart.maxy !== undefined && chart.miny !== undefined) {
+                model.forceY([chart.miny, chart.maxy]);
+            }
             model.staggerLabels(true);
             model.tooltips(true);
             model.showValues(true);

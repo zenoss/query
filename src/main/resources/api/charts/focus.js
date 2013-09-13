@@ -39,6 +39,12 @@
             chart.svg.datum(chart.plots).transition().duration(0).call(
                     _chart.model());
         },
+        
+        resize : function(chart) {
+            var _chart = chart.closure, model = _chart.model();
+            model.height($(chart.svgwrapper).height());
+            chart.svg.transition().duration(0).call(model);
+        },
 
         build : function(chart, data) {
 
@@ -54,9 +60,12 @@
                 return zenoss.visualization.tickFormat(data.startTimeActual,
                         data.endTimeActual, ts);
             });
-
-            model.yAxis.tickFormat(d3.format('f'));
-            model.y2Axis.tickFormat(d3.format('f'));
+            model.yAxis.tickFormat(function(value){
+                return chart.formatValue(value);
+            });
+            model.y2Axis.tickFormat(function(value){
+                return chart.formatValue(value);
+            });
             model.height($(chart.svgwrapper).height());
             model.width($(chart.svgwrapper).width());
             chart.svg.datum(chart.plots);

@@ -37,12 +37,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
@@ -319,7 +314,6 @@ public class MetricService implements MetricServiceAPI {
             MetricCalculator calc = null;
             Map<String, MetricCalculator> calcs = new HashMap<String, MetricCalculator>();
             MetricCalculatorFactory calcFactory = new MetricCalculatorFactory();
-
             // Walk the queries and build up a map of metric name to RPN
             // expressions
             for (MetricSpecification spec : this.queries) {
@@ -344,6 +338,7 @@ public class MetricService implements MetricServiceAPI {
                     if ((calc = calcs.get(terms[0])) != null) {
                         val = calc.evaluate(val);
                     }
+
                     writer.objectS().value(METRIC, terms[0], true)
                             .value(TIMESTAMP, ts, true)
                             .value(VALUE, val, terms.length > 3);
