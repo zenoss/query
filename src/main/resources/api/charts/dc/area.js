@@ -120,6 +120,12 @@
             dc.renderAll('zenoss');
         },
 
+        resize : function(chart, height) {
+            var _chart = chart.closure;
+            _chart.compositeChart().height(height);
+            _chart.compositeChart().redraw();
+        },
+
         build : function(chart) {
             var _chart = new zenoss.visualization.chart.dc.area.Chart();
             var lc;

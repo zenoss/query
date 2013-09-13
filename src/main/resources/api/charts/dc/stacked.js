@@ -134,6 +134,12 @@
             dc.renderAll('zenoss');
         },
 
+        resize : function(chart, height) {
+            var _chart = chart.closure;
+            _chart.lineChart().height(height);
+            _chart.lineChart().redraw();
+        },
+
         build : function(chart) {
             // Cull to common data points so that stacking
             // works correctly
