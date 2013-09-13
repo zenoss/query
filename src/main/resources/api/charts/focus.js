@@ -39,6 +39,12 @@
             chart.svg.datum(chart.plots).transition().duration(0).call(
                     _chart.model());
         },
+        
+        resize : function(chart) {
+            var _chart = chart.closure, model = _chart.model();
+            model.height($(chart.svgwrapper).height());
+            chart.svg.transition().duration(0).call(model);
+        },
 
         build : function(chart, data) {
 
