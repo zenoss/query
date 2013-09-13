@@ -933,7 +933,7 @@
     zenoss.visualization.Chart.prototype.__hasFooter = function() {
         return (this.config.footer === undefined
                 || (typeof this.config.footer === 'boolean' && this.config.footer === true) || (typeof this.config.footer === 'string' && this.config.footer === 'range'));
-    }
+    };
 
     /**
      * Returns true if this chart is displaying only the range in the footer,
@@ -945,7 +945,7 @@
      */
     zenoss.visualization.Chart.prototype.__footerRangeOnly = function() {
         return (typeof this.config.footer === 'string' && this.config.footer === 'range');
-    }
+    };
 
     /**
      * Constructs the chart footer for a given chart. The footer will contain
@@ -1326,7 +1326,7 @@
             for (i in this.overlays) {
                 overlay = this.overlays[i];
                 // get the date range
-                var minDate, maxDate, plot, i, firstMetric = plots[0];
+                var minDate, maxDate, plot, k, firstMetric = plots[0];
                 plot = {
                     'key' : overlay.legend,
                     'disabled' : true,
@@ -1335,17 +1335,17 @@
                 };
                 minDate = firstMetric.values[0].x;
                 maxDate = firstMetric.values[firstMetric.values.length - 1].x;
-                for (i = 0; i < overlay.values.length; i += 1) {
+                for (k = 0; k < overlay.values.length; k += 1) {
 
                     // create a line by putting a point at the start and a point
                     // at the end
                     plot.values.push({
                         x : minDate,
-                        y : overlay.values[i]
+                        y : overlay.values[k]
                     });
                     plot.values.push({
                         x : maxDate,
-                        y : overlay.values[i]
+                        y : overlay.values[k]
                     });
                 }
                 plots.push(plot);
