@@ -375,8 +375,9 @@
 
                 for (i in this.config.datapoints) {
                     dp = this.config.datapoints[i];
-                    this.legend[dp.metric] = dp.legend || dp.metric;
-                    this.colors[dp.metric] = dp.color;
+                    this.legend[dp.name || dp.metric] = dp.legend || dp.name
+                            || dp.metric;
+                    this.colors[dp.name || dp.metric] = dp.color;
                 }
                 this.overlays = config.overlays || [];
                 // set the format or a default
@@ -1038,8 +1039,9 @@
         for (i in this.config.datapoints) {
             if (this.config.datapoints.hasOwnProperty(i)) {
                 dp = this.config.datapoints[i];
-                this.legend[dp.metric] = dp.legend || dp.metric;
-                this.colors[dp.metric] = dp.color;
+                this.legend[dp.name || dp.metric] = dp.legend || dp.name
+                        || dp.metric;
+                this.colors[dp.name || dp.metric] = dp.color;
             }
         }
 
@@ -1150,27 +1152,45 @@
                 request.metrics = [];
                 config.datapoints.forEach(function(dp) {
                     var m = {};
-                    m.metric = dp.metric;
-                    if (dp.rate !== undefined) {
-                        m.rate = dp.rate;
+                    if (dp.metric) {
+                        m.metric = dp.metric;
+
+                        if (dp.rate !== undefined) {
+                            m.rate = dp.rate;
+                        }
+                        if (dp.aggregator !== undefined) {
+                            m.aggregator = dp.aggregator;
+                        }
+
+                        if (dp.tags !== undefined) {
+                            m.tags = {};
+                            var key;
+                            for (key in dp.tags) {
+                                if (dp.tags.hasOwnProperty(key)) {
+                                    m.tags[key] = dp.tags[key];
+                                }
+                            }
+                        }
+
+                        if (!dp.name) {
+                            m.name = dp.metric;
+                        } else {
+                            m.name = dp.name;
+                        }
+                    } else if (dp.name) {
+                        m.name = dp.name;
+                    } else {
+                        // todo: error
                     }
-                    if (dp.aggregator !== undefined) {
-                        m.aggregator = dp.aggregator;
-                    }
+
                     if (dp.downsample !== undefined) {
                         m.downsample = dp.downsample;
                     }
                     if (dp.expression !== undefined) {
                         m.expression = dp.expression;
                     }
-                    if (dp.tags !== undefined) {
-                        m.tags = {};
-                        var key;
-                        for (key in dp.tags) {
-                            if (dp.tags.hasOwnProperty(key)) {
-                                m.tags[key] = dp.tags[key];
-                            }
-                        }
+                    if (dp.emit !== undefined) {
+                        m.emit = dp.emit;
                     }
                     request.metrics.push(m);
                 });
@@ -1517,9 +1537,25 @@
         });
     };
 
+    zenoss.visualization.Chart.prototype.__havePlotData = function() {
+        var i, ll;
+
+        if (!this.plots || this.plots.length == 0) {
+            return false;
+        }
+
+        ll = this.plots.length;
+        for (i = 0; i < ll; i += 1) {
+            if (this.plots[i].values.length > 0) {
+                return true;
+            }
+        }
+        return false;
+    };
+
     zenoss.visualization.Chart.prototype.__updateData = function(data) {
         this.plots = this.__processResult(this.request, data);
-        if (this.plots.length === 0) {
+        if (!this.__havePlotData()) {
             zenoss.visualization.__showNoData(this.name);
         } else {
             zenoss.visualization.__showChart(this.name);
@@ -1544,7 +1580,7 @@
         this.impl.render(this);
 
         // If there is not data, let the user know
-        if (this.plots.length == 0) {
+        if (!this.__havePlotData()) {
             zenoss.visualization.__showNoData(this.name);
         }
     };

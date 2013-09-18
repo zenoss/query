@@ -29,55 +29,46 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.zenoss.app.metricservice.calculators;
+package org.zenoss.app.metricservice.api.impl;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.List;
+
+import org.zenoss.app.metricservice.api.model.MetricSpecification;
+import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
+import org.zenoss.app.metricsevice.buckets.Buckets;
 
 /**
- * Base class that can be utilized by MetricCalculator implementations to
- * provide the storage and retrieval of a saved expression.
+ * Specifies the interface for implementations that process the results from the
+ * metric storage. Implementation should process the data into a Buckets
+ * representation.
+ * 
+ * @author Zenoss
  */
-public abstract class BaseMetricCalculator implements MetricCalculator {
+public interface ResultProcessor {
     /**
-     * the saved expression
-     */
-    private String expression = null;
-
-    private ReferenceProvider referenceProvider = null;
-
-    /*
-     * (non-Javadoc)
+     * Processes the input stream from the metric storage engine to a Buckets
+     * representation
      * 
-     * @see
-     * org.zenoss.app.metricservice.calculators.MetricCalculator#setExpression
-     * (java.lang.String)
+     * @param reader
+     *            input stream from which lines should be read from the the
+     *            metric storage engine
+     * @param queries
+     *            queries that generated the results
+     * @param bucketsize
+     *            the size of the buckets that should be generated
+     * @return
+     * @throws IOException
+     *             when an exception occurs when reading from the metric storage
+     *             engine
+     * @throws ClassNotFoundException
+     *             when a calculation engine cannot be loaded
+     * @throws UnknownReferenceException
+     *             when a reference in an expression cannot be found.
      */
-    @Override
-    public void setExpression(String expression) {
-        this.expression = expression;
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.zenoss.app.metricservice.calculators.MetricCalculator#getExpression()
-     */
-    @Override
-    public String getExpression() {
-        return expression;
-    }
-
-    /**
-     * @return the referenceProvider
-     */
-    public ReferenceProvider getReferenceProvider() {
-        return referenceProvider;
-    }
-
-    /**
-     * @param referenceProvider
-     *            the referenceProvider to set
-     */
-    public void setReferenceProvider(ReferenceProvider referenceProvider) {
-        this.referenceProvider = referenceProvider;
-    }
+    public Buckets<MetricKey, String> processResults(BufferedReader reader,
+            List<MetricSpecification> queries, long bucketsize)
+            throws IOException, ClassNotFoundException,
+            UnknownReferenceException;
 }

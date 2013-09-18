@@ -39,6 +39,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zenoss.app.metricservice.calculators.MetricCalculator;
 import org.zenoss.app.metricservice.calculators.MetricCalculatorFactory;
+import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
 import org.zenoss.app.metricservice.calculators.rpn.Calculator;
 
 /**
@@ -54,7 +55,8 @@ public class RpnTest {
     }
 
     @Test
-    public void basicAddition() throws ClassNotFoundException {
+    public void basicAddition() throws ClassNotFoundException,
+            UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         double result = calc.evaluate("5,1,10,+,+");
@@ -62,7 +64,8 @@ public class RpnTest {
     }
 
     @Test
-    public void basicSubtraction() throws ClassNotFoundException {
+    public void basicSubtraction() throws ClassNotFoundException,
+            UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         double result = calc.evaluate("5,1,10,-,-");
@@ -70,7 +73,8 @@ public class RpnTest {
     }
 
     @Test
-    public void basicMultiplication() throws ClassNotFoundException {
+    public void basicMultiplication() throws ClassNotFoundException,
+            UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         double result = calc.evaluate("5,1,10,*,*");
@@ -78,7 +82,8 @@ public class RpnTest {
     }
 
     @Test
-    public void basicDivision() throws ClassNotFoundException {
+    public void basicDivision() throws ClassNotFoundException,
+            UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         double result = calc.evaluate("5,1,10,/,/");
@@ -86,7 +91,7 @@ public class RpnTest {
     }
 
     @Test
-    public void min() throws ClassNotFoundException {
+    public void min() throws ClassNotFoundException, UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         double result = calc.evaluate("5, 10, min");
@@ -94,7 +99,7 @@ public class RpnTest {
     }
 
     @Test
-    public void max() throws ClassNotFoundException {
+    public void max() throws ClassNotFoundException, UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         double result = calc.evaluate("5, 10, max");
@@ -102,7 +107,7 @@ public class RpnTest {
     }
 
     @Test
-    public void dup() throws ClassNotFoundException {
+    public void dup() throws ClassNotFoundException, UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         double result = calc.evaluate("5, dup, +");
@@ -110,7 +115,8 @@ public class RpnTest {
     }
 
     @Test
-    public void example1() throws ClassNotFoundException {
+    public void example1() throws ClassNotFoundException,
+            UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         double result = calc.evaluate("128,8,*");
@@ -118,7 +124,8 @@ public class RpnTest {
     }
 
     @Test
-    public void example2() throws ClassNotFoundException {
+    public void example2() throws ClassNotFoundException,
+            UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         double result = calc.evaluate("1024,7000,gt");
@@ -126,7 +133,8 @@ public class RpnTest {
     }
 
     @Test
-    public void example3() throws ClassNotFoundException {
+    public void example3() throws ClassNotFoundException,
+            UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         double result = calc.evaluate("0, 7000,2024,if");
@@ -134,7 +142,8 @@ public class RpnTest {
     }
 
     @Test
-    public void example4() throws ClassNotFoundException {
+    public void example4() throws ClassNotFoundException,
+            UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         double result = calc.evaluate("128,8,*,7000,GT,7000,128,8,*,IF");
@@ -142,7 +151,7 @@ public class RpnTest {
     }
 
     @Test
-    public void mod() throws ClassNotFoundException {
+    public void mod() throws ClassNotFoundException, UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         double result = calc.evaluate("1234,100,%");
@@ -150,7 +159,7 @@ public class RpnTest {
     }
 
     @Test
-    public void sort() throws ClassNotFoundException {
+    public void sort() throws ClassNotFoundException, UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         String in = "9, 3, 4, 5, 1, 2, 8, 6, 7, 0, 10, sort";
@@ -165,7 +174,7 @@ public class RpnTest {
     }
 
     @Test
-    public void rev() throws ClassNotFoundException {
+    public void rev() throws ClassNotFoundException, UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         String in = "9, 3, 4, 5, 1, 2, 8, 6, 7, 0, 10, rev";
@@ -210,7 +219,8 @@ public class RpnTest {
     }
 
     @Test
-    public void NanAndInfinityTest() throws ClassNotFoundException {
+    public void NanAndInfinityTest() throws ClassNotFoundException,
+            UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         Assert.assertEquals("Positive infinity", 1.0,
@@ -228,7 +238,8 @@ public class RpnTest {
     }
 
     @Test
-    public void TimeTest() throws ClassNotFoundException {
+    public void TimeTest() throws ClassNotFoundException,
+            UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         Assert.assertEquals("Now", new Date().getTime() / 1000,
@@ -236,7 +247,8 @@ public class RpnTest {
     }
 
     @Test
-    public void LimitTest() throws ClassNotFoundException {
+    public void LimitTest() throws ClassNotFoundException,
+            UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         Assert.assertEquals("In Limit", 5.0, calc.evaluate("5, 0, 10, limit"),
@@ -248,7 +260,8 @@ public class RpnTest {
     }
 
     @Test
-    public void AddNanTest() throws ClassNotFoundException {
+    public void AddNanTest() throws ClassNotFoundException,
+            UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         Assert.assertEquals("Left side unknown", 5.0,
@@ -261,7 +274,8 @@ public class RpnTest {
     }
 
     @Test
-    public void exchangeTest() throws ClassNotFoundException {
+    public void exchangeTest() throws ClassNotFoundException,
+            UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         Assert.assertEquals(1.0, calc.evaluate("1,2,exc"), 0.0);
@@ -272,7 +286,8 @@ public class RpnTest {
     }
 
     @Test
-    public void regression1() throws ClassNotFoundException {
+    public void regression1() throws ClassNotFoundException,
+            UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         Assert.assertEquals(

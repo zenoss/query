@@ -61,7 +61,7 @@ import com.yammer.metrics.annotation.Timed;
 @Produces(MediaType.APPLICATION_JSON)
 public class MetricResources {
 
-    @Autowired
+    @Autowired(required = true)
     MetricServiceAPI api;
 
     @Timed
@@ -72,7 +72,7 @@ public class MetricResources {
             @QueryParam("end") Optional<String> endTime,
             @QueryParam("returnset") Optional<ReturnSet> returnset,
             @QueryParam("series") Optional<Boolean> series) {
-        
+
         return api.query(id, startTime, endTime, returnset, series,
                 Optional.<String> absent(),
                 Optional.<Map<String, List<String>>> absent(), queries);
@@ -94,7 +94,7 @@ public class MetricResources {
                 .getDownsample());
         Optional<Map<String, List<String>>> tags = Optional
                 .<Map<String, List<String>>> fromNullable(query.getTags());
-        
+
         return api.query(id, start, end, returnset, series, downsample, tags,
                 query.getMetrics());
     }

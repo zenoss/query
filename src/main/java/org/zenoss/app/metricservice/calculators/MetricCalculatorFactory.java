@@ -93,7 +93,7 @@ public class MetricCalculatorFactory {
                 prefix = ',';
             }
             buf.append(']');
-            log.error(buf.toString());
+            log.debug(buf.toString());
         }
 
         StringBuilder classname = new StringBuilder();

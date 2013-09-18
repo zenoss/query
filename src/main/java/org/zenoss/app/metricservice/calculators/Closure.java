@@ -32,52 +32,9 @@
 package org.zenoss.app.metricservice.calculators;
 
 /**
- * Base class that can be utilized by MetricCalculator implementations to
- * provide the storage and retrieval of a saved expression.
+ * @author david
+ *
  */
-public abstract class BaseMetricCalculator implements MetricCalculator {
-    /**
-     * the saved expression
-     */
-    private String expression = null;
+public interface Closure {
 
-    private ReferenceProvider referenceProvider = null;
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.zenoss.app.metricservice.calculators.MetricCalculator#setExpression
-     * (java.lang.String)
-     */
-    @Override
-    public void setExpression(String expression) {
-        this.expression = expression;
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.zenoss.app.metricservice.calculators.MetricCalculator#getExpression()
-     */
-    @Override
-    public String getExpression() {
-        return expression;
-    }
-
-    /**
-     * @return the referenceProvider
-     */
-    public ReferenceProvider getReferenceProvider() {
-        return referenceProvider;
-    }
-
-    /**
-     * @param referenceProvider
-     *            the referenceProvider to set
-     */
-    public void setReferenceProvider(ReferenceProvider referenceProvider) {
-        this.referenceProvider = referenceProvider;
-    }
 }

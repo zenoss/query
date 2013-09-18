@@ -41,12 +41,37 @@ import org.zenoss.app.metricservice.api.model.ReturnSet;
 import com.google.common.base.Optional;
 
 /**
- * @author David Bainbridge <dbainbridge@zenoss.com>
+ * @author Zenoss
  * 
  */
 public interface MetricServiceAPI {
+
+    /**
+     * Specifies the interface for querying performance metric data.
+     * 
+     * @param id
+     *            id of the request
+     * @param startTime
+     *            start time of the query range
+     * @param endTime
+     *            end time of the query range
+     * @param returnset
+     *            return all or only those values in the query range, this is
+     *            needed because OpenTSDB returns values outside the query
+     *            range.
+     * @param series
+     *            should the results be returned as a series or in line
+     * @param downsample
+     *            global downsample value
+     * @param tags
+     *            global filters for the query
+     * @param queries
+     *            metric queries
+     * @return response of the request
+     */
     public Response query(Optional<String> id, Optional<String> startTime,
             Optional<String> endTime, Optional<ReturnSet> returnset,
-            Optional<Boolean> series, Optional<String> optional, Optional<Map<String, List<String>>> tags,
+            Optional<Boolean> series, Optional<String> downsample,
+            Optional<Map<String, List<String>>> tags,
             List<MetricSpecification> queries);
 }
