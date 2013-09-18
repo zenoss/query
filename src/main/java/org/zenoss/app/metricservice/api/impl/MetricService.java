@@ -354,8 +354,14 @@ public class MetricService implements MetricServiceAPI {
 
             }
 
-            // TODO: Deal with no bucket specification better
-            long bucketSize = 15;
+            /**
+             * TODO: Deal with no bucket specification better. Create a bucket
+             * size of 1 second means that we are behaving correctly, but it
+             * also means we are going a lot more work than we really need to as
+             * we would just directly stream the results without processing them
+             * into buckets.
+             */
+            long bucketSize = 1;
             if (downsample != null && downsample.length() > 2) {
                 bucketSize = Utils.parseDuration(downsample);
             }
@@ -366,14 +372,14 @@ public class MetricService implements MetricServiceAPI {
 
                 if (series) {
                     seriesResultsWriter.writeResults(writer, queries, buckets,
-                            convertedEndTime, api.getSourceId(), start,
-                            startTime, actual.format(startDate), end, endTime,
+                            id, api.getSourceId(), start, startTime,
+                            actual.format(startDate), end, endTime,
                             actual.format(endDate), returnset, series);
                 } else {
 
                     asIsResultsWriter.writeResults(writer, queries, buckets,
-                            convertedEndTime, api.getSourceId(), start,
-                            startTime, actual.format(startDate), end, endTime,
+                            id, api.getSourceId(), start, startTime,
+                            actual.format(startDate), end, endTime,
                             actual.format(endDate), returnset, series);
                 }
             } catch (Exception e) {
