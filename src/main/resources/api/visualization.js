@@ -123,6 +123,13 @@
                 return d3.time.format('%x %X')(new Date(ts));
             },
 
+            /**
+             * Wrapper around the console group function. This wrapper protects
+             * the client from those browsers that don't support the group
+             * function.
+             * 
+             * @access private
+             */
             __group : function() {
                 if (console !== undefined) {
                     if (console.group !== undefined) {
@@ -134,6 +141,13 @@
                 }
             },
 
+            /**
+             * Wrapper around the console groupCollapsed function. This wrapper
+             * protects the client from those browsers that don't support this
+             * function.
+             * 
+             * @access private
+             */
             __groupCollapsed : function() {
                 if (console !== undefined) {
                     if (console.groupCollapsed !== undefined) {
@@ -145,6 +159,12 @@
                 }
             },
 
+            /**
+             * Wrapper around the console function. This wrapper protects the
+             * client from those browsers that don't support this function.
+             * 
+             * @access private
+             */
             __groupEnd : function() {
                 if (console !== undefined) {
                     if (console.groupEnd !== undefined) {
@@ -156,6 +176,12 @@
                 }
             },
 
+            /**
+             * Wrapper around the console function. This wrapper protects the
+             * client from those browsers that don't support this function.
+             * 
+             * @access private
+             */
             __error : function() {
                 if (console !== undefined) {
                     if (console.error !== undefined) {
@@ -167,6 +193,12 @@
                 }
             },
 
+            /**
+             * Wrapper around the console function. This wrapper protects the
+             * client from those browsers that don't support this function.
+             * 
+             * @access private
+             */
             __warn : function() {
                 if (console !== undefined) {
                     if (console.warn !== undefined) {
@@ -178,6 +210,12 @@
                 }
             },
 
+            /**
+             * Wrapper around the console function. This wrapper protects the
+             * client from those browsers that don't support this function.
+             * 
+             * @access private
+             */
             __log : function() {
                 if (console !== undefined) {
                     if (console.log !== undefined) {
@@ -1147,7 +1185,7 @@
             if (config.returnset !== undefined) {
                 request.returnset = config.returnset;
             }
-            
+
             if (config.grouping !== undefined) {
                 request.grouping = config.grouping;
             }
