@@ -37,8 +37,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.calculators.Closure;
 import org.zenoss.app.metricservice.calculators.MetricCalculator;
@@ -57,8 +55,6 @@ import org.zenoss.app.metricsevice.buckets.Value;
  */
 public class DefaultResultProcessor implements ResultProcessor,
         ReferenceProvider {
-    private static final Logger log = LoggerFactory
-            .getLogger(DefaultResultProcessor.class);
 
     private class BucketClosure implements Closure {
         public BucketClosure() {

@@ -36,17 +36,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * A comparable and matchable representation of metric tags
  * 
  * @author Zenoss
  */
 public class Tags {
-
-    private static final Logger log = LoggerFactory.getLogger(Tags.class);
 
     /**
      * Maps a tag name to its values.
