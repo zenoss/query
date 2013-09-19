@@ -213,6 +213,7 @@ public class MetricService implements MetricServiceAPI {
         private final ReturnSet returnset;
         private final Boolean series;
         private final String downsample;
+        private final String grouping;
         private final Map<String, List<String>> tags;
         private final List<MetricSpecification> queries;
         private long start = -1;
@@ -220,7 +221,7 @@ public class MetricService implements MetricServiceAPI {
 
         public Worker(MetricServiceAppConfiguration config, String id,
                 String startTime, String endTime, ReturnSet returnset,
-                Boolean series, String downsample,
+                Boolean series, String downsample, String grouping,
                 Map<String, List<String>> tags,
                 List<MetricSpecification> queries) {
             if (queries == null) {
@@ -238,6 +239,7 @@ public class MetricService implements MetricServiceAPI {
             this.series = series;
             this.tags = tags;
             this.downsample = downsample;
+            this.grouping = grouping;
             this.queries = queries;
         }
 
@@ -362,8 +364,8 @@ public class MetricService implements MetricServiceAPI {
              * into buckets.
              */
             long bucketSize = 1;
-            if (downsample != null && downsample.length() > 2) {
-                bucketSize = Utils.parseDuration(downsample);
+            if (grouping != null && grouping.length() > 1) {
+                bucketSize = Utils.parseDuration(grouping);
             }
             try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(
                     output))) {
@@ -404,12 +406,14 @@ public class MetricService implements MetricServiceAPI {
      * .base.Optional, com.google.common.base.Optional,
      * com.google.common.base.Optional, com.google.common.base.Optional,
      * com.google.common.base.Optional, com.google.common.base.Optional,
-     * com.google.common.base.Optional, java.util.List)
+     * com.google.common.base.Optional, com.google.common.base.Optional,
+     * java.util.List)
      */
     @Override
     public Response query(Optional<String> id, Optional<String> startTime,
             Optional<String> endTime, Optional<ReturnSet> returnset,
             Optional<Boolean> series, Optional<String> downsample,
+            Optional<String> grouping,
             Optional<Map<String, List<String>>> tags,
             List<MetricSpecification> queries) {
 
@@ -423,7 +427,7 @@ public class MetricService implements MetricServiceAPI {
                                     .getDefaultReturnSet()), series.or(config
                                     .getMetricServiceConfig()
                                     .getDefaultSeries()), downsample.orNull(),
-                            tags.orNull(), queries)).build();
+                            grouping.orNull(), tags.orNull(), queries)).build();
         } catch (Exception e) {
             log.error(String.format(
                     "Error While attempting to query data soruce: %s : %s", e

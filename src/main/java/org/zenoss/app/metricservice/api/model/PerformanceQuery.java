@@ -63,6 +63,9 @@ public class PerformanceQuery {
     @JsonProperty(required=false)
     private String downsample = null;
     
+    @JsonProperty(required=false)
+    private String grouping = null;
+    
     @JsonProperty(value="returnset")
     private ReturnSet returnset = null;
 
@@ -151,6 +154,20 @@ public class PerformanceQuery {
     }
 
 	/**
+     * @return the grouping
+     */
+    public String getGrouping() {
+        return grouping;
+    }
+
+    /**
+     * @param grouping the grouping to set
+     */
+    public void setGrouping(String grouping) {
+        this.grouping = grouping;
+    }
+
+    /**
 	 * @return the resturnset
 	 */
 	public ReturnSet getReturnset() {

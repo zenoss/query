@@ -1147,6 +1147,10 @@
             if (config.returnset !== undefined) {
                 request.returnset = config.returnset;
             }
+            
+            if (config.grouping !== undefined) {
+                request.grouping = config.grouping;
+            }
 
             if (config.datapoints !== undefined) {
                 request.metrics = [];

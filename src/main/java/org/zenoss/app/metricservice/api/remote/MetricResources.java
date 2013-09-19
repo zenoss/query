@@ -74,7 +74,7 @@ public class MetricResources {
             @QueryParam("series") Optional<Boolean> series) {
 
         return api.query(id, startTime, endTime, returnset, series,
-                Optional.<String> absent(),
+                Optional.<String> absent(), Optional.<String> absent(),
                 Optional.<Map<String, List<String>>> absent(), queries);
     }
 
@@ -92,10 +92,12 @@ public class MetricResources {
                 .getSeries());
         Optional<String> downsample = Optional.<String> fromNullable(query
                 .getDownsample());
+        Optional<String> grouping = Optional.<String> fromNullable(query
+                .getGrouping());
         Optional<Map<String, List<String>>> tags = Optional
                 .<Map<String, List<String>>> fromNullable(query.getTags());
 
-        return api.query(id, start, end, returnset, series, downsample, tags,
-                query.getMetrics());
+        return api.query(id, start, end, returnset, series, downsample,
+                grouping, tags, query.getMetrics());
     }
 }

@@ -63,6 +63,11 @@ public interface MetricServiceAPI {
      *            should the results be returned as a series or in line
      * @param downsample
      *            global downsample value
+     * @param grouping
+     *            specifies the size, in seconds, into which results should be
+     *            grouped. This is useful / required when dealing with RPN
+     *            expressions that reference other metric values so that metrics
+     *            that come in a different times can be "lined up"
      * @param tags
      *            global filters for the query
      * @param queries
@@ -72,6 +77,7 @@ public interface MetricServiceAPI {
     public Response query(Optional<String> id, Optional<String> startTime,
             Optional<String> endTime, Optional<ReturnSet> returnset,
             Optional<Boolean> series, Optional<String> downsample,
+            Optional<String> grouping,
             Optional<Map<String, List<String>>> tags,
             List<MetricSpecification> queries);
 }
