@@ -322,15 +322,40 @@
                         '<span class="zenerror">' + detail + '</span>');
             },
 
+            /**
+             * Shows a no data available message in the chart and hides any
+             * chart elements such as the chart and the footer.
+             * 
+             * @access private
+             * @param {string}
+             *            name of the div wrapper for the chart
+             */
             __showNoData : function(name) {
                 zenoss.visualization.__showMessage(name,
                         '<span class="nodata"></span>');
             },
 
+            /**
+             * Hides the message window
+             * 
+             * @access private
+             * @param {string}
+             *            name of the div wrapper for the chart
+             */
             __hideMessage : function(name) {
                 $('#' + name + ' .message').css('display', 'none');
             },
 
+            /**
+             * Show the message window and hide the chart elements. The message
+             * window is then populated with the given message.
+             * 
+             * @access private
+             * @param {string}
+             *            name of the div wrapper for the chart
+             * @param {string}
+             *            html that represents the message to display.
+             */
             __showMessage : function(name, message) {
                 if (message) {
                     $('#' + name + ' .message').html(message);
@@ -354,11 +379,25 @@
                                         .height()) / 2);
             },
 
+            /**
+             * Hides the chart elements
+             * 
+             * @access private
+             * @param {string}
+             *            name of the div wrapper of the chart
+             */
             __hideChart : function(name) {
                 $('#' + name + ' .zenchart').css('display', 'none');
                 $('#' + name + ' .zenfooter').css('display', 'none');
             },
 
+            /**
+             * Shows the chart elements
+             * 
+             * @access private
+             * @param {string}
+             *            name of the div wrapper of the chart
+             */
             __showChart : function(name) {
                 zenoss.visualization.__hideMessage(name);
                 $('#' + name + ' .zenchart').css('display', 'block');
@@ -1579,6 +1618,12 @@
         });
     };
 
+    /**
+     * Returns true if the chart has plots and they contain data points, else
+     * false.
+     * 
+     * @access private
+     */
     zenoss.visualization.Chart.prototype.__havePlotData = function() {
         var i, ll;
 
@@ -1595,6 +1640,13 @@
         return false;
     };
 
+    /**
+     * Updates the chart with a new data set
+     * 
+     * @access private
+     * @param {object}
+     *            the new data to display in the chart
+     */
     zenoss.visualization.Chart.prototype.__updateData = function(data) {
         this.plots = this.__processResult(this.request, data);
         if (!this.__havePlotData()) {
