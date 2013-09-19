@@ -143,8 +143,13 @@ public class Tags {
      *            instance to which to compare
      * @return true if they are equal, else false
      */
-    public boolean equals(Tags other) {
-        if (other == null || this.tags.size() != other.tags.size()) {
+    public boolean equals(Object object) {
+        if (object == null || !(object instanceof Tags)) {
+            return false;
+        }
+        
+        Tags other = (Tags) object;
+        if (this.tags.size() != other.tags.size()) {
             return false;
         }
 

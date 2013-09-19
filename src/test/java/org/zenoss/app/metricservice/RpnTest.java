@@ -37,8 +37,10 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.zenoss.app.metricservice.calculators.Closure;
 import org.zenoss.app.metricservice.calculators.MetricCalculator;
 import org.zenoss.app.metricservice.calculators.MetricCalculatorFactory;
+import org.zenoss.app.metricservice.calculators.ReferenceProvider;
 import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
 import org.zenoss.app.metricservice.calculators.rpn.Calculator;
 
@@ -301,5 +303,79 @@ public class RpnTest {
                 calc.evaluate(2146738.0,
                         "1024,*,DUP,2146787328,LT,EXC,2146787328,/,1.0,-,-100,*,0.0,IF"),
                 0.5);
+    }
+
+    @Test
+    public void referenceTest() throws ClassNotFoundException,
+            UnknownReferenceException {
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
+        calc.setReferenceProvider(new ReferenceProvider() {
+
+            @Override
+            public double lookup(String name, Closure closure)
+                    throws UnknownReferenceException {
+                if (name.equals("ref1")) {
+                    return 2.0;
+                } else if (name.equals("ref2")) {
+                    return 3.0;
+                }
+                throw new UnknownReferenceException(name);
+            }
+        });
+
+        Assert.assertEquals(6.0, calc.evaluate("ref1,ref2,*"), 0.0);
+    }
+
+    @Test
+    public void unknownReferenceTest() throws ClassNotFoundException,
+            UnknownReferenceException {
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
+        calc.setReferenceProvider(new ReferenceProvider() {
+
+            @Override
+            public double lookup(String name, Closure closure)
+                    throws UnknownReferenceException {
+                if (name.equals("ref1")) {
+                    return 2.0;
+                }
+                throw new UnknownReferenceException(name);
+            }
+        });
+
+        try {
+            calc.evaluate("ref1,ref2,*");
+        } catch (UnknownReferenceException ure) {
+            return;
+        }
+        Assert.fail("should have exceptioned out with an unknown reference");
+    }
+
+    @Test
+    public void referenceTestWithClosure() throws ClassNotFoundException,
+            UnknownReferenceException {
+        MetricCalculator calc = new MetricCalculatorFactory()
+                .newInstance("rpn");
+        final Closure data = new Closure() {
+        };
+
+        calc.setReferenceProvider(new ReferenceProvider() {
+
+            @Override
+            public double lookup(String name, Closure closure)
+                    throws UnknownReferenceException {
+                Assert.assertEquals("closure object is not what was expected",
+                        data, closure);
+                if (name.equals("ref1")) {
+                    return 2.0;
+                } else if (name.equals("ref2")) {
+                    return 3.0;
+                }
+                throw new UnknownReferenceException(name);
+            }
+        });
+
+        Assert.assertEquals(6.0, calc.evaluate("ref1,ref2,*", data), 0.0);
     }
 }
