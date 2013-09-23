@@ -37,7 +37,12 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
@@ -52,8 +57,7 @@ import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.MetricServiceAPI;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
-import org.zenoss.app.metricservice.calculators.MetricCalculator;
-import org.zenoss.app.metricservice.calculators.MetricCalculatorFactory;
+import org.zenoss.app.metricsevice.buckets.Buckets;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -61,7 +65,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Optional;
 
 /**
- * @author David Bainbridge <dbainbridge@zenoss.com>
+ * @author Zenoss
  * 
  */
 @API
@@ -93,8 +97,44 @@ public class MetricService implements MetricServiceAPI {
 
     protected static final String NOT_SPECIFIED = "not-specified";
 
+    protected ResultProcessor resultsProcessor = new DefaultResultProcessor();
+    protected ResultWriter seriesResultsWriter = new SeriesResultWriter();
+    protected ResultWriter asIsResultsWriter = new LineResultWriter();
+
     private static final Logger log = LoggerFactory
             .getLogger(MetricService.class);
+
+    public static List<MetricSpecification> metricFilter(
+            List<? extends MetricSpecification> list) {
+        List<MetricSpecification> result = new ArrayList<MetricSpecification>();
+        if (list != null) {
+            for (MetricSpecification spec : list) {
+                if (spec.getMetric() != null) {
+                    result.add((MetricSpecification) spec);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * It is a calculated value if it has a name, but no metric value
+     * 
+     * @param list
+     * @return
+     */
+    public static List<MetricSpecification> valueFilter(
+            List<? extends MetricSpecification> list) {
+        List<MetricSpecification> result = new ArrayList<MetricSpecification>();
+        if (list != null) {
+            for (MetricSpecification spec : list) {
+                if (spec.getName() != null && spec.getMetric() == null) {
+                    result.add((MetricSpecification) spec);
+                }
+            }
+        }
+        return result;
+    }
 
     public MetricService() {
         objectMapper = new ObjectMapper();
@@ -173,6 +213,7 @@ public class MetricService implements MetricServiceAPI {
         private final ReturnSet returnset;
         private final Boolean series;
         private final String downsample;
+        private final String grouping;
         private final Map<String, List<String>> tags;
         private final List<MetricSpecification> queries;
         private long start = -1;
@@ -180,7 +221,7 @@ public class MetricService implements MetricServiceAPI {
 
         public Worker(MetricServiceAppConfiguration config, String id,
                 String startTime, String endTime, ReturnSet returnset,
-                Boolean series, String downsample,
+                Boolean series, String downsample, String grouping,
                 Map<String, List<String>> tags,
                 List<MetricSpecification> queries) {
             if (queries == null) {
@@ -198,172 +239,8 @@ public class MetricService implements MetricServiceAPI {
             this.series = series;
             this.tags = tags;
             this.downsample = downsample;
+            this.grouping = grouping;
             this.queries = queries;
-        }
-
-        private void writeAsSeries(JsonWriter writer, BufferedReader reader)
-                throws NumberFormatException, IOException,
-                ClassNotFoundException {
-            long t = -1;
-            String line = null;
-            String lastMetric = null;
-            long ts = 0;
-            double val = 0;
-            boolean comma = false;
-            String expr = null;
-            MetricCalculator calc = null;
-            Map<String, MetricCalculator> calcs = new HashMap<String, MetricCalculator>();
-            MetricCalculatorFactory calcFactory = new MetricCalculatorFactory();
-
-            // Walk the queries and build up a map of metric name to RPN
-            // expressions
-            for (MetricSpecification spec : this.queries) {
-                if ((expr = spec.getExpression()) != null
-                        && (expr = expr.trim()).length() > 0) {
-                    calcs.put(spec.getMetric(), calcFactory.newInstance(expr));
-                }
-            }
-
-            // Because TSDB gives data that is outside the exact time range
-            // requested it is not always known at any point if the further
-            // data is "valid" if we are triming to the exact time range. As
-            // such we have to delay the comma before a new "series" until we
-            // know we will actually have one.
-            boolean precomma = false;
-
-            boolean needHeader = true;
-
-            while ((line = reader.readLine()) != null) {
-                String terms[] = line.split(" ", 4);
-
-                // Check the timestamp and if we went backwards in time or there
-                // is a new metric name that means that we are onto the next
-                // query.
-                ts = Long.valueOf(terms[1]);
-                if (ts < t
-                        || (lastMetric != null && !lastMetric.equals(terms[0]))) {
-                    // If we have written a header then we need to close
-                    // out the JSON object
-                    if (!needHeader) {
-                        writer.arrayE().objectE(false);
-                    }
-                    needHeader = true;
-                    comma = false;
-                    precomma = true;
-                }
-                t = ts;
-                lastMetric = terms[0];
-                if (returnset == ReturnSet.ALL || (ts >= start && ts <= end)) {
-                    if (needHeader) {
-                        if (precomma) {
-                            writer.write(',');
-                            precomma = false;
-                        }
-                        writer.objectS().value(METRIC, terms[0], true);
-
-                        // every entry in this series should have the same
-                        // tags, so output them once, by just using the tags
-                        // from the first entry
-                        if (terms.length > 3) {
-                            // The result has tags
-                            writer.objectS(TAGS);
-                            int eq = -1;
-                            for (String tag : terms[3].split(" ")) {
-                                // Bit of a hack here. We are using the fact
-                                // that only on the first trip through this loop
-                                // eq == -1 as an indicator that on before every
-                                // value except the first we need to add a ','
-                                if (eq != -1) {
-                                    writer.write(',');
-                                }
-                                eq = tag.indexOf('=');
-                                writer.value(tag.substring(0, eq),
-                                        tag.substring(eq + 1));
-                            }
-                            writer.objectE(true);
-                        }
-
-                        writer.arrayS(DATAPOINTS);
-                        needHeader = false;
-                    }
-                    if (comma) {
-                        writer.write(',');
-                    }
-                    comma = true;
-                    val = Double.valueOf(terms[2]);
-                    if ((calc = calcs.get(terms[0])) != null) {
-                        val = calc.evaluate(val);
-                    }
-                    writer.objectS().value(TIMESTAMP, ts, true)
-                            .value(VALUE, val, false).objectE();
-                }
-            }
-            if (!needHeader) {
-                // end the last query, if we opened it
-                writer.arrayE().objectE();
-            }
-        }
-
-        private void writeAsIs(JsonWriter writer, BufferedReader reader)
-                throws IOException, ClassNotFoundException {
-            String line = null;
-            long ts = -1;
-            double val = 0;
-            boolean comma = false;
-            String expr = null;
-            MetricCalculator calc = null;
-            Map<String, MetricCalculator> calcs = new HashMap<String, MetricCalculator>();
-            MetricCalculatorFactory calcFactory = new MetricCalculatorFactory();
-            // Walk the queries and build up a map of metric name to RPN
-            // expressions
-            for (MetricSpecification spec : this.queries) {
-                if ((expr = spec.getExpression()) != null
-                        && (expr = expr.trim()).length() > 0) {
-                    calcs.put(spec.getMetric(), calcFactory.newInstance(expr));
-                }
-            }
-
-            while ((line = reader.readLine()) != null) {
-                String terms[] = line.split(" ", 4);
-
-                // Check the timestamp and if we went backwards in time that
-                // means that we are onto the next query.
-                ts = Long.valueOf(terms[1]);
-                if (returnset == ReturnSet.ALL || (ts >= start && ts <= end)) {
-                    if (comma) {
-                        writer.write(',');
-                    }
-                    comma = true;
-                    val = Double.valueOf(terms[2]);
-                    if ((calc = calcs.get(terms[0])) != null) {
-                        val = calc.evaluate(val);
-                    }
-
-                    writer.objectS().value(METRIC, terms[0], true)
-                            .value(TIMESTAMP, ts, true)
-                            .value(VALUE, val, terms.length > 3);
-
-                    if (terms.length > 3) {
-                        // The result has tags
-                        writer.objectS(TAGS);
-                        int eq = -1;
-                        for (String tag : terms[3].split(" ")) {
-                            // Bit of a hack here. We are using the fact that
-                            // only on the first trip through this loop eq == -1
-                            // as an indicator that on before every value except
-                            // the first we need to add a ','
-                            if (eq != -1) {
-                                writer.write(',');
-                            }
-                            eq = tag.indexOf('=');
-                            writer.value(tag.substring(0, eq),
-                                    tag.substring(eq + 1));
-                        }
-                        writer.objectE();
-                    }
-                    writer.objectE();
-                }
-            }
         }
 
         /*
@@ -427,8 +304,6 @@ public class MetricService implements MetricServiceAPI {
                         .status(400)
                         .entity(objectMapper.writer().writeValueAsString(
                                 response)).build());
-                // throw new WebApplicationException(Response.status(400)
-                // .entity(new JSONObject(response).toString()).build());
             }
 
             if (serverTimeZone == null) {
@@ -463,7 +338,7 @@ public class MetricService implements MetricServiceAPI {
             try {
                 reader = api.getReader(config, id, convertedStartTime,
                         convertedEndTime, returnset, series, downsample, tags,
-                        queries);
+                        MetricService.metricFilter(queries));
                 if (returnset == ReturnSet.LAST) {
                     reader = new LastFilter(reader, startDate, endDate);
                 }
@@ -481,31 +356,34 @@ public class MetricService implements MetricServiceAPI {
 
             }
 
+            /**
+             * TODO: Deal with no bucket specification better. Create a bucket
+             * size of 1 second means that we are behaving correctly, but it
+             * also means we are going a lot more work than we really need to as
+             * we would just directly stream the results without processing them
+             * into buckets.
+             */
+            long bucketSize = 1;
+            if (grouping != null && grouping.length() > 1) {
+                bucketSize = Utils.parseDuration(grouping);
+            }
             try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(
                     output))) {
+                Buckets<MetricKey, String> buckets = resultsProcessor
+                        .processResults(reader, queries, bucketSize);
 
-                writer.objectS()
-                        .value(CLIENT_ID, id, true)
-                        .value(SOURCE, api.getSourceId(), true)
-                        .value(START_TIME, startTime, true)
-                        .value(START_TIME_ACTUAL, actual.format(startDate),
-                                true).value(END_TIME, endTime, true)
-                        .value(END_TIME_ACTUAL, actual.format(endDate), true)
-                        .value(RETURN_SET, returnset, true)
-                        .value(SERIES, series, true).arrayS(RESULTS);
-
-                // convert the start / end times to longs so we can determine if
-                // the returned results are outside the bounds of the requested
-                // area. this only needs to be done if the query was for the
-                // exact time window.
                 if (series) {
-                    writeAsSeries(writer, reader);
+                    seriesResultsWriter.writeResults(writer, queries, buckets,
+                            id, api.getSourceId(), start, startTime,
+                            actual.format(startDate), end, endTime,
+                            actual.format(endDate), returnset, series);
                 } else {
-                    writeAsIs(writer, reader);
-                }
 
-                writer.arrayE().objectE(); // end the whole thing
-                writer.flush();
+                    asIsResultsWriter.writeResults(writer, queries, buckets,
+                            id, api.getSourceId(), start, startTime,
+                            actual.format(startDate), end, endTime,
+                            actual.format(endDate), returnset, series);
+                }
             } catch (Exception e) {
                 log.error(
                         "Server error while processing metric source {} : {}:{}",
@@ -524,15 +402,18 @@ public class MetricService implements MetricServiceAPI {
      * (non-Javadoc)
      * 
      * @see
-     * org.zenoss.app.query.api.PerformanceMetricQueryAPI#query(com.google.common
+     * org.zenoss.app.metricservice.api.MetricServiceAPI#query(com.google.common
      * .base.Optional, com.google.common.base.Optional,
      * com.google.common.base.Optional, com.google.common.base.Optional,
-     * com.google.common.base.Optional, java.util.List)
+     * com.google.common.base.Optional, com.google.common.base.Optional,
+     * com.google.common.base.Optional, com.google.common.base.Optional,
+     * java.util.List)
      */
     @Override
     public Response query(Optional<String> id, Optional<String> startTime,
             Optional<String> endTime, Optional<ReturnSet> returnset,
             Optional<Boolean> series, Optional<String> downsample,
+            Optional<String> grouping,
             Optional<Map<String, List<String>>> tags,
             List<MetricSpecification> queries) {
 
@@ -546,7 +427,7 @@ public class MetricService implements MetricServiceAPI {
                                     .getDefaultReturnSet()), series.or(config
                                     .getMetricServiceConfig()
                                     .getDefaultSeries()), downsample.orNull(),
-                            tags.orNull(), queries)).build();
+                            grouping.orNull(), tags.orNull(), queries)).build();
         } catch (Exception e) {
             log.error(String.format(
                     "Error While attempting to query data soruce: %s : %s", e

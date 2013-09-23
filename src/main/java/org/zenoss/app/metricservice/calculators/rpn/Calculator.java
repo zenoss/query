@@ -37,11 +37,14 @@ import java.util.Date;
 import java.util.List;
 
 import org.zenoss.app.metricservice.calculators.BaseMetricCalculator;
+import org.zenoss.app.metricservice.calculators.Closure;
+import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
 
 /**
  * A RPN expression metric calculator.
  */
 public class Calculator extends BaseMetricCalculator {
+
     /**
      * Maintains the stack used for RPN evaluation
      */
@@ -488,12 +491,13 @@ public class Calculator extends BaseMetricCalculator {
      * 
      * @see
      * org.zenoss.app.metricservice.calculators.MetricCalculator#evaluate(java
-     * .lang.String)
+     * .lang.String, org.zenoss.app.metricservice.calculators.Closure)
      */
     @Override
-    public double evaluate(String expression) {
+    public double evaluate(String expression, Closure closure)
+            throws UnknownReferenceException {
         clear();
-        return doEvaluate(expression);
+        return doEvaluate(expression, closure);
     }
 
     /*
@@ -501,13 +505,27 @@ public class Calculator extends BaseMetricCalculator {
      * 
      * @see
      * org.zenoss.app.metricservice.calculators.MetricCalculator#evaluate(double
-     * )
+     * , org.zenoss.app.metricservice.calculators.Closure)
      */
     @Override
-    public double evaluate(double value) {
+    public double evaluate(double value, Closure closure)
+            throws UnknownReferenceException {
         clear();
         push(value);
-        return doEvaluate(getExpression());
+        return doEvaluate(getExpression(), closure);
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.zenoss.app.metricservice.calculators.MetricCalculator#evaluate(org
+     * .zenoss.app.metricservice.calculators.Closure)
+     */
+    @Override
+    public double evaluate(Closure closure) throws UnknownReferenceException {
+        clear();
+        return doEvaluate(getExpression(), closure);
     }
 
     /*
@@ -515,13 +533,23 @@ public class Calculator extends BaseMetricCalculator {
      * 
      * @see
      * org.zenoss.app.metricservice.calculators.MetricCalculator#evaluate(double
-     * , java.lang.String)
+     * , java.lang.String, org.zenoss.app.metricservice.calculators.Closure)
      */
     @Override
-    public double evaluate(double value, String expression) {
+    public double evaluate(double value, String expression, Closure closure)
+            throws UnknownReferenceException {
         clear();
         push(value);
-        return doEvaluate(expression);
+        return doEvaluate(expression, closure);
+    }
+
+    private void pushReference(String reference, Closure closure)
+            throws UnknownReferenceException {
+        if (getReferenceProvider() == null) {
+            throw new UnknownReferenceException(reference);
+        }
+
+        push(getReferenceProvider().lookup(reference, closure));
     }
 
     /**
@@ -534,11 +562,13 @@ public class Calculator extends BaseMetricCalculator {
      * @return the value on the top of the stack at the end of the evaluation,
      *         the value is not removed from the stack.
      */
-    private double doEvaluate(String expression) {
+    private double doEvaluate(String expression, Closure closure)
+            throws UnknownReferenceException {
         String[] terms = expression.split(",");
         String term;
+        String ref;
         for (int i = 0; i < terms.length; ++i) {
-            term = terms[i].trim().toLowerCase();
+            term = (ref = terms[i].trim()).toLowerCase();
             if (term.length() == 0) {
                 continue;
             }
@@ -574,7 +604,7 @@ public class Calculator extends BaseMetricCalculator {
                 } else if ("addnan".equals(term)) {
                     addnan();
                 } else {
-                    throw new UnsupportedOperationException(term);
+                    pushReference(ref, closure);
                 }
                 break;
             case 'c':
@@ -583,7 +613,7 @@ public class Calculator extends BaseMetricCalculator {
                 } else if ("ceil".equals(term)) {
                     ceil();
                 } else {
-                    throw new UnsupportedOperationException(term);
+                    pushReference(ref, closure);
                 }
                 break;
             case 'd':
@@ -592,7 +622,7 @@ public class Calculator extends BaseMetricCalculator {
                 } else if ("deg2rad".equals(term)) {
                     deg2rad();
                 } else {
-                    throw new UnsupportedOperationException(term);
+                    pushReference(ref, closure);
                 }
                 break;
             case 'e':
@@ -603,14 +633,14 @@ public class Calculator extends BaseMetricCalculator {
                 } else if ("eq".equals(term)) {
                     eq();
                 } else {
-                    throw new UnsupportedOperationException(term);
+                    pushReference(ref, closure);
                 }
                 break;
             case 'f':
                 if ("floor".equals(term)) {
                     floor();
                 } else {
-                    throw new UnsupportedOperationException(term);
+                    pushReference(ref, closure);
                 }
                 break;
             case 'g':
@@ -619,7 +649,7 @@ public class Calculator extends BaseMetricCalculator {
                 } else if ("ge".equals(term)) {
                     ge();
                 } else {
-                    throw new UnsupportedOperationException(term);
+                    pushReference(ref, closure);
                 }
                 break;
             case 'i':
@@ -632,10 +662,10 @@ public class Calculator extends BaseMetricCalculator {
                 } else if ("inf".equals(term)) {
                     infinity();
                 } else {
-                    throw new UnsupportedOperationException(term);
+                    pushReference(ref, closure);
                 }
                 break;
-            case 'l':               
+            case 'l':
                 if ("limit".equals(term)) {
                     limit();
                 } else if ("log".equals(term)) {
@@ -645,7 +675,7 @@ public class Calculator extends BaseMetricCalculator {
                 } else if ("le".equals(term)) {
                     le();
                 } else {
-                    throw new UnsupportedOperationException(term);
+                    pushReference(ref, closure);
                 }
                 break;
             case 'm':
@@ -654,7 +684,7 @@ public class Calculator extends BaseMetricCalculator {
                 } else if ("max".equals(term)) {
                     max();
                 } else {
-                    throw new UnsupportedOperationException(term);
+                    pushReference(ref, closure);
                 }
                 break;
             case 'n':
@@ -665,7 +695,7 @@ public class Calculator extends BaseMetricCalculator {
                 } else if ("ne".equals(term)) {
                     ne();
                 } else {
-                    throw new UnsupportedOperationException(term);
+                    pushReference(ref, closure);
                 }
                 break;
             case 'r':
@@ -674,7 +704,7 @@ public class Calculator extends BaseMetricCalculator {
                 } else if ("rad2deg".equals(term)) {
                     rad2deg();
                 } else {
-                    throw new UnsupportedOperationException(term);
+                    pushReference(ref, closure);
                 }
                 break;
             case 's':
@@ -685,14 +715,14 @@ public class Calculator extends BaseMetricCalculator {
                 } else if ("sin".equals(term)) {
                     sin();
                 } else {
-                    throw new UnsupportedOperationException(term);
+                    pushReference(ref, closure);
                 }
                 break;
             case 't':
                 if ("tan".equals(term)) {
                     tan();
                 } else {
-                    throw new UnsupportedOperationException(term);
+                    pushReference(ref, closure);
                 }
                 break;
             case 'u':
@@ -701,18 +731,66 @@ public class Calculator extends BaseMetricCalculator {
                 } else if ("un".equals(term)) {
                     isUnknown();
                 } else {
-                    throw new UnsupportedOperationException(term);
+                    pushReference(ref, closure);
                 }
                 break;
             default:
                 if (Character.isDigit(term.charAt(0))) {
                     push(Double.valueOf(term));
-                } else {
-                    throw new UnsupportedOperationException(term);
+                }
+                if (Character.isLetter(term.charAt(0))) {
+                    pushReference(ref, closure);
                 }
                 break;
             }
         }
         return peek();
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.zenoss.app.metricservice.calculators.MetricCalculator#evaluate(double
+     * , java.lang.String)
+     */
+    @Override
+    public double evaluate(double value, String expression)
+            throws UnknownReferenceException {
+        return evaluate(value, expression, (Closure) null);
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.zenoss.app.metricservice.calculators.MetricCalculator#evaluate(java
+     * .lang.String)
+     */
+    @Override
+    public double evaluate(String expression) throws UnknownReferenceException {
+        return evaluate(expression, (Closure) null);
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.zenoss.app.metricservice.calculators.MetricCalculator#evaluate(double
+     * )
+     */
+    @Override
+    public double evaluate(double value) throws UnknownReferenceException {
+        return evaluate(value, (Closure) null);
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.zenoss.app.metricservice.calculators.MetricCalculator#evaluate()
+     */
+    @Override
+    public double evaluate() throws UnknownReferenceException {
+        return evaluate((Closure) null);
     }
 }

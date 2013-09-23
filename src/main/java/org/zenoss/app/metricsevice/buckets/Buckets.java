@@ -1,0 +1,239 @@
+/*
+ * Copyright (c) 2013, Zenoss and/or its affiliates. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ *   - Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   - Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer in the
+ *     documentation and/or other materials provided with the distribution.
+ *
+ *   - Neither the name of Zenoss or the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+ * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+package org.zenoss.app.metricsevice.buckets;
+
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Provides a utility to bucket metrics into defined sized chunks, averaging the
+ * values when multiple values fall in a single bucket.
+ * 
+ * @author Zenoss
+ * 
+ * @param <P>
+ *            primary key type
+ * @param <S>
+ *            shortcut key type
+ */
+public class Buckets<P, S> {
+    /**
+     * Default bucket size of 5 minutes
+     */
+    static public final long DEFAULT_BUCKET_SIZE = 300; // 5 Minutes
+
+    /**
+     * Specifies the size of each bucket in seconds
+     */
+    private long downsample = 5 * 60;
+
+    /**
+     * Set of buckets indexed by time in seconds
+     */
+    private Map<Long, Bucket> bucketList = new HashMap<Long, Bucket>();
+
+    /**
+     * Each bucket maintains a summary of the values that fall within that
+     * bucket. This includes the sum of all the values added for a given metric
+     * and the number of values per metric. This minimal information allows for
+     * the calculation of the average as well as implements easy addition and
+     * removal of values.
+     * 
+     * @author Zenoss
+     */
+    final public class Bucket {
+
+        /**
+         * Map from the primary key to the values within a bucket
+         */
+        private Map<P, Value> values = new HashMap<P, Value>();
+
+        /**
+         * Map from the shortcut key to the values within a bucket
+         */
+        private Map<S, Value> valuesByName = new HashMap<S, Value>();
+
+        /**
+         * Add a value to a bucket
+         * 
+         * @param primaryKey
+         *            primary key for the value
+         * @param shortcutKey
+         *            shortcut key for the value
+         * @param value
+         *            value to add
+         */
+        final public void add(final P primaryKey, final S shortcutKey,
+                final double value) {
+
+            // Fetch existing value, if it exists
+            Value holder = values.get(primaryKey);
+
+            // If value does not exists, create and add
+            if (holder == null) {
+                holder = new Value();
+                values.put(primaryKey, holder);
+                valuesByName.put(shortcutKey, holder);
+            }
+
+            // Add the value
+            holder.add(value);
+        }
+
+        /**
+         * Returns a value based on primary key lookup
+         * 
+         * @param key
+         *            primary key
+         * @return the value associated with the primary key or null
+         */
+        final public Value getValue(final P key) {
+            return values.get(key);
+        }
+
+        /**
+         * Returns a value based on the shortcut key lookup
+         * 
+         * @param shortcut
+         *            shortcut key
+         * @return the value associated with the shortcut key or null
+         */
+        final public Value getValueByShortcut(S shortcut) {
+            return valuesByName.get(shortcut);
+        }
+    }
+
+    /**
+     * Default, no parameter constructor. Creates an instance of buckets with a
+     * default bucket size.
+     */
+    public Buckets() {
+    }
+
+    /**
+     * Constructs an instance of buckets with a specified bucket size.
+     * 
+     * @param downsample
+     *            the number of seconds per each bucket
+     */
+    public Buckets(final long downsample) {
+        this.downsample = downsample;
+    }
+
+    /**
+     * Add a value to the buckets
+     * 
+     * @param primaryKey
+     *            primary key for the vlaue
+     * @param shortcutKey
+     *            shortcut key for the value
+     * @param timestamp
+     *            timestamp of the value (will be rounded based on downsample
+     *            size)
+     * @param value
+     *            value to add
+     */
+    final public void add(final P primaryKey, final S shortcutKey,
+            final long timestamp, final double value) {
+        long ts = (long) (timestamp / downsample);
+
+        // Get existing or create new bucket for this timestamp
+        Bucket b = bucketList.get(ts);
+        if (b == null) {
+            b = new Bucket();
+            bucketList.put(ts, b);
+        }
+
+        // Add the value
+        b.add(primaryKey, shortcutKey, value);
+    }
+
+    /**
+     * Returns a bucket for a specified timestamp or null if a bucket does not
+     * exists for the timestamp.
+     * 
+     * @return bucket of the given timestamp (that will be downsampled) or null
+     */
+    final public Bucket getBucket(long timestamp) {
+        return bucketList.get(timestamp / downsample);
+    }
+
+    /**
+     * Returns a sorted copy of the timestamps for the buckets. The timestamps
+     * returned are the downsampled values. To get the correct timestamp these
+     * values should be multiplied by the downsample value.
+     * 
+     * @return sorted list of downsampled time values
+     */
+    final public List<Long> getTimestamps() {
+        List<Long> result = new ArrayList<Long>(bucketList.keySet());
+        Collections.sort(result);
+        return result;
+    }
+
+    /**
+     * Returns the downsample value
+     * 
+     * @return downsample
+     */
+    final public long getDownsample() {
+        return downsample;
+    }
+
+    /**
+     * Dumps the contents of the buckets to the given print stream. This can be
+     * useful for debugging
+     * 
+     * @param ps
+     *            printstream instance to use for the dump
+     */
+    final public void dump(PrintStream ps) {
+        List<Long> keys = new ArrayList<Long>(bucketList.keySet());
+        Collections.sort(keys);
+
+        for (long k : keys) {
+            ps.format("BUCKET: %d (%s)\n", k, new Date(k * downsample * 1000));
+            for (P key : bucketList.get(k).values.keySet()) {
+                ps.format("    %-40s : %10.2f (%10.2f / %d)\n", key.toString(),
+                        bucketList.get(k).values.get(key).getValue(),
+                        bucketList.get(k).values.get(key).getSum(),
+                        bucketList.get(k).values.get(key).getCount());
+
+            }
+        }
+    }
+}

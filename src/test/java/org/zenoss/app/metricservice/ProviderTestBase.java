@@ -365,7 +365,7 @@ public abstract class ProviderTestBase extends ResourceTest {
                 Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
                 Optional.of(true), Optional.<String> absent(),
                 Optional.<Map<String, List<String>>> absent(),
-                new String[] { "avg:laLoadInt1{btag1=value1,tag2=value2}" });
+                new String[] { "avg:laLoadInt1{tag1=*,tag2=*}" });
     }
 
     @Test
@@ -374,7 +374,7 @@ public abstract class ProviderTestBase extends ResourceTest {
                 Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
                 Optional.of(false), Optional.<String> absent(),
                 Optional.<Map<String, List<String>>> absent(),
-                new String[] { "avg:laLoadInt1{tag1=value1,tag2=value2}" });
+                new String[] { "avg:laLoadInt1{tag1=*,tag2=*}" });
     }
 
     @Test
@@ -383,8 +383,8 @@ public abstract class ProviderTestBase extends ResourceTest {
                 Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
                 Optional.of(true), Optional.<String> absent(),
                 Optional.<Map<String, List<String>>> absent(), new String[] {
-                        "avg:laLoadInt1{tag1=value1,tag2=value2}",
-                        "sum:laLoadInt5{tag1=value1,tag2=value2}" });
+                        "avg:laLoadInt1{tag1=*,tag2=*}",
+                        "sum:laLoadInt5{tag1=*,tag2=*}" });
     }
 
     @Test
@@ -393,8 +393,8 @@ public abstract class ProviderTestBase extends ResourceTest {
                 Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
                 Optional.of(false), Optional.<String> absent(),
                 Optional.<Map<String, List<String>>> absent(), new String[] {
-                        "avg:laLoadInt1{tag1=value1,tag2=value2}",
-                        "sum:laLoadInt5{tag1=value1,tag2=value2}" });
+                        "avg:laLoadInt1{tag1=*,tag2=*}",
+                        "sum:laLoadInt5{tag1=*,tag2=*}" });
     }
 
     @Test
@@ -456,8 +456,8 @@ public abstract class ProviderTestBase extends ResourceTest {
                 Optional.<String> absent(), Optional.of(ReturnSet.LAST),
                 Optional.of(false), Optional.<String> absent(),
                 Optional.<Map<String, List<String>>> absent(), new String[] {
-                        "avg:laLoadInt1{tag1=value1,tag2=value2}",
-                        "sum:laLoadInt5{tag1=value1,tag2=value2}" });
+                        "avg:laLoadInt1{tag1=*,tag2=*}",
+                        "sum:laLoadInt5{tag1=*,tag2=*}" });
     }
 
     @Test
@@ -475,7 +475,7 @@ public abstract class ProviderTestBase extends ResourceTest {
                 Optional.<String> absent(), Optional.of(ReturnSet.LAST),
                 Optional.of(true), Optional.<String> absent(),
                 Optional.<Map<String, List<String>>> absent(), new String[] {
-                        "avg:laLoadInt1{tag1=value1,tag2=value2}",
-                        "sum:laLoadInt5{tag1=value1,tag2=value2}" });
+                        "avg:laLoadInt1{tag1=*,tag2=*}",
+                        "sum:laLoadInt5{tag1=*,tag2=*}" });
     }
 }

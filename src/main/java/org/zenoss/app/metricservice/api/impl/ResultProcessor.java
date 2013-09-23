@@ -28,56 +28,47 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.metricservice.api;
 
+package org.zenoss.app.metricservice.api.impl;
+
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.List;
-import java.util.Map;
-
-import javax.ws.rs.core.Response;
 
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
-import org.zenoss.app.metricservice.api.model.ReturnSet;
-
-import com.google.common.base.Optional;
+import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
+import org.zenoss.app.metricsevice.buckets.Buckets;
 
 /**
- * @author Zenoss
+ * Specifies the interface for implementations that process the results from the
+ * metric storage. Implementation should process the data into a Buckets
+ * representation.
  * 
+ * @author Zenoss
  */
-public interface MetricServiceAPI {
-
+public interface ResultProcessor {
     /**
-     * Specifies the interface for querying performance metric data.
+     * Processes the input stream from the metric storage engine to a Buckets
+     * representation
      * 
-     * @param id
-     *            id of the request
-     * @param startTime
-     *            start time of the query range
-     * @param endTime
-     *            end time of the query range
-     * @param returnset
-     *            return all or only those values in the query range, this is
-     *            needed because OpenTSDB returns values outside the query
-     *            range.
-     * @param series
-     *            should the results be returned as a series or in line
-     * @param downsample
-     *            global downsample value
-     * @param grouping
-     *            specifies the size, in seconds, into which results should be
-     *            grouped. This is useful / required when dealing with RPN
-     *            expressions that reference other metric values so that metrics
-     *            that come in a different times can be "lined up"
-     * @param tags
-     *            global filters for the query
+     * @param reader
+     *            input stream from which lines should be read from the the
+     *            metric storage engine
      * @param queries
-     *            metric queries
-     * @return response of the request
+     *            queries that generated the results
+     * @param bucketsize
+     *            the size of the buckets that should be generated
+     * @return
+     * @throws IOException
+     *             when an exception occurs when reading from the metric storage
+     *             engine
+     * @throws ClassNotFoundException
+     *             when a calculation engine cannot be loaded
+     * @throws UnknownReferenceException
+     *             when a reference in an expression cannot be found.
      */
-    public Response query(Optional<String> id, Optional<String> startTime,
-            Optional<String> endTime, Optional<ReturnSet> returnset,
-            Optional<Boolean> series, Optional<String> downsample,
-            Optional<String> grouping,
-            Optional<Map<String, List<String>>> tags,
-            List<MetricSpecification> queries);
+    public Buckets<MetricKey, String> processResults(BufferedReader reader,
+            List<MetricSpecification> queries, long bucketsize)
+            throws IOException, ClassNotFoundException,
+            UnknownReferenceException;
 }
