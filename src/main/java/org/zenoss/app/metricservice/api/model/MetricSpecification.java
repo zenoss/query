@@ -30,6 +30,8 @@
  */
 package org.zenoss.app.metricservice.api.model;
 
+import static org.springframework.util.StringUtils.arrayToDelimitedString;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,7 +44,6 @@ import org.zenoss.app.metricservice.api.impl.Utils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import static org.springframework.util.StringUtils.arrayToDelimitedString;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
@@ -56,6 +57,9 @@ public class MetricSpecification {
     private String metric = null;
 
     @JsonProperty
+    private String name = null;
+
+    @JsonProperty
     private Aggregator aggregator = DEFAULT_AGGREGATOR;
 
     @JsonProperty
@@ -66,12 +70,65 @@ public class MetricSpecification {
 
     @JsonProperty
     private RateOptions rateOptions = null;
-    
-    @JsonProperty
+
+    @JsonProperty()
     private String expression = null;
+
+    /**
+     * Determines is the results queried via this specification should be
+     * returned or not. This is used when a metric calculation is leveraged in
+     * an expression of another metric, but the raw results of the first metric
+     * are not required by the client.
+     */
+    @JsonProperty
+    private Boolean emit = Boolean.TRUE;
 
     @JsonProperty
     private Map<String, List<String>> tags = null;
+
+    /**
+     * @return
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * @param name
+     */
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    /**
+     * @return the expression
+     */
+    public String getExpression() {
+        return expression;
+    }
+
+    /**
+     * @param expression
+     *            the expression to set
+     */
+    public void setExpression(String expression) {
+        this.expression = expression;
+    }
+
+    /**
+     * @return the emit
+     */
+    public Boolean getEmit() {
+        return emit;
+    }
+
+    /**
+     * @param emit
+     *            the emit to set
+     */
+    public void setEmit(Boolean emit) {
+        this.emit = emit;
+    }
 
     /**
      * @return the metric
@@ -147,20 +204,6 @@ public class MetricSpecification {
     public final void setRateOptions(RateOptions rateOptions) {
         this.rateOptions = rateOptions;
     }
-    
-    /**
-     * @return the expression
-     */
-    public String getExpression() {
-        return expression;
-    }
-
-    /**
-     * @param expression the expression to set
-     */
-    public void setExpression(String expression) {
-        this.expression = expression;
-    }
 
     /**
      * @return the tags
@@ -177,6 +220,20 @@ public class MetricSpecification {
         this.tags = tags;
     }
 
+    public String getMetricOrName() {
+        if (metric != null) {
+            return metric;
+        }
+        return name;
+    }
+
+    public String getNameOrMetric() {
+        if (name != null) {
+            return name;
+        }
+        return metric;
+    }
+
     /**
      * Encodes the current instance into the URL query parameter format that <a
      * href="http://opentsdb.net/http-api.html#/q">OpenTSDB</a> supports.
@@ -191,7 +248,8 @@ public class MetricSpecification {
      * 
      * @return OpenTSDB URL query formatted String instance
      */
-    public String toString(String downsample, Map<String, List<String>> baseTags, boolean withRateOptions) {
+    public String toString(String downsample,
+            Map<String, List<String>> baseTags, boolean withRateOptions) {
         StringBuilder buf = new StringBuilder();
         if (getAggregator() != null) {
             buf.append(getAggregator()).append(':');
@@ -202,7 +260,7 @@ public class MetricSpecification {
             buf.append(downsample).append(':');
         }
         if (getRate()) {
-            buf.append("rate");   
+            buf.append("rate");
             if (withRateOptions && getRateOptions() != null) {
                 buf.append('{');
                 if (getRateOptions().getCounter() != null) {
@@ -224,7 +282,13 @@ public class MetricSpecification {
             }
             buf.append(':');
         }
-        buf.append(getMetric());
+        if (getMetric() != null) {
+            buf.append(getMetric());
+        } else {
+            buf.append('[');
+            buf.append(getName());
+            buf.append(']');
+        }
         if ((baseTags != null && baseTags.size() > 0)
                 || (getTags() != null && getTags().size() > 0)) {
             Map<String, List<String>> joined = new HashMap<String, List<String>>();
@@ -241,7 +305,10 @@ public class MetricSpecification {
                     buf.append(',');
                 }
                 comma = true;
-                buf.append(tag.getKey()).append('=').append(arrayToDelimitedString(tag.getValue().toArray(), "|"));
+                buf.append(tag.getKey())
+                        .append('=')
+                        .append(arrayToDelimitedString(
+                                tag.getValue().toArray(), "|"));
             }
             buf.append('}');
         }
@@ -261,7 +328,7 @@ public class MetricSpecification {
     public String toString() {
         return this.toString(null, null, false);
     }
-    
+
     public String toString(boolean sendRateOptions) {
         return this.toString(null, null, sendRateOptions);
     }

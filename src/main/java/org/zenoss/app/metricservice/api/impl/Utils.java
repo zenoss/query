@@ -110,11 +110,25 @@ public class Utils {
     }
 
     public static long parseDuration(String v) {
-        char last = v.charAt(v.length() - 1);
+
+        /*
+         * Be a bit lenient here. If the value is actually a downsample
+         * specification, which would be a duration followed by a dash and an
+         * aggregation method, simply use the durection bit.
+         */
+        int idx;
+        char last;
+        if ((idx = v.indexOf('-')) > 0) {
+            idx -= 1;
+            last = v.charAt(idx);
+        } else {
+            idx = v.length() - 1;
+            last = v.charAt(idx);
+        }
 
         int period = 0;
         try {
-            period = Integer.parseInt(v.substring(0, v.length() - 1));
+            period = Integer.parseInt(v.substring(0, idx));
         } catch (NumberFormatException e) {
             return 0;
         }

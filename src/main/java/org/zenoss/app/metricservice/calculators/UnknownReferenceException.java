@@ -32,52 +32,21 @@
 package org.zenoss.app.metricservice.calculators;
 
 /**
- * Base class that can be utilized by MetricCalculator implementations to
- * provide the storage and retrieval of a saved expression.
+ * @author david
+ * 
  */
-public abstract class BaseMetricCalculator implements MetricCalculator {
-    /**
-     * the saved expression
-     */
-    private String expression = null;
+public class UnknownReferenceException extends Exception {
+    private static final long serialVersionUID = 7470448997172692107L;
 
-    private ReferenceProvider referenceProvider = null;
+    private String reference = null;
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.zenoss.app.metricservice.calculators.MetricCalculator#setExpression
-     * (java.lang.String)
-     */
-    @Override
-    public void setExpression(String expression) {
-        this.expression = expression;
+    public UnknownReferenceException(String reference) {
+        this.reference = reference;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.zenoss.app.metricservice.calculators.MetricCalculator#getExpression()
-     */
-    @Override
-    public String getExpression() {
-        return expression;
-    }
-
-    /**
-     * @return the referenceProvider
-     */
-    public ReferenceProvider getReferenceProvider() {
-        return referenceProvider;
-    }
-
-    /**
-     * @param referenceProvider
-     *            the referenceProvider to set
-     */
-    public void setReferenceProvider(ReferenceProvider referenceProvider) {
-        this.referenceProvider = referenceProvider;
+    public String toString() {
+        return String
+                .format("Unknown reference,  %s, encountered while performing metric calculation",
+                        reference);
     }
 }

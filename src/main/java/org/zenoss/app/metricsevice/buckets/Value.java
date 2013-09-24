@@ -29,55 +29,71 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.zenoss.app.metricservice.calculators;
+package org.zenoss.app.metricsevice.buckets;
 
 /**
- * Base class that can be utilized by MetricCalculator implementations to
- * provide the storage and retrieval of a saved expression.
+ * Value holder for a metric's value within a bucket.
+ * 
+ * @author Zenoss
  */
-public abstract class BaseMetricCalculator implements MetricCalculator {
+final public class Value {
+
     /**
-     * the saved expression
+     * The running sum of all the values added into this value
      */
-    private String expression = null;
+    private double sum = 0.0;
 
-    private ReferenceProvider referenceProvider = null;
+    /**
+     * The count of items added into this value
+     */
+    private long count = 0;
 
-    /*
-     * (non-Javadoc)
+    /**
+     * The average of the values added into the value
      * 
-     * @see
-     * org.zenoss.app.metricservice.calculators.MetricCalculator#setExpression
-     * (java.lang.String)
+     * @return average of the value
      */
-    @Override
-    public void setExpression(String expression) {
-        this.expression = expression;
+    final public double getValue() {
+        return sum / (double) count;
     }
 
-    /*
-     * (non-Javadoc)
+    /**
+     * Returns the running total of the value
      * 
-     * @see
-     * org.zenoss.app.metricservice.calculators.MetricCalculator#getExpression()
+     * @return running total
      */
-    @Override
-    public String getExpression() {
-        return expression;
+    final public double getSum() {
+        return sum;
     }
 
     /**
-     * @return the referenceProvider
+     * Returns the number of items added to the value
+     * 
+     * @return the number of items added
      */
-    public ReferenceProvider getReferenceProvider() {
-        return referenceProvider;
+    final public long getCount() {
+        return count;
     }
 
     /**
-     * @param referenceProvider
-     *            the referenceProvider to set
+     * Add a given number to the value
+     * 
+     * @param value
+     *            the number to add
      */
-    public void setReferenceProvider(ReferenceProvider referenceProvider) {
-        this.referenceProvider = referenceProvider;
+    final public void add(final double value) {
+        sum += value;
+        count++;
+    }
+
+    /**
+     * Removes a given number from the value
+     * 
+     * @param value
+     *            the number to remove
+     */
+    final public void remove(final double value) {
+        sum -= value;
+        count--;
     }
 }
