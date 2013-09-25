@@ -46,6 +46,8 @@ public class Utils {
     public static final String DETAULT_START_TIME = "1h-ago";
     public static final String DEFAULT_END_TIME = NOW;
 
+    private static final long HEURISTIC_EPOCH = 649753200000L;
+
     // Error tags
     public static final String NOT_SPECIFIED = "not-specified";
     public static final String CLIENT_ID = "id";
@@ -94,10 +96,37 @@ public class Utils {
 
         if (NOW.equals(v)) {
             return new Date().getTime() / 1000;
-        } else if (v.endsWith("-ago")) {
+        }
+
+        if (v.endsWith("-ago")) {
             return new Date().getTime() / 1000
                     - parseDuration(v.substring(0, v.length() - 4));
         }
+
+        if (v.indexOf('-') == -1) {
+            /*
+             * No dash, assume it is a number representing seconds or ms since
+             * unix epoch.
+             */
+            long result = 0;
+            try {
+                result = Long.parseLong(v);
+
+                /*
+                 * Check to see if they gave us seconds or ms. This is really a
+                 * heuristic as we can't really be sure. How we will check is if
+                 * the value is > a well known epoch value then we will assume
+                 * it is a ms value.
+                 */
+                if (result > HEURISTIC_EPOCH) {
+                    result /= 1000;
+                }
+                return result;
+            } catch (NumberFormatException nfe) {
+                // Must not be a epoch number, keep trying something else
+            }
+        }
+
         try {
             return new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss-Z").parse(v)
                     .getTime() / 1000;
