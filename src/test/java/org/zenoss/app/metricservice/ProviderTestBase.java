@@ -35,6 +35,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -326,6 +327,28 @@ public abstract class ProviderTestBase extends ResourceTest {
     @Test
     public void queryTest10sAgo1QuerySeries() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
+                Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
+                Optional.of(true), Optional.<String> absent(),
+                Optional.<Map<String, List<String>>> absent(),
+                new String[] { "avg:laLoadInt1" });
+    }
+
+    @Test
+    public void queryTestEpochInSeconds10sAgo1QuerySeries() throws Exception {
+        String start = String
+                .valueOf(((long) new Date().getTime() / 1000) - 10L);
+        testQuery(Optional.of("my-client-id"), Optional.of(start),
+                Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
+                Optional.of(true), Optional.<String> absent(),
+                Optional.<Map<String, List<String>>> absent(),
+                new String[] { "avg:laLoadInt1" });
+    }
+
+    @Test
+    public void queryTestEpochInMs10sAgo1QuerySeries() throws Exception {
+        String start = String
+                .valueOf(new Date().getTime() - (10 * 1000));
+        testQuery(Optional.of("my-client-id"), Optional.of(start),
                 Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
                 Optional.of(true), Optional.<String> absent(),
                 Optional.<Map<String, List<String>>> absent(),
