@@ -103,7 +103,7 @@ public class Utils {
                     - parseDuration(v.substring(0, v.length() - 4));
         }
 
-        if (v.indexOf('-') == -1) {
+        if (v.indexOf('/') == -1) {
             /*
              * No dash, assume it is a number representing seconds or ms since
              * unix epoch.
