@@ -57,7 +57,7 @@ import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.MetricServiceAPI;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
-import org.zenoss.app.metricsevice.buckets.Buckets;
+import org.zenoss.app.metricservice.buckets.Buckets;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;

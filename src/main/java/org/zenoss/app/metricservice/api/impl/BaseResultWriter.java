@@ -36,7 +36,7 @@ import java.util.List;
 
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
-import org.zenoss.app.metricsevice.buckets.Buckets;
+import org.zenoss.app.metricservice.buckets.Buckets;
 
 /**
  * @author Zenoss
