@@ -38,13 +38,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
+import org.zenoss.app.metricservice.buckets.Buckets;
+import org.zenoss.app.metricservice.buckets.Value;
 import org.zenoss.app.metricservice.calculators.Closure;
 import org.zenoss.app.metricservice.calculators.MetricCalculator;
 import org.zenoss.app.metricservice.calculators.MetricCalculatorFactory;
 import org.zenoss.app.metricservice.calculators.ReferenceProvider;
 import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
-import org.zenoss.app.metricsevice.buckets.Buckets;
-import org.zenoss.app.metricsevice.buckets.Value;
 
 /**
  * Processes the output stream from the back end metric query storage into

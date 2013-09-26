@@ -29,7 +29,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.zenoss.app.metricsevice.buckets;
+package org.zenoss.app.metricservice.buckets;
 
 import java.io.PrintStream;
 import java.util.ArrayList;

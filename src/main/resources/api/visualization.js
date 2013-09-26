@@ -724,6 +724,102 @@
         };
     }
 
+    /*
+     * Symbols used during autoscaling
+     */
+    zenoss.visualization.__scaleSymbols = [ 'y', // 10e-24 Yecto
+    'z', // 10^-21 Zepto
+    'a', // 10^-18 Atto
+    'f', // 10^-15 Femto
+    'p', // 10^-12 Pico
+    'n', // 10^-9 Nano
+    'u', // 10^-6 Micro
+    'm', // 10^-3 Milli
+    ' ', // Base
+    'k', // 10^3 Kilo
+    'M', // 10^6 Mega
+    'G', // 10^9 Giga
+    'T', // 10^12 Tera
+    'P', // 10^15 Peta
+    'E', // 10^18 Exa
+    'Z', // 10^21 Zetta
+    'Y'  // 10^24 Yotta
+    ];
+
+    /**
+     * Returns the appropriate scale symbol given a scaling factor
+     * 
+     * @access private
+     * @param {number}
+     *            scale factor, which is the the value which is multiplied by
+     *            the scale unit and then applied to a value to get the
+     *            displayed value.
+     * @returns character the symbol associated widh the given scale factor
+     */
+    zenoss.visualization.Chart.prototype.__scaleSymbol = function(factor) {
+        var ll = zenoss.visualization.__scaleSymbols.length;
+        var idx = factor + ((ll - 1) / 2);
+        if (idx < 0 || idx >= ll) {
+            return 'UKN';
+        }
+        return zenoss.visualization.__scaleSymbols[idx];
+    };
+
+    /**
+     * Calculates a scale factor given the maximum value in the chart.
+     * 
+     * @access private
+     * @param {number}
+     *            maximum value in the chart data
+     * @returns number the calculated scale factor
+     */
+    zenoss.visualization.Chart.prototype.__calculateAutoScaleFactor = function(
+            max) {
+        var factor = 0, ceiling, upper, lower, unit;
+        if (this.config.autoscale) {
+            ceiling = this.config.autoscale.ceiling || 5;
+            unit = parseInt(this.config.autoscale.factor || 1000);
+
+            upper = Math.pow(10, ceiling);
+            lower = upper / 10;
+
+            // Make sure that max value is greater than the lower boundary
+            while (max != 0 && max < lower) {
+                max *= unit;
+                factor -= 1;
+            }
+
+            /*
+             * And then make sure that max is lower than the upper boundary, it
+             * is favored that number be less than the upper boundary than
+             * higher than the lower.
+             */
+            while (max != 0 && max > upper) {
+                max /= unit;
+                factor += 1;
+            }
+        }
+        return factor;
+    }
+
+    /**
+     * Set the auto scale information on the chart
+     * 
+     * @access private
+     * @param {number}
+     *            auto scaling factor
+     */
+    zenoss.visualization.Chart.prototype.__configAutoScale = function(factor) {
+        var scaleUnit = 1000;
+        if (this.config.autoscale && this.config.autoscale.factor) {
+            scaleUnit = this.config.autoscale.factor;
+        }
+        this.scale = {};
+        this.scale.factor = factor;
+        this.scale.symbol = this.__scaleSymbol(factor);
+        this.scale.term = Math.pow(scaleUnit, factor);
+    };
+
     /**
      * Formats the given value according to the format specified by the
      * configuration or a default and returns the result.
@@ -736,6 +832,7 @@
      */
     zenoss.visualization.Chart.prototype.formatValue = function(value) {
         var format = this.format;
+        var scaled;
 
         /*
          * If we were given a undefined value, Infinity, of NaN (all things that
@@ -745,12 +842,13 @@
             return value;
         }
         try {
-            var rval = sprintf(format, value);
+            scaled = value / this.scale.term;
+            var rval = sprintf(format, scaled);
             if ($.isNumeric(rval)) {
-                return rval;
+                return rval + this.scale.symbol;
             }
             // if the result is a NaN just return the original value
-            return value;
+            return rval;
         } catch (x) {
             // override the number format for this chart
             // since this method could be called several times to render a
@@ -758,10 +856,11 @@
             this.format = DEFAULT_NUMBER_FORMAT;
             zenoss.visualization.__warn('Invalid format string  ' + format
                     + ' using the default format.');
+            scaled = value / this.scale.term;
             try {
-                return sprintf(this.format, value);
+                return sprintf(this.format, scaled) + this.scale.symbol;
             } catch (x) {
-                return value;
+                return scaled + this.scale.symbol;
             }
         }
     };
@@ -1105,7 +1204,9 @@
                     'dataType' : 'json',
                     'contentType' : 'application/json',
                     'success' : function(data) {
-                        self.plots = self.__processResult(self.request, data);
+                        var results = self.__processResult(self.request, data);
+                        self.plots = results[0];
+                        self.__configAutoScale(results[1]);
 
                         /*
                          * If the chart has not been created yet, then create
@@ -1284,13 +1385,17 @@
      */
     zenoss.visualization.Chart.prototype.__processResultAsSeries = function(
             request, data) {
-        var self = this, plots = [];
+        var self = this, plots = [], max = 0, i, result, dpi, dp;
 
-        data.results.forEach(function(result) {
-            // The key for a series plot will be its distinguishing
-            // characteristics, which is the metric name and the
-            // tags. We will use any mapping from metric name to legend value
-            // that was part of the original request.
+        for (i in data.results) {
+            result = data.results[i];
+
+            /*
+             * The key for a series plot will be its distinguishing
+             * characteristics, which is the metric name and the tags. We will
+             * use any mapping from metric name to legend value that was part of
+             * the original request.
+             */
             var key = self.legend[result.metric];
             if (result.tags !== undefined) {
                 key += '{';
@@ -1309,16 +1414,18 @@
                 'color' : self.colors[result.metric],
                 'values' : []
             };
-            result.datapoints.forEach(function(dp) {
+            for (dpi in result.datapoints) {
+                dp = result.datapoints[dpi];
+                max = Math.max(Math.abs(dp.value), max);
                 plot.values.push({
                     'x' : dp.timestamp * 1000,
                     'y' : dp.value
                 });
-            });
+            }
             plots.push(plot);
-        });
+        }
 
-        return plots;
+        return [ plots, this.__calculateAutoScaleFactor(max) ];
     };
 
     /**
@@ -1337,15 +1444,18 @@
     zenoss.visualization.Chart.prototype.__processResultAsDefault = function(
             request, data) {
 
-        var self = this, plotMap = [];
+        var self = this, plotMap = [], i, result, max = 0;
 
-        // Create a plot for each metric name, this is essentially
-        // grouping the results by metric name. This can cause problems
-        // if the request contains multiple queries for the same
-        // metric, but this is basically a restriction of the
-        // implementation (OpenTSDB) where it doesn't split the results
-        // logically when multiple requests are made in a single call.
-        data.results.forEach(function(result) {
+        /*
+         * Create a plot for each metric name, this is essentially grouping the
+         * results by metric name. This can cause problems if the request
+         * contains multiple queries for the same metric, but this is basically
+         * a restriction of the implementation (OpenTSDB) where it doesn't split
+         * the results logically when multiple requests are made in a single
+         * call.
+         */
+        for (i in data.results) {
+            result = data.results[i];
             var plot = plotMap[result.metric];
             if (plot === undefined) {
                 plot = {
@@ -1356,11 +1466,12 @@
                 plotMap[result.metric] = plot;
             }
 
+            max = Math.max(Math.abs(result.value), max);
             plot.values.push({
                 'x' : result.timestamp * 1000,
                 'y' : result.value
             });
-        });
+        }
 
         var xcompare = function(a, b) {
             if (a.x < b.x) {
@@ -1372,8 +1483,10 @@
             return 0;
         };
 
-        // Convert the plotMap into an array of plots for the graph
-        // library to process
+        /*
+         * Convert the plotMap into an array of plots for the graph library to
+         * process
+         */
         var plots = [];
         var key;
         for (key in plotMap) {
@@ -1384,7 +1497,7 @@
                 plots.push(plotMap[key]);
             }
         }
-        return plots;
+        return [ plots, this.__calculateAutoScaleFactor(max) ];
     };
 
     /**
@@ -1402,12 +1515,14 @@
      */
     zenoss.visualization.Chart.prototype.__processResult = function(request,
             data) {
-        var self = this, plots, i, overlay;
+        var self = this, results, plots, i, overlay;
 
         if (data.series) {
-            plots = this.__processResultAsSeries(request, data);
+            results = this.__processResultAsSeries(request, data);
+            plots = results[0];
         } else {
-            plots = this.__processResultAsDefault(request, data);
+            results = this.__processResultAsDefault(request, data);
+            plots = results[0];
         }
 
         // add overlays
@@ -1440,7 +1555,7 @@
                 plots.push(plot);
             }
         }
-        return plots;
+        return results;
     };
 
     /**
@@ -1636,7 +1751,6 @@
      *            the new data to display in the chart
      */
     zenoss.visualization.Chart.prototype.__updateData = function(data) {
-        this.plots = this.__processResult(this.request, data);
         if (!this.__havePlotData()) {
             zenoss.visualization.__showNoData(this.name);
         } else {
