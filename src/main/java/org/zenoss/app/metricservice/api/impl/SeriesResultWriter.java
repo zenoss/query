@@ -36,8 +36,8 @@ import java.util.List;
 
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
-import org.zenoss.app.metricsevice.buckets.Buckets;
-import org.zenoss.app.metricsevice.buckets.Value;
+import org.zenoss.app.metricservice.buckets.Buckets;
+import org.zenoss.app.metricservice.buckets.Value;
 
 /**
  * Writes the query results in a series format where the results are grouped by

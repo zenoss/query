@@ -36,8 +36,8 @@ import java.io.IOException;
 import java.util.List;
 
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
+import org.zenoss.app.metricservice.buckets.Buckets;
 import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
-import org.zenoss.app.metricsevice.buckets.Buckets;
 
 /**
  * Specifies the interface for implementations that process the results from the

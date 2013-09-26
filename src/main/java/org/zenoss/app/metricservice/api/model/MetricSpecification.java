@@ -71,9 +71,9 @@ public class MetricSpecification {
     @JsonProperty
     private RateOptions rateOptions = null;
 
-    @JsonProperty()
+    @JsonProperty
     private String expression = null;
-
+    
     /**
      * Determines is the results queried via this specification should be
      * returned or not. This is used when a metric calculation is leveraged in
@@ -114,7 +114,7 @@ public class MetricSpecification {
     public void setExpression(String expression) {
         this.expression = expression;
     }
-
+    
     /**
      * @return the emit
      */

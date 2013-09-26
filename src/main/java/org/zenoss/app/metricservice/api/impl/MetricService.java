@@ -57,7 +57,7 @@ import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.MetricServiceAPI;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
-import org.zenoss.app.metricsevice.buckets.Buckets;
+import org.zenoss.app.metricservice.buckets.Buckets;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -345,8 +345,9 @@ public class MetricService implements MetricServiceAPI {
             } catch (WebApplicationException wae) {
                 throw wae;
             } catch (Exception e) {
-                log.error("Failed to connect to metric data source: {} : {}", e
-                        .getClass().getName(), e.getMessage());
+                log.error(String.format(
+                        "Failed to connect to metric data source: %s : %s", e
+                                .getClass().getName(), e.getMessage()), e);
                 throw new WebApplicationException(
                         Utils.getErrorResponse(
                                 id,
@@ -386,9 +387,10 @@ public class MetricService implements MetricServiceAPI {
                 }
             } catch (Exception e) {
                 log.error(
-                        "Server error while processing metric source {} : {}:{}",
-                        api.getSourceId(), e.getClass().getName(),
-                        e.getMessage());
+                        String.format(
+                                "Server error while processing metric source %s : %s:%s",
+                                api.getSourceId(), e.getClass().getName(),
+                                e.getMessage()), e);
                 throw new WebApplicationException(Response.status(500).build());
             } finally {
                 if (reader != null) {
