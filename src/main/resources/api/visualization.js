@@ -448,7 +448,7 @@
              *            to specify the entire chart definition.
              */
             Chart : function(name, config) {
-                var self = this, dp, i;
+                var self = this, dp, i, info;
 
                 this.name = name;
                 this.config = config;
@@ -460,15 +460,8 @@
                 }
 
                 // Build up a map of metric name to legend label.
-                this.legend = {};
-                this.colors = {};
+                this.__buildPlotInfo();
 
-                for (i in this.config.datapoints) {
-                    dp = this.config.datapoints[i];
-                    this.legend[dp.name || dp.metric] = dp.legend || dp.name
-                            || dp.metric;
-                    this.colors[dp.name || dp.metric] = dp.color;
-                }
                 this.overlays = config.overlays || [];
                 // set the format or a default
                 this.format = config.format || DEFAULT_NUMBER_FORMAT;
@@ -743,7 +736,7 @@
     'P', // 10^15 Peta
     'E', // 10^18 Exa
     'Z', // 10^21 Zetta
-    'Y'  // 10^24 Yotta
+    'Y' // 10^24 Yotta
     ];
 
     /**
@@ -864,6 +857,28 @@
             }
         }
     };
+
+    /**
+     * Iterates over the list of data plots and sets up display information
+     * about each plot, including its legend label, color, and if it is filled
+     * or not.
+     * 
+     * @access private
+     */
+    zenoss.visualization.Chart.prototype.__buildPlotInfo = function() {
+        var i, info, dp;
+
+        this.plotInfo = {};
+        for (i in this.config.datapoints) {
+            dp = this.config.datapoints[i];
+            info = {
+                'legend' : dp.legend || dp.name || dp.metric,
+                'color' : dp.color,
+                'fill' : dp.fill
+            };
+            this.plotInfo[dp.name || dp.metric] = info;
+        }
+    }
 
     /**
      * Checks to see if the passed in plot is actually an overlay.
@@ -1182,17 +1197,7 @@
         /*
          * Rebuild the legend and color tables
          */
-        this.legend = {};
-        this.colors = {};
-
-        for (i in this.config.datapoints) {
-            if (this.config.datapoints.hasOwnProperty(i)) {
-                dp = this.config.datapoints[i];
-                this.legend[dp.name || dp.metric] = dp.legend || dp.name
-                        || dp.metric;
-                this.colors[dp.name || dp.metric] = dp.color;
-            }
-        }
+        this.__buildPlotInfo();
 
         this.request = this.__buildDataRequest(this.config);
         $
@@ -1385,7 +1390,7 @@
      */
     zenoss.visualization.Chart.prototype.__processResultAsSeries = function(
             request, data) {
-        var self = this, plots = [], max = 0, i, result, dpi, dp;
+        var self = this, plots = [], max = 0, i, result, dpi, dp, info, key, plot;
 
         for (i in data.results) {
             result = data.results[i];
@@ -1396,7 +1401,8 @@
              * use any mapping from metric name to legend value that was part of
              * the original request.
              */
-            var key = self.legend[result.metric];
+            info = self.plotInfo[result.metric];
+            key = info.legend;
             if (result.tags !== undefined) {
                 key += '{';
                 var prefix = '';
@@ -1409,9 +1415,10 @@
                 }
                 key += '};';
             }
-            var plot = {
+            plot = {
                 'key' : key,
-                'color' : self.colors[result.metric],
+                'color' : info.color,
+                'fill' : info.fill,
                 'values' : []
             };
             for (dpi in result.datapoints) {
@@ -1444,7 +1451,7 @@
     zenoss.visualization.Chart.prototype.__processResultAsDefault = function(
             request, data) {
 
-        var self = this, plotMap = [], i, result, max = 0;
+        var self = this, plotMap = [], i, result, max = 0, info, plot;
 
         /*
          * Create a plot for each metric name, this is essentially grouping the
@@ -1456,11 +1463,13 @@
          */
         for (i in data.results) {
             result = data.results[i];
-            var plot = plotMap[result.metric];
+            plot = plotMap[result.metric];
             if (plot === undefined) {
+                info = self.plotInfo[result.metric];
                 plot = {
-                    'key' : self.legend[result.metric],
-                    'color' : self.colors[result.metric],
+                    'key' : info.legend,
+                    'color' : info.color,
+                    'fill' : info.fill,
                     'values' : []
                 };
                 plotMap[result.metric] = plot;
