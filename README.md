@@ -22,15 +22,41 @@ From this initial starting point the user can expand to override the default val
 from a stored chart or even create a complete chart from within the HTML page.
 
         zenoss.visualization.chart.create("chart1", {
-            "type" : "focus",
+            "type" : "line",
             "series" : true,
             "type" : "line",
+            "returnset" : "exact",
+            "downsample" : "1m-avg",
+            "grouping" : "5m",
+            "autoscale" : {
+                "ceiling" : 5,
+                "factor" : 1024
+            },
+            "tags" {
+                "tagk1" : [ "tagv1", "tagv2" ], 
+                "tagk2" : [ "tagv1", "tagv2" ]
+            },            
             "range" : {
                 "start" : "1h-ago",
                 "end" : "now"
             },
+            "format" : "%5.2f",
             "datapoints" : [ {
+                "name" : "myload1",
+                "legend" : "Legend Label for Load 1",
+                "color" : "red",
+                "fill" : true,
                 "metric" : "laLoadInt1",
+                "emit" : true,
+                "expression" : "rpn:2,*",
+                "miny" : 10,
+                "maxy" : 10000,
+                "rate" : true,              
+                "rateOptions" : {
+                    "counter" : true,
+                    "counterMax" : 20000,
+                    "resetThreshold" : 2000
+                }
             }, {
                 "metric" : "laLoadInt5",
                 "aggregator" : "sum",
@@ -92,17 +118,28 @@ Resources
   - `POST /query/performance` - return the performance metrics that match the search criteria. The results are the same as for the get request below, the difference is that instead of specifying the criteria as query parameters the criteria is specified as an JSON object in the POST data. The JSON structure that is supported on this POST call follows the following format:
 
         {
-            "start"   : "<datetime>",
-            "end"     : "<datetime>",
-            "exact"   : true or false,
-            "series"  : true or false,
+            "start"      : "<datetime>",
+            "end"        : "<datetime>",
+            "returnset"  : exact | last | <undefined>
+            "series"     : true or false,
+            "downsample" : request default for downsample over all metrics,
+            "tags"       : request default for tags over all metrics
+            "grouping"   : <integer> specifies the bucket size that values are grouped
+                           into to align data from multiple metrics that are created at essentially random times 
             "metrics" : [
                 {
-                    "metric" : "<metric name>",
-                    "aggregator" : "<aggregator>",
-                    "downsample" : "<downsample>",
-                    "rate"       : true or false,
-                    "tags"       : {
+                    "metric"      : "<metric name>",
+                    "aggregator"  : "<aggregator>",
+                    "downsample"  : "<downsample>",
+                    "rate"        : true or false,
+                    "rateOptions" : { // optional
+                        "counter"        : true or false,
+                        "counterMax"     : roll over value for the counter,
+                        "resetThreshold" : delta between consecutive values which should be considered at counter reset
+                    },
+                    "expression"  : RPN expression to perform on the raw value to get the returned value
+                    "emit"        : return this metric to the client? true or false
+                    "tags"        : {
                         "tag-name" : "tag-value", ...
                     } 
                 }, ...
