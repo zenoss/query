@@ -235,7 +235,8 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
      */
     public BufferedReader getReader(MetricServiceAppConfiguration config,
             String id, String startTime, String endTime, ReturnSet returnset,
-            Boolean series, String downsample, Map<String, List<String>> globalTags,
+            Boolean series, String downsample,
+            Map<String, List<String>> globalTags,
             List<MetricSpecification> queries) throws IOException {
         StringBuilder buf = new StringBuilder(config.getMetricServiceConfig()
                 .getOpenTsdbUrl());
@@ -247,13 +248,10 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             buf.append("&end=").append(URLEncoder.encode(endTime, "UTF-8"));
         }
         for (MetricSpecification query : queries) {
-            buf.append("&m=")
-                    .append(URLEncoder.encode(
-                            query.toString(
-                                    downsample,
-                                    globalTags,
-                                    this.config.getMetricServiceConfig().getSendRateOptions()),
-                            "UTF-8"));
+            buf.append("&m=").append(
+                    URLEncoder.encode(query.toString(downsample, globalTags,
+                            this.config.getMetricServiceConfig()
+                                    .getSendRateOptions()), "UTF-8"));
         }
         buf.append("&ascii");
 
@@ -273,6 +271,16 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             // any response information that was send back.
 
             throw generateException(connection);
+        }
+
+        /*
+         * Check to make sure that we have the right content returned to us, in
+         * that, if the content type is not 'text/plain' then something is
+         * wrong.
+         */
+        if (!"text/plain".equals(connection.getContentType())) {
+            throw new WebApplicationException(Utils.getErrorResponse(id, 500,
+                    "Unknown severe request error", "unknown"));
         }
 
         return new BufferedReader(new InputStreamReader(
