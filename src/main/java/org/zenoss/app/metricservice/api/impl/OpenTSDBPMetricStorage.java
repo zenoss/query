@@ -165,13 +165,15 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
         // Date not found, grab the default from the
         // configuration
+        TimeZone tz = TimeZone.getTimeZone(config.getMetricServiceConfig()
+                .getDefaultTsdTimeZone());
         if (log.isDebugEnabled()) {
             log.debug(
-                    "Returning default time zone information from configuration: {}",
-                    config.getMetricServiceConfig().getDefaultTsdTimeZone());
+                    "Returning default time zone information from configuration: {}, recognized as {}",
+                    config.getMetricServiceConfig().getDefaultTsdTimeZone(),
+                    tz.getDisplayName());
         }
-        return TimeZone.getTimeZone(config.getMetricServiceConfig()
-                .getDefaultTsdTimeZone());
+        return tz;
     }
 
     private WebApplicationException generateException(

@@ -91,7 +91,7 @@ public class MetricKeyCache {
         List<MetricKey> list = map.get(metric);
         if (list != null) {
             for (MetricKey key : list) {
-                if (tags == key.getTags() || key.getTags().match(tags)) {
+                if (tags == key.getTags() || key.getTags() == null || key.getTags().match(tags)) {
                     return key;
                 }
             }
