@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<title>Sample Zenoss Charts - Non-Optimized Data Queries</title>
+<script type="text/javascript"
+  src="/static/performance/query/visualization.js"></script>
+<!--
+   This can be useful to have around if you just want to debug some of the
+   div layouts without having to deal with the graph information
+  
+<script type="text/javascript"
+  	src="http://localhost:8888/static/performance/jquery.min.js"></script>
+<script type="text/javascript"
+  	src="http://localhost:8888/static/performance/d3.v3.js"></script>
+<script type="text/javascript"
+  	src="http://localhost:8888/static/performance/jstz-1.0.4.min.js"></script>
+<script type="text/javascript"
+  	src="http://localhost:8888/static/performance/crossfilter.min.js"></script>
+<script type="text/javascript"
+  	src="http://localhost:8888/static/performance/charts/area.js"></script>
+<script type="text/javascript"
+    src="http://localhost:8888/static/performance/nv.d3.js"></script>
+<script type="text/javascript"
+    src="http://localhost:8888/static/performance/query/charts/lineChart.js"></script>
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+
+ -->
+<style type="text/css">
+.left {
+  float: left;
+  clear: none;
+}
+
+.right {
+  float: right;
+  clear: none;
+}
+
+.centered {
+  clear: both;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.default {
+  height: 300px;
+  width: 400px;
+}
+
+.large {
+  height: 400px;
+  width: 500px;
+}
+
+.huge {
+  height: 650px;
+  width: 1000px;
+}
+
+.medium {
+  height: 500px;
+  width: 700px;
+}
+
+.tinted {
+  background-color: #f0f0f0;
+}
+
+.bordered {
+  border-style: solid;
+  border-width: 2px;
+  border-color: green;
+}
+
+.chart {
+  height: -webkit-calc(100% -   72px);
+  height: calc(100% -   72px);
+  width: inherit;
+}
+
+.title {
+  font-size: 18pt;
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.label {
+  font-size: 14pt;
+  font-style: italic;
+  text-align: center;
+  margin-bottom: 50px;
+  width: auto;
+  margin-right: auto;
+  margin-left: auto;
+  background-color: #f5f5f5;
+}
+</style>
+</head>
+<body>
+  <div class="tinted centered title">
+    <span>Sample Zenoss Charts - Non-Optimized Data Queries</span>
+  </div>
+  <!-- -->
+  <div class="huge centered">
+    <div id="chart0" class="chart"></div>
+    <div class="label centered">
+      <span>RPN Defined Metrics</span>
+    </div>
+  </div>
+  <!-- -->
+  <!-- -->
+  <div class="huge centered">
+    <div id="chart1" class="chart"></div>
+    <div class="label centered">
+      <span>NVD3 Line Chart with Domain Selector</span>
+    </div>
+  </div>
+  <!-- -->
+  <!-- -->
+  <div class="default left">
+    <div id="chart2" class="chart tinted bordered"></div>
+    <div class="label centered">
+      <span>NVDS Pie Chart</span>
+    </div>
+  </div>
+  <!-- -->
+  <!-- -->
+  <div class="default right">
+    <div id="chart3" class="chart"></div>
+    <div class="label centered">
+      <span>DCJ2 Area Chart</span>
+    </div>
+  </div>
+  <!-- -->
+  <!-- -->
+  <div class="large centered">
+    <div id="chart4" class="chart bordered"></div>
+    <div class="label centered">
+      <span>NVD3 Line Chart</span>
+    </div>
+  </div>
+  <!-- -->
+  <!-- -->
+  <div class="large centered">
+    <div id="chart5" class="chart bordered"></div>
+    <div class="label centered">
+      <span>NVD3 Line Chart - Reduced Time Range</span>
+    </div>
+  </div>
+  <!-- -->
+  <!-- -->
+  <div class="huge centered">
+    <div id="chart6" class="chart"></div>
+    <div class="label centered">
+      <span>NVD3 Bar Chart</span>
+    </div>
+  </div>
+  <!-- -->
+  <!-- -->
+  <div class="huge centered">
+    <div id="chart7" class="chart"></div>
+    <div class="label centered">
+      <span>NVD3 Stacked Area Chart</span>
+    </div>
+  </div>
+  <!-- -->
+  <!-- -->
+  <div class="huge centered">
+    <div id="chart8" class="chart"></div>
+    <div class="label centered">
+      <span>NVD3 Discrete Bar Chart</span>
+    </div>
+  </div>
+  <!-- -->
+  <!-- -->
+  <div class="large left">
+    <div id="chart9" class="chart bordered tinted"></div>
+    <div class="label centered">
+      <span>DCJS Stacked Area Chart</span>
+    </div>
+  </div>
+  <!-- -->
+  <!-- -->
+  <div class="large right">
+    <div id="chart10" class="chart bordered tinted"></div>
+    <div class="label centered">
+      <span>Default Stacked Area Chart</span>
+    </div>
+  </div>
+  <!-- -->
+  <!-- -->
+
+  <script type="text/javascript">
+            zenoss.visualization.url = "http://" + location.host;
+            zenoss.visualization.debug = false;
+            var t = 5000;
+
+            /**/
+            var s = parseInt(new Date().getTime() / 1000) - 10 * 60;
+            var e = parseInt(new Date().getTime() / 1000) - 4 * 60;
+            s = '15m-ago';
+            e = 'now';
+            //    s = '2013/09/01-01:00:00-PDT'    
+            //    e = '2013/09/01-13:00:00-PDT'
+
+            /**
+            zenoss.visualization.chart.create("chart0", {
+                "type" : "line",
+                "series" : false,
+                "footer" : true,
+                "returnset" : "exact",
+                "grouping" : "2s",
+                "yAxisLabel" : 'Hz',
+                "range" : {
+                    "start" : '2013/09/26-12:59:50-+0000',
+                    "end" : '2013/09/26-13:59:50-+0000'
+                },
+                "autoscale" : {
+                    "ceiling" : 5,
+                    "factor" : 1000,
+                },
+                "datapoints" : [ {
+                    "name" : "esxwin2_host-993 CPU Usage",
+                    "metric" : "cpuUsage",
+                    "legend" : "esxwin2_host-993 CPU Usage",
+                    "emit" : true
+                }, {
+                    "name" : "esxwin2_host-993 CPU Reserved Capacity",
+                    "metric" : "cpuReserved",
+                    "legend" : "esxwin2_host-993 CPU Reserved Capacity",
+                    "emit" : true
+                } ]
+            });
+            /**/
+            /**/
+            zenoss.visualization.chart.create("chart0", {
+                "type" : "line",
+                "series" : false,
+                "footer" : true,
+                "returnset" : "exact",
+                "grouping" : "2s",
+                "range" : {
+                    "start" : s,
+                    "end" : e
+                },
+                "autoscale" : {
+                    "ceiling" : 5
+                },
+                /*
+                "datapoints" : [ {
+                    "name" : "full",
+                    "metric" : "laLoadInt1",
+                    "legend" : "Full",
+                    "color" : "red",
+                    "emit" : true
+                }, {
+                    "name" : "half",
+                    "legend" : "Half",
+                    "color" : "purple",
+                    "expression" : "rpn:full,2,/",
+                    "emit" : true
+                }, {
+                    "name" : "foo",
+                    "metric" : "laLoadInt15",
+                    "legend" : "Thing 2",
+                    "color" : "yellow",
+                    "emit" : false
+                }, {
+                    "name" : "bar",
+                    "expression" : "rpn:2",
+                    "color" : "green",
+                    "emit" : true
+                } ]
+                 */
+                /**
+                "datapoints" : [ {
+                    "name" : "load1",
+                    "metric" : "laLoadInt1",
+                    "legend" : "Thing 1",
+                    "color" : "red",
+                    "emit" : true,
+                    "tags" : {
+                        "device_class" : [ "Devices/Server/Linux/MySQL" ]
+                    }
+                }, {
+                    "name" : "load2",
+                    "metric" : "laLoadInt1",
+                    "legend" : "Thing 2",
+                    "color" : "blue",
+                    "emit" : true,
+                    "tags" : {
+                        "device_class" : [ "Devices/Server/Linux" ]
+                    }
+                } ]
+                 /**/
+                /**/
+                "datapoints" : [ {
+                    "metric" : "laLoadInt1",
+                    "legend" : "Thing 1",
+                    "color" : "red",
+                    "fill" : true,
+                    "emit" : true,
+                }, {
+                    "name" : "no data",
+                    "metric" : "laLoadInt15",
+                    "legend" : "no data",
+                    "color" : "yellow",
+                    "emit" : true,
+                    "tags" : {
+                        "device_class" : [ "/Devices/Network/Wireless" ]
+                    }
+                }, {
+                    "metric" : "laLoadInt15",
+                    "legend" : "Thing 2",
+                    "color" : "yellow",
+                    "emit" : false
+                }, {
+                    "name" : "myvalue",
+                    "legend" : "Made Up",
+                    "color" : "purple",
+                    "expression" : "rpn:0,laLoadInt1,-", //"rpn:laLoadInt1, 2, /",
+                    "emit" : true
+                }, {
+                    "name" : "diff",
+                    "legend" : "difference",
+                    "color" : "black",
+                    "expression" : "rpn:time,360,%,deg2rad,cos,10,*",
+                    "fill" : true,
+                    "emit" : true
+                }, {
+                    "name" : "sin",
+                    "legend" : "sin",
+                    "color" : "brown",
+                    "expression" : "rpn:time,360,%,deg2rad,sin,10,*",
+                    "emit" : true
+                }, {
+                    "name" : "myvalue2",
+                    "legend" : "Straight Line",
+                    "color" : "green",
+                    "expression" : "rpn:0",
+                    "emit" : true
+                }, {
+                    "name" : "power",
+                    "legend" : "Power",
+                    "color" : "blue",
+                    "expression" : "rpn:laLoadInt1,laLoadInt1,sqrt",
+                    "emit" : true
+                }, {
+                    "name" : "newpower",
+                    "legend" : "Neg Power",
+                    "color" : "orange",
+                    "expression" : "rpn:0,power,-",
+                    "emit" : true
+                } ]
+            });
+            /**/
+
+            /**/
+            zenoss.visualization.chart.create("chart1", {
+                "type" : "line",
+                "series" : true,
+                "footer" : true,
+                "range" : {
+                    "start" : "1h-ago",
+                    "end" : "now"
+                },
+                "autoscale" : {
+                    "ceiling" : 5
+                },
+                "datapoints" : [ {
+                    "metric" : "laLoadInt1",
+                    "legend" : "Thing 1",
+                    "color" : "red"
+                }, {
+                    "metric" : "laLoadInt5",
+                    "legend" : "Thing 5"
+                } ]
+            });
+            setTimeout("update0()", t);
+            /**/
+
+            function update0() {
+                console.log("UPDATE0 - removed any tags, should have graph");
+                zenoss.visualization.chart.update("chart1", {
+                    "type" : "line",
+                    "tags" : "-"
+                });
+                setTimeout("update0_5()", t);
+
+            }
+
+            function update0_5() {
+                console.log("UPDATE0_5 - should have 3rd plot");
+                zenoss.visualization.chart.update("chart1", {
+                    "datapoints" : [ {
+                        "metric" : "laLoadInt15",
+                        "legend" : "Thing 15"
+                    } ]
+                });
+                setTimeout("update1()", t);
+
+            }
+
+            function update1() {
+                console.log("UPDATE1 - 30m range, no data");
+                zenoss.visualization.chart.update("chart1", {
+                    "type" : "line",
+                    "tags" : {
+                        "device_name" : [ "/Devices/Network/Wireless" ]
+                    },
+                    "range" : {
+                        "start" : "30m-ago",
+                        "end" : "now"
+                    }
+                });
+                setTimeout("update2()", t);
+
+            }
+
+            function update2() {
+                console.log("UPDATE2 - 30m range with 3 plots");
+                zenoss.visualization.chart.update("chart1", {
+                    "range" : {
+                        "start" : "30m-ago",
+                        "end" : "now"
+                    },
+                    "tags" : "-"
+                });
+                setTimeout("update3()", t);
+            }
+            function update3() {
+                console.log("UPDATE3 - error");
+                zenoss.visualization.chart.update("chart1", {
+                    "range" : {
+                        "start" : "30m-ago",
+                        "end" : "now"
+                    },
+                    "tags" : {
+                        "foo" : [ "bar" ]
+                    }
+                });
+                setTimeout("update4()", t);
+            }
+            function update4() {
+                console.log("UPDATE4 - 10m range, 3 plots");
+                zenoss.visualization.chart.update("chart1", {
+                    "range" : {
+                        "start" : "10m-ago",
+                        "end" : "now"
+                    },
+                    "tags" : "-"
+                });
+                setTimeout("update5()", t);
+            }
+            function update5() {
+                console.log("UPDATE5 - 10m range, no data");
+                zenoss.visualization.chart.update("chart1", {
+                    "type" : "line",
+                    "range" : {
+                        "start" : "10m-ago",
+                        "end" : "15s-ago"
+                    },
+                    "tags" : {
+                        "device_name" : [ "/Devices/Network/Wireless" ]
+                    },
+                });
+                setTimeout("update6()", t);
+            }
+            function update6() {
+                console.log("UPDATE6 - 10m range, 3 plots");
+                zenoss.visualization.chart.update("chart1", {
+                    "type" : "line",
+                    "tags" : "-",
+                    "range" : {
+                        "start" : "10m-ago",
+                        "end" : "15s-ago"
+                    }
+                });
+                setTimeout("updateN()", t);
+            }
+            function updateN() {
+                console.log("UPDATEN - 10m range, 3 plots");
+                zenoss.visualization.chart.update("chart1", {
+                    "type" : "line",
+                    "range" : {
+                        "start" : "10m-ago",
+                        "end" : "15s-ago"
+                    },
+                    "tags" : "-"
+                });
+                setTimeout("updateN()", t * 3);
+            }
+            /**/
+            /**/
+            zenoss.visualization.chart.create("chart2", {
+                "type" : "pie",
+                "series" : true,
+                "range" : {
+                    "start" : "1h-ago",
+                    "end" : "now"
+                },
+                "datapoints" : [ {
+                    "metric" : "laLoadInt1",
+                    "rate" : false,
+                    "tags" : {
+                        "device_class" : [ "*" ]
+                    },
+                    "legend" : "some text"
+                }, {
+                    "metric" : "laLoadInt5",
+                    "rate" : false,
+                }, , {
+                    "metric" : "laLoadInt15",
+                    "rate" : false,
+                } ]
+            });
+            /**/
+            /**/
+            zenoss.visualization.chart.create("chart3", {
+                "series" : false,
+                "type" : "dc.area",
+                "range" : {
+                    "start" : "1h-ago",
+                    "end" : "now"
+                },
+                "datapoints" : [ {
+                    "metric" : "laLoadInt5",
+                    "legend" : "some strange label",
+                    "rate" : false,
+                }, {
+                    "metric" : "laLoadInt1",
+                    "legend" : "if you say so",
+                    "rate" : false,
+                }, {
+                    "metric" : "laLoadInt15",
+                    "rate" : false,
+                } ]
+            });
+            /**/
+            /**/
+            zenoss.visualization.chart.create("chart4", {
+                "type" : "area",
+                "datapoints" : [ {
+                    "metric" : "laLoadInt1",
+                    "downsample" : "30m-avg"
+                }, {
+                    "metric" : "laLoadInt5",
+                    "downsample" : "30m-avg"
+                } ]
+            });
+
+            zenoss.visualization.chart.create("chart5", {
+                "type" : "area",
+                "footer" : false,
+                "datapoints" : [ {
+                    "metric" : "laLoadInt1",
+                    "downsample" : "30m-avg"
+                }, {
+                    "metric" : "laLoadInt5",
+                    "downsample" : "30m-avg"
+                } ]
+            });
+
+            /**/
+            /**/
+            zenoss.visualization.chart.create("chart6", {
+                "type" : "bar",
+                "footer" : "range",
+                "datapoints" : [ {
+                    "metric" : "laLoadInt1",
+                    "downsample" : "30m-avg"
+                }, {
+                    "metric" : "laLoadInt5",
+                    "downsample" : "30m-avg"
+                } ]
+            });
+            /**/
+            /**/
+            zenoss.visualization.chart.create("chart7", {
+                "type" : "area",
+                "datapoints" : [ {
+                    "metric" : "laLoadInt1",
+                    "downsample" : "30m-avg"
+                }, {
+                    "metric" : "laLoadInt5",
+                    "downsample" : "30m-avg"
+                } ]
+            });
+            /**/
+            /**/
+            zenoss.visualization.chart.create("chart8", {
+                "type" : "discretebar",
+                "series" : true,
+                "datapoints" : [ {
+                    "metric" : "laLoadInt1",
+                    "legend" : "mock label",
+                    "downsample" : "30m-avg",
+                    "tags" : {
+                        "device_class" : [ "*" ]
+                    }
+                }, {
+                    "metric" : "laLoadInt5",
+                    "legend" : "whatever",
+                    "downsample" : "30m-avg",
+                    "tags" : {
+                        "device_class" : [ "*" ]
+                    }
+                } ]
+            });
+            /**/
+            /**/
+            zenoss.visualization.chart.create("chart9", {
+                "type" : "dc.stacked",
+                "datapoints" : [ {
+                    "metric" : "laLoadInt1"
+                }, {
+                    "metric" : "laLoadInt5"
+                }, {
+                    "metric" : "laLoadInt15"
+                } ]
+            });
+            /**/
+            /**/
+            zenoss.visualization.chart.create("chart10", {
+                "type" : "area",
+                "datapoints" : [ {
+                    "metric" : "laLoadInt1"
+                }, {
+                    "metric" : "laLoadInt5"
+                }, {
+                    "metric" : "laLoadInt15"
+                } ]
+            });
+            /**/
+        </script>
+</body>
+
+</html>
