@@ -246,9 +246,10 @@
             __cull : function(chart) {
 
                 var i, keys = [];
-                // If there is only one plot in the chart we are done, there is
-                // nothing
-                // to do.
+                /*
+                 * If there is only one plot in the chart we are done, there is
+                 * nothing to be done.
+                 */
                 if (chart.plots.length < 2) {
                     return;
                 }
@@ -378,15 +379,15 @@
                 $('#' + name + ' .message span').width(
                         $('#' + name + ' .message').width()
                                 - parseInt($('#' + name + ' .message span')
-                                        .css('margin-left'))
+                                        .css('margin-left'), 10)
                                 - parseInt($('#' + name + ' .message span')
-                                        .css('margin-right')));
+                                        .css('margin-right'), 10));
                 $('#' + name + ' .message span').css('top', '50%');
                 $('#' + name + ' .message span')
                         .css(
                                 'margin-top',
                                 -parseInt($('#' + name + ' .message span')
-                                        .height()) / 2);
+                                        .height(), 10) / 2);
             },
 
             /**
@@ -448,8 +449,6 @@
              *            to specify the entire chart definition.
              */
             Chart : function(name, config) {
-                var self = this, dp, i, info;
-
                 this.name = name;
                 this.config = config;
                 this.yAxisLabel = config.yAxisLabel;
@@ -486,27 +485,32 @@
                 $(this.div).append($(this.footer));
 
                 this.svg = d3.select(this.svgwrapper).append('svg');
-                this.request = this.__buildDataRequest(this.config);
+                try {
+                    this.request = this.__buildDataRequest(this.config);
 
-                if (zenoss.visualization.debug) {
-                    zenoss.visualization
-                            .__groupCollapsed('POST Request Object');
-                    zenoss.visualization.__log(zenoss.visualization.url
-                            + zenoss.visualization.urlPerformance);
-                    zenoss.visualization.__log(this.request);
-                    zenoss.visualization.__groupEnd();
-                }
+                    if (zenoss.visualization.debug) {
+                        zenoss.visualization
+                                .__groupCollapsed('POST Request Object');
+                        zenoss.visualization.__log(zenoss.visualization.url
+                                + zenoss.visualization.urlPerformance);
+                        zenoss.visualization.__log(this.request);
+                        zenoss.visualization.__groupEnd();
+                    }
 
-                /*
-                 * Sanity Check. If the request contained no metrics to query
-                 * then log this information as a warning, as it really does not
-                 * make sense.
-                 */
-                if (this.request.metrics === undefined) {
-                    zenoss.visualization
-                            .__warn('Chart configuration contains no metric sepcifications. No data will be displayed.');
+                    /*
+                     * Sanity Check. If the request contained no metrics to
+                     * query then log this information as a warning, as it
+                     * really does not make sense.
+                     */
+                    if (this.request.metrics === undefined) {
+                        zenoss.visualization
+                                .__warn('Chart configuration contains no metric sepcifications. No data will be displayed.');
+                    }
+                    this.update();
+                } catch (x) {
+                    zenoss.visualization.__error(x);
+                    zenoss.visualization.__showError(this.name, x);
                 }
-                this.update();
             },
 
             /**
@@ -589,11 +593,11 @@
                                         _callback(data);
                                     },
                                     'error' : function(response) {
+                                        var err, detail;
                                         zenoss.visualization
                                                 .__error(response.responseText);
-                                        var err = JSON
-                                                .parse(response.responseText);
-                                        var detail = 'Error while attempting to fetch chart resource with the name "'
+                                        err = JSON.parse(response.responseText);
+                                        detail = 'Error while attempting to fetch chart resource with the name "'
                                                 + name
                                                 + '", via the URL "'
                                                 + zenoss.visualization.url
@@ -610,7 +614,7 @@
                                 });
                     }
 
-                    var config, template;
+                    var config, template, result;
                     if (typeof arg1 === 'string') {
                         // A chart template name was specified, so we need to
                         // first
@@ -623,14 +627,14 @@
                                         loadChart(
                                                 arg1,
                                                 function(template) {
-                                                    var result = new zenoss.visualization.Chart(
+                                                    var merged = new zenoss.visualization.Chart(
                                                             name,
                                                             zenoss.visualization
                                                                     .__merge(
                                                                             template,
                                                                             config));
-                                                    zenoss.visualization.__charts[name] = result;
-                                                    return result;
+                                                    zenoss.visualization.__charts[name] = merged;
+                                                    return merged;
                                                 }, function(err, detail) {
                                                     zenoss.visualization
                                                             .__showError(name,
@@ -640,11 +644,11 @@
                             return;
                         }
                         loadChart(arg1, function(template) {
-                            var result = new zenoss.visualization.Chart(name,
+                            var merged = new zenoss.visualization.Chart(name,
                                     zenoss.visualization.__merge(template,
                                             config));
-                            zenoss.visualization.__charts[name] = result;
-                            return result;
+                            zenoss.visualization.__charts[name] = merged;
+                            return merged;
                         }, function(err, detail) {
                             zenoss.visualization.__showError(name, detail);
                         });
@@ -656,18 +660,17 @@
 
                     if (window.jQuery === undefined) {
                         zenoss.visualization.__bootstrap(function() {
-                            var result = new zenoss.visualization.Chart(name,
+                            var merged = new zenoss.visualization.Chart(name,
                                     zenoss.visualization.__merge(template,
                                             config));
-                            zenoss.visualization.__charts[name] = result;
-                            return result;
+                            zenoss.visualization.__charts[name] = merged;
+                            return merged;
                         });
                         return;
                     }
-                    var result = new zenoss.visualization.Chart(name,
+                    result = new zenoss.visualization.Chart(name,
                             zenoss.visualization.__merge(template, config));
                     zenoss.visualization.__charts[name] = result;
-                    return result;
                 }
             },
 
@@ -750,8 +753,9 @@
      * @returns character the symbol associated widh the given scale factor
      */
     zenoss.visualization.Chart.prototype.__scaleSymbol = function(factor) {
-        var ll = zenoss.visualization.__scaleSymbols.length;
-        var idx = factor + ((ll - 1) / 2);
+        var ll, idx;
+        ll = zenoss.visualization.__scaleSymbols.length;
+        idx = factor + ((ll - 1) / 2);
         if (idx < 0 || idx >= ll) {
             return 'UKN';
         }
@@ -771,13 +775,13 @@
         var factor = 0, ceiling, upper, lower, unit;
         if (this.config.autoscale) {
             ceiling = this.config.autoscale.ceiling || 5;
-            unit = parseInt(this.config.autoscale.factor || 1000);
+            unit = parseInt(this.config.autoscale.factor || 1000, 10);
 
             upper = Math.pow(10, ceiling);
             lower = upper / 10;
 
             // Make sure that max value is greater than the lower boundary
-            while (max != 0 && max < lower) {
+            while (max !== 0 && max < lower) {
                 max *= unit;
                 factor -= 1;
             }
@@ -787,13 +791,13 @@
              * is favored that number be less than the upper boundary than
              * higher than the lower.
              */
-            while (max != 0 && max > upper) {
+            while (max !== 0 && max > upper) {
                 max /= unit;
                 factor += 1;
             }
         }
         return factor;
-    }
+    };
 
     /**
      * Set the auto scale information on the chart
@@ -824,8 +828,7 @@
      *            The format string for example "%2f";
      */
     zenoss.visualization.Chart.prototype.formatValue = function(value) {
-        var format = this.format;
-        var scaled;
+        var format = this.format, scaled, rval;
 
         /*
          * If we were given a undefined value, Infinity, of NaN (all things that
@@ -836,7 +839,7 @@
         }
         try {
             scaled = value / this.scale.term;
-            var rval = sprintf(format, scaled);
+            rval = sprintf(format, scaled);
             if ($.isNumeric(rval)) {
                 return rval + this.scale.symbol;
             }
@@ -852,7 +855,7 @@
             scaled = value / this.scale.term;
             try {
                 return sprintf(this.format, scaled) + this.scale.symbol;
-            } catch (x) {
+            } catch (x1) {
                 return scaled + this.scale.symbol;
             }
         }
@@ -878,7 +881,7 @@
             };
             this.plotInfo[dp.name || dp.metric] = info;
         }
-    }
+    };
 
     /**
      * Checks to see if the passed in plot is actually an overlay.
@@ -907,10 +910,12 @@
      * @access private
      */
     zenoss.visualization.Chart.prototype.__resize = function() {
-        var fheight = this.__hasFooter() ? parseInt($(this.table).outerHeight())
+        var fheight, height, span;
+
+        fheight = this.__hasFooter() ? parseInt($(this.table).outerHeight(), 10)
                 : 0;
-        var height = parseInt($(this.div).height()) - fheight;
-        var span = $(this.message).find('span');
+        height = parseInt($(this.div).height(), 10) - fheight;
+        span = $(this.message).find('span');
 
         $(this.svgwrapper).outerHeight(height);
         if (this.impl) {
@@ -918,8 +923,8 @@
         }
 
         $(this.message).outerHeight(height);
-        span.css('margin-top', -parseInt(span.height()) / 2);
-    }
+        span.css('margin-top', -parseInt(span.height(), 10) / 2);
+    };
 
     /**
      * Constructs and appends a footer row onto the footer table
@@ -983,7 +988,10 @@
      *         chart, else false.
      */
     zenoss.visualization.Chart.prototype.__updateFooter = function(data) {
-        var sta, eta, plot, dp, vals, cur, min, max, avg, cols, init, label, i, v, ll, k, rows, row, key, box, color, resize = false;
+        var sta, eta, plot, dp, vals, cur, min, max, avg, cols, init, label, ll, i, v, vIdx, k, rows, row, box, color, resize = false;
+        if (!this.table) {
+            return false;
+        }
         rows = $(this.table).find('tr');
         if (data) {
             sta = zenoss.visualization.dateFormatter(new Date(
@@ -1057,7 +1065,8 @@
                         max = 2;
                         avg = 3;
                         init = false;
-                        plot.values.forEach(function(v) {
+                        for (vIdx in plot.values) {
+                            v = plot.values[vIdx];
                             if (!init) {
                                 vals[min] = v.y;
                                 vals[max] = v.y;
@@ -1068,7 +1077,7 @@
                             }
                             vals[avg] += v.y;
                             vals[cur] = v.y;
-                        });
+                        }
                         vals[avg] = vals[avg] / plot.values.length;
                         for (v = 0; v < vals.length; v += 1) {
                             $(cols[2 + v]).html(this.formatValue(vals[v]));
@@ -1125,15 +1134,16 @@
      *            the data to be charted
      */
     zenoss.visualization.Chart.prototype.__buildFooter = function(config, data) {
+        var tr, td, dates, th;
         this.table = document.createElement('table');
         $(this.table).addClass('zenfooter_content');
         $(this.table).addClass('zenfooter_text');
         $(this.footer).append($(this.table));
 
         // One row for the date range of the chart
-        var tr = document.createElement('tr');
-        var td = document.createElement('td');
-        var dates = document.createElement('span');
+        tr = document.createElement('tr');
+        td = document.createElement('td');
+        dates = document.createElement('span');
         $(td).addClass('zenfooter_dates');
         $(td).attr('colspan', 6);
         $(dates).addClass('zenfooter_dates_text');
@@ -1145,7 +1155,6 @@
 
             // One row for the stats table header
             tr = document.createElement('tr');
-            var th;
             [ '', 'Metric', 'Ending', 'Minimum', 'Maximum', 'Average' ]
                     .forEach(function(s) {
                         th = document.createElement('th');
@@ -1172,7 +1181,7 @@
      *            changeset updates to the existing graph's configuration.
      */
     zenoss.visualization.Chart.prototype.update = function(changeset) {
-        var self = this, kill = [], property, i, dp;
+        var self = this, kill = [], property;
 
         // This function is really meant to only handle given types of changes,
         // i.e. we don't expect that you can change the type of the graph but
@@ -1199,85 +1208,101 @@
          */
         this.__buildPlotInfo();
 
-        this.request = this.__buildDataRequest(this.config);
-        $
-                .ajax({
-                    'url' : zenoss.visualization.url
-                            + zenoss.visualization.urlPerformance,
-                    'type' : 'POST',
-                    'data' : JSON.stringify(this.request),
-                    'dataType' : 'json',
-                    'contentType' : 'application/json',
-                    'success' : function(data) {
-                        var results = self.__processResult(self.request, data);
-                        self.plots = results[0];
-                        self.__configAutoScale(results[1]);
+        try {
+            this.request = this.__buildDataRequest(this.config);
+            $
+                    .ajax({
+                        'url' : zenoss.visualization.url
+                                + zenoss.visualization.urlPerformance,
+                        'type' : 'POST',
+                        'data' : JSON.stringify(this.request),
+                        'dataType' : 'json',
+                        'contentType' : 'application/json',
+                        'success' : function(data) {
+                            var results = self.__processResult(self.request,
+                                    data);
+                            self.plots = results[0];
+                            self.__configAutoScale(results[1]);
 
-                        /*
-                         * If the chart has not been created yet, then create
-                         * it, else just update the data.
-                         */
-                        if (!self.closure) {
-                            if (self.config.type === undefined) {
-                                self.config.type = 'line';
+                            /*
+                             * If the chart has not been created yet, then
+                             * create it, else just update the data.
+                             */
+                            if (!self.closure) {
+                                if (self.config.type === undefined) {
+                                    self.config.type = 'line';
+                                }
+                                self.__render(data);
+                            } else {
+                                self.__updateData(data);
                             }
-                            self.__render(data);
-                        } else {
-                            self.__updateData(data);
-                        }
 
-                        // Update the footer
-                        if (self.__updateFooter(data)) {
-                            self.__resize();
-                        }
-                    },
-                    'error' : function(res) {
-                        /*
-                         * Many, many reasons that we might have gotten here,
-                         * with most of them we are not able to detect why. If
-                         * we have a readystate of 4 and an response code in the
-                         * 200s that likely means we were unable to parse the
-                         * JSON returned from the server. If not that then who
-                         * knows ....
-                         */
-                        self.plots = undefined;
-                        if (self.__updateFooter()) {
-                            self.__resize();
-                        }
+                            // Update the footer
+                            if (self.__updateFooter(data)) {
+                                self.__resize();
+                            }
+                        },
+                        'error' : function(res) {
+                            /*
+                             * Many, many reasons that we might have gotten
+                             * here, with most of them we are not able to detect
+                             * why. If we have a readystate of 4 and an response
+                             * code in the 200s that likely means we were unable
+                             * to parse the JSON returned from the server. If
+                             * not that then who knows ....
+                             */
+                            self.plots = undefined;
+                            if (self.__updateFooter()) {
+                                self.__resize();
+                            }
 
-                        var detail;
-                        if (res.readyState === 4
-                                && Math.floor(res.status / 100) === 2) {
-                            detail = 'Severe: Unable to parse data returned from Zenoss metric service as JSON object. Please copy / paste the REQUEST and RESPONSE written to your browser\'s Java Console into an email to Zenoss Support';
-                            zenoss.visualization
-                                    .__group('Severe error, please report');
-                            zenoss.visualization.__error('REQUEST : POST '
-                                    + zenoss.visualization.urlPerformance
-                                    + '  ' + JSON.stringify(self.request));
-                            zenoss.visualization.__error('RESPONSE: '
-                                    + res.responseText);
-                            zenoss.visualization.__groupEnd();
-                            zenoss.visualization.__showError(self.name, detail);
-                        } else {
-                            try {
-                                var err = JSON.parse(res.responseText);
-                                detail = 'An unexpected failure response was received from the server. The reported message is: '
-                                        + err.errorSource
-                                        + ' : '
-                                        + err.errorMessage;
+                            var err, detail;
+                            if (res.readyState === 4
+                                    && Math.floor(res.status / 100) === 2) {
+                                detail = 'Severe: Unable to parse data returned from Zenoss metric service as JSON object. Please copy / paste the REQUEST and RESPONSE written to your browser\'s Java Console into an email to Zenoss Support';
+                                zenoss.visualization
+                                        .__group('Severe error, please report');
+                                zenoss.visualization.__error('REQUEST : POST '
+                                        + zenoss.visualization.urlPerformance
+                                        + '  ' + JSON.stringify(self.request));
+                                zenoss.visualization.__error('RESPONSE: '
+                                        + res.responseText);
+                                zenoss.visualization.__groupEnd();
+                                zenoss.visualization.__showError(self.name,
+                                        detail);
+                            } else {
+                                try {
+                                    err = JSON.parse(res.responseText);
+                                    if (!err || !err.errorSoruce
+                                            || !err.errorMessage) {
+                                        detail = 'An unexpected failure response was received from the server. The reported message is: '
+                                                + res.responseText;
+                                    } else {
+                                        detail = 'An unexpected failure response was received from the server. The reported message is: '
+                                                + err.errorSource
+                                                + ' : '
+                                                + err.errorMessage;
+                                    }
+                                } catch (e) {
+                                    detail = 'An unexpected failure response was received from the server. The reported message is: '
+                                            + res.statusText
+                                            + ' : '
+                                            + res.status;
+                                }
                                 zenoss.visualization.__error(detail);
                                 zenoss.visualization.__showError(self.name,
                                         detail);
-                            } catch (e) {
-                                detail = 'An unexpected failure response was received from the server. The reported message is: '
-                                        + res.statusText + ' : ' + res.status;
-                                zenoss.visualization.__error(detail);
-                                zenoss.visualization.__showError(self.name,
-                                        detail);
                             }
                         }
-                    }
-                });
+                    });
+        } catch (x) {
+            this.plots = undefined;
+            if (self.__updateFooter()) {
+                self.__resize();
+            }
+            zenoss.visualization.__error(x);
+            zenoss.visualization.__showError(this.name, x);
+        }
     };
 
     /**
@@ -1325,50 +1350,60 @@
 
             if (config.datapoints !== undefined) {
                 request.metrics = [];
-                config.datapoints.forEach(function(dp) {
-                    var m = {};
-                    if (dp.metric) {
-                        m.metric = dp.metric;
+                config.datapoints
+                        .forEach(function(dp) {
+                            var m = {}, key;
+                            if (dp.metric !== undefined) {
+                                m.metric = dp.metric;
 
-                        if (dp.rate !== undefined) {
-                            m.rate = dp.rate;
-                        }
-                        if (dp.aggregator !== undefined) {
-                            m.aggregator = dp.aggregator;
-                        }
-
-                        if (dp.tags !== undefined) {
-                            m.tags = {};
-                            var key;
-                            for (key in dp.tags) {
-                                if (dp.tags.hasOwnProperty(key)) {
-                                    m.tags[key] = dp.tags[key];
+                                if (dp.rate !== undefined) {
+                                    m.rate = dp.rate;
                                 }
+                                if (dp.aggregator !== undefined) {
+                                    m.aggregator = dp.aggregator;
+                                }
+
+                                if (dp.tags !== undefined) {
+                                    m.tags = {};
+                                    for (key in dp.tags) {
+                                        if (dp.tags.hasOwnProperty(key)) {
+                                            m.tags[key] = dp.tags[key];
+                                        }
+                                    }
+                                }
+
+                                if (dp.name === undefined) {
+                                    m.name = dp.metric;
+                                } else {
+                                    m.name = dp.name;
+                                }
+                            } else if (dp.name !== undefined) {
+                                m.name = dp.name;
+                            } else {
+                                /*
+                                 * This data point has neither a metric
+                                 * definition nor a name (virtual metric)
+                                 * deffined. As such this is an invalid
+                                 * specification. Because of this we will fail
+                                 * the entire request so that the caller is not
+                                 * confused as to why partial data is returned.
+                                 */
+                                throw sprintf(
+                                        "Invalid data point specification in request, '%s'. No 'metric' or 'name' attribute specified, failing entire request.",
+                                        JSON.stringify(dp, null, ' '));
                             }
-                        }
 
-                        if (!dp.name) {
-                            m.name = dp.metric;
-                        } else {
-                            m.name = dp.name;
-                        }
-                    } else if (dp.name) {
-                        m.name = dp.name;
-                    } else {
-                        // todo: error
-                    }
-
-                    if (dp.downsample !== undefined) {
-                        m.downsample = dp.downsample;
-                    }
-                    if (dp.expression !== undefined) {
-                        m.expression = dp.expression;
-                    }
-                    if (dp.emit !== undefined) {
-                        m.emit = dp.emit;
-                    }
-                    request.metrics.push(m);
-                });
+                            if (dp.downsample !== undefined) {
+                                m.downsample = dp.downsample;
+                            }
+                            if (dp.expression !== undefined) {
+                                m.expression = dp.expression;
+                            }
+                            if (dp.emit !== undefined) {
+                                m.emit = dp.emit;
+                            }
+                            request.metrics.push(m);
+                        });
 
             }
         }
@@ -1390,7 +1425,7 @@
      */
     zenoss.visualization.Chart.prototype.__processResultAsSeries = function(
             request, data) {
-        var self = this, plots = [], max = 0, i, result, dpi, dp, info, key, plot;
+        var self = this, plots = [], max = 0, i, result, dpi, dp, info, key, plot, tag, prefix;
 
         for (i in data.results) {
             result = data.results[i];
@@ -1405,8 +1440,7 @@
             key = info.legend;
             if (result.tags !== undefined) {
                 key += '{';
-                var prefix = '';
-                var tag;
+                prefix = '';
                 for (tag in result.tags) {
                     if (result.tags.hasOwnProperty(tag)) {
                         key += prefix + tag + '=' + result.tags[tag];
@@ -1451,7 +1485,7 @@
     zenoss.visualization.Chart.prototype.__processResultAsDefault = function(
             request, data) {
 
-        var self = this, plotMap = [], i, result, max = 0, info, plot;
+        var self = this, plotMap = [], i, result, max = 0, info, plot, plots, key, xcompare;
 
         /*
          * Create a plot for each metric name, this is essentially grouping the
@@ -1482,7 +1516,7 @@
             });
         }
 
-        var xcompare = function(a, b) {
+        xcompare = function(a, b) {
             if (a.x < b.x) {
                 return -1;
             }
@@ -1496,8 +1530,7 @@
          * Convert the plotMap into an array of plots for the graph library to
          * process
          */
-        var plots = [];
-        var key;
+        plots = [];
         for (key in plotMap) {
             if (plotMap.hasOwnProperty(key)) {
                 // Sort the values of the plot as we put them in the
@@ -1524,7 +1557,7 @@
      */
     zenoss.visualization.Chart.prototype.__processResult = function(request,
             data) {
-        var self = this, results, plots, i, overlay;
+        var results, plots, i, overlay, minDate, maxDate, plot, k, firstMetric;
 
         if (data.series) {
             results = this.__processResultAsSeries(request, data);
@@ -1539,7 +1572,7 @@
             for (i in this.overlays) {
                 overlay = this.overlays[i];
                 // get the date range
-                var minDate, maxDate, plot, k, firstMetric = plots[0];
+                firstMetric = plots[0];
                 plot = {
                     'key' : overlay.legend,
                     'disabled' : true,
@@ -1581,7 +1614,7 @@
      * @returns {object} the merged object
      */
     zenoss.visualization.__merge = function(base, extend) {
-        var m;
+        var m, k, v;
         if (zenoss.visualization.debug) {
             zenoss.visualization.__groupCollapsed('Object Merge');
             zenoss.visualization.__group('SOURCES');
@@ -1608,7 +1641,6 @@
         }
 
         m = $.extend(true, {}, base);
-        var k, v;
         for (k in extend) {
             if (extend.hasOwnProperty(k)) {
                 v = extend[k];
@@ -1651,14 +1683,14 @@
      *            callback called after the dependencies are loaded
      */
     zenoss.visualization.__loadDependencies = function(required, callback) {
-        var base;
+        var base, o, c, js, css;
+
         if (required === undefined) {
             callback();
             return;
         }
 
         // Check if it is already loaded, using the value in the 'defined' field
-        var o;
         if (zenoss.visualization.__dependencies[required.defined] !== undefined
                 && zenoss.visualization.__dependencies[required.defined].state !== undefined) {
             o = zenoss.visualization.__dependencies[required.defined].state;
@@ -1683,7 +1715,7 @@
                                     + '" in process of being loaded, queuing until loaded.');
                 }
 
-                var c = zenoss.visualization.__dependencies[required.defined].callbacks;
+                c = zenoss.visualization.__dependencies[required.defined].callbacks;
                 c.push(callback);
             }
             return;
@@ -1706,8 +1738,8 @@
         // Load the JS and CSS files. Divide the list of files into two lists:
         // JS
         // and CSS as we can load one async, and the other loads sync (CSS).
-        var js = [];
-        var css = [];
+        js = [];
+        css = [];
         required.source.forEach(function(v) {
             if (v.endsWith('.js')) {
                 js.push(v);
@@ -1739,7 +1771,7 @@
     zenoss.visualization.Chart.prototype.__havePlotData = function() {
         var i, ll;
 
-        if (!this.plots || this.plots.length == 0) {
+        if (!this.plots || this.plots.length === 0) {
             return false;
         }
 
@@ -1828,7 +1860,7 @@
                             // if so load that.
                             zenoss.visualization.__loadDependencies(
                                     self.impl.required, function() {
-                                        self.__buildChart(data)
+                                        self.__buildChart(data);
                                         if (self.__hasFooter()) {
                                             self.__buildFooter(self.config,
                                                     data);
@@ -1874,6 +1906,7 @@
      *            callback the function to call once the JavaScript is loaded
      */
     zenoss.visualization.__bootstrapScriptLoader = function(url, callback) {
+        var script, deferred, _callback;
 
         function ZenDeferred() {
             var failCallback;
@@ -1883,12 +1916,13 @@
                     return failCallback;
                 }
                 failCallback = _;
+                return failCallback;
             };
         }
 
-        var script = document.createElement("script");
-        var deferred = new ZenDeferred();
-        var _callback = callback;
+        script = document.createElement("script");
+        deferred = new ZenDeferred();
+        _callback = callback;
         script.type = "text/javascript";
         script.async = true;
 
@@ -1957,15 +1991,12 @@
         }
 
         // Shift the next value off of the JS array and load it.
-        var uri = js.shift();
-        var _js = js;
-        var _css = css;
-        var self = this;
+        var uri = js.shift(), _js = js, _css = css, self = this, loader;
         if (!uri.startsWith("http")) {
             uri = zenoss.visualization.url + zenoss.visualization.urlPath + uri;
         }
 
-        var loader = zenoss.visualization.__bootstrapScriptLoader;
+        loader = zenoss.visualization.__bootstrapScriptLoader;
         if (window.jQuery !== undefined) {
             loader = $.getScript;
         }

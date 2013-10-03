@@ -358,11 +358,11 @@ public class MetricService implements MetricServiceAPI {
             }
 
             /**
-             * TODO: Deal with no bucket specification better. Create a bucket
-             * size of 1 second means that we are behaving correctly, but it
-             * also means we are going a lot more work than we really need to as
-             * we would just directly stream the results without processing them
-             * into buckets.
+             * Deal with no bucket specification better. Create a bucket size of
+             * 1 second means that we are behaving correctly, but it also means
+             * we are going a lot more work than we really need to as we would
+             * just directly stream the results without processing them into
+             * buckets.
              */
             long bucketSize = 1;
             if (grouping != null && grouping.length() > 1) {

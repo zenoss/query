@@ -56,10 +56,10 @@ public class MetricServiceConfig {
 
     @JsonProperty
     private String defaultTsdTimeZone = "UTC";
-    
+
     @JsonProperty
     private int connectionTimeoutMs = 1000;
-    
+
     @JsonProperty
     private Boolean sendRateOptions = Boolean.FALSE;
 
@@ -142,7 +142,17 @@ public class MetricServiceConfig {
      *            the openTsdbUrl to set
      */
     public final void setOpenTsdbUrl(String openTsdbUrl) {
-        this.openTsdbUrl = openTsdbUrl;
+
+        /**
+         * If the given value ends with a '/', then lets trim it as we will add
+         * that later on.
+         */
+        if (openTsdbUrl.endsWith("/")) {
+            this.openTsdbUrl = openTsdbUrl.substring(0,
+                    openTsdbUrl.length() - 1);
+        } else {
+            this.openTsdbUrl = openTsdbUrl;
+        }
     }
 
     /**
@@ -169,7 +179,8 @@ public class MetricServiceConfig {
     }
 
     /**
-     * @param sendRateOptions the sendRateOptions to set
+     * @param sendRateOptions
+     *            the sendRateOptions to set
      */
     public void setSendRateOptions(Boolean sendRateOptions) {
         this.sendRateOptions = sendRateOptions;
