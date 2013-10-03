@@ -44,6 +44,7 @@ import javax.ws.rs.core.Response;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zenoss.app.metricservice.api.MetricServiceAPI;
+import org.zenoss.app.metricservice.api.impl.Utils;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.PerformanceQuery;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
@@ -82,6 +83,10 @@ public class MetricResources {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response query2(PerformanceQuery query) {
+        if (query == null) {
+            return Utils.getErrorResponse(null, 400,
+                    "Received an empty query request", "Empty Request");
+        }
         Optional<String> id = Optional.<String> absent();
         Optional<String> start = Optional.<String> fromNullable(query
                 .getStart());

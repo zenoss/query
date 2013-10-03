@@ -165,13 +165,15 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
         // Date not found, grab the default from the
         // configuration
+        TimeZone tz = TimeZone.getTimeZone(config.getMetricServiceConfig()
+                .getDefaultTsdTimeZone());
         if (log.isDebugEnabled()) {
             log.debug(
-                    "Returning default time zone information from configuration: {}",
-                    config.getMetricServiceConfig().getDefaultTsdTimeZone());
+                    "Returning default time zone information from configuration: {}, recognized as {}",
+                    config.getMetricServiceConfig().getDefaultTsdTimeZone(),
+                    tz.getDisplayName());
         }
-        return TimeZone.getTimeZone(config.getMetricServiceConfig()
-                .getDefaultTsdTimeZone());
+        return tz;
     }
 
     private WebApplicationException generateException(
@@ -235,7 +237,8 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
      */
     public BufferedReader getReader(MetricServiceAppConfiguration config,
             String id, String startTime, String endTime, ReturnSet returnset,
-            Boolean series, String downsample, Map<String, List<String>> globalTags,
+            Boolean series, String downsample,
+            Map<String, List<String>> globalTags,
             List<MetricSpecification> queries) throws IOException {
         StringBuilder buf = new StringBuilder(config.getMetricServiceConfig()
                 .getOpenTsdbUrl());
@@ -247,13 +250,10 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             buf.append("&end=").append(URLEncoder.encode(endTime, "UTF-8"));
         }
         for (MetricSpecification query : queries) {
-            buf.append("&m=")
-                    .append(URLEncoder.encode(
-                            query.toString(
-                                    downsample,
-                                    globalTags,
-                                    this.config.getMetricServiceConfig().getSendRateOptions()),
-                            "UTF-8"));
+            buf.append("&m=").append(
+                    URLEncoder.encode(query.toString(downsample, globalTags,
+                            this.config.getMetricServiceConfig()
+                                    .getSendRateOptions()), "UTF-8"));
         }
         buf.append("&ascii");
 
@@ -273,6 +273,34 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             // any response information that was send back.
 
             throw generateException(connection);
+        }
+
+        /*
+         * Check to make sure that we have the right content returned to us, in
+         * that, if the content type is not 'text/plain' then something is
+         * wrong.
+         */
+        if (!"text/plain".equals(connection.getContentType())) {
+            /*
+             * Log the response in order to help support.
+             */
+            if (log.isErrorEnabled()) {
+                try (InputStream is = connection.getInputStream()) {
+                    byte[] content = ByteStreams.toByteArray(is);
+
+                    log.error(
+                            "Invalid response content type of: '{}', full returned content '{}'",
+                            connection.getContentType(), new String(content));
+
+                } catch (Exception e) {
+                    log.error(
+                            "Invalid response content type of: '{}', exception attempting to read content '{}:{}'",
+                            connection.getContentType(),
+                            e.getClass().getName(), e.getMessage());
+                }
+            }
+            throw new WebApplicationException(Utils.getErrorResponse(id, 500,
+                    "Unknown severe request error", "unknown"));
         }
 
         return new BufferedReader(new InputStreamReader(
