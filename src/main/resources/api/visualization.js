@@ -246,9 +246,10 @@
             __cull : function(chart) {
 
                 var i, keys = [];
-                // If there is only one plot in the chart we are done, there is
-                // nothing
-                // to do.
+                /*
+                 * If there is only one plot in the chart we are done, there is
+                 * nothing to be done.
+                 */
                 if (chart.plots.length < 2) {
                     return;
                 }
@@ -484,27 +485,32 @@
                 $(this.div).append($(this.footer));
 
                 this.svg = d3.select(this.svgwrapper).append('svg');
-                this.request = this.__buildDataRequest(this.config);
+                try {
+                    this.request = this.__buildDataRequest(this.config);
 
-                if (zenoss.visualization.debug) {
-                    zenoss.visualization
-                            .__groupCollapsed('POST Request Object');
-                    zenoss.visualization.__log(zenoss.visualization.url
-                            + zenoss.visualization.urlPerformance);
-                    zenoss.visualization.__log(this.request);
-                    zenoss.visualization.__groupEnd();
-                }
+                    if (zenoss.visualization.debug) {
+                        zenoss.visualization
+                                .__groupCollapsed('POST Request Object');
+                        zenoss.visualization.__log(zenoss.visualization.url
+                                + zenoss.visualization.urlPerformance);
+                        zenoss.visualization.__log(this.request);
+                        zenoss.visualization.__groupEnd();
+                    }
 
-                /*
-                 * Sanity Check. If the request contained no metrics to query
-                 * then log this information as a warning, as it really does not
-                 * make sense.
-                 */
-                if (this.request.metrics === undefined) {
-                    zenoss.visualization
-                            .__warn('Chart configuration contains no metric sepcifications. No data will be displayed.');
+                    /*
+                     * Sanity Check. If the request contained no metrics to
+                     * query then log this information as a warning, as it
+                     * really does not make sense.
+                     */
+                    if (this.request.metrics === undefined) {
+                        zenoss.visualization
+                                .__warn('Chart configuration contains no metric sepcifications. No data will be displayed.');
+                    }
+                    this.update();
+                } catch (x) {
+                    zenoss.visualization.__error(x);
+                    zenoss.visualization.__showError(this.name, x);
                 }
-                this.update();
             },
 
             /**
@@ -1202,87 +1208,101 @@
          */
         this.__buildPlotInfo();
 
-        this.request = this.__buildDataRequest(this.config);
-        $
-                .ajax({
-                    'url' : zenoss.visualization.url
-                            + zenoss.visualization.urlPerformance,
-                    'type' : 'POST',
-                    'data' : JSON.stringify(this.request),
-                    'dataType' : 'json',
-                    'contentType' : 'application/json',
-                    'success' : function(data) {
-                        var results = self.__processResult(self.request, data);
-                        self.plots = results[0];
-                        self.__configAutoScale(results[1]);
+        try {
+            this.request = this.__buildDataRequest(this.config);
+            $
+                    .ajax({
+                        'url' : zenoss.visualization.url
+                                + zenoss.visualization.urlPerformance,
+                        'type' : 'POST',
+                        'data' : JSON.stringify(this.request),
+                        'dataType' : 'json',
+                        'contentType' : 'application/json',
+                        'success' : function(data) {
+                            var results = self.__processResult(self.request,
+                                    data);
+                            self.plots = results[0];
+                            self.__configAutoScale(results[1]);
 
-                        /*
-                         * If the chart has not been created yet, then create
-                         * it, else just update the data.
-                         */
-                        if (!self.closure) {
-                            if (self.config.type === undefined) {
-                                self.config.type = 'line';
-                            }
-                            self.__render(data);
-                        } else {
-                            self.__updateData(data);
-                        }
-
-                        // Update the footer
-                        if (self.__updateFooter(data)) {
-                            self.__resize();
-                        }
-                    },
-                    'error' : function(res) {
-                        /*
-                         * Many, many reasons that we might have gotten here,
-                         * with most of them we are not able to detect why. If
-                         * we have a readystate of 4 and an response code in the
-                         * 200s that likely means we were unable to parse the
-                         * JSON returned from the server. If not that then who
-                         * knows ....
-                         */
-                        self.plots = undefined;
-                        if (self.__updateFooter()) {
-                            self.__resize();
-                        }
-
-                        var err, detail;
-                        if (res.readyState === 4
-                                && Math.floor(res.status / 100) === 2) {
-                            detail = 'Severe: Unable to parse data returned from Zenoss metric service as JSON object. Please copy / paste the REQUEST and RESPONSE written to your browser\'s Java Console into an email to Zenoss Support';
-                            zenoss.visualization
-                                    .__group('Severe error, please report');
-                            zenoss.visualization.__error('REQUEST : POST '
-                                    + zenoss.visualization.urlPerformance
-                                    + '  ' + JSON.stringify(self.request));
-                            zenoss.visualization.__error('RESPONSE: '
-                                    + res.responseText);
-                            zenoss.visualization.__groupEnd();
-                            zenoss.visualization.__showError(self.name, detail);
-                        } else {
-                            try {
-                                err = JSON.parse(res.responseText);
-                                if (!err || !err.errorSoruce
-                                        || !err.errorMessage) {
-                                    detail = 'An unexpected failure response was received from the server. The reported message is: '
-                                            + res.responseText;
-                                } else {
-                                    detail = 'An unexpected failure response was received from the server. The reported message is: '
-                                            + err.errorSource
-                                            + ' : '
-                                            + err.errorMessage;
+                            /*
+                             * If the chart has not been created yet, then
+                             * create it, else just update the data.
+                             */
+                            if (!self.closure) {
+                                if (self.config.type === undefined) {
+                                    self.config.type = 'line';
                                 }
-                            } catch (e) {
-                                detail = 'An unexpected failure response was received from the server. The reported message is: '
-                                        + res.statusText + ' : ' + res.status;
+                                self.__render(data);
+                            } else {
+                                self.__updateData(data);
                             }
-                            zenoss.visualization.__error(detail);
-                            zenoss.visualization.__showError(self.name, detail);
+
+                            // Update the footer
+                            if (self.__updateFooter(data)) {
+                                self.__resize();
+                            }
+                        },
+                        'error' : function(res) {
+                            /*
+                             * Many, many reasons that we might have gotten
+                             * here, with most of them we are not able to detect
+                             * why. If we have a readystate of 4 and an response
+                             * code in the 200s that likely means we were unable
+                             * to parse the JSON returned from the server. If
+                             * not that then who knows ....
+                             */
+                            self.plots = undefined;
+                            if (self.__updateFooter()) {
+                                self.__resize();
+                            }
+
+                            var err, detail;
+                            if (res.readyState === 4
+                                    && Math.floor(res.status / 100) === 2) {
+                                detail = 'Severe: Unable to parse data returned from Zenoss metric service as JSON object. Please copy / paste the REQUEST and RESPONSE written to your browser\'s Java Console into an email to Zenoss Support';
+                                zenoss.visualization
+                                        .__group('Severe error, please report');
+                                zenoss.visualization.__error('REQUEST : POST '
+                                        + zenoss.visualization.urlPerformance
+                                        + '  ' + JSON.stringify(self.request));
+                                zenoss.visualization.__error('RESPONSE: '
+                                        + res.responseText);
+                                zenoss.visualization.__groupEnd();
+                                zenoss.visualization.__showError(self.name,
+                                        detail);
+                            } else {
+                                try {
+                                    err = JSON.parse(res.responseText);
+                                    if (!err || !err.errorSoruce
+                                            || !err.errorMessage) {
+                                        detail = 'An unexpected failure response was received from the server. The reported message is: '
+                                                + res.responseText;
+                                    } else {
+                                        detail = 'An unexpected failure response was received from the server. The reported message is: '
+                                                + err.errorSource
+                                                + ' : '
+                                                + err.errorMessage;
+                                    }
+                                } catch (e) {
+                                    detail = 'An unexpected failure response was received from the server. The reported message is: '
+                                            + res.statusText
+                                            + ' : '
+                                            + res.status;
+                                }
+                                zenoss.visualization.__error(detail);
+                                zenoss.visualization.__showError(self.name,
+                                        detail);
+                            }
                         }
-                    }
-                });
+                    });
+        } catch (x) {
+            this.plots = undefined;
+            if (self.__updateFooter()) {
+                self.__resize();
+            }
+            zenoss.visualization.__error(x);
+            zenoss.visualization.__showError(this.name, x);
+        }
     };
 
     /**
@@ -1330,49 +1350,60 @@
 
             if (config.datapoints !== undefined) {
                 request.metrics = [];
-                config.datapoints.forEach(function(dp) {
-                    var m = {}, key;
-                    if (dp.metric) {
-                        m.metric = dp.metric;
+                config.datapoints
+                        .forEach(function(dp) {
+                            var m = {}, key;
+                            if (dp.metric !== undefined) {
+                                m.metric = dp.metric;
 
-                        if (dp.rate !== undefined) {
-                            m.rate = dp.rate;
-                        }
-                        if (dp.aggregator !== undefined) {
-                            m.aggregator = dp.aggregator;
-                        }
-
-                        if (dp.tags !== undefined) {
-                            m.tags = {};
-                            for (key in dp.tags) {
-                                if (dp.tags.hasOwnProperty(key)) {
-                                    m.tags[key] = dp.tags[key];
+                                if (dp.rate !== undefined) {
+                                    m.rate = dp.rate;
                                 }
+                                if (dp.aggregator !== undefined) {
+                                    m.aggregator = dp.aggregator;
+                                }
+
+                                if (dp.tags !== undefined) {
+                                    m.tags = {};
+                                    for (key in dp.tags) {
+                                        if (dp.tags.hasOwnProperty(key)) {
+                                            m.tags[key] = dp.tags[key];
+                                        }
+                                    }
+                                }
+
+                                if (dp.name === undefined) {
+                                    m.name = dp.metric;
+                                } else {
+                                    m.name = dp.name;
+                                }
+                            } else if (dp.name !== undefined) {
+                                m.name = dp.name;
+                            } else {
+                                /*
+                                 * This data point has neither a metric
+                                 * definition nor a name (virtual metric)
+                                 * deffined. As such this is an invalid
+                                 * specification. Because of this we will fail
+                                 * the entire request so that the caller is not
+                                 * confused as to why partial data is returned.
+                                 */
+                                throw sprintf(
+                                        "Invalid data point specification in request, '%s'. No 'metric' or 'name' attribute specified, failing entire request.",
+                                        JSON.stringify(dp, null, ' '));
                             }
-                        }
 
-                        if (!dp.name) {
-                            m.name = dp.metric;
-                        } else {
-                            m.name = dp.name;
-                        }
-                    } else if (dp.name) {
-                        m.name = dp.name;
-                    } else {
-                        // todo: error
-                    }
-
-                    if (dp.downsample !== undefined) {
-                        m.downsample = dp.downsample;
-                    }
-                    if (dp.expression !== undefined) {
-                        m.expression = dp.expression;
-                    }
-                    if (dp.emit !== undefined) {
-                        m.emit = dp.emit;
-                    }
-                    request.metrics.push(m);
-                });
+                            if (dp.downsample !== undefined) {
+                                m.downsample = dp.downsample;
+                            }
+                            if (dp.expression !== undefined) {
+                                m.expression = dp.expression;
+                            }
+                            if (dp.emit !== undefined) {
+                                m.emit = dp.emit;
+                            }
+                            request.metrics.push(m);
+                        });
 
             }
         }
