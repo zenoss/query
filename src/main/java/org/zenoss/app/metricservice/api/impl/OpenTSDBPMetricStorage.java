@@ -281,6 +281,24 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
          * wrong.
          */
         if (!"text/plain".equals(connection.getContentType())) {
+            /*
+             * Log the response in order to help support.
+             */
+            if (log.isErrorEnabled()) {
+                try (InputStream is = connection.getInputStream()) {
+                    byte[] content = ByteStreams.toByteArray(is);
+
+                    log.error(
+                            "Invalid response content type of: '{}', full returned content '{}'",
+                            connection.getContentType(), new String(content));
+
+                } catch (Exception e) {
+                    log.error(
+                            "Invalid response content type of: '{}', exception attempting to read content '{}:{}'",
+                            connection.getContentType(),
+                            e.getClass().getName(), e.getMessage());
+                }
+            }
             throw new WebApplicationException(Utils.getErrorResponse(id, 500,
                     "Unknown severe request error", "unknown"));
         }
