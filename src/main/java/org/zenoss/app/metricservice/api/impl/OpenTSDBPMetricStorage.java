@@ -62,7 +62,7 @@ import com.google.common.io.ByteStreams;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
- * 
+ *
  */
 @API
 @Configuration
@@ -83,12 +83,12 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
      * header value. If not, then the default port is attempted (if not used
      * originally). If neither are found then it will default to the value set
      * in the configuration.
-     * 
+     *
      * If a date header is found, then that is assumed it is in the format
      * "EEE, d MMM yyyy HH:mm:ss Z" and the last term (space separated) is the
      * time zone. This information is extracted, converted to a time zone {@see
      * TimeZone#getTimeZone(String)}, and returned.
-     * 
+     *
      * @return the TSD server's time zone
      */
     public TimeZone getServerTimeZone() {
@@ -229,7 +229,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.zenoss.app.query.api.impl.MetricStorageAPI#getReader(org.zenoss.app
      * .query.QueryAppConfiguration, java.lang.String, java.lang.String,
@@ -255,7 +255,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
                             this.config.getMetricServiceConfig()
                                     .getSendRateOptions()), "UTF-8"));
         }
-        buf.append("&ascii");
+        buf.append("&ascii&silent");
 
         if (log.isDebugEnabled()) {
             log.debug("OpenTSDB GET: {}", buf.toString());
@@ -309,7 +309,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.zenoss.app.query.api.impl.MetricStorageAPI#getSourceId()
      */
     @Override
