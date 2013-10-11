@@ -7,14 +7,14 @@ metrics:
   defaultStartTime: 1h-ago
   defaultEndTime: now
   defaultSeries: false
-  openTsdbUrl: http://tsdb.zenaas.com:4242
+  openTsdbUrl: http://127.0.0.1:4242
   defaultTsdTimeZone: UTC
   connectionTimeoutMs: 20000
   sendRateOptions: false
 charts:
   redisConnection: localhost:6379
 proxyConfiguration:
-  hostname: 10.87.110.247
+  hostname: 127.0.0.1
   port: 8080
 http:
   connectorType: nonblocking
