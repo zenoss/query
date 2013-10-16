@@ -6,7 +6,8 @@
      <properties>
           <maven.compiler.source>1.7</maven.compiler.source>
           <maven.compiler.target>1.7</maven.compiler.target>
-          <zapp.version>0.0.8</zapp.version>
+         <zapp.version>0.0.9-SNAPSHOT</zapp.version>
+          <metric-consumer.version>0.0.3-SNAPSHOT</metric-consumer.version>
           <jersey.version>1.15</jersey.version>
           <mockito.version>1.9.5</mockito.version>
           <junit.version>4.11</junit.version>
@@ -31,7 +32,11 @@
                <artifactId>zauth-bundle</artifactId>
                <version>${zapp.version}</version>
           </dependency>
-
+         <dependency>
+             <groupId>org.zenoss</groupId>
+             <artifactId>metric-zapp-reporter</artifactId>
+             <version>${metric-consumer.version}</version>
+         </dependency>
           <!-- Used for storage of chart definitions -->
           <dependency>
                <groupId>redis.clients</groupId>
@@ -62,7 +67,7 @@
                <groupId>com.github.tomakehurst</groupId>
                <artifactId>wiremock</artifactId>
                <version>1.33</version>
-               <!-- Include this if you have dependency conflicts for Guava, 
+               <!-- Include this if you have dependency conflicts for Guava,
                     Jetty, Jackson or Apache HTTP Client -->
                <classifier>standalone</classifier>
                <scope>test</scope>
@@ -301,7 +306,7 @@
           </plugins>
           <pluginManagement>
                <plugins>
-                    <!--This plugin's configuration is used to store Eclipse 
+                    <!--This plugin's configuration is used to store Eclipse
                          m2e settings only. It has no influence on the Maven build itself. -->
                     <plugin>
                          <groupId>org.eclipse.m2e</groupId>
