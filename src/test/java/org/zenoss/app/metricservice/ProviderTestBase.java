@@ -151,8 +151,8 @@ public abstract class ProviderTestBase extends ResourceTest {
             int count = -1;
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd-hh:mm:ss-Z");
             sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-            long s = sdf.parse((String) json.get("startTimeActual")).getTime() / 1000;
-            long e = sdf.parse((String) json.get("endTimeActual")).getTime() / 1000;
+            long s = (Long) json.get("startTimeActual");
+            long e = (Long) json.get("endTimeActual");
             long dur = e - s;
             long step = 1;
             if (dur < 60) {

@@ -84,16 +84,15 @@ abstract public class BaseResultWriter implements ResultWriter {
     public void writeResults(JsonWriter writer,
             List<MetricSpecification> queries,
             Buckets<MetricKey, String> buckets, String id, String sourceId,
-            long startTs, String startTimeConfig, String startTimeActual,
-            long endTs, String endTimeConfig, String endTimeActual,
+            long startTs, String startTimeConfig, long endTs, String endTimeConfig, 
             ReturnSet returnset, boolean series) throws IOException {
 
         writer.objectS().value(MetricService.CLIENT_ID, id, true)
                 .value(MetricService.SOURCE, sourceId, true)
                 .value(MetricService.START_TIME, startTimeConfig, true)
-                .value(MetricService.START_TIME_ACTUAL, startTimeActual, true)
+                .value(MetricService.START_TIME_ACTUAL, startTs, true)
                 .value(MetricService.END_TIME, endTimeConfig, true)
-                .value(MetricService.END_TIME_ACTUAL, endTimeActual, true)
+                .value(MetricService.END_TIME_ACTUAL, endTs, true)
                 .value(MetricService.RETURN_SET, returnset, true)
                 .value(MetricService.SERIES, series, true)
                 .arrayS(MetricService.RESULTS);
