@@ -6,8 +6,8 @@
      <properties>
           <maven.compiler.source>1.7</maven.compiler.source>
           <maven.compiler.target>1.7</maven.compiler.target>
-         <zapp.version>0.0.9-SNAPSHOT</zapp.version>
-          <metric-consumer.version>0.0.3-SNAPSHOT</metric-consumer.version>
+         <zapp.version>0.0.9</zapp.version>
+          <metric-consumer.version>0.0.3</metric-consumer.version>
           <jersey.version>1.15</jersey.version>
           <mockito.version>1.9.5</mockito.version>
           <junit.version>4.11</junit.version>
