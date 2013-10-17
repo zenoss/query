@@ -149,7 +149,6 @@ public class MetricService implements MetricServiceAPI {
 
     protected final ObjectMapper objectMapper;
 
-    protected TimeZone serverTimeZone = null;
 
     /**
      * Used as a buffer filter class when return the "last" values for a query.
