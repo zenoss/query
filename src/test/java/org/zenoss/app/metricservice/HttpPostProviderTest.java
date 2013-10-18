@@ -77,6 +77,8 @@ public class HttpPostProviderTest extends ProviderTestBase {
             // queries
             config.getMetricServiceConfig().setOpenTsdbUrl(
                     "http://localhost:8089");
+            //Tests can be slow give higher timeout
+            config.getMetricServiceConfig().setConnectionTimeoutMs(5000);
             return config;
         }
     }
@@ -86,6 +88,7 @@ public class HttpPostProviderTest extends ProviderTestBase {
     public WireMockRule wireMockRule = new WireMockRule(WireMockConfiguration
             .wireMockConfig().port(8089));
 
+    @Override
     protected Map<?, ?> testQuery(Optional<String> id, Optional<String> start,
             Optional<String> end, Optional<ReturnSet> returnset,
             Optional<Boolean> series, Optional<String> downsample,
