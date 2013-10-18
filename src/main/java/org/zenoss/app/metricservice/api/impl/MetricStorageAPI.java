@@ -19,5 +19,4 @@ public interface MetricStorageAPI {
 
     public String getSourceId();
 
-    public TimeZone getServerTimeZone();
 }

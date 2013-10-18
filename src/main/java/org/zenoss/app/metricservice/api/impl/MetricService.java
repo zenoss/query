@@ -149,7 +149,6 @@ public class MetricService implements MetricServiceAPI {
 
     protected final ObjectMapper objectMapper;
 
-    protected TimeZone serverTimeZone = null;
 
     /**
      * Used as a buffer filter class when return the "last" values for a query.
@@ -167,10 +166,10 @@ public class MetricService implements MetricServiceAPI {
         /**
          * @param in
          */
-        public LastFilter(Reader in, Date startTs, Date endTs) {
+        public LastFilter(Reader in, long startTs, long endTs) {
             super(in);
-            this.startTs = startTs.getTime() / 1000;
-            this.endTs = endTs.getTime() / 1000;
+            this.startTs = startTs;
+            this.endTs = endTs;
         }
 
         /*
@@ -306,33 +305,9 @@ public class MetricService implements MetricServiceAPI {
                                 response)).build());
             }
 
-            if (serverTimeZone == null) {
-                try {
-                    serverTimeZone = api.getServerTimeZone();
-                } catch (Exception e) {
-                    log.error(
-                            "Unable to determine timezone of the performance metric server: {} : {}",
-                            e.getClass().getName(), e.getMessage());
-                    throw new WebApplicationException(
-                            Utils.getErrorResponse(
-                                    id,
-                                    500,
-                                    String.format("Unable to determine timezone of the performance metric server"),
-                                    e.getMessage()));
-                }
-            }
-
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
-            sdf.setTimeZone(serverTimeZone);
-            SimpleDateFormat actual = new SimpleDateFormat(
-                    "yyyy/MM/dd-HH:mm:ss-Z");
-            actual.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-            Date startDate = new Date(start * 1000);
-            Date endDate = new Date(end * 1000);
-
-            String convertedStartTime = sdf.format(startDate);
-            String convertedEndTime = sdf.format(endDate);
+            
+            String convertedStartTime = Long.toString(start);
+            String convertedEndTime = Long.toString(end);
 
             BufferedReader reader = null;
             try {
@@ -340,7 +315,7 @@ public class MetricService implements MetricServiceAPI {
                         convertedEndTime, returnset, series, downsample, tags,
                         MetricService.metricFilter(queries));
                 if (returnset == ReturnSet.LAST) {
-                    reader = new LastFilter(reader, startDate, endDate);
+                    reader = new LastFilter(reader, start, end);
                 }
             } catch (WebApplicationException wae) {
                 throw wae;
@@ -375,15 +350,12 @@ public class MetricService implements MetricServiceAPI {
 
                 if (series) {
                     seriesResultsWriter.writeResults(writer, queries, buckets,
-                            id, api.getSourceId(), start, startTime,
-                            actual.format(startDate), end, endTime,
-                            actual.format(endDate), returnset, series);
+                            id, api.getSourceId(), start, startTime, end, endTime, returnset, series);
                 } else {
 
                     asIsResultsWriter.writeResults(writer, queries, buckets,
                             id, api.getSourceId(), start, startTime,
-                            actual.format(startDate), end, endTime,
-                            actual.format(endDate), returnset, series);
+                            end, endTime, returnset, series);
                 }
             } catch (Exception e) {
                 log.error(

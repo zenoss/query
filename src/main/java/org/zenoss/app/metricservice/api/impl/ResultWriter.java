@@ -66,17 +66,11 @@ public interface ResultWriter {
      * @param startTimeConfig
      *            Configuration specification that represents the start of the
      *            query range
-     * @param startTimeActual
-     *            actual start time, which may be a translation from a relative
-     *            time to an absolute time, of the start of the query range
      * @param endTs
      *            ms since epoch that represents the end of the query range
      * @param endTimeConfig
      *            Configuration specification that represents the end of the
      *            query range
-     * @param endTimeActual
-     *            actual end time, which may be a translation from a relative
-     *            time to an absolute time, of the end of the query range
      * @param returnset
      *            specifies if all results are returned or only those in the
      *            specified query range (this is needed because by default
@@ -91,7 +85,6 @@ public interface ResultWriter {
     public void writeResults(JsonWriter writer,
             List<MetricSpecification> queries,
             Buckets<MetricKey, String> buckets, String id, String sourceId,
-            long startTs, String startTimeConfig, String startTimeActual,
-            long endTs, String endTimeConfig, String endTimeActual,
+            long startTs, String startTimeConfig, long endTs, String endTimeConfig,
             ReturnSet returnset, boolean series) throws IOException;
 }

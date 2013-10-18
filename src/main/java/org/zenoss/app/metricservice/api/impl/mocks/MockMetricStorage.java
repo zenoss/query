@@ -74,9 +74,6 @@ public class MockMetricStorage implements MetricStorageAPI {
     @Autowired
     MetricServiceAppConfiguration config;
 
-    public TimeZone getServerTimeZone() {
-        return TimeZone.getDefault();
-    }
 
     public byte[] generateData(MetricServiceAppConfiguration config, String id,
             String startTime, String endTime, ReturnSet returnset,
