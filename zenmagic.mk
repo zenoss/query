@@ -135,15 +135,15 @@ ifeq "$(REQUIRES_JDK)" "1"
         CHECK_TOOLS_VERSION_BRAND := java:$(REQD_JDK_MIN_VER):$(REQD_JDK_BRAND) mvn:$(REQD_MVN_MIN_VER):$(REQD_MVN_BRAND)
     endif
 
-    DFLT_MAVEN_OPTS = -DskipTests
-    ifndef MAVEN_OPTS
-        ifndef $(_COMPONENT)_MAVEN_OPTS
-            MAVEN_OPTS ?= $(DFLT_MAVEN_OPTS)
+    DFLT_JVM_OPTS = -DskipTests
+    ifndef JVM_OPTS
+        ifndef $(_COMPONENT)_JVM_OPTS
+            JVM_OPTS ?= $(DFLT_MAVEN_OPTS)
         else
-            MAVEN_OPTS  = $($(_COMPONENT)_MAVEN_OPTS)
+            JVM_OPTS  = $($(_COMPONENT)_MAVEN_OPTS)
         endif
     else
-        MAVEN_OPTS := $($(_COMPONENT)_MAVEN_OPTS) $(MAVEN_OPTS)
+        JVM_OPTS := $($(_COMPONENT)_MAVEN_OPTS) $(MAVEN_OPTS)
     endif
 
     # Trust that maven will only rebuild when necessary.  
@@ -257,10 +257,10 @@ quiet_cmd_MKDIR = MKDIR  $2
 #------------------------------------------------------------
 # Invoke maven <arg>.
 quiet_cmd_MVN = MVN    $2 $3
-      cmd_MVN = $(MVN) $(MAVEN_OPTS) $2 
+      cmd_MVN = $(MVN) $(JVM_OPTS) $2 
 
 quiet_cmd_MVNASM = MVN    assemble $3
-      cmd_MVNASM = $(MVN) $(MAVEN_OPTS) $2 
+      cmd_MVNASM = $(MVN) $(JVM_OPTS) $2 
 
 #----------------------------------------------------------------------------
 # Remove a file.
