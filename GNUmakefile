@@ -15,26 +15,41 @@
 # Don't let your editor turn tabs into spaces or vice versa.
 #============================================================================
 COMPONENT             = central-query
-COMPONENT_PREFIX      = install
-COMPONENT_SYSCONFDIR  = $(COMPONENT_PREFIX)/etc
-_COMPONENT            = $(strip $(COMPONENT))
 SUPERVISOR_CONF       = $(_COMPONENT)_supervisor.conf
-SUPERVISORD_DIR       = $(SYSCONFDIR)/supervisor
+SUPERVISORD_DIR       = $(pkgconfdir)/supervisor
 REQUIRES_JDK          = 1
-#COMPONENT_MAVEN_OPTS = -DskipTests=true
-SRC_DIR               = src
+srcdir                = src
 #
-# For zapp components, keep BUILD_DIR aligned with src/main/assembly/zapp.xml
+# For zapp components, keep blddir aligned with src/main/assembly/zapp.xml
 #
-BUILD_DIR             = target
+blddir                = target
 
 #============================================================================
 # Hide common build macros, idioms, and default rules in a separate file.
 #============================================================================
-ifeq "$(wildcard zenmagic.mk)" ""
-    $(error "Makefile for $(_COMPONENT) is unable to include zenmagic.mk.  Please investigate")
+
+#---------------------------------------------------------------------------#
+# Pull in zenmagic.mk
+#---------------------------------------------------------------------------#
+# Locate and include common build idioms tucked away in 'zenmagic.mk'
+# This holds convenience macros and default target implementations.
+#
+# Generate a list of directories starting here and going up the tree where we
+# should look for an instance of zenmagic.mk to include.
+#
+#     ./zenmagic.mk ../zenmagic.mk ../../zenmagic.mk ../../../zenmagic.mk
+#---------------------------------------------------------------------------#
+NEAREST_ZENMAGIC_MK := $(word 1,$(wildcard ./zenmagic.mk $(shell for slash in $$(echo $(abspath .) | sed -e "s|.*\(/obj/\)\(.*\)|\1\2|g" -e "s|.*\(/src/\)\(.*\)|\1\2|g" | sed -e "s|[^/]||g" -e "s|/|/ |g"); do string=$${string}../;echo $${string}zenmagic.mk; done | xargs echo)))
+
+ifeq "$(NEAREST_ZENMAGIC_MK)" ""
+    $(warning "Missing zenmagic.mk needed by the $(COMPONENT)-component makefile.")
+    $(warning "Unable to find our file of build idioms in the current or parent directories.")
+    $(error   "A fully populated src tree usually resolves that.")
 else
-    include zenmagic.mk
+    #ifneq "$(MAKECMDGOALS)" ""
+    #    $(warning "Including $(NEAREST_ZENMAGIC_MK) $(MAKECMDGOALS)")
+    #endif
+    include $(NEAREST_ZENMAGIC_MK)
 endif
 
 # List of source files needed to build this component.
@@ -44,8 +59,7 @@ COMPONENT_SRC ?= $(DFLT_COMPONENT_SRC)
 COMPONENT_JAR ?= $(DFLT_COMPONENT_JAR)
 
 # Specify install-related directories to create as part of the install target.
-# NB: Intentional usage of _PREFIX and PREFIX here to avoid circular dependency.
-INSTALL_MKDIRS = $(_DESTDIR)$(_PREFIX) $(_DESTDIR)$(PREFIX)/log $(_DESTDIR)$(SUPERVISORD_DIR)
+INSTALL_MKDIRS = $(_DESTDIR)$(prefix) $(_DESTDIR)$(prefix)/log $(_DESTDIR)$(SUPERVISORD_DIR)
 
 ifeq "$(COMPONENT_JAR)" ""
     $(call echol,"Please investigate the COMPONENT_JAR macro assignment.")
@@ -54,8 +68,8 @@ else
     # Name of binary tar we're building: my-component-x.y.z-zapp.tar.gz
     COMPONENT_TAR = $(shell echo $(COMPONENT_JAR) | $(SED) -e "s|\.jar|-zapp.tar.gz|g")
 endif
-TARGET_JAR := $(BUILD_DIR)/$(COMPONENT_JAR)
-TARGET_TAR := $(BUILD_DIR)/$(COMPONENT_TAR)
+TARGET_JAR := $(blddir)/$(COMPONENT_JAR)
+TARGET_TAR := $(blddir)/$(COMPONENT_TAR)
 
 #============================================================================
 # Subset of standard build targets our makefiles should implement.  
@@ -90,10 +104,10 @@ install: | $(INSTALL_MKDIRS)
 		$(call echol,"$(LINE)") ;\
 		exit 1 ;\
 	fi 
-	$(call cmd,UNTAR,$(abspath $(TARGET_TAR)),$(_DESTDIR)$(PREFIX))
+	$(call cmd,UNTAR,$(abspath $(TARGET_TAR)),$(_DESTDIR)$(prefix))
 	$(call cmd,SYMLINK,../$(_COMPONENT)/$(SUPERVISOR_CONF),$(_DESTDIR)$(SUPERVISORD_DIR)/$(SUPERVISOR_CONF))
 	@$(call echol,$(LINE))
-	@$(call echol,"$(_COMPONENT) installed to $(_DESTDIR)$(PREFIX)")
+	@$(call echol,"$(_COMPONENT) installed to $(_DESTDIR)$(prefix)")
 
 devinstall: dev% : %
 	@$(call echol,"Add logic to the $@ rule if you want it to behave differently than the $< rule.")
