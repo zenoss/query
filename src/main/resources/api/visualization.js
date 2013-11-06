@@ -9,6 +9,16 @@
 (function(window) {
     "use strict";
 
+    // make sure that Array.forEach is available
+    if (!('forEach' in Array.prototype)) {
+        Array.prototype.forEach= function(action, that /*opt*/) {
+            for (var i= 0, n= this.length; i<n; i++) {
+                if (i in this) {
+                    action.call(that, this[i], i, this);
+                }
+            }
+        };
+    }
     var DEFAULT_NUMBER_FORMAT = "%6.2f";
 
     /**
@@ -195,7 +205,7 @@
             __error : function() {
                 if (console !== undefined) {
                     if (console.error !== undefined) {
-                        console.error.apply(console, arguments);
+                        console.error(arguments[0]);
                     } else if (console.log !== undefined) {
                         console.log.apply(console, arguments);
                     }
@@ -212,7 +222,7 @@
             __warn : function() {
                 if (console !== undefined) {
                     if (console.warn !== undefined) {
-                        console.warn.apply(console, arguments);
+                        console.warn(arguments[0]);
                     } else if (console.log !== undefined) {
                         console.log.apply(console, arguments);
                     }
