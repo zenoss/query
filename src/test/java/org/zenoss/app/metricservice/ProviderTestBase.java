@@ -42,6 +42,7 @@ import java.util.TimeZone;
 
 import javax.ws.rs.core.MediaType;
 
+import com.sun.jersey.api.client.Client;
 import org.eclipse.jetty.util.ajax.JSON;
 import org.junit.Assert;
 import org.junit.Test;
@@ -261,8 +262,10 @@ public abstract class ProviderTestBase extends ResourceTest {
             list.add(MetricSpecification.fromString(s));
         }
         pq.setMetrics(list);
-
-        WebResource wr = client().resource("/api/performance/query");
+        Client client = client();
+        client.setConnectTimeout(1000000);
+        client.setReadTimeout(1000000);
+        WebResource wr = client.resource("/api/performance/query");
         Assert.assertNotNull(wr);
         wr.accept(MediaType.APPLICATION_JSON);
         Builder request = wr.type(MediaType.APPLICATION_JSON);
@@ -315,7 +318,10 @@ public abstract class ProviderTestBase extends ResourceTest {
         }
 
         // Invoke the URI and make sure we get a response
-        WebResource wr = client().resource(buf.toString());
+        Client client = client();
+        client.setConnectTimeout(1000000);
+        client.setReadTimeout(1000000);
+        WebResource wr = client.resource(buf.toString());
         Assert.assertNotNull(wr);
         ClientResponse response = wr.get(ClientResponse.class);
         Assert.assertNotNull(response);
