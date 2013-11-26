@@ -18,7 +18,6 @@ COMPONENT             = central-query
 SUPERVISOR_CONF       = $(_COMPONENT)_supervisor.conf
 SUPERVISORD_DIR       = $(pkgconfdir)/supervisor
 REQUIRES_JDK          = 1
-srcdir                = src
 #
 # For zapp components, keep blddir aligned with src/main/assembly/zapp.xml
 #
@@ -39,7 +38,7 @@ blddir                = target
 #
 #     ./zenmagic.mk ../zenmagic.mk ../../zenmagic.mk ../../../zenmagic.mk
 #---------------------------------------------------------------------------#
-NEAREST_ZENMAGIC_MK := $(word 1,$(wildcard ./zenmagic.mk $(shell for slash in $$(echo $(abspath .) | sed -e "s|.*\(/obj/\)\(.*\)|\1\2|g" -e "s|.*\(/src/\)\(.*\)|\1\2|g" | sed -e "s|[^/]||g" -e "s|/|/ |g"); do string=$${string}../;echo $${string}zenmagic.mk; done | xargs echo)))
+NEAREST_ZENMAGIC_MK := $(word 1,$(wildcard ./zenmagic.mk $(shell for slash in $$(echo $(abspath .) | sed -e "s|.*\(/obj/\)\(.*\)|\1\2|g" | sed -e "s|[^/]||g" -e "s|/|/ |g"); do string=$${string}../;echo $${string}zenmagic.mk; done | xargs echo)))
 
 ifeq "$(NEAREST_ZENMAGIC_MK)" ""
     $(warning "Missing zenmagic.mk needed by the $(COMPONENT)-component makefile.")
@@ -51,12 +50,6 @@ else
     #endif
     include $(NEAREST_ZENMAGIC_MK)
 endif
-
-# List of source files needed to build this component.
-COMPONENT_SRC ?= $(DFLT_COMPONENT_SRC)
-
-# Name of jar we're building: my-component-x.y.z.jar
-COMPONENT_JAR ?= $(DFLT_COMPONENT_JAR)
 
 # Specify install-related directories to create as part of the install target.
 INSTALL_MKDIRS = $(_DESTDIR)$(prefix) $(_DESTDIR)$(prefix)/log $(_DESTDIR)$(SUPERVISORD_DIR)
@@ -76,14 +69,14 @@ TARGET_TAR := $(blddir)/$(COMPONENT_TAR)
 #
 # See: http://www.gnu.org/prep/standards/html_node/Standard-Targets.html#Standard-Targets
 #============================================================================
-.PHONY: all build clean devinstall distclean install help mrclean uninstall
+.PHONY: all build clean devinstall distclean install installhere help mrclean uninstall uninstallhere
 all build: $(TARGET_TAR)
 
 # Targets to build the binary *.tar.gz.
 ifeq "$(_TRUST_MVN_REBUILD)" "yes"
 $(TARGET_TAR): checkenv
 else
-$(TARGET_TAR): $(CHECKED_ENV) $(COMPONENT_SRC)
+$(TARGET_TAR): $(COMPONENT_SRC)
 endif
 	$(call cmd,MVNASM,package -P assemble,$@)
 	@$(call echol,$(LINE))
@@ -94,7 +87,7 @@ $(INSTALL_MKDIRS):
 
 # NB: Use the "|" to indicate an existence-only dep rather than a modtime dep.
 #     This rule should not trigger rebuilding of the component we're installing.
-install: | $(INSTALL_MKDIRS) 
+install installhere: | $(INSTALL_MKDIRS) 
 	@if [ ! -f "$(TARGET_TAR)" ];then \
 		$(call echol) ;\
 		$(call echol,"Error: Missing $(TARGET_TAR)") ;\
@@ -114,7 +107,11 @@ devinstall: dev% : %
 
 uninstall: dflt_component_uninstall
 
-clean: dflt_component_clean
+uninstallhere:
+	$(call cmd,RMDIR,$(_DESTDIR))
+
+clean:
+	$(call cmd,MVN,clean)
 
 mrclean distclean: dflt_component_distclean
 
