@@ -17,6 +17,7 @@
 COMPONENT             = central-query
 SUPERVISOR_CONF       = $(_COMPONENT)_supervisor.conf
 SUPERVISORD_DIR       = $(pkgconfdir)/supervisor
+COMPONENT_SH          = $(_COMPONENT).sh
 REQUIRES_JDK          = 1
 srcdir                = src
 #
@@ -106,6 +107,8 @@ install: | $(INSTALL_MKDIRS)
 	fi 
 	$(call cmd,UNTAR,$(abspath $(TARGET_TAR)),$(_DESTDIR)$(prefix))
 	$(call cmd,SYMLINK,../$(_COMPONENT)/$(SUPERVISOR_CONF),$(_DESTDIR)$(SUPERVISORD_DIR)/$(SUPERVISOR_CONF))
+	@$(call echol,$(LINE))
+	$(call cmd,CHMOD,744,$(bindir)/$(COMPONENT_SH))
 	@$(call echol,$(LINE))
 	@$(call echol,"$(_COMPONENT) installed to $(_DESTDIR)$(prefix)")
 

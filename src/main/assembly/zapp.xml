@@ -20,6 +20,10 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>target/bin</directory>
+            <outputDirectory>bin</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>target/cert</directory>
             <outputDirectory>/etc/${project.artifactId}/cert</outputDirectory>
             <includes>
