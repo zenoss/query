@@ -17,6 +17,7 @@
 COMPONENT             = central-query
 SUPERVISOR_CONF       = $(_COMPONENT)_supervisor.conf
 SUPERVISORD_DIR       = $(pkgconfdir)/supervisor
+COMPONENT_SH          = $(_COMPONENT).sh
 REQUIRES_JDK          = 1
 srcdir                = src
 #
