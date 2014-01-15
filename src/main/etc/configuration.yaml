@@ -1,3 +1,4 @@
+authEnabled: true
 logging:
   level: INFO
   loggers:
