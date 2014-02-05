@@ -78,16 +78,24 @@
             showLegendOnNoData : true,
 
             /**
+             * Used for formatting the date in the legend of the chart.
+             * It must be a valid moment.js date format.
+             * http://momentjs.com/docs/#/parsing/string-format/
+             * @access public
+             * @default "MM/DD/YY h:mm:ss a"
+             */
+            dateFormat: "MM/DD/YY h:mm:ss a",
+            /**
              * Used to format dates for the output display in the footer of a
              * chart.
              *
-             * @param {Date}
-             *            date the date to be formated
+             * @param {int}
+             *            unix timestamp of the date to be formated
              * @returns a string representation of the date
              * @access public
              */
-            dateFormatter : function(date) {
-                return d3.time.format('%-m/%-d/%Y %-I:%M:%S %p')(date);
+            dateFormatter : function(date, timezone) {
+                return moment.utc(date, "X").tz(timezone).format(zenoss.visualization.dateFormat);
             },
 
             /**
@@ -105,8 +113,8 @@
              * @returns string representation of the timestamp
              * @access public
              */
-            tickFormat : function(start, end, ts) {
-                var _start, _end;
+            tickFormat : function(start, end, ts, timezone) {
+                var _start, _end, ts_seconds;
 
                 /*
                  * Convert the strings to date instances, with the understanding
@@ -125,22 +133,30 @@
                     _end = end;
                 }
 
+                //NOTE: Javascript timestamps are usually in milliseconds,
+                // but moment.js uses seconds so we have to divide by 1000
+                ts_seconds = ts / 1000;
                 // Select a date/time format based on the range
                 if (_start.getFullYear() === _end.getFullYear()) {
                     if (_start.getMonth() === _end.getMonth()) {
                         if (_start.getDate() === _end.getDate()) {
                             if (_start.getHours() === _end.getHours()) {
                                 if (_start.getMinutes() === _end.getMinutes()) {
-                                    return d3.time.format('::%S')(new Date(ts));
+                                    // only show seconds
+                                    return moment.utc(ts_seconds, "X").tz(timezone).format("::ss");
                                 }
-                                return d3.time.format(':%M:%S')(new Date(ts));
+                                // show minutes and seconds
+                                return moment.utc(ts_seconds, "X").tz(timezone).format(":mm :ss");
                             }
-                            return d3.time.format('%H:%M:%S')(new Date(ts));
+                            // hours, minutes and seconds
+                            return moment.utc(ts_seconds, "X").tz(timezone).format("H:mm:ss");
                         }
                     }
-                    return d3.time.format('%m/%d %H:%M:%S')(new Date(ts));
+                    //show the date
+                    return moment.utc(ts_seconds, "X").tz(timezone).format("MM/DD-H:mm:ss");
                 }
-                return d3.time.format('%x %X')(new Date(ts));
+                // show the full date
+                return moment.utc(ts_seconds, "X").tz(timezone).format(zenoss.visualization.dateFormat);
             },
 
             /**
@@ -480,6 +496,7 @@
                 if ($.isNumeric(config.maxy)) {
                     this.maxy = config.maxy;
                 }
+                this.timezone = config.timezone;
                 this.svgwrapper = document.createElement('div');
                 $(this.svgwrapper).addClass('zenchart');
                 $(this.div).append($(this.svgwrapper));
@@ -998,20 +1015,21 @@
      *         chart, else false.
      */
     zenoss.visualization.Chart.prototype.__updateFooter = function(data) {
-        var sta, eta, plot, dp, vals, cur, min, max, avg, cols, init, label, ll, i, v, vIdx, k, rows, row, box, color, resize = false;
+        var sta, eta, plot, dp, vals, cur, min, max, avg, cols, init, label, ll, i, v, vIdx, k, rows, row, box, color, resize = false,
+            timezone = this.timezone || jstz.determine().name();
         if (!this.table) {
             return false;
         }
         rows = $(this.table).find('tr');
         if (data) {
-            sta = zenoss.visualization.dateFormatter(new Date( data.startTimeActual * 1000));
-            eta = zenoss.visualization.dateFormatter(new Date( data.endTimeActual * 1000));
+            sta = zenoss.visualization.dateFormatter(data.startTimeActual, timezone );
+            eta = zenoss.visualization.dateFormatter(data.endTimeActual, timezone);
         } else {
             sta = eta = 'N/A';
 
         }
         $($(rows[0]).find('td')).html(
-                sta + ' to ' + eta + ' (' + jstz.determine().name() + ')');
+                sta + ' to ' + eta + ' (' + timezone + ')');
 
         /*
          * The class on the value rows was set when they were created so get a
@@ -2037,10 +2055,15 @@
      *            [fail] called if the core dependencies are not loaded
      */
     zenoss.visualization.__bootstrap = function(success, fail) {
+        var sources = [ 'jquery.min.js', 'd3.v3.min.js', 'jstz-1.0.4.min.js',
+                    'css/zenoss.css', 'sprintf.min.js' ];
+        // if moment isn't already loaded load it now, hopefully the versions will be compatible
+        if (window.moment == null) {
+            sources = sources.concat(['moment.min.js', 'moment-timezone.js', 'moment-timezone-data.js']);
+        }
         zenoss.visualization.__loadDependencies({
             'defined' : 'd3',
-            'source' : [ 'jquery.min.js', 'd3.v3.min.js', 'jstz-1.0.4.min.js',
-                    'css/zenoss.css', 'sprintf.min.js' ]
+            'source' : sources
         }, success, fail);
     };
     window.zenoss = zenoss;
