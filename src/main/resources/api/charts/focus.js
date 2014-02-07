@@ -29,17 +29,17 @@
 
             _chart.model().xAxis.tickFormat(function(ts) {
                 return zenoss.visualization.tickFormat(data.startTimeActual,
-                        data.endTimeActual, ts);
+                        data.endTimeActual, ts, chart.timezone);
             });
             _chart.model().x2Axis.tickFormat(function(ts) {
                 return zenoss.visualization.tickFormat(data.startTimeActual,
-                        data.endTimeActual, ts);
+                        data.endTimeActual, ts, chart.timezone);
             });
 
             chart.svg.datum(chart.plots).transition().duration(0).call(
                     _chart.model());
         },
-        
+
         resize : function(chart) {
             var _chart = chart.closure, model = _chart.model();
             model.height($(chart.svgwrapper).height());
@@ -54,11 +54,11 @@
 
             model.xAxis.tickFormat(function(ts) {
                 return zenoss.visualization.tickFormat(data.startTimeActual,
-                        data.endTimeActual, ts);
+                        data.endTimeActual, ts, chart.timezone);
             });
             model.x2Axis.tickFormat(function(ts) {
                 return zenoss.visualization.tickFormat(data.startTimeActual,
-                        data.endTimeActual, ts);
+                        data.endTimeActual, ts, chart.timezone);
             });
             model.yAxis.tickFormat(function(value){
                 return chart.formatValue(value);

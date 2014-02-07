@@ -29,7 +29,7 @@
 
             _chart.model().xAxis.tickFormat(function(ts) {
                 return zenoss.visualization.tickFormat(data.startTimeActual,
-                        data.endTimeActual, ts);
+                        data.endTimeActual, ts, chart.timezone);
             });
             chart.svg.datum(chart.plots).transition().duration(0).call(
                     _chart.model());
@@ -42,7 +42,7 @@
 
             model.xAxis.tickFormat(function(ts) {
                 return zenoss.visualization.tickFormat(data.startTimeActual,
-                        data.endTimeActual, ts);
+                        data.endTimeActual, ts, chart.timezone);
             });
             model.yAxis.tickFormat(function(value) {
                 return chart.formatValue(value);
@@ -66,7 +66,7 @@
                     chart.svg.call(model);
                 });
             });
-            
+
             model.lines.isArea(function(d) {
                 return d.fill;
             });
