@@ -82,9 +82,9 @@
              * It must be a valid moment.js date format.
              * http://momentjs.com/docs/#/parsing/string-format/
              * @access public
-             * @default "MM/DD/YY h:mm:ss a"
+             * @default "MM/DD/YY hh:mm:ss a"
              */
-            dateFormat: "MM/DD/YY h:mm:ss a",
+            dateFormat: "MM/DD/YY hh:mm:ss a",
             /**
              * Used to format dates for the output display in the footer of a
              * chart.
@@ -149,11 +149,11 @@
                                 return moment.utc(ts_seconds, "X").tz(timezone).format(":mm :ss");
                             }
                             // hours, minutes and seconds
-                            return moment.utc(ts_seconds, "X").tz(timezone).format("H:mm:ss");
+                            return moment.utc(ts_seconds, "X").tz(timezone).format("hh:mm:ssa");
                         }
                     }
                     //show the date
-                    return moment.utc(ts_seconds, "X").tz(timezone).format("MM/DD-H:mm:ss");
+                    return moment.utc(ts_seconds, "X").tz(timezone).format("MM/DD-hh:mm:ssa");
                 }
                 // show the full date
                 return moment.utc(ts_seconds, "X").tz(timezone).format(zenoss.visualization.dateFormat);
