@@ -33,6 +33,7 @@ package org.zenoss.app.metricservice;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zenoss.app.metricservice.api.configs.MetricServiceConfig;
+import org.zenoss.app.metricservice.api.model.ReturnSet;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
@@ -42,7 +43,7 @@ public class MetricServiceConfigTest {
 
     private static final String START_TIME = "2013/04/30-07:00:00-GMT";
     private static final String END_TIME = "2013/04/30-08:00:00-GMT";
-    private static final boolean EXACT_WINDOW = true;
+    private static final ReturnSet RETURN_SET = ReturnSet.EXACT;
     private static final boolean SERIES = false;
     private static final String TSDB_TZ = "UTC";
     private static final String TSDB_URL = "http://localhost:4242";
@@ -52,13 +53,13 @@ public class MetricServiceConfigTest {
         MetricServiceConfig config = new MetricServiceConfig();
         config.setDefaultStartTime(START_TIME);
         config.setDefaultEndTime(END_TIME);
-        config.setDefaultExactTimeWindow(EXACT_WINDOW);
+        config.setDefaultReturnSet(RETURN_SET);
         config.setDefaultSeries(SERIES);
         config.setDefaultTsdTimeZone(TSDB_TZ);
         config.setOpenTsdbUrl(TSDB_URL);
         Assert.assertEquals(START_TIME, config.getDefaultStartTime());
         Assert.assertEquals(END_TIME, config.getDefaultEndTime());
-        Assert.assertEquals(EXACT_WINDOW, config.getDefaultExactTimeWindow());
+        Assert.assertEquals(RETURN_SET, config.getDefaultReturnSet());
         Assert.assertEquals(SERIES, config.getDefaultSeries());
         Assert.assertEquals(TSDB_TZ, config.getDefaultTsdTimeZone());
         Assert.assertEquals(TSDB_URL, config.getOpenTsdbUrl());

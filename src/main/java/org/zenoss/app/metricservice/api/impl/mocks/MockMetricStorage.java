@@ -36,6 +36,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.ParseException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -51,6 +52,7 @@ import org.zenoss.app.metricservice.api.impl.MetricStorageAPI;
 import org.zenoss.app.metricservice.api.impl.OpenTSDBPMetricStorage;
 import org.zenoss.app.metricservice.api.impl.Utils;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
+import org.zenoss.app.metricservice.api.model.ReturnSet;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
@@ -72,14 +74,11 @@ public class MockMetricStorage implements MetricStorageAPI {
     @Autowired
     MetricServiceAppConfiguration config;
 
-    public TimeZone getServerTimeZone() {
-        return TimeZone.getDefault();
-    }
 
     public byte[] generateData(MetricServiceAppConfiguration config, String id,
-            String startTime, String endTime, Boolean exactTimeWindow,
-            Boolean series, List<MetricSpecification> queries)
-            throws IOException {
+            String startTime, String endTime, ReturnSet returnset,
+            Boolean series, String downsample, Map<String, List<String>> tags,
+            List<MetricSpecification> queries) throws IOException {
         log.debug("Generate data for '{}' to '{}' requested", startTime,
                 endTime);
 
@@ -139,9 +138,17 @@ public class MockMetricStorage implements MetricStorageAPI {
                     buf.append(2.0);
                 }
 
-                if (query.getTags() != null) {
-                    for (Map.Entry<String, String> tag : query.getTags()
-                            .entrySet()) {
+                // Need to join the global tags with the per metric tags,
+                // overriding any global tag with that specified per metric
+                if (tags != null || query.getTags() != null) {
+                    Map<String, List<String>> joined = new HashMap<String, List<String>>();
+                    if (tags != null) {
+                        joined.putAll(tags);
+                    }
+                    if (query.getTags() != null) {
+                        joined.putAll(query.getTags());
+                    }
+                    for (Map.Entry<String, List<String>> tag : joined.entrySet()) {
                         buf.append(' ').append(tag.getKey()).append(EQ)
                                 .append(MOCK_VALUE);
                     }
@@ -165,11 +172,11 @@ public class MockMetricStorage implements MetricStorageAPI {
      * java.lang.String, java.lang.Boolean, java.lang.Boolean, java.util.List)
      */
     public BufferedReader getReader(MetricServiceAppConfiguration config,
-            String id, String startTime, String endTime,
-            Boolean exactTimeWindow, Boolean series,
+            String id, String startTime, String endTime, ReturnSet returnset,
+            Boolean series, String downsample, Map<String, List<String>> tags,
             List<MetricSpecification> queries) throws IOException {
-        byte[] data = generateData(config, id, startTime, endTime,
-                exactTimeWindow, series, queries);
+        byte[] data = generateData(config, id, startTime, endTime, returnset,
+                series, downsample, tags, queries);
         return new BufferedReader(new InputStreamReader(
                 new ByteArrayInputStream(data)));
     }

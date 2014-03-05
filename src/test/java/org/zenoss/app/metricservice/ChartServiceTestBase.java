@@ -73,16 +73,16 @@ public abstract class ChartServiceTestBase extends ResourceTest {
         addResource(resource);
     }
 
-    private List<Chart> createCharts(int numFilters, int numDatapoints,
+    private List<Chart> createCharts(int numTags, int numDatapoints,
             int numCharts) {
         // Add 100 charts so we can list them in groups of 10
         Range range = new Range();
         range.setStart("1h-ago");
         range.setEnd("now");
 
-        Map<String, String> filter = new HashMap<String, String>();
-        for (int i = 0; i < numFilters; ++i) {
-            filter.put("Name=" + i, "Value=" + i);
+        Map<String, String> tags = new HashMap<String, String>();
+        for (int i = 0; i < numTags; ++i) {
+            tags.put("Name=" + i, "Value=" + i);
         }
 
         List<Datapoint> datapoints = new ArrayList<Datapoint>();
@@ -98,7 +98,7 @@ public abstract class ChartServiceTestBase extends ResourceTest {
             Chart chart = new Chart();
             chart.setName("chart-" + i);
             chart.setRange(range);
-            chart.setFilter(filter);
+            chart.setTags(tags);
             chart.setDatapoints(datapoints);
             charts.add(chart);
         }
@@ -109,7 +109,7 @@ public abstract class ChartServiceTestBase extends ResourceTest {
     private List<String> addCharts(List<Chart> charts) {
         List<String> uuids = new ArrayList<String>();
 
-        WebResource wr = client().resource("/chart");
+        WebResource wr = client().resource("/api/performance/chart");
         Assert.assertNotNull(wr);
         wr.accept(MediaType.APPLICATION_JSON);
 
@@ -146,7 +146,7 @@ public abstract class ChartServiceTestBase extends ResourceTest {
         List<String> ids = null;
         try {
             WebResource wr = client().resource(
-                    "/chart?start=-1&end=0&includeCount=true");
+                    "/api/performance/chart?start=-1&end=0&includeCount=true");
             ClientResponse response = wr.get(ClientResponse.class);
             Assert.assertEquals("Unable to get count", 200,
                     response.getStatus());
@@ -156,7 +156,7 @@ public abstract class ChartServiceTestBase extends ResourceTest {
             List<Chart> charts = createCharts(5, 5, 100);
             ids = addCharts(charts);
 
-            wr = client().resource("/chart?start=-1&end=0&includeCount=true");
+            wr = client().resource("/api/performance/chart?start=-1&end=0&includeCount=true");
             response = wr.get(ClientResponse.class);
             Assert.assertEquals("Unable to get count", 200,
                     response.getStatus());
@@ -185,7 +185,7 @@ public abstract class ChartServiceTestBase extends ResourceTest {
         try {
             // Add and verify charts
             WebResource wr = client().resource(
-                    "/chart?start=-1&end=0&includeCount=true");
+                    "/api/performance/chart?start=-1&end=0&includeCount=true");
             ClientResponse response = wr.get(ClientResponse.class);
             Assert.assertEquals("Unable to get count", 200,
                     response.getStatus());
@@ -195,7 +195,7 @@ public abstract class ChartServiceTestBase extends ResourceTest {
             List<Chart> charts = createCharts(5, 5, 100);
             ids = addCharts(charts);
 
-            wr = client().resource("/chart?start=-1&end=0&includeCount=true");
+            wr = client().resource("/api/performance/chart?start=-1&end=0&includeCount=true");
             response = wr.get(ClientResponse.class);
             Assert.assertEquals("Unable to get count", 200,
                     response.getStatus());
@@ -223,7 +223,7 @@ public abstract class ChartServiceTestBase extends ResourceTest {
             }
 
             // Make sure the count hasn't changed (assumes we are sole writer)
-            wr = client().resource("/chart?start=-1&end=0&includeCount=true");
+            wr = client().resource("/api/performance/chart?start=-1&end=0&includeCount=true");
             response = wr.get(ClientResponse.class);
             Assert.assertEquals("Unable to get count", 200,
                     response.getStatus());
@@ -239,8 +239,8 @@ public abstract class ChartServiceTestBase extends ResourceTest {
                 Chart chart = response.getEntity(Chart.class);
                 Assert.assertEquals("name was not updated",
                         id.substring("/chart/".length()), chart.getName());
-                Assert.assertEquals("filters were not updated", 1, chart
-                        .getFilter().size());
+                Assert.assertEquals("tags were not updated", 1, chart
+                        .getTags().size());
                 Assert.assertEquals("data points were not updated", 1, chart
                         .getDatapoints().size());
             }
@@ -258,7 +258,7 @@ public abstract class ChartServiceTestBase extends ResourceTest {
         try {
             // Add and verify charts
             WebResource wr = client().resource(
-                    "/chart?start=-1&end=0&includeCount=true");
+                    "/api/performance/chart?start=-1&end=0&includeCount=true");
             ClientResponse response = wr.get(ClientResponse.class);
             Assert.assertEquals("Unable to get count", 200,
                     response.getStatus());
@@ -268,7 +268,7 @@ public abstract class ChartServiceTestBase extends ResourceTest {
             List<Chart> charts = createCharts(5, 5, 100);
             ids = addCharts(charts);
 
-            wr = client().resource("/chart?start=-1&end=0&includeCount=true");
+            wr = client().resource("/api/performance/chart?start=-1&end=0&includeCount=true");
             response = wr.get(ClientResponse.class);
             Assert.assertEquals("Unable to get count", 200,
                     response.getStatus());
@@ -289,7 +289,7 @@ public abstract class ChartServiceTestBase extends ResourceTest {
             deleteCharts(ids);
 
             // Make sure the count is back to normal
-            wr = client().resource("/chart?start=-1&end=0&includeCount=true");
+            wr = client().resource("/api/performance/chart?start=-1&end=0&includeCount=true");
             response = wr.get(ClientResponse.class);
             Assert.assertEquals("Unable to get count", 200,
                     response.getStatus());
@@ -326,7 +326,7 @@ public abstract class ChartServiceTestBase extends ResourceTest {
             StringBuilder buf = new StringBuilder();
             for (int i = 0; i < 10; ++i) {
                 buf.setLength(0);
-                buf.append("/chart?start=").append(start).append("&end=")
+                buf.append("/api/performance/chart?start=").append(start).append("&end=")
                         .append(end);
                 WebResource wr = client().resource(buf.toString());
                 Assert.assertNotNull(wr);
@@ -368,7 +368,7 @@ public abstract class ChartServiceTestBase extends ResourceTest {
             for (int i = 0; i < 10; ++i) {
                 int idx = r.nextInt(charts.size());
                 buf.setLength(0);
-                buf.append("/chart/name/").append(charts.get(idx).getName());
+                buf.append("/api/performance/chart/name/").append(charts.get(idx).getName());
                 WebResource wr = client().resource(buf.toString());
                 Assert.assertNotNull(wr);
                 ClientResponse response = wr.get(ClientResponse.class);

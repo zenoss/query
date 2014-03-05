@@ -36,6 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.impl.ResourcePersistenceAPI;
+import org.zenoss.app.metricservice.api.impl.ResourcePersistenceFactoryAPI;
 import org.zenoss.dropwizardspring.annotations.HealthCheck;
 
 @Configuration
@@ -46,7 +47,7 @@ public class ResourcePersistenceHealthCheck extends
     MetricServiceAppConfiguration config;
 
     @Autowired
-    ResourcePersistenceAPI persistence;
+    ResourcePersistenceFactoryAPI persistenceFactory;
 
     protected ResourcePersistenceHealthCheck() {
         super("Resource Persistence");
@@ -54,25 +55,22 @@ public class ResourcePersistenceHealthCheck extends
 
     @Override
     protected Result check() throws Exception {
+        ResourcePersistenceAPI api = null;
         try {
-            String[] parts = config.getChartServiceConfig()
-                    .getRedisConnection().split(":");
-            if (parts.length == 1) {
-                persistence.connect("UNKNOWN", parts[0]);
-            } else if (parts.length == 2) {
-                persistence.connect("UNKNOWN", parts[0],
-                        Integer.parseInt(parts[1]));
-            } else {
+
+            if (!persistenceFactory.isConnected()) {
                 return Result.unhealthy("Bad connection string");
             }
-
-            persistence.ping();
+            api = persistenceFactory.getInstance("UNKNOWN");
+            api.ping();
             return Result.healthy();
         } catch (WebApplicationException wae) {
-            return Result.unhealthy(wae);            
-        } catch (Throwable t) {
-            return Result.unhealthy(String.format("%s : %s", t.getClass()
-                    .getName(), t.getMessage()));
+            return Result.unhealthy(wae);
+        } catch (Exception e) {
+            return Result.unhealthy(String.format("%s : %s", e.getClass()
+                    .getName(), e.getMessage()));
+        } finally {
+            persistenceFactory.returnInstance(api);
         }
     }
 }

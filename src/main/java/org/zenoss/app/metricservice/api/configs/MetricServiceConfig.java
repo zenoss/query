@@ -30,6 +30,8 @@
  */
 package org.zenoss.app.metricservice.api.configs;
 
+import org.zenoss.app.metricservice.api.model.ReturnSet;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -38,7 +40,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class MetricServiceConfig {
     @JsonProperty
-    private Boolean defaultExactTimeWindow = Boolean.TRUE;
+    private ReturnSet defaultReturnSet = ReturnSet.EXACT;
 
     @JsonProperty
     private String defaultStartTime = "1h-ago";
@@ -54,15 +56,18 @@ public class MetricServiceConfig {
 
     @JsonProperty
     private String defaultTsdTimeZone = "UTC";
-    
+
     @JsonProperty
     private int connectionTimeoutMs = 1000;
 
+    @JsonProperty
+    private Boolean sendRateOptions = Boolean.FALSE;
+
     /**
-     * @return the defaultExactTimeWindow
+     * @return the defaultReturnSet
      */
-    public final Boolean getDefaultExactTimeWindow() {
-        return defaultExactTimeWindow;
+    public final ReturnSet getDefaultReturnSet() {
+        return defaultReturnSet;
     }
 
     /**
@@ -101,11 +106,11 @@ public class MetricServiceConfig {
     }
 
     /**
-     * @param defaultExactTimeWindow
-     *            the defaultExactTimeWindow to set
+     * @param defaultReturnSet
+     *            the defaultReturnSet to set
      */
-    public final void setDefaultExactTimeWindow(Boolean defaultExactTimeWindow) {
-        this.defaultExactTimeWindow = defaultExactTimeWindow;
+    public final void setDefaultReturnSet(ReturnSet defaultReturnSet) {
+        this.defaultReturnSet = defaultReturnSet;
     }
 
     /**
@@ -137,7 +142,17 @@ public class MetricServiceConfig {
      *            the openTsdbUrl to set
      */
     public final void setOpenTsdbUrl(String openTsdbUrl) {
-        this.openTsdbUrl = openTsdbUrl;
+
+        /**
+         * If the given value ends with a '/', then lets trim it as we will add
+         * that later on.
+         */
+        if (openTsdbUrl.endsWith("/")) {
+            this.openTsdbUrl = openTsdbUrl.substring(0,
+                    openTsdbUrl.length() - 1);
+        } else {
+            this.openTsdbUrl = openTsdbUrl;
+        }
     }
 
     /**
@@ -154,5 +169,20 @@ public class MetricServiceConfig {
 
     public final void setConnectionTimeoutMs(int connectionTimeoutMs) {
         this.connectionTimeoutMs = connectionTimeoutMs;
+    }
+
+    /**
+     * @return the sendRateOptions
+     */
+    public Boolean getSendRateOptions() {
+        return sendRateOptions;
+    }
+
+    /**
+     * @param sendRateOptions
+     *            the sendRateOptions to set
+     */
+    public void setSendRateOptions(Boolean sendRateOptions) {
+        this.sendRateOptions = sendRateOptions;
     }
 }

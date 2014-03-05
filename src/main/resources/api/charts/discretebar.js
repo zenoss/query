@@ -1,37 +1,109 @@
-zenoss.visualization.chart.discretebar = {
-	required : {
-		defined : 'nv',
-		source : [ 'nv.d3.min.js', 'css/nv.d3.css' ]
-	},
+(function() {
+    "use strict";
+    var discretebar = {
+        required : {
+            defined : 'nv',
+            source : [ 'nv.d3.min.js', 'css/nv.d3.css' ]
+        },
 
-	build : function(chart) {
-		var _chart = nv.models.discreteBarChart().x(function(d) {
-			return d.label
-		}).y(function(d) {
-			return d.value
-		}).staggerLabels(true).tooltips(true).showValues(true)
+        Chart : function() {
+            var _model = null;
+            var _averages = {
+                'key' : 'Average',
+                'values' : []
+            };
 
-		var __means = [ {
-			'key' : 'Cumlative',
-			'values' : []
-		} ];
-		chart.plots.forEach(function(plot) {
-			__means[0].values.push({
-				'label' : plot.key,
-				'value' : d3.mean(plot.values, function(d) {
-					return d.y;
-				})
-			});
-		});
-		_chart.height($('#' + chart.name).height());
+            this.model = function(_) {
+                if (!arguments.length) {
+                    return _model;
+                }
+                _model = _;
+            };
 
-		nv.addGraph(function() {
-			chart.svg.datum(__means).transition().duration(500).call(_chart);
-		});
+            this.averages = function(_) {
+                if (!arguments.length) {
+                    return [ _averages ];
+                }
+                var plots = _;
 
-		nv.utils.windowResize(_chart.update);
-	},
-	render : function() {
+                _averages.values = [];
+                var label;
+                plots.forEach(function(plot) {
+                    label = plot.key;
+                    if (label.indexOf('{') > -1) {
+                        label = label.substring(0, 50);
+                    }
 
-	}
-}
+                    _averages.values.push({
+                        'label' : label,
+                        'value' : d3.mean(plot.values, function(d) {
+                            return d.y;
+                        })
+                    });
+                });
+                return [ _averages ];
+            };
+        },
+
+        color : function(chart, impl, idx) {
+            return {
+                'color' : impl.model().color()(0, idx),
+                'opacity' : 1
+            };
+        },
+
+        update : function(chart, data) {
+            var _chart = chart.closure;
+
+            chart.svg.datum(_chart.averages(chart.plots)).transition()
+                    .duration(0).call(_chart.model());
+        },
+
+        resize : function(chart) {
+            var _chart = chart.closure, model = _chart.model();
+            model.height($(chart.svgwrapper).height());
+            chart.svg.transition().duration(0).call(model);
+        },
+
+        build : function(chart) {
+            var _chart = new zenoss.visualization.chart.discretebar.Chart();
+            var model = nv.models.discreteBarChart();
+            _chart.model(model);
+
+            model.x(function(d) {
+                return d.label;
+            });
+            model.y(function(d) {
+                return d.value;
+            });
+            model.yAxis.tickFormat(function(value){
+                return chart.formatValue(value);
+            });
+            if (chart.maxy !== undefined && chart.miny !== undefined) {
+                model.forceY([chart.miny, chart.maxy]);
+            }
+            model.staggerLabels(true);
+            model.tooltips(true);
+            model.showValues(true);
+            model.height($(chart.svgwrapper).height());
+            model.width($(chart.svgwrapper).width());
+            chart.svg.datum(_chart.averages(chart.plots));
+
+            nv.addGraph(function() {
+                chart.svg.transition().duration(500).call(model);
+                nv.utils.windowResize(function() {
+                    chart.svg.call(model.update);
+                });
+            });
+
+            return _chart;
+        },
+        render : function() {
+
+        }
+    };
+
+    $.extend(true, zenoss.visualization.chart, {
+        discretebar : discretebar
+    });
+}());

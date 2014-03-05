@@ -51,7 +51,7 @@ public class RateOptionsTest {
         Assert.assertTrue(ms.getRateOptions().getCounter());
         Assert.assertNull(ms.getRateOptions().getCounterMax());
         Assert.assertNull(ms.getRateOptions().getResetThreshold());
-        Assert.assertEquals("avg:rate{counter}:laLoadInt", ms.toString());
+        Assert.assertEquals("avg:rate{counter}:laLoadInt", ms.toString(true));
     }
 
     @Test
@@ -64,7 +64,8 @@ public class RateOptionsTest {
         Assert.assertNull(ms.getRateOptions().getCounterMax());
         Assert.assertEquals((long) 2000, (long) ms.getRateOptions()
                 .getResetThreshold());
-        Assert.assertEquals("avg:rate{counter,,2000}:laLoadInt", ms.toString());
+        Assert.assertEquals("avg:rate{counter,,2000}:laLoadInt",
+                ms.toString(true));
     }
 
     @Test
@@ -77,7 +78,8 @@ public class RateOptionsTest {
         Assert.assertNull(ms.getRateOptions().getCounterMax());
         Assert.assertEquals((long) 2000, (long) ms.getRateOptions()
                 .getResetThreshold());
-        Assert.assertEquals("avg:rate{counter,,2000}:laLoadInt", ms.toString());
+        Assert.assertEquals("avg:rate{counter,,2000}:laLoadInt",
+                ms.toString(true));
     }
 
     @Test
@@ -91,7 +93,7 @@ public class RateOptionsTest {
                 .getCounterMax());
         Assert.assertNull(ms.getRateOptions().getResetThreshold());
         Assert.assertEquals("avg:rate{counter,987654321}:laLoadInt",
-                ms.toString());
+                ms.toString(true));
     }
 
     @Test
@@ -105,7 +107,7 @@ public class RateOptionsTest {
                 .getCounterMax());
         Assert.assertNull(ms.getRateOptions().getResetThreshold());
         Assert.assertEquals("avg:rate{counter,987654321}:laLoadInt",
-                ms.toString());
+                ms.toString(true));
     }
 
     @Test
@@ -121,7 +123,7 @@ public class RateOptionsTest {
         Assert.assertEquals((long) 2000, (long) ms.getRateOptions()
                 .getResetThreshold());
         Assert.assertEquals("avg:rate{counter," + Long.MAX_VALUE
-                + ",2000}:laLoadInt", ms.toString());
+                + ",2000}:laLoadInt", ms.toString(true));
 
     }
 
@@ -138,7 +140,7 @@ public class RateOptionsTest {
         Assert.assertEquals((long) 2000, (long) ms.getRateOptions()
                 .getResetThreshold());
         Assert.assertEquals("avg:10m-avg:rate{counter," + Long.MAX_VALUE
-                + ",2000}:laLoadInt", ms.toString());
+                + ",2000}:laLoadInt", ms.toString(true));
 
     }
 

@@ -31,6 +31,7 @@
 package org.zenoss.app.metricservice.api.remote;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -43,8 +44,10 @@ import javax.ws.rs.core.Response;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zenoss.app.metricservice.api.MetricServiceAPI;
+import org.zenoss.app.metricservice.api.impl.Utils;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.PerformanceQuery;
+import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.dropwizardspring.annotations.Resource;
 
 import com.google.common.base.Optional;
@@ -54,43 +57,52 @@ import com.yammer.metrics.annotation.Timed;
  * @author David Bainbridge <dbainbridge@zenoss.com>
  * 
  */
-@Resource
-@Path("query")
+@Resource(name = "query")
+@Path("/api/performance/query")
 @Produces(MediaType.APPLICATION_JSON)
 public class MetricResources {
 
-    @Autowired
+    @Autowired(required = true)
     MetricServiceAPI api;
 
-    @Path("/performance")
     @Timed
     @GET
     public Response query(@QueryParam("id") Optional<String> id,
             @QueryParam("query") List<MetricSpecification> queries,
             @QueryParam("start") Optional<String> startTime,
             @QueryParam("end") Optional<String> endTime,
-            @QueryParam("exact") Optional<Boolean> exactTimeWindow,
+            @QueryParam("returnset") Optional<ReturnSet> returnset,
             @QueryParam("series") Optional<Boolean> series) {
 
-        return api.query(id, startTime, endTime, exactTimeWindow, series,
-                queries);
+        return api.query(id, startTime, endTime, returnset, series,
+                Optional.<String> absent(), Optional.<String> absent(),
+                Optional.<Map<String, List<String>>> absent(), queries);
     }
 
-    @Path("/performance")
     @Timed
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response query2(PerformanceQuery query) {
+        if (query == null) {
+            return Utils.getErrorResponse(null, 400,
+                    "Received an empty query request", "Empty Request");
+        }
         Optional<String> id = Optional.<String> absent();
-        Optional<String> start = query.getStart() != null ? Optional.of(query
-                .getStart()) : Optional.<String> absent();
-        Optional<String> end = query.getEnd() != null ? Optional.of(query
-                .getEnd()) : Optional.<String> absent();
-        Optional<Boolean> exact = query.getExactTimeWindow() == null ? Optional
-                .<Boolean> absent() : Optional.of(query.getExactTimeWindow());
-        Optional<Boolean> series = (query.getSeries() == null ? Optional
-                .<Boolean> absent() : Optional.of(query.getSeries()));
+        Optional<String> start = Optional.<String> fromNullable(query
+                .getStart());
+        Optional<String> end = Optional.<String> fromNullable(query.getEnd());
+        Optional<ReturnSet> returnset = Optional.<ReturnSet> fromNullable(query
+                .getReturnset());
+        Optional<Boolean> series = Optional.<Boolean> fromNullable(query
+                .getSeries());
+        Optional<String> downsample = Optional.<String> fromNullable(query
+                .getDownsample());
+        Optional<String> grouping = Optional.<String> fromNullable(query
+                .getGrouping());
+        Optional<Map<String, List<String>>> tags = Optional
+                .<Map<String, List<String>>> fromNullable(query.getTags());
 
-        return api.query(id, start, end, exact, series, query.getMetrics());
+        return api.query(id, start, end, returnset, series, downsample,
+                grouping, tags, query.getMetrics());
     }
 }

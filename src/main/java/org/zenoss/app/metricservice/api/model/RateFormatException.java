@@ -45,7 +45,6 @@ public class RateFormatException extends RuntimeException {
      * 
      */
     public RateFormatException() {
-        // TODO Auto-generated constructor stub
     }
 
     /**
@@ -53,24 +52,21 @@ public class RateFormatException extends RuntimeException {
      */
     public RateFormatException(String message) {
         super(message);
-        // TODO Auto-generated constructor stub
     }
 
     /**
      * @param cause
      */
-    public RateFormatException(Throwable cause) {
+    public RateFormatException(Exception cause) {
         super(cause);
-        // TODO Auto-generated constructor stub
     }
 
     /**
      * @param message
      * @param cause
      */
-    public RateFormatException(String message, Throwable cause) {
+    public RateFormatException(String message, Exception cause) {
         super(message, cause);
-        // TODO Auto-generated constructor stub
     }
 
     /**
@@ -82,7 +78,5 @@ public class RateFormatException extends RuntimeException {
     public RateFormatException(String message, Throwable cause,
             boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
-        // TODO Auto-generated constructor stub
     }
-
 }

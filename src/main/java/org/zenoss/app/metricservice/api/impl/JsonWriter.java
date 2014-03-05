@@ -93,8 +93,7 @@ public class JsonWriter extends BufferedWriter {
      *             when then underlying writer throws an exception
      */
     public JsonWriter value(String name, String value) throws IOException {
-        value(name, value, false);
-        return this;
+        return value(name, value, false);
     }
 
     /**
@@ -136,8 +135,7 @@ public class JsonWriter extends BufferedWriter {
      *             when then underlying writer throws an exception
      */
     public JsonWriter value(String name, boolean value) throws IOException {
-        value(name, value, false);
-        return this;
+        return value(name, value, false);
     }
 
     /**
@@ -179,8 +177,7 @@ public class JsonWriter extends BufferedWriter {
      *             when then underlying writer throws an exception
      */
     public JsonWriter value(String name, long value) throws IOException {
-        value(name, value, false);
-        return this;
+        return value(name, value, false);
     }
 
     /**
@@ -222,8 +219,7 @@ public class JsonWriter extends BufferedWriter {
      *             when then underlying writer throws an exception
      */
     public JsonWriter value(String name, double value) throws IOException {
-        value(name, value, false);
-        return this;
+        return value(name, value, false);
     }
 
     /**
@@ -265,8 +261,7 @@ public class JsonWriter extends BufferedWriter {
      *             when then underlying writer throws an exception
      */
     public JsonWriter value(String name, int value) throws IOException {
-        value(name, value, false);
-        return this;
+        return value(name, value, false);
     }
 
     /**
@@ -308,8 +303,50 @@ public class JsonWriter extends BufferedWriter {
      *             when then underlying writer throws an exception
      */
     public JsonWriter value(String name, float value) throws IOException {
-        value(name, value, false);
+        return value(name, value, false);
+    }
+
+    /**
+     * Writes a name / "enum" value pair in JSON format to the output with an
+     * optionally appended comma
+     * 
+     * @param name
+     *            name of the property
+     * @param value
+     *            value of the property
+     * @param appendComma
+     *            determines if a comma will be appended
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter value(String name, Enum<?> value, boolean appendComma)
+            throws IOException {
+        write('\"');
+        write(name);
+        write("\":\"");
+        write(value.toString().toLowerCase());
+        write('\"');
+        if (appendComma) {
+            write(',');
+        }
         return this;
+    }
+
+    /**
+     * Writes a name / "enum" value pair in JSON format to the output with no
+     * comma appended
+     * 
+     * @param name
+     *            name of the property
+     * @param value
+     *            value of the property
+     * @return the JsonWriter, so chaining can be utilized
+     * @throws IOException
+     *             when then underlying writer throws an exception
+     */
+    public JsonWriter value(String name, Enum<?> value) throws IOException {
+        return value(name, value, false);
     }
 
     /**

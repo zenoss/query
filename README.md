@@ -1,9 +1,77 @@
-Zenoss Central Query Service
-=====
+Zenoss Central Query Service and JavaScript Library
+====
 This project provides a HTTP/JSON based metric service capability for the information 
-that Zenoss stores in its central repository.
+that Zenoss stores in its central repository as well as a JavaScript library that allows
+a user to easily embed standard graphs in their own web page.
 
-The resources this service provides are:
+JavaScript Library
+----
+The purpose of the Zenoss Visualization JavaScript Library is to allow users and
+Zenoss developers to quickly and easily define and insert graphs into web pages.
+It is this library that Zenoss uses internally to provide the graphs that are
+part of the Zenoss application.
+
+In its most basic form the user should only have to include two JavaScript statements
+to embed Zenoss Visualizations on their web page. The first loads the Zenoss
+Visualization library and the second creates a chart.
+
+        <script type="text/javascript" src="http://zenoss.company.com:8888/api/visualization.js"></script>
+        zenoss.visualization.chart.create("id-of-div-to-augment", "name-of-saved-chart");
+
+From this initial starting point the user can expand to override the default values
+from a stored chart or even create a complete chart from within the HTML page.
+
+        zenoss.visualization.chart.create("chart1", {
+            "type" : "line",
+            "series" : true,
+            "type" : "line",
+            "returnset" : "exact",
+            "downsample" : "1m-avg",
+            "grouping" : "5m",
+            "autoscale" : {
+                "ceiling" : 5,
+                "factor" : 1024
+            },
+            "tags" {
+                "tagk1" : [ "tagv1", "tagv2" ], 
+                "tagk2" : [ "tagv1", "tagv2" ]
+            },            
+            "range" : {
+                "start" : "1h-ago",
+                "end" : "now"
+            },
+            "format" : "%5.2f",
+            "datapoints" : [ {
+                "name" : "myload1",
+                "legend" : "Legend Label for Load 1",
+                "color" : "red",
+                "fill" : true,
+                "metric" : "laLoadInt1",
+                "emit" : true,
+                "expression" : "rpn:2,*",
+                "miny" : 10,
+                "maxy" : 10000,
+                "rate" : true,              
+                "rateOptions" : {
+                    "counter" : true,
+                    "counterMax" : 20000,
+                    "resetThreshold" : 2000
+                }
+            }, {
+                "metric" : "laLoadInt5",
+                "aggregator" : "sum",
+                "downsample" : "5m-avg"
+            }, {
+                "metric" : "laLoadInt15",
+            } ]
+        }); 
+
+The complete documentation for the for the public API can be found by accessing
+the `doc/index.html` from a running instance. The complete API documentation,
+including "private" methods can be found at `doc/full/index.html`.
+
+Resources
+----
 
   - `GET /chart` - return a list of chart resources.
   
@@ -28,6 +96,7 @@ The resources this service provides are:
 
         {
             "name" : "<chart-name>",
+            "type" : <type of chart>,
             "range" : { [optional]
                 "start" : <datetime>,
                 "end"   : <datetime>,
@@ -37,27 +106,40 @@ The resources this service provides are:
             },
             "datapoints" : [
                 {
-                    "type" : i.e. line, bar, etc
                     "consolidator" : avg, sum, etc
                     "metric" : metric name
                 }, ...
             ]
         }
 
+
+    __Currently supported chart types are: `line`, `bar`, `pie`, `focus`, `discretebar`, `area`, `dc.stacked`, and `dc.area`.__
+
   - `POST /query/performance` - return the performance metrics that match the search criteria. The results are the same as for the get request below, the difference is that instead of specifying the criteria as query parameters the criteria is specified as an JSON object in the POST data. The JSON structure that is supported on this POST call follows the following format:
 
         {
-            "start"   : "<datetime>",
-            "end"     : "<datetime>",
-            "exact"   : true or false,
-            "series"  : true or false,
+            "start"      : "<datetime>",
+            "end"        : "<datetime>",
+            "returnset"  : exact | last | <undefined>
+            "series"     : true or false,
+            "downsample" : request default for downsample over all metrics,
+            "tags"       : request default for tags over all metrics
+            "grouping"   : <integer> specifies the bucket size that values are grouped
+                           into to align data from multiple metrics that are created at essentially random times 
             "metrics" : [
                 {
-                    "metric" : "<metric name>",
-                    "aggregator" : "<aggregator>",
-                    "downsample" : "<downsample>",
-                    "rate"       : true or false,
-                    "tags"       : {
+                    "metric"      : "<metric name>",
+                    "aggregator"  : "<aggregator>",
+                    "downsample"  : "<downsample>",
+                    "rate"        : true or false,
+                    "rateOptions" : { // optional
+                        "counter"        : true or false,
+                        "counterMax"     : roll over value for the counter,
+                        "resetThreshold" : delta between consecutive values which should be considered at counter reset
+                    },
+                    "expression"  : RPN expression to perform on the raw value to get the returned value
+                    "emit"        : return this metric to the client? true or false
+                    "tags"        : {
                         "tag-name" : "tag-value", ...
                     } 
                 }, ...

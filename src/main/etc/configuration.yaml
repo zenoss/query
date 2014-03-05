@@ -1,20 +1,26 @@
+authEnabled: true
 logging:
   level: INFO
   loggers:
     "org.zenoss": DEBUG
 metrics: 
-  defaultExactTimeWindow: true
+  defaultReturnSet: EXACT
   defaultStartTime: 1h-ago
   defaultEndTime: now
   defaultSeries: false
-  openTsdbUrl: http://tsdb.zenaas.com:4242
+  openTsdbUrl: http://127.0.0.1:4242
   defaultTsdTimeZone: UTC
-  connectionTimeoutMs: 1000
+  connectionTimeoutMs: 20000
+  sendRateOptions: false
 charts:
   redisConnection: localhost:6379
+proxyConfiguration:
+  hostname: 127.0.0.1
+  port: 8080
 http:
   connectorType: nonblocking
   port: 8888
+  adminPort: 58888
   ssl:
       #Example is using a java keystore in the target directory.
       keyStore: ${ssl.cert.dir}/ssl.pfx

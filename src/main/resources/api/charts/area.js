@@ -1,44 +1,102 @@
-zenoss.visualization.chart.area = {
-	required : {
-		defined : 'nv',
-		source : [ 'nv.d3.min.js', 'css/nv.d3.css' ]
-	},
+(function() {
+    "use strict";
+    var area = {
+        required : {
+            defined : 'nv',
+            source : [ 'nv.d3.min.js', 'css/nv.d3.css' ]
+        },
 
-	build : function(chart) {
-		// Area plots don't seem to do well if there are multiple data point
-		// sets and there are not the same number of points in each set, so
-		// truncate the data point areas to the same number of points.
-		if (chart.plots.length > 1) {
-			// get minmum length
-			var minLength = chart.plots[0].values.length;
-			chart.plots.forEach(function(plot) {
-				minLength = Math.min(minLength, plot.values.length);
-			});
+        color : function(chart, impl, idx) {
+            return {
+                'color' : impl.model().color()(0, idx),
+                'opacity' : 1
+            };
+        },
 
-			// Truncate
-			chart.plots.forEach(function(plot) {
-				plot.values.length = minLength;
-			});
+        Chart : function() {
+            var _model = null;
 
-		}
-		_chart = nv.models.stackedAreaChart().x(function(v) {
-			return v.x;
-		}).y(function(v) {
-			return v.y;
-		}).clipEdge(true);
+            this.model = function(_) {
+                if (!arguments.length) {
+                    return _model;
+                }
+                _model = _;
+            };
+        },
 
-		_chart.xAxis.tickFormat(function(ts) {
-			return d3.time.format('%x %X')(new Date(ts));
-		});
-		nv.addGraph(function() {
-			chart.svg.datum(chart.plots).transition().duration(500)
-					.call(_chart);
-			nv.utils.windowResize(function() {
-				chart.svg.call(_chart)
-			});
-		});
-	},
-	render : function() {
+        update : function(chart, data) {
+            // OK. Area charts really want data points to match up on keys,
+            // which
+            // makes sense as this is how they stack things. To make this work
+            // we
+            // going to walk the points and make sure they match
+            zenoss.visualization.__cull(chart);
 
-	}
-}
+            var _chart = chart.closure;
+
+            _chart.model().xAxis.tickFormat(function(ts) {
+                return zenoss.visualization.tickFormat(data.startTimeActual,
+                        data.endTimeActual, ts, chart.timezone);
+            });
+
+            chart.svg.datum(chart.plots).transition().duration(0).call(
+                    _chart.model());
+        },
+
+        resize : function(chart) {
+            var _chart = chart.closure, model = _chart.model();
+            model.height($(chart.svgwrapper).height());
+            chart.svg.transition().duration(0).call(model);
+        },
+
+        build : function(chart, data) {
+            // OK. Area charts really want data points to match up on keys,
+            // which
+            // makes sense as this is how they stack things. To make this work
+            // we
+            // going to walk the points and make sure they match
+            zenoss.visualization.__cull(chart);
+
+            var _chart = new zenoss.visualization.chart.area.Chart();
+            var model = nv.models.stackedAreaChart();
+            _chart.model(model);
+
+            model.xAxis.tickFormat(function(ts) {
+                return zenoss.visualization.tickFormat(data.startTimeActual,
+                        data.endTimeActual, ts, chart.timezone);
+            });
+            model.yAxis.tickFormat(function(value){
+                return chart.formatValue(value);
+            });
+            model.clipEdge(true);
+            model.height($(chart.svgwrapper).height());
+            model.width($(chart.svgwrapper).width());
+            model.yAxis.axisLabel(chart.yAxisLabel);
+            if (chart.maxy !== undefined && chart.miny !== undefined) {
+                model.forceY([chart.miny, chart.maxy]);
+            }
+            // magic to make the yaxis label show up
+            // see https://github.com/novus/nvd3/issues/17
+            model.margin({left: 100});
+            chart.svg.datum(chart.plots);
+
+            nv.addGraph(function() {
+                chart.svg.transition().duration(500).call(model);
+                nv.utils.windowResize(function() {
+                    chart.svg.call(model);
+                });
+            });
+            return _chart;
+        },
+        render : function() {
+
+        }
+    };
+
+
+
+    $.extend(true, zenoss.visualization.chart, {
+        area : area
+    });
+
+}());

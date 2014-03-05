@@ -31,6 +31,7 @@
 package org.zenoss.app.metricservice.api.model;
 
 import java.util.List;
+import java.util.Map;
 
 import org.zenoss.app.metricservice.api.impl.Utils;
 
@@ -52,12 +53,21 @@ public class PerformanceQuery {
     
     @JsonProperty(required=true)
     private List<MetricSpecification> metrics = null;
-    
-    @JsonProperty(value="exact")
-    private Boolean exactTimeWindow = null;
-    
+        
     @JsonProperty(value="series")
     private Boolean series = null;
+    
+    @JsonProperty(required=false)
+    private Map<String, List<String>> tags = null;
+    
+    @JsonProperty(required=false)
+    private String downsample = null;
+    
+    @JsonProperty(required=false)
+    private String grouping = null;
+    
+    @JsonProperty(value="returnset")
+    private ReturnSet returnset = null;
 
     /**
      * @return the start
@@ -88,20 +98,6 @@ public class PerformanceQuery {
     }
 
     /**
-     * @return the exactTimeWindow
-     */
-    public final Boolean getExactTimeWindow() {
-        return exactTimeWindow;
-    }
-
-    /**
-     * @param exactTimeWindow the exactTimeWindow to set
-     */
-    public final void setExactTimeWindow(Boolean exactTimeWindow) {
-        this.exactTimeWindow = exactTimeWindow;
-    }
-
-    /**
      * @return the series
      */
     public final Boolean getSeries() {
@@ -127,5 +123,61 @@ public class PerformanceQuery {
      */
     public final void setMetrics(List<MetricSpecification> metrics) {
         this.metrics = metrics;
-    } 
+    }
+
+    /**
+     * @return the tags
+     */
+    public final Map<String, List<String>> getTags() {
+        return tags;
+    }
+
+    /**
+     * @param tags the tags to set
+     */
+    public final void setTags(Map<String, List<String>> tags) {
+        this.tags = tags;
+    }
+
+    /**
+     * @return the downsample
+     */
+    public final String getDownsample() {
+        return downsample;
+    }
+
+    /**
+     * @param downsample the downsample to set
+     */
+    public final void setDownsample(String downsample) {
+        this.downsample = downsample;
+    }
+
+	/**
+     * @return the grouping
+     */
+    public String getGrouping() {
+        return grouping;
+    }
+
+    /**
+     * @param grouping the grouping to set
+     */
+    public void setGrouping(String grouping) {
+        this.grouping = grouping;
+    }
+
+    /**
+	 * @return the resturnset
+	 */
+	public ReturnSet getReturnset() {
+		return returnset;
+	}
+
+	/**
+	 * @param returnset the returnset to set
+	 */
+	public void setReturnset(ReturnSet returnset) {
+		this.returnset = returnset;
+	}
 }

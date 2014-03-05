@@ -40,6 +40,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -55,12 +56,13 @@ import org.springframework.context.annotation.Profile;
 import org.zenoss.app.annotations.API;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
+import org.zenoss.app.metricservice.api.model.ReturnSet;
 
 import com.google.common.io.ByteStreams;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
- * 
+ *
  */
 @API
 @Configuration
@@ -73,104 +75,6 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             .getLogger(OpenTSDBPMetricStorage.class);
 
     private static final String SOURCE_ID = "OpenTSDB";
-
-    /**
-     * Attempt to determine the time zone of the server on which the TSD is
-     * executing. The server time zone is determined by performing a "HTTP HEAD"
-     * operation on the server and looking to see if the server returned a Date
-     * header value. If not, then the default port is attempted (if not used
-     * originally). If neither are found then it will default to the value set
-     * in the configuration.
-     * 
-     * If a date header is found, then that is assumed it is in the format
-     * "EEE, d MMM yyyy HH:mm:ss Z" and the last term (space separated) is the
-     * time zone. This information is extracted, converted to a time zone {@see
-     * TimeZone#getTimeZone(String)}, and returned.
-     * 
-     * @return the TSD server's time zone
-     */
-    public TimeZone getServerTimeZone() {
-
-        String sdate = null;
-        HttpURLConnection connection = null;
-        URL url = null;
-        try {
-            // Do a HEAD on the TSDB server and see if it reports the Date
-            url = new URL(config.getMetricServiceConfig().getOpenTsdbUrl());
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("HEAD");
-            connection.setConnectTimeout(config.getMetricServiceConfig()
-                    .getConnectionTimeoutMs());
-            connection.setReadTimeout(config.getMetricServiceConfig()
-                    .getConnectionTimeoutMs());
-            sdate = connection.getHeaderField("Date");
-            connection.disconnect();
-            connection = null;
-            if (log.isDebugEnabled()) {
-                if (sdate == null) {
-                    log.debug(
-                            "Unable to find 'Date' header value from HTTP HEAD @ {}",
-                            url);
-                } else {
-                    log.debug(
-                            "Found 'Date' header value from HTTP HEAD @ {} : {}",
-                            url, sdate);
-                }
-            }
-            if (sdate == null) {
-                // HEAD did not return value, try standard port, if not already
-                // tried.
-                if (url.getPort() != url.getDefaultPort()) {
-                    url = new URL(url.getProtocol(), url.getHost(),
-                            url.getDefaultPort(), "");
-                    connection = (HttpURLConnection) url.openConnection();
-                    connection.setRequestMethod("HEAD");
-                    connection.setConnectTimeout(config
-                            .getMetricServiceConfig().getConnectionTimeoutMs());
-                    connection.setReadTimeout(config.getMetricServiceConfig()
-                            .getConnectionTimeoutMs());
-                    sdate = connection.getHeaderField("Date");
-                    connection.disconnect();
-                    connection = null;
-                    if (log.isDebugEnabled()) {
-                        if (sdate == null) {
-                            log.debug(
-                                    "Unable to find 'Date' header value from HTTP HEAD using default port @ {}",
-                                    url);
-                        } else {
-                            log.debug(
-                                    "Found 'Date' header value from HTTP HEAD using default port @ {} : {}",
-                                    url, sdate);
-                        }
-                    }
-                }
-            }
-        } catch (IOException e) {
-            log.error(
-                    "Failed to connect to server via '{}' to retrieve server time zone information: {} : {}",
-                    url, e.getClass().getName(), e.getMessage());
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
-        }
-
-        if (sdate != null) {
-            String[] terms = sdate.split(" ");
-            TimeZone tz = TimeZone.getTimeZone(terms[terms.length - 1]);
-            return tz;
-        }
-
-        // Date not found, grab the default from the
-        // configuration
-        if (log.isDebugEnabled()) {
-            log.debug(
-                    "Returning default time zone information from configuration: {}",
-                    config.getMetricServiceConfig().getDefaultTsdTimeZone());
-        }
-        return TimeZone.getTimeZone(config.getMetricServiceConfig()
-                .getDefaultTsdTimeZone());
-    }
 
     private WebApplicationException generateException(
             HttpURLConnection connection) {
@@ -204,21 +108,20 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             }
 
             return new WebApplicationException(Response.status(code).build());
-        } catch (Throwable t) {
-            t.printStackTrace();
+        } catch (Exception e) {
             log.error(
                     "Unexpected error while attempting to parse response from OpenTSDB: {} : {}",
-                    t.getClass().getName(), t.getMessage());
+                    e.getClass().getName(), e.getMessage());
             try {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 JsonWriter writer = new JsonWriter(new OutputStreamWriter(baos));
                 writer.objectS();
-                writer.value(Utils.ERROR_MESSAGE, t.getMessage());
+                writer.value(Utils.ERROR_MESSAGE, e.getMessage());
                 writer.objectE();
                 writer.close();
                 return new WebApplicationException(Response.status(code)
                         .entity(baos.toString()).build());
-            } catch (Throwable i) {
+            } catch (Exception ee) {
                 return new WebApplicationException(code);
             }
         }
@@ -226,15 +129,16 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.zenoss.app.query.api.impl.MetricStorageAPI#getReader(org.zenoss.app
      * .query.QueryAppConfiguration, java.lang.String, java.lang.String,
      * java.lang.String, java.lang.Boolean, java.lang.Boolean, java.util.List)
      */
     public BufferedReader getReader(MetricServiceAppConfiguration config,
-            String id, String startTime, String endTime,
-            Boolean exactTimeWindow, Boolean series,
+            String id, String startTime, String endTime, ReturnSet returnset,
+            Boolean series, String downsample,
+            Map<String, List<String>> globalTags,
             List<MetricSpecification> queries) throws IOException {
         StringBuilder buf = new StringBuilder(config.getMetricServiceConfig()
                 .getOpenTsdbUrl());
@@ -247,9 +151,11 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         }
         for (MetricSpecification query : queries) {
             buf.append("&m=").append(
-                    URLEncoder.encode(query.toString(), "UTF-8"));
+                    URLEncoder.encode(query.toString(downsample, globalTags,
+                            this.config.getMetricServiceConfig()
+                                    .getSendRateOptions()), "UTF-8"));
         }
-        buf.append("&ascii");
+        buf.append("&ascii&silent");
 
         if (log.isDebugEnabled()) {
             log.debug("OpenTSDB GET: {}", buf.toString());
@@ -269,13 +175,41 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             throw generateException(connection);
         }
 
+        /*
+         * Check to make sure that we have the right content returned to us, in
+         * that, if the content type is not 'text/plain' then something is
+         * wrong.
+         */
+        if (!"text/plain".equals(connection.getContentType())) {
+            /*
+             * Log the response in order to help support.
+             */
+            if (log.isErrorEnabled()) {
+                try (InputStream is = connection.getInputStream()) {
+                    byte[] content = ByteStreams.toByteArray(is);
+
+                    log.error(
+                            "Invalid response content type of: '{}', full returned content '{}'",
+                            connection.getContentType(), new String(content));
+
+                } catch (Exception e) {
+                    log.error(
+                            "Invalid response content type of: '{}', exception attempting to read content '{}:{}'",
+                            connection.getContentType(),
+                            e.getClass().getName(), e.getMessage());
+                }
+            }
+            throw new WebApplicationException(Utils.getErrorResponse(id, 500,
+                    "Unknown severe request error", "unknown"));
+        }
+
         return new BufferedReader(new InputStreamReader(
                 connection.getInputStream()));
     }
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.zenoss.app.query.api.impl.MetricStorageAPI#getSourceId()
      */
     @Override

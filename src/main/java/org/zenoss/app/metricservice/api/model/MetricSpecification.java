@@ -30,7 +30,11 @@
  */
 package org.zenoss.app.metricservice.api.model;
 
+import static org.springframework.util.StringUtils.arrayToDelimitedString;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.WebApplicationException;
@@ -53,6 +57,9 @@ public class MetricSpecification {
     private String metric = null;
 
     @JsonProperty
+    private String name = null;
+
+    @JsonProperty
     private Aggregator aggregator = DEFAULT_AGGREGATOR;
 
     @JsonProperty
@@ -65,7 +72,63 @@ public class MetricSpecification {
     private RateOptions rateOptions = null;
 
     @JsonProperty
-    private Map<String, String> tags = null;
+    private String expression = null;
+    
+    /**
+     * Determines is the results queried via this specification should be
+     * returned or not. This is used when a metric calculation is leveraged in
+     * an expression of another metric, but the raw results of the first metric
+     * are not required by the client.
+     */
+    @JsonProperty
+    private Boolean emit = Boolean.TRUE;
+
+    @JsonProperty
+    private Map<String, List<String>> tags = null;
+
+    /**
+     * @return
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * @param name
+     */
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    /**
+     * @return the expression
+     */
+    public String getExpression() {
+        return expression;
+    }
+
+    /**
+     * @param expression
+     *            the expression to set
+     */
+    public void setExpression(String expression) {
+        this.expression = expression;
+    }
+    
+    /**
+     * @return the emit
+     */
+    public Boolean getEmit() {
+        return emit;
+    }
+
+    /**
+     * @param emit
+     *            the emit to set
+     */
+    public void setEmit(Boolean emit) {
+        this.emit = emit;
+    }
 
     /**
      * @return the metric
@@ -145,7 +208,7 @@ public class MetricSpecification {
     /**
      * @return the tags
      */
-    public final Map<String, String> getTags() {
+    public final Map<String, List<String>> getTags() {
         return tags;
     }
 
@@ -153,8 +216,22 @@ public class MetricSpecification {
      * @param tags
      *            the tags to set
      */
-    public final void setTags(Map<String, String> tags) {
+    public final void setTags(Map<String, List<String>> tags) {
         this.tags = tags;
+    }
+
+    public String getMetricOrName() {
+        if (metric != null) {
+            return metric;
+        }
+        return name;
+    }
+
+    public String getNameOrMetric() {
+        if (name != null) {
+            return name;
+        }
+        return metric;
     }
 
     /**
@@ -165,21 +242,26 @@ public class MetricSpecification {
      * proposed to OpenTSDB, but is not yet committed. This format include
      * "rate" options to better support counter base metrics</em>
      * 
-     * @param ms
-     *            the metric specification to encode
+     * @param baseTags
+     *            specifies any base tags that should be applied to the metric
+     *            before overriding with any metric specific tags.
+     * 
      * @return OpenTSDB URL query formatted String instance
      */
-    public String toString() {
+    public String toString(String downsample,
+            Map<String, List<String>> baseTags, boolean withRateOptions) {
         StringBuilder buf = new StringBuilder();
         if (getAggregator() != null) {
             buf.append(getAggregator()).append(':');
         }
         if (getDownsample() != null) {
             buf.append(getDownsample()).append(':');
+        } else if (downsample != null) {
+            buf.append(downsample).append(':');
         }
         if (getRate()) {
             buf.append("rate");
-            if (getRateOptions() != null) {
+            if (withRateOptions && getRateOptions() != null) {
                 buf.append('{');
                 if (getRateOptions().getCounter() != null) {
                     if (getRateOptions().getCounter()) {
@@ -200,16 +282,33 @@ public class MetricSpecification {
             }
             buf.append(':');
         }
-        buf.append(getMetric());
-        if (getTags() != null && getTags().size() > 0) {
+        if (getMetric() != null) {
+            buf.append(getMetric());
+        } else {
+            buf.append('[');
+            buf.append(getName());
+            buf.append(']');
+        }
+        if ((baseTags != null && baseTags.size() > 0)
+                || (getTags() != null && getTags().size() > 0)) {
+            Map<String, List<String>> joined = new HashMap<String, List<String>>();
+            if (baseTags != null) {
+                joined.putAll(baseTags);
+            }
+            if (getTags() != null) {
+                joined.putAll(getTags());
+            }
             buf.append('{');
             boolean comma = false;
-            for (Map.Entry<String, String> tag : getTags().entrySet()) {
+            for (Map.Entry<String, List<String>> tag : joined.entrySet()) {
                 if (comma) {
                     buf.append(',');
                 }
                 comma = true;
-                buf.append(tag.getKey()).append('=').append(tag.getValue());
+                buf.append(tag.getKey())
+                        .append('=')
+                        .append(arrayToDelimitedString(
+                                tag.getValue().toArray(), "|"));
             }
             buf.append('}');
         }
@@ -217,11 +316,29 @@ public class MetricSpecification {
     }
 
     /**
+     * Encodes the current instance into the URL query parameter format that <a
+     * href="http://opentsdb.net/http-api.html#/q">OpenTSDB</a> supports.
+     * <p/>
+     * <em style="color: red">NOTE: This method supports a format that is
+     * proposed to OpenTSDB, but is not yet committed. This format include
+     * "rate" options to better support counter base metrics</em>
+     * 
+     * @return OpenTSDB URL query formatted String instance
+     */
+    public String toString() {
+        return this.toString(null, null, false);
+    }
+
+    public String toString(boolean sendRateOptions) {
+        return this.toString(null, null, sendRateOptions);
+    }
+
+    /**
      * @param value
      * @return
      */
-    private static Map<String, String> parseTags(String value) {
-        Map<String, String> tags = new HashMap<String, String>();
+    private static Map<String, List<String>> parseTags(String value) {
+        Map<String, List<String>> tags = new HashMap<String, List<String>>();
 
         if (value == null || (value = value.trim()).length() == 0) {
             return tags;
@@ -229,7 +346,9 @@ public class MetricSpecification {
         String[] pairs = value.substring(1, value.length() - 1).split(",");
         for (String pair : pairs) {
             String[] terms = pair.split("=", 2);
-            tags.put(terms[0].trim(), terms[1].trim());
+            List<String> vals = new ArrayList<String>();
+            vals.add(terms[1].trim());
+            tags.put(terms[0].trim(), vals);
         }
         return tags;
     }
@@ -308,13 +427,13 @@ public class MetricSpecification {
         int idx = terms[terms.length - 1].indexOf('{');
 
         String metric = null;
-        Map<String, String> tags = null;
+        Map<String, List<String>> tags = null;
         if (idx >= 0) {
             tags = MetricSpecification.parseTags(terms[terms.length - 1]
                     .substring(idx).trim());
             metric = terms[terms.length - 1].substring(0, idx);
         } else {
-            tags = new HashMap<String, String>();
+            tags = new HashMap<String, List<String>>();
             metric = terms[terms.length - 1];
         }
 
@@ -331,10 +450,10 @@ public class MetricSpecification {
                 if (terms[1].indexOf('{') > -1) {
                     try {
                         rateOptions = parseRateOptions(terms[1].trim());
-                    } catch (Throwable t) {
+                    } catch (Exception e) {
                         throw new WebApplicationException(
                                 Utils.getErrorResponse(null, 400,
-                                        t.getMessage(), t.getClass().getName()));
+                                        e.getMessage(), e.getClass().getName()));
                     }
                 }
                 if (terms.length > 3) {
@@ -347,10 +466,10 @@ public class MetricSpecification {
                     if (terms[2].indexOf('{') > -1) {
                         try {
                             rateOptions = parseRateOptions(terms[2].trim());
-                        } catch (Throwable t) {
+                        } catch (Exception e) {
                             throw new WebApplicationException(
-                                    Utils.getErrorResponse(null, 400, t
-                                            .getMessage(), t.getClass()
+                                    Utils.getErrorResponse(null, 400, e
+                                            .getMessage(), e.getClass()
                                             .getName()));
                         }
                     }
