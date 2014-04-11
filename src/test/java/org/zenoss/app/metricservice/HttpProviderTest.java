@@ -72,6 +72,7 @@ public class HttpProviderTest extends ProviderTestBase {
         @Bean
         public MetricServiceAppConfiguration getQueryAppConfiguration() {
             MetricServiceAppConfiguration config = new MetricServiceAppConfiguration();
+            config.setAuthEnabled(false);
 
             // Set up the config so that it contacts our mock server for tsdb
             // queries

@@ -42,67 +42,107 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import org.apache.shiro.subject.PrincipalCollection;
+import org.apache.shiro.subject.Subject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zenoss.app.AppConfiguration;
 import org.zenoss.app.metricservice.api.MetricServiceAPI;
 import org.zenoss.app.metricservice.api.impl.Utils;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.PerformanceQuery;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
+import org.zenoss.app.security.ZenossTenant;
+import org.zenoss.app.zauthbundle.ZappSecurity;
 import org.zenoss.dropwizardspring.annotations.Resource;
 
 import com.google.common.base.Optional;
 import com.yammer.metrics.annotation.Timed;
 
+import static com.google.common.base.Optional.absent;
+
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
- * 
  */
 @Resource(name = "query")
 @Path("/api/performance/query")
 @Produces(MediaType.APPLICATION_JSON)
 public class MetricResources {
 
+    @Autowired
+    AppConfiguration configuration;
+
+    @Autowired
+    ZappSecurity security;
+
     @Autowired(required = true)
     MetricServiceAPI api;
 
-    @Timed
-    @GET
-    public Response query(@QueryParam("id") Optional<String> id,
-            @QueryParam("query") List<MetricSpecification> queries,
-            @QueryParam("start") Optional<String> startTime,
-            @QueryParam("end") Optional<String> endTime,
-            @QueryParam("returnset") Optional<ReturnSet> returnset,
-            @QueryParam("series") Optional<Boolean> series) {
-
-        return api.query(id, startTime, endTime, returnset, series,
-                Optional.<String> absent(), Optional.<String> absent(),
-                Optional.<Map<String, List<String>>> absent(), queries);
+    public MetricResources() {
     }
 
+    public MetricResources(AppConfiguration configuration, ZappSecurity security, MetricServiceAPI api) {
+        this.configuration = configuration;
+        this.security = security;
+        this.api = api;
+    }
+
+    @GET
     @Timed
+    public Response query(@QueryParam("id") Optional<String> id,
+                          @QueryParam("query") List<MetricSpecification> queries,
+                          @QueryParam("start") Optional<String> startTime,
+                          @QueryParam("end") Optional<String> endTime,
+                          @QueryParam("returnset") Optional<ReturnSet> returnset,
+                          @QueryParam("series") Optional<Boolean> series) {
+        Optional<Map<String, List<String>>> tags = getTags( null);
+        return api.query(id, startTime, endTime, returnset, series,
+                Optional.<String>absent(), Optional.<String>absent(),
+                tags, queries);
+    }
+
     @POST
+    @Timed
     @Consumes(MediaType.APPLICATION_JSON)
     public Response query2(PerformanceQuery query) {
         if (query == null) {
             return Utils.getErrorResponse(null, 400,
                     "Received an empty query request", "Empty Request");
         }
-        Optional<String> id = Optional.<String> absent();
-        Optional<String> start = Optional.<String> fromNullable(query
+        Optional<String> id = Optional.<String>absent();
+        Optional<String> start = Optional.<String>fromNullable(query
                 .getStart());
-        Optional<String> end = Optional.<String> fromNullable(query.getEnd());
-        Optional<ReturnSet> returnset = Optional.<ReturnSet> fromNullable(query
+        Optional<String> end = Optional.<String>fromNullable(query.getEnd());
+        Optional<ReturnSet> returnset = Optional.<ReturnSet>fromNullable(query
                 .getReturnset());
-        Optional<Boolean> series = Optional.<Boolean> fromNullable(query
+        Optional<Boolean> series = Optional.<Boolean>fromNullable(query
                 .getSeries());
-        Optional<String> downsample = Optional.<String> fromNullable(query
+        Optional<String> downsample = Optional.<String>fromNullable(query
                 .getDownsample());
-        Optional<String> grouping = Optional.<String> fromNullable(query
+        Optional<String> grouping = Optional.<String>fromNullable(query
                 .getGrouping());
-        Optional<Map<String, List<String>>> tags = Optional
-                .<Map<String, List<String>>> fromNullable(query.getTags());
-
+        Optional<Map<String, List<String>>> tags = getTags( query.getTags());
         return api.query(id, start, end, returnset, series, downsample,
                 grouping, tags, query.getMetrics());
+    }
+
+    String getTenantId() {
+        Subject subject = security.getSubject();
+        PrincipalCollection principles = subject.getPrincipals();
+        ZenossTenant tenant = principles.oneByType(ZenossTenant.class);
+        return tenant.id();
+    }
+
+    Optional<Map<String, List<String>>> getTags(Map<String, List<String>> tags) {
+        if (configuration.isAuthEnabled()) {
+            if (tags == null) {
+                tags = Maps.newHashMap();
+            }
+            String tenantId = getTenantId();
+            tags.put("zenoss_tenant_id", Lists.newArrayList(tenantId));
+        }
+
+        return Optional.fromNullable(tags);
     }
 }
