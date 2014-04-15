@@ -21,13 +21,6 @@ import static junit.framework.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/**
- * Created with IntelliJ IDEA.
- * User: scleveland
- * Date: 4/11/14
- * Time: 1:55 PM
- * To change this template use File | Settings | File Templates.
- */
 public class MetricResourcesTest {
 
     AppConfiguration configuration;
