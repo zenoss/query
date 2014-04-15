@@ -33,6 +33,7 @@ package org.zenoss.app.metricservice;
 import javax.validation.Valid;
 
 import org.zenoss.app.AppConfiguration;
+import org.zenoss.app.metric.zapp.ManagedReporterConfig;
 import org.zenoss.app.metric.zapp.MetricReporterConfig;
 import org.zenoss.app.metricservice.api.configs.ChartServiceConfig;
 import org.zenoss.app.metricservice.api.configs.MetricServiceConfig;
@@ -53,8 +54,8 @@ public class MetricServiceAppConfiguration extends AppConfiguration {
     private ChartServiceConfig chartServiceConfig = new ChartServiceConfig();
 
     @Valid
-    @JsonProperty("metricReporter")
-    private MetricReporterConfig metricReporterConfig = new MetricReporterConfig();
+    @JsonProperty("managedReporter")
+    private ManagedReporterConfig managedReporterConfig = new ManagedReporterConfig();
 
     public ChartServiceConfig getChartServiceConfig() {
         return chartServiceConfig;
@@ -64,7 +65,7 @@ public class MetricServiceAppConfiguration extends AppConfiguration {
         return metricServiceConfig;
     }
 
-    public MetricReporterConfig getMetricReporterConfig(){
-        return metricReporterConfig;
+    public ManagedReporterConfig getManagedReporterConfig() {
+        return managedReporterConfig;
     }
 }

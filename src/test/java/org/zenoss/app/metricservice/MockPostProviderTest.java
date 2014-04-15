@@ -64,6 +64,7 @@ public class MockPostProviderTest extends ProviderTestBase {
         @Bean
         public MetricServiceAppConfiguration getQueryAppConfiguration() {
             MetricServiceAppConfiguration config = new MetricServiceAppConfiguration();
+            config.setAuthEnabled(false);
             return config;
         }
     }
