@@ -26,3 +26,7 @@ http:
       keyStore: ${ssl.cert.dir}/ssl.pfx
       keyStorePassword: zapp_pass
       keyStoreType: pkcs12
+
+managedReporter:
+    metricReporters:
+      - {posterType: http, username: "$zcreds[]", password: "$zcreds[]"}
