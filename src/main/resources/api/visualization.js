@@ -41,7 +41,7 @@
              * @access public
              * @default false
              */
-            debug : true,
+            debug : false,
 
             /**
              * Used to specify the base URL that is the endpoint for the Zenoss
