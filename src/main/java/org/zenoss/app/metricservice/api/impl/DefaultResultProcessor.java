@@ -39,7 +39,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang.builder.ReflectionToStringBuilder;
+//import org.apache.commons.lang.builder.ReflectionToStringBuilder;
+import com.google.common.base.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenoss.app.metricservice.api.metric.impl.MetricService;
@@ -165,7 +166,7 @@ public class DefaultResultProcessor implements ResultProcessor,
         }
 
         for (OpenTSDBQueryResult result : allResults) {
-            log.debug("processing result: {}", ReflectionToStringBuilder.toString(result));
+            log.debug("processing result: {}", result.debugString());
             String metricName = result.metric;
             for (Map.Entry<Long, String> dpValue : result.dps.entrySet()) {
                 previousTs = ts;
