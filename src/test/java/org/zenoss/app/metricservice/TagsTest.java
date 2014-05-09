@@ -31,14 +31,14 @@
 
 package org.zenoss.app.metricservice;
 
+import org.junit.Assert;
+import org.junit.Test;
+import org.zenoss.app.metricservice.api.impl.Tags;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.junit.Assert;
-import org.junit.Test;
-import org.zenoss.app.metricservice.api.impl.Tags;
 
 /**
  * @author Zenoss

@@ -30,14 +30,12 @@
  */
 package org.zenoss.app.metricservice;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-
-import javax.ws.rs.core.MediaType;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.WebResource.Builder;
+import com.yammer.dropwizard.testing.ResourceTest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,12 +45,8 @@ import org.zenoss.app.metricservice.api.model.Datapoint;
 import org.zenoss.app.metricservice.api.model.Range;
 import org.zenoss.app.metricservice.api.remote.ChartResources;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.WebResource.Builder;
-import com.yammer.dropwizard.testing.ResourceTest;
+import javax.ws.rs.core.MediaType;
+import java.util.*;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>

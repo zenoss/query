@@ -102,6 +102,12 @@ public class Tags {
         return result;
     }
 
+    public static Tags fromOpenTsdbTags(Map<String,String> tags) {
+        Tags result = new Tags();
+        result.tags.putAll(tags);
+        return result;
+    }
+
     /*
      * (non-Javadoc)
      * 
@@ -212,4 +218,5 @@ public class Tags {
         }
         return true;
     }
+
 }

@@ -34,6 +34,7 @@ package org.zenoss.app.metricservice.api.impl;
 import java.io.IOException;
 import java.util.List;
 
+import org.zenoss.app.metricservice.api.metric.impl.MetricService;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.app.metricservice.buckets.Buckets;

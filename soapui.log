@@ -1,0 +1,2 @@
+2014-05-06 17:20:07,409 WARN  [DefaultSoapUICore] Missing folder [/home/morr/ext] for external libraries
+2014-05-06 17:20:07,409 INFO  [DefaultSoapUICore] Creating new settings at [/home/morr/soapui-settings.xml]

@@ -30,10 +30,10 @@
  */
 package org.zenoss.app.metricservice;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.google.common.base.Optional;
 import org.junit.Rule;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,10 +50,9 @@ import org.zenoss.app.metricservice.api.impl.mocks.MockMetricStorage;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.google.common.base.Optional;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>

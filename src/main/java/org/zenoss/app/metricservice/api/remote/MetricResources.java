@@ -33,12 +33,7 @@ package org.zenoss.app.metricservice.api.remote;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -46,6 +41,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.shiro.subject.PrincipalCollection;
 import org.apache.shiro.subject.Subject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zenoss.app.AppConfiguration;
 import org.zenoss.app.metricservice.api.MetricServiceAPI;
@@ -70,6 +67,8 @@ import static com.google.common.base.Optional.absent;
 @Produces(MediaType.APPLICATION_JSON)
 public class MetricResources {
 
+    private static final Logger log = LoggerFactory.getLogger(MetricResources.class);
+
     @Autowired
     AppConfiguration configuration;
 
@@ -83,6 +82,7 @@ public class MetricResources {
     }
 
     public MetricResources(AppConfiguration configuration, ZappSecurity security, MetricServiceAPI api) {
+        log.info("MetricResources constructor starting...");
         this.configuration = configuration;
         this.security = security;
         this.api = api;
@@ -96,6 +96,8 @@ public class MetricResources {
                           @QueryParam("end") Optional<String> endTime,
                           @QueryParam("returnset") Optional<ReturnSet> returnset,
                           @QueryParam("series") Optional<Boolean> series) {
+        System.out.println("MetricResources.query - GET");
+        log.info("Entered MetricResources.query with multiple params (GET).");
         Optional<Map<String, List<String>>> tags = getTags( null);
         return api.query(id, startTime, endTime, returnset, series,
                 Optional.<String>absent(), Optional.<String>absent(),
@@ -106,6 +108,8 @@ public class MetricResources {
     @Timed
     @Consumes(MediaType.APPLICATION_JSON)
     public Response query2(PerformanceQuery query) {
+        System.out.println("MetricResources.query - POST");
+        log.info("Entered MetricResources.query with single param (POST).");
         if (query == null) {
             return Utils.getErrorResponse(null, 400,
                     "Received an empty query request", "Empty Request");
@@ -125,6 +129,11 @@ public class MetricResources {
         Optional<Map<String, List<String>>> tags = getTags( query.getTags());
         return api.query(id, start, end, returnset, series, downsample,
                 grouping, tags, query.getMetrics());
+    }
+
+    @OPTIONS
+            public Response handleOptions(@HeaderParam("Access-Control-Request-Headers")  String request) {
+        return api.options(request);
     }
 
     String getTenantId() {

@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: org.zenoss.zapp:zenoss-app:0.0.15">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/zenoss/zapp/zenoss-app/0.0.15/zenoss-app-0.0.15.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/org/zenoss/zapp/zenoss-app/0.0.15/zenoss-app-0.0.15-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/zenoss/zapp/zenoss-app/0.0.15/zenoss-app-0.0.15-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

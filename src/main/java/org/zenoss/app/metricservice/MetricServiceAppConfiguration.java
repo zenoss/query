@@ -34,7 +34,6 @@ import javax.validation.Valid;
 
 import org.zenoss.app.AppConfiguration;
 import org.zenoss.app.metric.zapp.ManagedReporterConfig;
-import org.zenoss.app.metric.zapp.MetricReporterConfig;
 import org.zenoss.app.metricservice.api.configs.ChartServiceConfig;
 import org.zenoss.app.metricservice.api.configs.MetricServiceConfig;
 

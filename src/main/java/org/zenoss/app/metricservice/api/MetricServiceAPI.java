@@ -80,4 +80,8 @@ public interface MetricServiceAPI {
             Optional<String> grouping,
             Optional<Map<String, List<String>>> tags,
             List<MetricSpecification> queries);
+
+    public Response newQuery(Optional<String> id, Optional<String> start, Optional<String> end, Optional<ReturnSet> returnset, Optional<Boolean> series, Optional<String> downsample, Optional<String> grouping, Optional<Map<String, List<String>>> tags, List<MetricSpecification> metrics);
+
+    public Response options(String request);
 }

@@ -31,18 +31,14 @@
 
 package org.zenoss.app.metricservice;
 
-import java.util.Date;
-import java.util.List;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.zenoss.app.metricservice.calculators.Closure;
-import org.zenoss.app.metricservice.calculators.MetricCalculator;
-import org.zenoss.app.metricservice.calculators.MetricCalculatorFactory;
-import org.zenoss.app.metricservice.calculators.ReferenceProvider;
-import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
+import org.zenoss.app.metricservice.calculators.*;
 import org.zenoss.app.metricservice.calculators.rpn.Calculator;
+
+import java.util.Date;
+import java.util.List;
 
 /**
  * @author david

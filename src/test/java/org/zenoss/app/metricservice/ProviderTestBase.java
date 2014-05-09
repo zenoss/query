@@ -30,19 +30,12 @@
  */
 package org.zenoss.app.metricservice;
 
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-
-import javax.ws.rs.core.MediaType;
-
+import com.google.common.base.Optional;
 import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.WebResource.Builder;
+import com.yammer.dropwizard.testing.ResourceTest;
 import org.eclipse.jetty.util.ajax.JSON;
 import org.junit.Assert;
 import org.junit.Test;
@@ -52,11 +45,12 @@ import org.zenoss.app.metricservice.api.model.PerformanceQuery;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.app.metricservice.api.remote.MetricResources;
 
-import com.google.common.base.Optional;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.WebResource.Builder;
-import com.yammer.dropwizard.testing.ResourceTest;
+import javax.ws.rs.core.MediaType;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>

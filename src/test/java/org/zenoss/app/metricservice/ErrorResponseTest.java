@@ -30,17 +30,15 @@
  */
 package org.zenoss.app.metricservice;
 
-import java.io.IOException;
-import java.util.Map;
-
-import javax.ws.rs.core.Response;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zenoss.app.metricservice.api.impl.Utils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>

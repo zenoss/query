@@ -1,4 +1,4 @@
-authEnabled: true
+authEnabled: false
 logging:
   level: INFO
   loggers:
@@ -14,9 +14,6 @@ metrics:
   sendRateOptions: false
 charts:
   redisConnection: localhost:6379
-proxyConfiguration:
-  hostname: 127.0.0.1
-  port: 8080
 http:
   connectorType: nonblocking
   port: 8888
@@ -26,7 +23,3 @@ http:
       keyStore: ${ssl.cert.dir}/ssl.pfx
       keyStorePassword: zapp_pass
       keyStoreType: pkcs12
-
-managedReporter:
-    metricReporters:
-      - {posterType: http, username: "$zcreds[]", password: "$zcreds[]"}

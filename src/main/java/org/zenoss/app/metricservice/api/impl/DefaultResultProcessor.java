@@ -33,10 +33,16 @@ package org.zenoss.app.metricservice.api.impl;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang.builder.ReflectionToStringBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.zenoss.app.metricservice.api.metric.impl.MetricService;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.buckets.Buckets;
 import org.zenoss.app.metricservice.buckets.Value;
@@ -49,12 +55,13 @@ import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
 /**
  * Processes the output stream from the back end metric query storage into
  * buckets including the calculation of any RPN functions and references.
- * 
+ *
  * @author Zenoss
- * 
  */
 public class DefaultResultProcessor implements ResultProcessor,
         ReferenceProvider {
+
+    private static final Logger log = LoggerFactory.getLogger(DefaultResultProcessor.class);
 
     private class BucketClosure implements Closure {
         public BucketClosure() {
@@ -103,12 +110,11 @@ public class DefaultResultProcessor implements ResultProcessor,
      */
     @Override
     public Buckets<MetricKey, String> processResults(BufferedReader reader,
-            List<MetricSpecification> queries, long bucketSize)
+                                                     List<MetricSpecification> queries, long bucketSize)
             throws ClassNotFoundException, UnknownReferenceException,
             IOException {
 
-        Buckets<MetricKey, String> buckets = new Buckets<MetricKey, String>(
-                bucketSize);
+        Buckets<MetricKey, String> buckets = new Buckets<MetricKey, String>(bucketSize);
 
         String line;
         String[] terms;
@@ -145,43 +151,51 @@ public class DefaultResultProcessor implements ResultProcessor,
         BucketClosure closure = new BucketClosure();
         Tags curTags = null;
         key = null;
+
+        List<OpenTSDBQueryResult> allResults = new ArrayList<>();
         while ((line = reader.readLine()) != null) {
-            terms = line.split(" ", 4);
-            val = Double.valueOf(terms[2]);
-            previousTs = ts;
-            ts = Long.valueOf(terms[1]);
+            log.info("Processing line: {}", line);
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                List<OpenTSDBQueryResult> resultList = mapper.readValue(line, mapper.getTypeFactory().constructCollectionType(List.class, OpenTSDBQueryResult.class));
+                allResults.addAll(resultList);
+            } catch (Exception e) {
+                log.error("Exception parsing json", e);
+            }
+        }
 
-            if (0 == previousTs || ts <= previousTs) {
-                if (terms.length > 3) {
-                    curTags = Tags.fromValue(terms[3]);
-                } else {
-                    curTags = null;
+        for (OpenTSDBQueryResult result : allResults) {
+            log.debug("processing result: {}", ReflectionToStringBuilder.toString(result));
+            String metricName = result.metric;
+            for (Map.Entry<Long, String> dpValue : result.dps.entrySet()) {
+                previousTs = ts;
+                val = Double.valueOf(dpValue.getValue());
+                ts = dpValue.getKey();
+                curTags = Tags.fromOpenTsdbTags(result.tags);
+                key = keyCache.get(metricName, curTags);
+                if ((calc = calcs.get(key)) != null) {
+                    val = calc.evaluate(val);
                 }
-                key = keyCache.get(terms[0], curTags);
-            }
 
-            if ((calc = calcs.get(key)) != null) {
-                val = calc.evaluate(val);
-            }
-
-            buckets.add(key, key.getName(), ts, val);
-            previousBucket = currentBucket;
-            currentBucket = buckets.getBucket(ts);
-            if (previousBucket != null && currentBucket != previousBucket) {
-                for (MetricSpecification value : values) {
-                    MetricKey k2 = keyCache.get(value.getName(), curTags);
-                    try {
-                        if ((calc = calcs.get(k2)) != null) {
-                            closure.ts = previousTs;
-                            closure.bucket = previousBucket;
-                            val = calc.evaluate((Closure) closure);
-                            buckets.add(k2, k2.getName(), previousTs, val);
-                        }
-                    } catch (UnknownReferenceException e) {
+                buckets.add(key, key.getName(), ts, val);
+                previousBucket = currentBucket;
+                currentBucket = buckets.getBucket(ts);
+                if (previousBucket != null && currentBucket != previousBucket) {
+                    for (MetricSpecification value : values) {
+                        MetricKey k2 = keyCache.get(value.getName(), curTags);
+                        try {
+                            if ((calc = calcs.get(k2)) != null) {
+                                closure.ts = previousTs;
+                                closure.bucket = previousBucket;
+                                val = calc.evaluate((Closure) closure);
+                                buckets.add(k2, k2.getName(), previousTs, val);
+                            }
+                        } catch (UnknownReferenceException e) {
                         /*
                          * Just because a reference was not in the same bucket
                          * does not mean a real failure. It is legitimate.
                          */
+                        }
                     }
                 }
             }
@@ -205,4 +219,5 @@ public class DefaultResultProcessor implements ResultProcessor,
         }
         return buckets;
     }
+
 }
