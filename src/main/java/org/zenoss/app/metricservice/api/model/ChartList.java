@@ -56,7 +56,7 @@ public class ChartList {
     private Long count = null;
 
     @JsonProperty(required = true)
-    List<String> ids = new ArrayList<String>();
+    List<String> ids = new ArrayList<>();
 
     /**
      * @return the start

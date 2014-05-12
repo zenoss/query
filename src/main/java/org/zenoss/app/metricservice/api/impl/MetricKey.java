@@ -31,11 +31,12 @@
 
 package org.zenoss.app.metricservice.api.impl;
 
+import com.google.common.base.Objects;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 
 /**
  * A combination key that uniquely identifies a metric based on the metric name
- * queried and the tags associated with that query.
+ * queried and the tags associated with that oldQuery.
  * 
  * @author Zenoss
  * 
@@ -52,7 +53,7 @@ public class MetricKey {
     private String metric = null;
 
     /**
-     * Tags associated with the metric query
+     * Tags associated with the metric oldQuery
      */
     private Tags tags = null;
 
@@ -65,11 +66,12 @@ public class MetricKey {
      * @return true if the two instance are equivalent, else false.
      */
     public boolean equals(MetricKey other) {
-        if (other == null || !this.metric.equals(other.metric)) {
-            return false;
-        }
-
-        return this.tags.equals(other);
+        return (null != other &&
+        Objects.equal(this.metric, other.metric) && Objects.equal(this.tags, other.tags) && Objects.equal(this.name, other.name));
+//        if (other == null || !this.metric.equals(other.metric)) {
+//            return false;
+//        }
+//        return this.tags.equals(other);
     }
 
     /**

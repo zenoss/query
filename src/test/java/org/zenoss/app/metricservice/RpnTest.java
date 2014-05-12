@@ -166,8 +166,8 @@ public class RpnTest {
         calc.evaluate(in);
 
         Calculator rpn = (Calculator) calc;
-        for (int i = 0; i < out.length; ++i) {
-            Assert.assertEquals(out[i], rpn.pop(), 0.0);
+        for (double anOut : out) {
+            Assert.assertEquals(anOut, rpn.pop(), 0.0);
         }
     }
 
@@ -181,8 +181,8 @@ public class RpnTest {
         calc.evaluate(in);
 
         Calculator rpn = (Calculator) calc;
-        for (int i = 0; i < out.length; ++i) {
-            Assert.assertEquals(out[i], rpn.pop(), 0.0);
+        for (double anOut : out) {
+            Assert.assertEquals(anOut, rpn.pop(), 0.0);
         }
     }
 

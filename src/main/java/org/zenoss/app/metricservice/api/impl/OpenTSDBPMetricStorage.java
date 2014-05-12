@@ -125,8 +125,8 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
      * (non-Javadoc)
      *
      * @see
-     * org.zenoss.app.query.api.impl.MetricStorageAPI#getReader(org.zenoss.app
-     * .query.QueryAppConfiguration, java.lang.String, java.lang.String,
+     * org.zenoss.app.oldQuery.api.impl.MetricStorageAPI#getReader(org.zenoss.app
+     * .oldQuery.QueryAppConfiguration, java.lang.String, java.lang.String,
      * java.lang.String, java.lang.Boolean, java.lang.Boolean, java.util.List)
      */
     public BufferedReader getReader(MetricServiceAppConfiguration config,
@@ -168,60 +168,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
                     + response.getStatusLine().getStatusCode());
         }
 
-        BufferedReader br = new BufferedReader(new InputStreamReader((response.getEntity().getContent())));
-        return br;
-
-        /*
-        HttpURLConnection connection = (HttpURLConnection) new URL(postUrl).openConnection();
-        connection.setDoInput(true);
-        connection.setDoOutput(true);
-        connection.setRequestProperty("Content-Type", "application/json");
-        connection.setRequestMethod("POST");
-        connection.setRequestProperty("Accept", "application/json");
-        connection.setConnectTimeout(config.getMetricServiceConfig().getConnectionTimeoutMs());
-        connection.setReadTimeout(config.getMetricServiceConfig().getConnectionTimeoutMs());
-        OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream(), "UTF-8");
-
-        writer.write(jsonQueryString);
-        log.info("Response code: {}", connection.getResponseCode());
-                                      */
-//        if (Math.floor(connection.getResponseCode() / 100) != 2) {
-//            // OpenTSDB through an error, attempt to parse out the reason from
-//            // any response information that was send back.
-//
-//            throw generateException(connection);
-//        }
-//
-//        /*
-//         * Check to make sure that we have the right content returned to us, in
-//         * that, if the content type is not 'text/plain' then something is
-//         * wrong.
-//         */
-//        if (!"text/plain".equals(connection.getContentType())) {
-//            /*
-//             * Log the response in order to help support.
-//             */
-//            if (log.isErrorEnabled()) {
-//                try (InputStream is = connection.getInputStream()) {
-//                    byte[] content = ByteStreams.toByteArray(is);
-//
-//                    log.error(
-//                            "Invalid response content type of: '{}', full returned content '{}'",
-//                            connection.getContentType(), new String(content));
-//
-//                } catch (Exception e) {
-//                    log.error(
-//                            "Invalid response content type of: '{}', exception attempting to read content '{}:{}'",
-//                            connection.getContentType(),
-//                            e.getClass().getName(), e.getMessage());
-//                }
-//            }
-//            throw new WebApplicationException(Utils.getErrorResponse(id, 500,
-//                    "Unknown severe request error", "unknown"));
-//        }
-//
-//        return new BufferedReader(new InputStreamReader(
-//                connection.getInputStream()));
+        return new BufferedReader(new InputStreamReader((response.getEntity().getContent())));
     }
 
     private OpenTSDBSubQuery openTSDBSubQueryFromMetricSpecification(MetricSpecification metricSpecification) {
@@ -251,7 +198,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
     /*
      * (non-Javadoc)
      *
-     * @see org.zenoss.app.query.api.impl.MetricStorageAPI#getSourceId()
+     * @see org.zenoss.app.oldQuery.api.impl.MetricStorageAPI#getSourceId()
      */
     @Override
     public String getSourceId() {

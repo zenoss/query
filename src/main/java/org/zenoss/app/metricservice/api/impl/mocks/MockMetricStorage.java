@@ -141,7 +141,7 @@ public class MockMetricStorage implements MetricStorageAPI {
                 // Need to join the global tags with the per metric tags,
                 // overriding any global tag with that specified per metric
                 if (tags != null || query.getTags() != null) {
-                    Map<String, List<String>> joined = new HashMap<String, List<String>>();
+                    Map<String, List<String>> joined = new HashMap<>();
                     if (tags != null) {
                         joined.putAll(tags);
                     }
@@ -167,8 +167,8 @@ public class MockMetricStorage implements MetricStorageAPI {
      * (non-Javadoc)
      * 
      * @see
-     * org.zenoss.app.query.api.impl.MetricStorageAPI#getReader(org.zenoss.app
-     * .query.QueryAppConfiguration, java.lang.String, java.lang.String,
+     * org.zenoss.app.oldQuery.api.impl.MetricStorageAPI#getReader(org.zenoss.app
+     * .oldQuery.QueryAppConfiguration, java.lang.String, java.lang.String,
      * java.lang.String, java.lang.Boolean, java.lang.Boolean, java.util.List)
      */
     public BufferedReader getReader(MetricServiceAppConfiguration config,
@@ -184,7 +184,7 @@ public class MockMetricStorage implements MetricStorageAPI {
     /*
      * (non-Javadoc)
      * 
-     * @see org.zenoss.app.query.api.impl.MetricStorageAPI#getSourceId()
+     * @see org.zenoss.app.oldQuery.api.impl.MetricStorageAPI#getSourceId()
      */
     @Override
     public String getSourceId() {

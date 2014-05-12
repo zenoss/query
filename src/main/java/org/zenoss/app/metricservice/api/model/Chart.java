@@ -53,7 +53,7 @@ public class Chart {
     private Map<String, String> tags = null;
     
     @JsonProperty
-    private List<Datapoint> datapoints = new ArrayList<Datapoint>();
+    private List<Datapoint> datapoints = new ArrayList<>();
 
     /**
      * @return the name

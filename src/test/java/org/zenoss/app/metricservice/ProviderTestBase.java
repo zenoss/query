@@ -40,10 +40,10 @@ import org.eclipse.jetty.util.ajax.JSON;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zenoss.app.metricservice.api.metric.remote.MetricResources;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.PerformanceQuery;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
-import org.zenoss.app.metricservice.api.remote.MetricResources;
 
 import javax.ws.rs.core.MediaType;
 import java.io.InputStreamReader;
@@ -72,16 +72,16 @@ public abstract class ProviderTestBase extends ResourceTest {
     }
 
     /**
-     * If the value is present then add the given name/value pair as a query
+     * If the value is present then add the given name/value pair as a oldQuery
      * parameter to the given buffer and return the '&' as the prefix, else just
      * return the given prefix.
      * 
      * @param buf
      *            the buffer to which to append
      * @param name
-     *            the name of the query parameter
+     *            the name of the oldQuery parameter
      * @param value
-     *            the optional value of the query parameter
+     *            the optional value of the oldQuery parameter
      * @param prefix
      *            the current prefix to use
      * @return the prefix that should be used for the next parameter
@@ -207,7 +207,7 @@ public abstract class ProviderTestBase extends ResourceTest {
                 case EXACT:
                     // count is queries.length because the mock generates
                     // a data point for each step in the time span for each
-                    // query
+                    // oldQuery
                     Assert.assertEquals("number of data points found", count
                             * queries.length, results.length);
                     break;
@@ -237,7 +237,7 @@ public abstract class ProviderTestBase extends ResourceTest {
             Optional<String> start, Optional<String> end,
             Optional<ReturnSet> returnset, Optional<Boolean> series,
             String[] queries) throws Exception {
-        // Build up a query object to post
+        // Build up a oldQuery object to post
         PerformanceQuery pq = new PerformanceQuery();
         if (start.isPresent()) {
             pq.setStart(start.get());
@@ -251,7 +251,7 @@ public abstract class ProviderTestBase extends ResourceTest {
         if (series.isPresent()) {
             pq.setSeries(series.get());
         }
-        List<MetricSpecification> list = new ArrayList<MetricSpecification>();
+        List<MetricSpecification> list = new ArrayList<>();
         for (String s : queries) {
             list.add(MetricSpecification.fromString(s));
         }
@@ -259,7 +259,7 @@ public abstract class ProviderTestBase extends ResourceTest {
         Client client = client();
         client.setConnectTimeout(1000000);
         client.setReadTimeout(1000000);
-        WebResource wr = client.resource("/api/performance/query");
+        WebResource wr = client.resource("/api/performance/oldQuery");
         Assert.assertNotNull(wr);
         wr.accept(MediaType.APPLICATION_JSON);
         Builder request = wr.type(MediaType.APPLICATION_JSON);
@@ -273,7 +273,7 @@ public abstract class ProviderTestBase extends ResourceTest {
     }
 
     /**
-     * Constructs a URI to test the performance query service given the various
+     * Constructs a URI to test the performance oldQuery service given the various
      * optional parameters, invokes the URI and does some basic structural
      * checks on the results.
      * 
@@ -299,16 +299,16 @@ public abstract class ProviderTestBase extends ResourceTest {
             Optional<Map<String, List<String>>> globalTags, String[] queries)
             throws Exception {
 
-        // Build up the URI query
+        // Build up the URI oldQuery
         char prefix = '?';
-        StringBuilder buf = new StringBuilder("/api/performance/query");
+        StringBuilder buf = new StringBuilder("/api/performance/oldQuery");
         prefix = addArgument(buf, "id", id, prefix);
         prefix = addArgument(buf, "start", start, prefix);
         prefix = addArgument(buf, "end", end, prefix);
         prefix = addArgument(buf, "returnset", returnset, prefix);
         prefix = addArgument(buf, "series", series, prefix);
         for (String query : queries) {
-            prefix = addArgument(buf, "query", Optional.of(query), prefix);
+            prefix = addArgument(buf, "oldQuery", Optional.of(query), prefix);
         }
 
         // Invoke the URI and make sure we get a response

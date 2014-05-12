@@ -30,14 +30,12 @@
  */
 package org.zenoss.app.metricservice;
 
-import javax.validation.Valid;
-
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.zenoss.app.AppConfiguration;
 import org.zenoss.app.metric.zapp.ManagedReporterConfig;
-import org.zenoss.app.metricservice.api.configs.ChartServiceConfig;
 import org.zenoss.app.metricservice.api.configs.MetricServiceConfig;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import javax.validation.Valid;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
@@ -49,16 +47,8 @@ public class MetricServiceAppConfiguration extends AppConfiguration {
     private MetricServiceConfig metricServiceConfig = new MetricServiceConfig();
 
     @Valid
-    @JsonProperty("charts")
-    private ChartServiceConfig chartServiceConfig = new ChartServiceConfig();
-
-    @Valid
     @JsonProperty("managedReporter")
     private ManagedReporterConfig managedReporterConfig = new ManagedReporterConfig();
-
-    public ChartServiceConfig getChartServiceConfig() {
-        return chartServiceConfig;
-    }
 
     public MetricServiceConfig getMetricServiceConfig() {
         return metricServiceConfig;

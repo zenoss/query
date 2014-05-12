@@ -105,7 +105,7 @@ public class MetricService implements MetricServiceAPI {
     }
 
     public static List<MetricSpecification> metricFilter(List<? extends MetricSpecification> list) {
-        List<MetricSpecification> result = new ArrayList<MetricSpecification>();
+        List<MetricSpecification> result = new ArrayList<>();
         if (list != null) {
             for (MetricSpecification spec : list) {
                 if (spec.getMetric() != null) {
@@ -126,7 +126,7 @@ public class MetricService implements MetricServiceAPI {
      */
     public static List<MetricSpecification>  valueFilter(
             List<? extends MetricSpecification> list) {
-        List<MetricSpecification> result = new ArrayList<MetricSpecification>();
+        List<MetricSpecification> result = new ArrayList<>();
         if (list != null) {
             for (MetricSpecification spec : list) {
                 if (spec.getName() != null && spec.getMetric() == null) {
@@ -137,48 +137,9 @@ public class MetricService implements MetricServiceAPI {
         return result;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see
-     * org.zenoss.app.metricservice.api.MetricServiceAPI#query(com.google.common
-     * .base.Optional, com.google.common.base.Optional,
-     * com.google.common.base.Optional, com.google.common.base.Optional,
-     * com.google.common.base.Optional, com.google.common.base.Optional,
-     * com.google.common.base.Optional, com.google.common.base.Optional,
-     * java.util.List)
-     */
     @Override
-    public Response query(Optional<String> id, Optional<String> startTime,
-                          Optional<String> endTime, Optional<ReturnSet> returnset,
-                          Optional<Boolean> series, Optional<String> downsample,
-                          Optional<String> grouping,
-                          Optional<Map<String, List<String>>> tags,
-                          List<MetricSpecification> queries) {
+    public Response query(Optional<String> id, Optional<String> start, Optional<String> end, Optional<ReturnSet> returnset, Optional<Boolean> series, Optional<String> downsample, Optional<String> grouping, Optional<Map<String, List<String>>> tags, List<MetricSpecification> metrics) {
         log.info("entering MetricService.query()");
-
-        try {
-            return makeCORS(Response.ok(
-                    new Worker(config, id.or(NOT_SPECIFIED),
-                            startTime.or(config.getMetricServiceConfig().getDefaultStartTime()),
-                            endTime.or(config.getMetricServiceConfig().getDefaultEndTime()),
-                            returnset.or(config.getMetricServiceConfig().getDefaultReturnSet()),
-                            series.or(config.getMetricServiceConfig().getDefaultSeries()),
-                            downsample.orNull(),
-                            grouping.orNull(),
-                            tags.orNull(),
-                            queries)));
-        } catch (Exception e) {
-            log.error(String.format(
-                    "Error While attempting to query data source: %s : %s", e
-                    .getClass().getName(), e.getMessage()));
-            return makeCORS(Response.status(500));
-        }
-    }
-
-    @Override
-    public Response newQuery(Optional<String> id, Optional<String> start, Optional<String> end, Optional<ReturnSet> returnset, Optional<Boolean> series, Optional<String> downsample, Optional<String> grouping, Optional<Map<String, List<String>>> tags, List<MetricSpecification> metrics) {
-        log.info("entering MetricService.newQuery()");
         try {
             return makeCORS(Response.ok(
                     new NewWorker(config, id.or(NOT_SPECIFIED),
@@ -259,162 +220,6 @@ public class MetricService implements MetricServiceAPI {
         }
     }
 
-    private class Worker implements StreamingOutput {
-        private final String id;
-        private final String startTime;
-        private final String endTime;
-        private final ReturnSet returnset;
-        private final Boolean series;
-        private final String downsample;
-        private final String grouping;
-        private final Map<String, List<String>> tags;
-        private final List<MetricSpecification> queries;
-        private long start = -1;
-        private long end = -1;
-
-        public Worker(MetricServiceAppConfiguration config, String id,
-                      String startTime, String endTime, ReturnSet returnset,
-                      Boolean series, String downsample, String grouping,
-                      Map<String, List<String>> tags,
-                      List<MetricSpecification> queries) {
-            if (queries == null) {
-                // This really should never happen as the query check should
-                // happen in our calling routine, but just in case.
-                log.error("Attempt to create query worker without any queries specified");
-                throw new IllegalArgumentException("No queries specified");
-            }
-            this.id = id;
-            this.startTime = startTime;
-            this.endTime = endTime;
-            this.returnset = returnset;
-            this.series = series;
-            this.tags = tags;
-            this.downsample = downsample;
-            this.grouping = grouping;
-            this.queries = queries;
-        }
-
-        /*
-         * (non-Javadoc)
-         *
-         * @see javax.ws.rs.core.StreamingOutput#write(java.io.OutputStream)
-         */
-        @Override
-        public void write(OutputStream output) throws IOException,
-                WebApplicationException {
-
-            validateParameters();
-            // Validate the input parameters
-
-            String convertedStartTime = Long.toString(start);
-            String convertedEndTime = Long.toString(end);
-
-            BufferedReader reader = null;
-            try {
-                reader = api.getReader(config, id, convertedStartTime,
-                        convertedEndTime, returnset, series, downsample, tags,
-                        MetricService.metricFilter(queries));
-                if (returnset == ReturnSet.LAST) {
-                    reader = new LastFilter(reader, start, end);
-                }
-            } catch (WebApplicationException wae) {
-                throw wae;
-            } catch (Exception e) {
-                log.error(String.format("Failed to connect to metric data source: %s : %s", e.getClass().getName(), e.getMessage()), e);
-                throw new WebApplicationException(
-                        Utils.getErrorResponse(
-                                id,
-                                500,
-                                String.format("Unable to connect to performance metric data source"),
-                                e.getMessage()));
-
-            }
-
-            /**
-             * Deal with no bucket specification better. Create a bucket size of
-             * 1 second means that we are behaving correctly, but it also means
-             * we are going a lot more work than we really need to as we would
-             * just directly stream the results without processing them into
-             * buckets.
-             */
-            long bucketSize = 1;
-            if (grouping != null && grouping.length() > 1) {
-                bucketSize = Utils.parseDuration(grouping);
-            }
-            try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(output))) {
-                Buckets<MetricKey, String> buckets = resultsProcessor.processResults(reader, queries, bucketSize);
-
-                if (series) {
-                    seriesResultsWriter.writeResults(writer, queries, buckets,
-                            id, api.getSourceId(), start, startTime, end, endTime, returnset, series);
-                } else {
-                    asIsResultsWriter.writeResults(writer, queries, buckets,
-                            id, api.getSourceId(), start, startTime,
-                            end, endTime, returnset, series);
-                }
-            } catch (Exception e) {
-                log.error(
-                        String.format(
-                                "Server error while processing metric source %s : %s:%s",
-                                api.getSourceId(), e.getClass().getName(),
-                                e.getMessage()), e);
-                throw new WebApplicationException(Response.status(500).build());
-            } finally {
-                if (reader != null) {
-                    reader.close();
-                }
-            }
-        }
-
-        private void validateParameters() throws JsonProcessingException {
-            List<Object> errors = new ArrayList<Object>();
-
-            // Validate start time
-            try {
-                start = Utils.parseDate(startTime);
-            } catch (ParseException e) {
-                log.error("Failed to parse start time option of '{}': {} : {}",
-                        startTime, e.getClass().getName(), e.getMessage());
-                errors.add(makeError(String.format(
-                        "Unable to parse specified start time value of '%s'",
-                        startTime), e.getMessage(), Utils.START));
-            }
-
-            // Validate end time
-            try {
-                end = Utils.parseDate(endTime);
-            } catch (ParseException e) {
-                log.error("Failed to parse end time option of '{}': {} : {}",
-                        endTime, e.getClass().getName(), e.getMessage());
-                errors.add(makeError(String.format("Unable to parse specified end time value of '%s'", startTime), e.getMessage(), Utils.END));
-            }
-
-            // Validate that there is at least one (1) metric specification
-            if (queries.size() == 0) {
-                log.error("No queries specified for request");
-                errors.add(makeError("At least one (1) metric query term must be specified, none found", METRIC, METRIC));
-            }
-
-            if (errors.size() > 0) {
-                Map<String, Object> response = new HashMap<String, Object>();
-                response.put(CLIENT_ID, id);
-                response.put(Utils.ERRORS, errors);
-                throw new WebApplicationException(Response
-                        .status(400)
-                        .entity(objectMapper.writer().writeValueAsString(response))
-                        .build());
-            }
-        }
-
-        private Map<String, Object> makeError(String errorMessage, String errorCause, String errorPart) {
-            Map<String, Object> error = new HashMap<String, Object>();
-            error.put(Utils.ERROR_MESSAGE, errorMessage);
-            error.put(Utils.ERROR_CAUSE, errorCause);
-            error.put(Utils.ERROR_PART, errorPart);
-            return error;
-        }
-    }
-
     private class NewWorker implements StreamingOutput {
         private final String id;
         private final String startTime;
@@ -470,6 +275,9 @@ public class MetricService implements MetricServiceAPI {
             BufferedReader reader = null;
             try {
                 reader = api.getReader(config, id, convertedStartTime, convertedEndTime, returnset, series, downsample, tags, MetricService.metricFilter(queries));
+                if (null == reader) {
+                    throw new Exception("Unable to get reader from api.");
+                }
                 if (returnset == ReturnSet.LAST) {
                     reader = new LastFilter(reader, start, end);
                 }
@@ -522,7 +330,7 @@ public class MetricService implements MetricServiceAPI {
         }
 
         private void validateParameters() throws JsonProcessingException {
-            List<Object> errors = new ArrayList<Object>();
+            List<Object> errors = new ArrayList<>();
 
             // Validate start time
             try {
@@ -543,11 +351,11 @@ public class MetricService implements MetricServiceAPI {
             // Validate that there is at least one (1) metric specification
             if (queries.size() == 0) {
                 log.error("No queries specified for request");
-                errors.add(makeError("At least one (1) metric query term must be specified, none found", METRIC, METRIC));
+                errors.add(makeError("At least one (1) metric oldQuery term must be specified, none found", METRIC, METRIC));
             }
 
             if (errors.size() > 0) {
-                Map<String, Object> response = new HashMap<String, Object>();
+                Map<String, Object> response = new HashMap<>();
                 response.put(CLIENT_ID, id);
                 response.put(Utils.ERRORS, errors);
                 throw new WebApplicationException(Response
@@ -558,7 +366,7 @@ public class MetricService implements MetricServiceAPI {
         }
 
         private Map<String, Object> makeError(String errorMessage, String errorCause, String errorPart) {
-            Map<String, Object> error = new HashMap<String, Object>();
+            Map<String, Object> error = new HashMap<>();
             error.put(Utils.ERROR_MESSAGE, errorMessage);
             error.put(Utils.ERROR_CAUSE, errorCause);
             error.put(Utils.ERROR_PART, errorPart);

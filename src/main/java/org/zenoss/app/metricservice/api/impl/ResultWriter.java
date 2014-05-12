@@ -62,19 +62,19 @@ public interface ResultWriter {
      * @param sourceId
      *            id of the storage from which the data was queried
      * @param startTs
-     *            ms since epoch that represents the start of the query range
+     *            ms since epoch that represents the start of the oldQuery range
      * @param startTimeConfig
      *            Configuration specification that represents the start of the
-     *            query range
+     *            oldQuery range
      * @param endTs
-     *            ms since epoch that represents the end of the query range
+     *            ms since epoch that represents the end of the oldQuery range
      * @param endTimeConfig
      *            Configuration specification that represents the end of the
-     *            query range
+     *            oldQuery range
      * @param returnset
      *            specifies if all results are returned or only those in the
-     *            specified query range (this is needed because by default
-     *            OpenTSDB may return results outside of the query range).
+     *            specified oldQuery range (this is needed because by default
+     *            OpenTSDB may return results outside of the oldQuery range).
      * @param series
      *            specifies is the write will be as a series or in line. this is
      *            used for the header information and probably should be remove.

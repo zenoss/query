@@ -54,7 +54,7 @@ import org.zenoss.app.metricservice.calculators.ReferenceProvider;
 import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
 
 /**
- * Processes the output stream from the back end metric query storage into
+ * Processes the output stream from the back end metric oldQuery storage into
  * buckets including the calculation of any RPN functions and references.
  *
  * @author Zenoss
@@ -115,7 +115,7 @@ public class DefaultResultProcessor implements ResultProcessor,
             throws ClassNotFoundException, UnknownReferenceException,
             IOException {
 
-        Buckets<MetricKey, String> buckets = new Buckets<MetricKey, String>(bucketSize);
+        Buckets<MetricKey, String> buckets = new Buckets<>(bucketSize);
 
         String line;
         String[] terms;
@@ -126,7 +126,7 @@ public class DefaultResultProcessor implements ResultProcessor,
 
         MetricKey key;
         MetricCalculator calc = null;
-        Map<MetricKey, MetricCalculator> calcs = new HashMap<MetricKey, MetricCalculator>();
+        Map<MetricKey, MetricCalculator> calcs = new HashMap<>();
         MetricCalculatorFactory calcFactory = new MetricCalculatorFactory();
 
         // Walk the queries and build up a map of metric name to RPN

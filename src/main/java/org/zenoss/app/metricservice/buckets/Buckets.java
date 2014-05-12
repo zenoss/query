@@ -64,7 +64,7 @@ public class Buckets<P, S> {
     /**
      * Set of buckets indexed by time in seconds
      */
-    private Map<Long, Bucket> bucketList = new HashMap<Long, Bucket>();
+    private Map<Long, Bucket> bucketList = new HashMap<>();
 
     /**
      * Each bucket maintains a summary of the values that fall within that
@@ -80,12 +80,12 @@ public class Buckets<P, S> {
         /**
          * Map from the primary key to the values within a bucket
          */
-        private Map<P, Value> values = new HashMap<P, Value>();
+        private Map<P, Value> values = new HashMap<>();
 
         /**
          * Map from the shortcut key to the values within a bucket
          */
-        private Map<S, Value> valuesByName = new HashMap<S, Value>();
+        private Map<S, Value> valuesByName = new HashMap<>();
 
         /**
          * Add a value to a bucket
@@ -200,7 +200,7 @@ public class Buckets<P, S> {
      * @return sorted list of downsampled time values
      */
     final public List<Long> getTimestamps() {
-        List<Long> result = new ArrayList<Long>(bucketList.keySet());
+        List<Long> result = new ArrayList<>(bucketList.keySet());
         Collections.sort(result);
         return result;
     }
@@ -222,7 +222,7 @@ public class Buckets<P, S> {
      *            printstream instance to use for the dump
      */
     final public void dump(PrintStream ps) {
-        List<Long> keys = new ArrayList<Long>(bucketList.keySet());
+        List<Long> keys = new ArrayList<>(bucketList.keySet());
         Collections.sort(keys);
 
         for (long k : keys) {

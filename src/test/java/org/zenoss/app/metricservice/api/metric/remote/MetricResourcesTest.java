@@ -1,4 +1,4 @@
-package org.zenoss.app.metricservice.api.remote;
+package org.zenoss.app.metricservice.api.metric.remote;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;

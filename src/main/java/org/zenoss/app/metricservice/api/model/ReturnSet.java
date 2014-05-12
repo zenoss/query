@@ -35,7 +35,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
  * Enumeration to specify the "type" or results that should be returned by the
- * performance metric query.
+ * performance metric oldQuery.
  * 
  * @author David Bainbridge <dbainbridge@zenoss.com>
  */

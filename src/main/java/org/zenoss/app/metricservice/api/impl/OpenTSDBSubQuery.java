@@ -15,7 +15,7 @@ public class OpenTSDBSubQuery {
 
     public void addTag(String key, String value) {
         if (null == tags) {
-            tags = new HashMap<String, String>();
+            tags = new HashMap<>();
         }
         tags.put(key, value);
     }

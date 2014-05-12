@@ -12,10 +12,7 @@ import org.zenoss.app.metricservice.api.model.Aggregator;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.PerformanceQuery;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.Assert.assertTrue;
 
@@ -53,8 +50,8 @@ public class JacksonTest {
     @Test
     public void testPerformanceGetQuery() {
                                    /*
-    public Response query(@QueryParam("id") Optional<String> id,
-                          @QueryParam("query") List<MetricSpecification> queries,
+    public Response oldQuery(@QueryParam("id") Optional<String> id,
+                          @QueryParam("oldQuery") List<MetricSpecification> queries,
                           @QueryParam("start") Optional<String> startTime,
                           @QueryParam("end") Optional<String> endTime,
                           @QueryParam("returnset") Optional<ReturnSet> returnset,
@@ -64,7 +61,7 @@ public class JacksonTest {
         spec.setTags(makeTags("host", "morr-workstation"));
         spec.setAggregator(Aggregator.avg);
         spec.setMetric("df.bytes.free");
-        List<MetricSpecification> specList = new ArrayList<MetricSpecification>();
+        List<MetricSpecification> specList = new ArrayList<>();
         specList.add(spec);
         writeJsonString(specList);
     }
@@ -105,7 +102,7 @@ public class JacksonTest {
     }
 
     private List<MetricSpecification> makeMetrics() {
-        List<MetricSpecification> result = new ArrayList<MetricSpecification>();
+        List<MetricSpecification> result = new ArrayList<>();
         result.add(makeMetricSpecification("df.bytes.free"));
         return result;
     }
@@ -115,12 +112,12 @@ public class JacksonTest {
         result.setAggregator(Aggregator.avg);
         result.setMetric(metricName);
         result.setTags(makeTags("host", "morr-workstation"));
-        result.setName("test query");
+        result.setName("test oldQuery");
         return result;
     }
 
     private Map<String,List<String>> makeTags(String tagName, String... tagValues) {
-        Map<String, List<String>> result = new HashMap<String, List<String>>();
+        Map<String, List<String>> result = new HashMap<>();
         result.put(tagName, makeList(tagValues));
         return result;
     }
@@ -138,17 +135,15 @@ public class JacksonTest {
     }
 
     private static Map<String, List<String>> makeFancyMap() {
-        Map<String, List<String>> result = new HashMap<String, List<String>>();
+        Map<String, List<String>> result = new HashMap<>();
         result.put("Numbers", makeList("one", "two", "three", "four", "five"));
         result.put("Letters", makeList("alpha", "beta", "gamma", "delta"));
         return result;
     }
 
     private static List<String> makeList(String... strings) {
-        List<String> result = new ArrayList<String>();
-        for (String s: strings) {
-            result.add(s);
-        }
+        List<String> result = new ArrayList<>();
+        Collections.addAll(result, strings);
         return result;
     }
 

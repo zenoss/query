@@ -8,10 +8,7 @@ import org.zenoss.app.metricservice.api.model.Aggregator;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 
 import javax.ws.rs.core.MediaType;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -25,7 +22,7 @@ public class JerseyClientTest {
     public void tryIt() {
         MetricSpecification request = makeMetricSpecification("df.bytes.percentused");
         Client c = Client.create();
-        String url = "http://localhost:8888/api/performance/query";
+        String url = "http://localhost:8888/api/performance/oldQuery";
         /*WebResource r = c.resource(url);
         r.type(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
@@ -47,7 +44,7 @@ public class JerseyClientTest {
 
 
     private List<MetricSpecification> makeMetrics() {
-        List<MetricSpecification> result = new ArrayList<MetricSpecification>();
+        List<MetricSpecification> result = new ArrayList<>();
         result.add(makeMetricSpecification("df.bytes.free"));
         return result;
     }
@@ -61,16 +58,14 @@ public class JerseyClientTest {
     }
 
     private Map<String,List<String>> makeTags(String tagName, String... tagValues) {
-        Map<String, List<String>> result = new HashMap<String, List<String>>();
+        Map<String, List<String>> result = new HashMap<>();
         result.put(tagName, makeList(tagValues));
         return result;
     }
 
     private static List<String> makeList(String... strings) {
-        List<String> result = new ArrayList<String>();
-        for (String s: strings) {
-            result.add(s);
-        }
+        List<String> result = new ArrayList<>();
+        Collections.addAll(result, strings);
         return result;
     }
 }

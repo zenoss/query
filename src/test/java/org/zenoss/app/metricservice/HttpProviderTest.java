@@ -97,7 +97,7 @@ public class HttpProviderTest extends ProviderTestBase {
 
         // Create some mock data for the request. This mock data will be
         // generated based on the request.
-        List<MetricSpecification> queryList = new ArrayList<MetricSpecification>();
+        List<MetricSpecification> queryList = new ArrayList<>();
         for (String query : queries) {
             queryList.add(MetricSpecification.fromString(query));
         }

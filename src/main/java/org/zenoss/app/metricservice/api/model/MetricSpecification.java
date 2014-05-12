@@ -235,7 +235,7 @@ public class MetricSpecification {
     }
 
     /**
-     * Encodes the current instance into the URL query parameter format that <a
+     * Encodes the current instance into the URL oldQuery parameter format that <a
      * href="http://opentsdb.net/http-api.html#/q">OpenTSDB</a> supports.
      * <p/>
      * <em style="color: red">NOTE: This method supports a format that is
@@ -246,7 +246,7 @@ public class MetricSpecification {
      *            specifies any base tags that should be applied to the metric
      *            before overriding with any metric specific tags.
      * 
-     * @return OpenTSDB URL query formatted String instance
+     * @return OpenTSDB URL oldQuery formatted String instance
      */
     public String toString(String downsample,
             Map<String, List<String>> baseTags, boolean withRateOptions) {
@@ -291,7 +291,7 @@ public class MetricSpecification {
         }
         if ((baseTags != null && baseTags.size() > 0)
                 || (getTags() != null && getTags().size() > 0)) {
-            Map<String, List<String>> joined = new HashMap<String, List<String>>();
+            Map<String, List<String>> joined = new HashMap<>();
             if (baseTags != null) {
                 joined.putAll(baseTags);
             }
@@ -316,14 +316,14 @@ public class MetricSpecification {
     }
 
     /**
-     * Encodes the current instance into the URL query parameter format that <a
+     * Encodes the current instance into the URL oldQuery parameter format that <a
      * href="http://opentsdb.net/http-api.html#/q">OpenTSDB</a> supports.
      * <p/>
      * <em style="color: red">NOTE: This method supports a format that is
      * proposed to OpenTSDB, but is not yet committed. This format include
      * "rate" options to better support counter base metrics</em>
      * 
-     * @return OpenTSDB URL query formatted String instance
+     * @return OpenTSDB URL oldQuery formatted String instance
      */
     public String toString() {
         return this.toString(null, null, false);
@@ -338,7 +338,7 @@ public class MetricSpecification {
      * @return
      */
     private static Map<String, List<String>> parseTags(String value) {
-        Map<String, List<String>> tags = new HashMap<String, List<String>>();
+        Map<String, List<String>> tags = new HashMap<>();
 
         if (value == null || (value = value.trim()).length() == 0) {
             return tags;
@@ -346,7 +346,7 @@ public class MetricSpecification {
         String[] pairs = value.substring(1, value.length() - 1).split(",");
         for (String pair : pairs) {
             String[] terms = pair.split("=", 2);
-            List<String> vals = new ArrayList<String>();
+            List<String> vals = new ArrayList<>();
             vals.add(terms[1].trim());
             tags.put(terms[0].trim(), vals);
         }
@@ -415,12 +415,12 @@ public class MetricSpecification {
      * 
      * @param content
      *            the metric specification in the OpenTSDB format
-     * @return model representation of the URL metric query parameter
+     * @return model representation of the URL metric oldQuery parameter
      * @see MetricSpecification
      */
     public static MetricSpecification fromString(String content) {
 
-        // Determine if there are tags in this query specification. This will
+        // Determine if there are tags in this oldQuery specification. This will
         // be a simple check, if there is a pattern '{' ... at the end
         // of the value, then strip it off as the tags.
         String[] terms = content.split(":", 4);
@@ -433,7 +433,7 @@ public class MetricSpecification {
                     .substring(idx).trim());
             metric = terms[terms.length - 1].substring(0, idx);
         } else {
-            tags = new HashMap<String, List<String>>();
+            tags = new HashMap<>();
             metric = terms[terms.length - 1];
         }
 

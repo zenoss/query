@@ -132,7 +132,7 @@ public class MetricCalculatorFactory {
         // Nothing found, throw an exception
         throw new ClassNotFoundException(
                 String.format(
-                        "Unable to find a class that implementations the expression evaluation for type '{}'",
+                        "Unable to find a class that implementations the expression evaluation for type '%s'",
                         terms[0]));
     }
 }

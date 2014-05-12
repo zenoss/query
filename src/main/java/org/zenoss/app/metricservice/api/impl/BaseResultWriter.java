@@ -57,12 +57,12 @@ abstract public class BaseResultWriter implements ResultWriter {
      *            buckets that contain the data to be output
      * @param returnset
      *            specifies if all results are returned or only those in the
-     *            specified query range (this is needed because by default
-     *            OpenTSDB may return results outside of the query range).
+     *            specified oldQuery range (this is needed because by default
+     *            OpenTSDB may return results outside of the oldQuery range).
      * @param startTs
-     *            ms since epoch that represents the start of the query range
+     *            ms since epoch that represents the start of the oldQuery range
      * @param endTs
-     *            ms since epoch that represents the end of the query range
+     *            ms since epoch that represents the end of the oldQuery range
      * @throws IOException
      *             when an IO exception occurs writing to the output stream
      */

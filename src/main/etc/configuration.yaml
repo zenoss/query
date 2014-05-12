@@ -12,8 +12,6 @@ metrics:
   defaultTsdTimeZone: UTC
   connectionTimeoutMs: 20000
   sendRateOptions: false
-charts:
-  redisConnection: localhost:6379
 http:
   connectorType: nonblocking
   port: 8888
