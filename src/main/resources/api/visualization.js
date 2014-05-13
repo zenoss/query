@@ -56,17 +56,17 @@
              * found. This includes library dependencies like jquery.
              *
              * @access public
-             * @default /static/performance/oldQuery
+             * @default /static/performance/query
              */
-            urlPath : "/static/performance/oldQuery/",
+            urlPath : "/static/performance/query/",
 
             /**
              * The url path where metrics are fetched from the server
              *
              * @access public
-             * @default /api/performance/oldQuery
+             * @default /api/performance/query
              */
-            urlPerformance : "/api/performance/oldQuery/",
+            urlPerformance : "/api/performance/query/",
 
             /**
              * Determines if the legend is displayed when no data is available
@@ -526,7 +526,7 @@
 
                     /*
                      * Sanity Check. If the request contained no metrics to
-                     * oldQuery then log this information as a warning, as it
+                     * query then log this information as a warning, as it
                      * really does not make sense.
                      */
                     if (this.request.metrics === undefined) {
@@ -1437,7 +1437,7 @@
     };
 
     /**
-     * Processes the result from the Zenoss performance metric oldQuery that is in
+     * Processes the result from the Zenoss performance metric query that is in
      * the series format into the data that can be utilized by the chart
      * library.
      *
@@ -1445,7 +1445,7 @@
      * @param {object}
      *            request the request which generated the data
      * @param {object}
-     *            data the data object returned from the oldQuery
+     *            data the data object returned from the query
      * @returns {object} the data in the format that can be utilized by the
      *          chart library.
      */
@@ -1496,7 +1496,7 @@
     };
 
     /**
-     * Processes the result from the Zenoss performance metric oldQuery that is in
+     * Processes the result from the Zenoss performance metric query that is in
      * the default format into the data that can be utilized by the chart
      * library.
      *
@@ -1504,7 +1504,7 @@
      * @param {object}
      *            request the request which generated the data
      * @param {object}
-     *            data the data object returned from the oldQuery
+     *            data the data object returned from the query
      * @returns {object} the data in the format that can be utilized by the
      *          chart library.
      */
@@ -1570,14 +1570,14 @@
 
     /**
      * Wrapper function that redirects to the proper implementation to processes
-     * the result from the Zenoss performance metric oldQuery into the data that
+     * the result from the Zenoss performance metric query into the data that
      * can be utilized by the chart library. *
      *
      * @access private
      * @param {object}
      *            request the request which generated the data
      * @param {object}
-     *            data the data object returned from the oldQuery
+     *            data the data object returned from the query
      * @returns {object} the data in the format that can be utilized by the
      *          chart library.
      */
@@ -1833,7 +1833,7 @@
      * Constructs a chart from the given data
      *
      * @param data
-     *            the data returned from a metric oldQuery
+     *            the data returned from a metric query
      * @access private
      */
     zenoss.visualization.Chart.prototype.__buildChart = function(data) {

@@ -68,7 +68,7 @@ public class MetricServiceApp extends
      */
     @Override
     public com.yammer.dropwizard.Bundle getBundle() {
-        return new AssetsBundle("/api/", "/static/performance/oldQuery/");
+        return new AssetsBundle("/api/", "/static/performance/query/");
     }
 
     /*

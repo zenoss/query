@@ -22,7 +22,7 @@ public class JerseyClientTest {
     public void tryIt() {
         MetricSpecification request = makeMetricSpecification("df.bytes.percentused");
         Client c = Client.create();
-        String url = "http://localhost:8888/api/performance/oldQuery";
+        String url = "http://localhost:8888/api/performance/query";
         /*WebResource r = c.resource(url);
         r.type(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)

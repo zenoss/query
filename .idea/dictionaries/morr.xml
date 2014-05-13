@@ -2,6 +2,7 @@
   <dictionary name="morr">
     <words>
       <w>downsample</w>
+      <w>zenoss</w>
     </words>
   </dictionary>
 </component>

@@ -26,7 +26,7 @@ from a stored chart or even create a complete chart from within the HTML page.
             "series" : true,
             "type" : "line",
             "returnset" : "exact",
-            "downsample" : "1m-avg",
+            "secondsPerBucket" : "1m-avg",
             "grouping" : "5m",
             "autoscale" : {
                 "ceiling" : 5,
@@ -60,7 +60,7 @@ from a stored chart or even create a complete chart from within the HTML page.
             }, {
                 "metric" : "laLoadInt5",
                 "aggregator" : "sum",
-                "downsample" : "5m-avg"
+                "secondsPerBucket" : "5m-avg"
             }, {
                 "metric" : "laLoadInt15",
             } ]
@@ -122,7 +122,7 @@ Resources
             "end"        : "<datetime>",
             "returnset"  : exact | last | <undefined>
             "series"     : true or false,
-            "downsample" : request default for downsample over all metrics,
+            "secondsPerBucket" : request default for secondsPerBucket over all metrics,
             "tags"       : request default for tags over all metrics
             "grouping"   : <integer> specifies the bucket size that values are grouped
                            into to align data from multiple metrics that are created at essentially random times 
@@ -130,7 +130,7 @@ Resources
                 {
                     "metric"      : "<metric name>",
                     "aggregator"  : "<aggregator>",
-                    "downsample"  : "<downsample>",
+                    "secondsPerBucket"  : "<secondsPerBucket>",
                     "rate"        : true or false,
                     "rateOptions" : { // optional
                         "counter"        : true or false,
@@ -163,11 +163,11 @@ Resources
     - `exact=<_true_ | _false_>`
     - `series-<_true_ | _false_><br/>`
       Determines is the results are grouped as individual series based on the results based on metric name and tag values not based on the number of queries specified.
-    - `query=<_AGG:[rate:][downsample:]metric[{tags}]_>`
+    - `query=<_AGG:[rate:][secondsPerBucket:]metric[{tags}]_>`
 
         `AGG = min | max | sum | avg`
 
-        `downsample = _like_ 10m-avg`
+        `secondsPerBucket = _like_ 10m-avg`
 
         `tags = name=tag-value`
 

@@ -41,9 +41,9 @@ import org.zenoss.app.metricservice.buckets.Buckets;
 import org.zenoss.app.metricservice.buckets.Value;
 
 /**
- * Writes the oldQuery results in a single line format where each line contains the
+ * Writes the query results in a single line format where each line contains the
  * metric name and a value. This format is similar to the raw format returns
- * from the underlying oldQuery engine, but contains some redundant information.
+ * from the underlying query engine, but contains some redundant information.
  * <p>
  * This class will output the results sequentially by metric name
  * 
@@ -70,7 +70,7 @@ public class LineResultWriter extends BaseResultWriter {
         Value value;
         String name;
         boolean comma = false;
-        long downsample = buckets.getDownsample();
+        long downsample = buckets.getSecondsPerBucket();
 
         /*
          * Iterate over the queries and for each each metric or value output its
@@ -78,7 +78,7 @@ public class LineResultWriter extends BaseResultWriter {
          * over all buckets, but it is either that or use lots of memory.
          */
         for (MetricSpecification query : queries) {
-            // Only return the result if the oldQuery is meant to be emitted.
+            // Only return the result if the query is meant to be emitted.
             if (query.getEmit()) {
                 for (long bts : timestamps) {
                     bts *= downsample;
@@ -90,7 +90,7 @@ public class LineResultWriter extends BaseResultWriter {
                                 writer.write(',');
                             }
                             comma = true;
-                            // bucket.getKeyByName(oldQuery.getNameOrMetric());
+                            // bucket.getKeyByName(query.getNameOrMetric());
                             writer.objectS()
                                     .value(MetricService.METRIC, name, true)
                                     .value(MetricService.TIMESTAMP, bts, true)

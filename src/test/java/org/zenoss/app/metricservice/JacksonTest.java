@@ -50,8 +50,8 @@ public class JacksonTest {
     @Test
     public void testPerformanceGetQuery() {
                                    /*
-    public Response oldQuery(@QueryParam("id") Optional<String> id,
-                          @QueryParam("oldQuery") List<MetricSpecification> queries,
+    public Response query(@QueryParam("id") Optional<String> id,
+                          @QueryParam("query") List<MetricSpecification> queries,
                           @QueryParam("start") Optional<String> startTime,
                           @QueryParam("end") Optional<String> endTime,
                           @QueryParam("returnset") Optional<ReturnSet> returnset,
@@ -112,7 +112,7 @@ public class JacksonTest {
         result.setAggregator(Aggregator.avg);
         result.setMetric(metricName);
         result.setTags(makeTags("host", "morr-workstation"));
-        result.setName("test oldQuery");
+        result.setName("test query");
         return result;
     }
 

@@ -41,7 +41,7 @@ import org.zenoss.app.metricservice.buckets.Buckets;
 import org.zenoss.app.metricservice.buckets.Value;
 
 /**
- * Writes the oldQuery results in a series format where the results are grouped by
+ * Writes the query results in a series format where the results are grouped by
  * the metric queried. This format eliminates the redundancy of repeating the
  * metric name in each result object.
  * 
@@ -69,7 +69,7 @@ public class SeriesResultWriter extends BaseResultWriter {
         boolean valueComma;
         boolean needHeader;
         boolean needFooter;
-        long downsample = buckets.getDownsample();
+        long downsample = buckets.getSecondsPerBucket();
 
         /*
          * Iterate over the queries and for each each metric or value output its
@@ -77,7 +77,7 @@ public class SeriesResultWriter extends BaseResultWriter {
          * over all buckets, but it is either that or use lots of memory.
          */
         for (MetricSpecification query : queries) {
-            // Only return the result if the oldQuery is meant to be emitted.
+            // Only return the result if the query is meant to be emitted.
             if (query.getEmit()) {
                 needHeader = true;
                 needFooter = false;
@@ -109,7 +109,7 @@ public class SeriesResultWriter extends BaseResultWriter {
                                 valueComma = true;
                             }
 
-                            // bucket.getKeyByName(oldQuery.getNameOrMetric());
+                            // bucket.getKeyByName(query.getNameOrMetric());
                             writer.objectS()
                                     .value(MetricService.TIMESTAMP, bts, true)
                                     .value(MetricService.VALUE,

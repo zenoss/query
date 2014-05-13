@@ -47,8 +47,6 @@ import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.app.metricservice.buckets.Buckets;
 
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.OPTIONS;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
@@ -78,9 +76,9 @@ public class MetricService implements MetricServiceAPI {
     public static final String DOWNSAMPLE = "downsample";
     public static final String METRIC = "metric";
     public static final String RETURN_SET = "returnset";
-    public static final String TIMESTAMP = "timestamp";
+    public static final String TIMESTAMP = "ts";
     public static final String SERIES = "series";
-    public static final String VALUE = "value";
+    public static final String VALUE = "val";
     public static final String TAGS = "tags";
     public static final String NOT_SPECIFIED = "not-specified";
     private static final Logger log = LoggerFactory.getLogger(MetricService.class);
@@ -142,7 +140,7 @@ public class MetricService implements MetricServiceAPI {
         log.info("entering MetricService.query()");
         try {
             return makeCORS(Response.ok(
-                    new NewWorker(config, id.or(NOT_SPECIFIED),
+                    new MetricServiceWorker(config, id.or(NOT_SPECIFIED),
                             start.or(config.getMetricServiceConfig().getDefaultStartTime()),
                             end.or(config.getMetricServiceConfig().getDefaultEndTime()),
                             returnset.or(config.getMetricServiceConfig().getDefaultReturnSet()),
@@ -220,7 +218,7 @@ public class MetricService implements MetricServiceAPI {
         }
     }
 
-    private class NewWorker implements StreamingOutput {
+    private class MetricServiceWorker implements StreamingOutput {
         private final String id;
         private final String startTime;
         private final String endTime;
@@ -233,13 +231,11 @@ public class MetricService implements MetricServiceAPI {
         private long start = -1;
         private long end = -1;
 
-        //private final Logger log = LoggerFactory.getLogger(NewWorker.class);
-
-        public NewWorker(MetricServiceAppConfiguration config, String id,
-                         String startTime, String endTime, ReturnSet returnset,
-                         Boolean series, String downsample, String grouping,
-                         Map<String, List<String>> tags,
-                         List<MetricSpecification> queries) {
+        public MetricServiceWorker(MetricServiceAppConfiguration config, String id,
+                                   String startTime, String endTime, ReturnSet returnset,
+                                   Boolean series, String downsample, String grouping,
+                                   Map<String, List<String>> tags,
+                                   List<MetricSpecification> queries) {
             if (queries == null) {
                 // This really should never happen as the query check should
                 // happen in our calling routine, but just in case.
@@ -351,7 +347,7 @@ public class MetricService implements MetricServiceAPI {
             // Validate that there is at least one (1) metric specification
             if (queries.size() == 0) {
                 log.error("No queries specified for request");
-                errors.add(makeError("At least one (1) metric oldQuery term must be specified, none found", METRIC, METRIC));
+                errors.add(makeError("At least one (1) metric query term must be specified, none found", METRIC, METRIC));
             }
 
             if (errors.size() > 0) {
@@ -381,7 +377,7 @@ public class MetricService implements MetricServiceAPI {
     private Response makeCORS(Response.ResponseBuilder responseBuilder, String returnMethod) {
         Response.ResponseBuilder rb = responseBuilder //Response.ok()
                 .header("Access-Control-Allow-Origin", "*")
-                .header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+                .header("Access-Control-Allow-Methods", "POST, OPTIONS");
 
         if (!"".equals(returnMethod)) {
             rb.header("Access-Control-Allow-Headers", returnMethod);

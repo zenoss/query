@@ -54,7 +54,7 @@ import org.zenoss.app.metricservice.calculators.ReferenceProvider;
 import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
 
 /**
- * Processes the output stream from the back end metric oldQuery storage into
+ * Processes the output stream from the back end metric query storage into
  * buckets including the calculation of any RPN functions and references.
  *
  * @author Zenoss

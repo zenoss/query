@@ -31,12 +31,11 @@
 
 package org.zenoss.app.metricservice.api.impl;
 
-import com.google.common.base.Objects;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 
 /**
  * A combination key that uniquely identifies a metric based on the metric name
- * queried and the tags associated with that oldQuery.
+ * queried and the tags associated with that query.
  * 
  * @author Zenoss
  * 
@@ -53,26 +52,9 @@ public class MetricKey {
     private String metric = null;
 
     /**
-     * Tags associated with the metric oldQuery
+     * Tags associated with the metric query
      */
     private Tags tags = null;
-
-    /**
-     * Determines if to instances are equivalent. They are considered equivalent
-     * if their metric and tags are equivalent.
-     * 
-     * @param other
-     *            instance to which to compare
-     * @return true if the two instance are equivalent, else false.
-     */
-    public boolean equals(MetricKey other) {
-        return (null != other &&
-        Objects.equal(this.metric, other.metric) && Objects.equal(this.tags, other.tags) && Objects.equal(this.name, other.name));
-//        if (other == null || !this.metric.equals(other.metric)) {
-//            return false;
-//        }
-//        return this.tags.equals(other);
-    }
 
     /**
      * Metric accessor
@@ -101,10 +83,33 @@ public class MetricKey {
         return name;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MetricKey metricKey = (MetricKey) o;
+
+        if (metric != null ? !metric.equals(metricKey.metric) : metricKey.metric != null) return false;
+        if (name != null ? !name.equals(metricKey.name) : metricKey.name != null) return false;
+        if (tags != null ? !tags.equals(metricKey.tags) : metricKey.tags != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + (metric != null ? metric.hashCode() : 0);
+        result = 31 * result + (tags != null ? tags.hashCode() : 0);
+        return result;
+    }
+
     /**
      * Constructs an instance from a MetricSpecification
      * 
      * @param spec
+
      *            instance from which to create the MetricKey
      * @return MetricKey instance
      */

@@ -235,7 +235,7 @@ public class MetricSpecification {
     }
 
     /**
-     * Encodes the current instance into the URL oldQuery parameter format that <a
+     * Encodes the current instance into the URL query parameter format that <a
      * href="http://opentsdb.net/http-api.html#/q">OpenTSDB</a> supports.
      * <p/>
      * <em style="color: red">NOTE: This method supports a format that is
@@ -246,7 +246,7 @@ public class MetricSpecification {
      *            specifies any base tags that should be applied to the metric
      *            before overriding with any metric specific tags.
      * 
-     * @return OpenTSDB URL oldQuery formatted String instance
+     * @return OpenTSDB URL query formatted String instance
      */
     public String toString(String downsample,
             Map<String, List<String>> baseTags, boolean withRateOptions) {
@@ -316,14 +316,14 @@ public class MetricSpecification {
     }
 
     /**
-     * Encodes the current instance into the URL oldQuery parameter format that <a
+     * Encodes the current instance into the URL query parameter format that <a
      * href="http://opentsdb.net/http-api.html#/q">OpenTSDB</a> supports.
      * <p/>
      * <em style="color: red">NOTE: This method supports a format that is
      * proposed to OpenTSDB, but is not yet committed. This format include
      * "rate" options to better support counter base metrics</em>
      * 
-     * @return OpenTSDB URL oldQuery formatted String instance
+     * @return OpenTSDB URL query formatted String instance
      */
     public String toString() {
         return this.toString(null, null, false);
@@ -415,12 +415,12 @@ public class MetricSpecification {
      * 
      * @param content
      *            the metric specification in the OpenTSDB format
-     * @return model representation of the URL metric oldQuery parameter
+     * @return model representation of the URL metric query parameter
      * @see MetricSpecification
      */
     public static MetricSpecification fromString(String content) {
 
-        // Determine if there are tags in this oldQuery specification. This will
+        // Determine if there are tags in this query specification. This will
         // be a simple check, if there is a pattern '{' ... at the end
         // of the value, then strip it off as the tags.
         String[] terms = content.split(":", 4);
