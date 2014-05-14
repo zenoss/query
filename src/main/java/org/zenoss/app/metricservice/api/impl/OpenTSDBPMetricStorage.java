@@ -135,7 +135,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
                                     Map<String, List<String>> globalTags,
                                     List<MetricSpecification> queries) throws IOException {
 
-                OpenTSDBQuery query = new OpenTSDBQuery();
+        OpenTSDBQuery query = new OpenTSDBQuery();
 
         if (!Utils.NOW.equals(startTime)) {
             query.start = startTime;

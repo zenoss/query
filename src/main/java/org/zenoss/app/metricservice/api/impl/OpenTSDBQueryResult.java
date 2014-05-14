@@ -17,13 +17,15 @@ public class OpenTSDBQueryResult {
     public Map<Long,String> dps;
     public String metric;
     public Map<String, String> tags;
+    public List<String> tsuids;
 
     public String debugString() {
         return Objects.toStringHelper(getClass())
-                .add("aggregateTags", aggregateTags)
-                .add("dps", dps)
-                .add("metric", metric)
-                .add("tags", tags)
-                .toString();
+            .add("aggregateTags", aggregateTags)
+            .add("dps", dps)
+            .add("metric", metric)
+            .add("tags", tags)
+            .add("tsuids", tsuids)
+            .toString();
     }
 }

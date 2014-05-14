@@ -21,7 +21,7 @@ public class OpenTSDBQuery {
     public boolean noAnnotations = false;
     public boolean globalAnnotations = false;
     public boolean msResolution = false;
-    public boolean showTSUIDs = false;
+    public boolean showTSUIDs = true;
 
     public void addSubQuery(OpenTSDBSubQuery openTSDBSubQuery) {
         if (null == queries) {

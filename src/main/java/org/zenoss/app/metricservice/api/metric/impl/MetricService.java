@@ -76,9 +76,9 @@ public class MetricService implements MetricServiceAPI {
     public static final String DOWNSAMPLE = "downsample";
     public static final String METRIC = "metric";
     public static final String RETURN_SET = "returnset";
-    public static final String TIMESTAMP = "ts";
+    public static final String TIMESTAMP = "timestamp";
     public static final String SERIES = "series";
-    public static final String VALUE = "val";
+    public static final String VALUE = "value";
     public static final String TAGS = "tags";
     public static final String NOT_SPECIFIED = "not-specified";
     private static final Logger log = LoggerFactory.getLogger(MetricService.class);
