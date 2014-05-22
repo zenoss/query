@@ -57,7 +57,6 @@ import java.util.*;
  * @author David Bainbridge <dbainbridge@zenoss.com>
  * 
  */
-@Ignore
 public abstract class ProviderTestBase extends ResourceTest {
 
     @Autowired
