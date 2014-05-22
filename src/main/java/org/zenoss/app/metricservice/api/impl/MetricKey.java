@@ -31,6 +31,7 @@
 
 package org.zenoss.app.metricservice.api.impl;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 
 /**
@@ -51,16 +52,28 @@ public class MetricKey {
      */
     private String metric = null;
 
+    @JsonProperty("id")
+    public String getId() {
+        return id;
+    }
+
+    /**
+     *  ID to be returned as passed in
+     */
+    private String id = null;
+
     /**
      * Tags associated with the metric query
      */
     private Tags tags = null;
+
 
     /**
      * Metric accessor
      * 
      * @return metric
      */
+    @JsonProperty("metric")
     public String getMetric() {
         return metric;
     }
@@ -70,6 +83,7 @@ public class MetricKey {
      * 
      * @return tags
      */
+    @JsonProperty("tags")
     public Tags getTags() {
         return tags;
     }
@@ -79,10 +93,18 @@ public class MetricKey {
      * 
      * @return name
      */
+    @JsonProperty("name")
     public String getName() {
         return name;
     }
-
+  /*
+    public boolean equals(MetricKey other) {
+        if (other == null || !this.metric.equals(other.metric)) {
+            return false;
+        }
+        return this.tags.equals(other);
+    }
+    */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -93,6 +115,7 @@ public class MetricKey {
         if (metric != null ? !metric.equals(metricKey.metric) : metricKey.metric != null) return false;
         if (name != null ? !name.equals(metricKey.name) : metricKey.name != null) return false;
         if (tags != null ? !tags.equals(metricKey.tags) : metricKey.tags != null) return false;
+        if (id != null ? !id.equals(metricKey.id) : metricKey.id != null) return false;
 
         return true;
     }
@@ -102,6 +125,7 @@ public class MetricKey {
         int result = name != null ? name.hashCode() : 0;
         result = 31 * result + (metric != null ? metric.hashCode() : 0);
         result = 31 * result + (tags != null ? tags.hashCode() : 0);
+        result = 31 * result + (id != null ? id.hashCode() : 0);
         return result;
     }
 
@@ -117,6 +141,7 @@ public class MetricKey {
         MetricKey key = new MetricKey();
         key.metric = spec.getMetricOrName();
         key.name = spec.getNameOrMetric();
+        key.id = spec.getId();
         if (spec.getTags() != null && spec.getTags().size() > 0) {
             key.tags = Tags.fromValue(spec.getTags());
         }
@@ -150,6 +175,6 @@ public class MetricKey {
      * @see java.lang.Object#toString()
      */
     public String toString() {
-        return String.format("[%s,  %s, %s]", metric, name, tags);
+        return String.format("MetricKey=[metric=%s,  name=%s, tags=%s, id=%s]", metric, name, tags, id);
     }
 }

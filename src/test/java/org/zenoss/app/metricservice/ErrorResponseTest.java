@@ -48,7 +48,7 @@ public class ErrorResponseTest {
     @Test
     public void nullTest() throws IOException {
         Response er = Utils.getErrorResponse(null, 200, null, null);
-        Map<String, Object> obj = new ObjectMapper().reader(Map.class)
+        Map<String, Object> obj = Utils.getObjectMapper().reader(Map.class)
                 .readValue((String) er.getEntity());
         Assert.assertNotNull(obj);
         Assert.assertEquals(200, er.getStatus());
@@ -58,7 +58,7 @@ public class ErrorResponseTest {
     @Test
     public void idTest() throws IOException {
         Response er = Utils.getErrorResponse("myid", 200, null, null);
-        Map<String, Object> obj = new ObjectMapper().reader(Map.class)
+        Map<String, Object> obj = Utils.getObjectMapper().reader(Map.class)
                 .readValue((String) er.getEntity());
         Assert.assertNotNull(obj);
         Assert.assertEquals(200, er.getStatus());
@@ -69,7 +69,7 @@ public class ErrorResponseTest {
     @Test
     public void messageTest() throws IOException {
         Response er = Utils.getErrorResponse(null, 200, "mymessage", null);
-        Map<String, Object> obj = new ObjectMapper().reader(Map.class)
+        Map<String, Object> obj = Utils.getObjectMapper().reader(Map.class)
                 .readValue((String) er.getEntity());
         Assert.assertNotNull(obj);
         Assert.assertEquals(200, er.getStatus());
@@ -80,7 +80,7 @@ public class ErrorResponseTest {
     @Test
     public void sourceTest() throws IOException {
         Response er = Utils.getErrorResponse(null, 200, null, "mysource");
-        Map<String, Object> obj = new ObjectMapper().reader(Map.class)
+        Map<String, Object> obj = Utils.getObjectMapper().reader(Map.class)
                 .readValue((String) er.getEntity());
         Assert.assertNotNull(obj);
         Assert.assertEquals(200, er.getStatus());
@@ -91,7 +91,7 @@ public class ErrorResponseTest {
     @Test
     public void idMessageTest() throws IOException {
         Response er = Utils.getErrorResponse("myid", 200, "mymessage", null);
-        Map<String, Object> obj = new ObjectMapper().reader(Map.class)
+        Map<String, Object> obj = Utils.getObjectMapper().reader(Map.class)
                 .readValue((String) er.getEntity());
         Assert.assertNotNull(obj);
         Assert.assertEquals(200, er.getStatus());
@@ -103,7 +103,7 @@ public class ErrorResponseTest {
     @Test
     public void idSourceTest() throws IOException {
         Response er = Utils.getErrorResponse("myid", 200, null, "mysource");
-        Map<String, Object> obj = new ObjectMapper().reader(Map.class)
+        Map<String, Object> obj = Utils.getObjectMapper().reader(Map.class)
                 .readValue((String) er.getEntity());
         Assert.assertNotNull(obj);
         Assert.assertEquals(200, er.getStatus());
@@ -115,7 +115,7 @@ public class ErrorResponseTest {
     @Test
     public void messageSourceTest() throws IOException {
         Response er = Utils.getErrorResponse(null, 200, "mymessage", "mysource");
-        Map<String, Object> obj = new ObjectMapper().reader(Map.class)
+        Map<String, Object> obj = Utils.getObjectMapper().reader(Map.class)
                 .readValue((String) er.getEntity());
         Assert.assertNotNull(obj);
         Assert.assertEquals(200, er.getStatus());
@@ -127,7 +127,7 @@ public class ErrorResponseTest {
     @Test
     public void allTest() throws IOException {
         Response er = Utils.getErrorResponse("myid", 200, "mymessage", "mysource");
-        Map<String, Object> obj = new ObjectMapper().reader(Map.class)
+        Map<String, Object> obj = Utils.getObjectMapper().reader(Map.class)
                 .readValue((String) er.getEntity());
         Assert.assertNotNull(obj);
         Assert.assertEquals(200, er.getStatus());

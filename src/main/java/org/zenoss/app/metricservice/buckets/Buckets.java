@@ -31,6 +31,10 @@
 
 package org.zenoss.app.metricservice.buckets;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,6 +55,8 @@ import java.util.Map;
  *            shortcut key type
  */
 public class Buckets<P, S> {
+
+    private final Logger log = LoggerFactory.getLogger(Bucket.class);
     /**
      * Default bucket size of 5 minutes
      */
@@ -60,6 +66,10 @@ public class Buckets<P, S> {
      * Specifies the size of each bucket in seconds
      */
     private long secondsPerBucket = 5 * 60;
+
+    public Map<Long, Bucket> getBucketList() {
+        return bucketList;
+    }
 
     /**
      * Set of buckets indexed by time in seconds
@@ -80,11 +90,13 @@ public class Buckets<P, S> {
         /**
          * Map from the primary key to the values within a bucket
          */
+        @JsonProperty("values")
         private Map<P, Value> values = new HashMap<>();
 
         /**
          * Map from the shortcut key to the values within a bucket
          */
+        @JsonProperty("valuesByName")
         private Map<S, Value> valuesByName = new HashMap<>();
 
         /**

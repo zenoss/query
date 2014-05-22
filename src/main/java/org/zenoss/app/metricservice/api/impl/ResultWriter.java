@@ -50,6 +50,9 @@ public interface ResultWriter {
      * Writes to the given JSON writer the results contained in the given
      * buckets with appropriate header information derived from the parameters.
      * 
+     *
+     *
+     *
      * @param writer
      *            stream on which to output the JSON representation of the
      *            buckets.
@@ -78,7 +81,7 @@ public interface ResultWriter {
      * @param series
      *            specifies is the write will be as a series or in line. this is
      *            used for the header information and probably should be remove.
-     * 
+     *
      * @throws IOException
      *             when an IO exception occurs writing to the output stream.
      */

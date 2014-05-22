@@ -7,7 +7,7 @@ metrics:
   defaultReturnSet: EXACT
   defaultStartTime: 1h-ago
   defaultEndTime: now
-  defaultSeries: false
+  defaultSeries: true
   openTsdbUrl: http://127.0.0.1:4242
   defaultTsdTimeZone: UTC
   connectionTimeoutMs: 20000

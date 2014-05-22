@@ -40,7 +40,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 //import org.apache.commons.lang.builder.ReflectionToStringBuilder;
-import com.google.common.base.Objects;
+import com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenoss.app.metricservice.api.metric.impl.MetricService;
@@ -83,7 +83,9 @@ public class DefaultResultProcessor implements ResultProcessor,
     public double lookup(String name, Closure closure)
             throws UnknownReferenceException {
         BucketClosure b = (BucketClosure) closure;
-
+        if (null == b) {
+            throw new NullPointerException("null closure passed to lookup() method.");
+        }
         /**
          * If they are looking for special values like "time" then give them
          * that.
@@ -110,10 +112,8 @@ public class DefaultResultProcessor implements ResultProcessor,
      * java.io.BufferedReader, java.util.List, long)
      */
     @Override
-    public Buckets<MetricKey, String> processResults(BufferedReader reader,
-                                                     List<MetricSpecification> queries, long bucketSize)
-            throws ClassNotFoundException, UnknownReferenceException,
-            IOException {
+    public Buckets<MetricKey, String> processResults(BufferedReader reader, List<MetricSpecification> queries, long bucketSize)
+            throws ClassNotFoundException, UnknownReferenceException, IOException {
 
         Buckets<MetricKey, String> buckets = new Buckets<>(bucketSize);
 
@@ -139,8 +139,8 @@ public class DefaultResultProcessor implements ResultProcessor,
         MetricKeyCache keyCache = new MetricKeyCache();
         for (MetricSpecification spec : queries) {
             key = keyCache.put(MetricKey.fromValue(spec));
-            if ((expr = spec.getExpression()) != null
-                    && (expr = expr.trim()).length() > 0) {
+            expr = Strings.nullToEmpty(spec.getExpression()).trim();
+            if (!expr.isEmpty()) {
                 calc = calcFactory.newInstance(expr);
                 calc.setReferenceProvider(this);
                 calcs.put(key, calc);
@@ -148,7 +148,7 @@ public class DefaultResultProcessor implements ResultProcessor,
         }
 
         // Get a list of calculated values
-        List<MetricSpecification> values = MetricService.valueFilter(queries);
+        List<MetricSpecification> calculatedValues = MetricService.calculatedValueFilter(queries);
         BucketClosure closure = new BucketClosure();
         Tags curTags = null;
         key = null;
@@ -156,9 +156,10 @@ public class DefaultResultProcessor implements ResultProcessor,
         List<OpenTSDBQueryResult> allResults = new ArrayList<>();
         while ((line = reader.readLine()) != null) {
             log.info("Processing line: {}", line);
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = Utils.getObjectMapper();
             try {
-                List<OpenTSDBQueryResult> resultList = mapper.readValue(line, mapper.getTypeFactory().constructCollectionType(List.class, OpenTSDBQueryResult.class));
+                List<OpenTSDBQueryResult> resultList = mapper.readValue(line,
+                    mapper.getTypeFactory().constructCollectionType(List.class, OpenTSDBQueryResult.class));
                 allResults.addAll(resultList);
             } catch (Exception e) {
                 log.error("Exception parsing json", e);
@@ -174,15 +175,19 @@ public class DefaultResultProcessor implements ResultProcessor,
                 ts = dpValue.getKey();
                 curTags = Tags.fromOpenTsdbTags(result.tags);
                 key = keyCache.get(metricName, curTags);
+                if (null == key) {
+                    log.warn("null key retrieved for metric {} and tags {}", metricName, null == curTags ? "NULL" : curTags.toString());
+                    continue;
+                }
                 if ((calc = calcs.get(key)) != null) {
                     val = calc.evaluate(val);
                 }
-
                 buckets.add(key, key.getName(), ts, val);
                 previousBucket = currentBucket;
                 currentBucket = buckets.getBucket(ts);
                 if (previousBucket != null && currentBucket != previousBucket) {
-                    for (MetricSpecification value : values) {
+                    for (MetricSpecification value : calculatedValues) {
+                        log.debug("Processing calculatedValue {}", value);
                         MetricKey k2 = keyCache.get(value.getName(), curTags);
                         try {
                             if ((calc = calcs.get(k2)) != null) {
@@ -201,7 +206,7 @@ public class DefaultResultProcessor implements ResultProcessor,
                 }
             }
         }
-        for (MetricSpecification value : values) {
+        for (MetricSpecification value : calculatedValues) {
             key = keyCache.get(value.getName(), curTags);
 
             try {

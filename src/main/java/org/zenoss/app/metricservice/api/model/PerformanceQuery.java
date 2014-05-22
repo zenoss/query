@@ -70,6 +70,7 @@ public class PerformanceQuery {
     @JsonProperty(value="returnset")
     private ReturnSet returnset = null;
 
+
     /**
      * @return the start
      */

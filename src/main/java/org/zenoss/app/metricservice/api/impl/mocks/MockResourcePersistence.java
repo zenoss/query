@@ -85,7 +85,7 @@ public class MockResourcePersistence implements ResourcePersistenceAPI {
     public String getResourceByName(String name) {
         // Walk the list of charts and if we find one with the attribute
         // name and value specified
-        ObjectMapper om = new ObjectMapper();
+        ObjectMapper om = Utils.getObjectMapper();
         ObjectReader reader = om.reader(Chart.class);
         Chart chart = null;
 

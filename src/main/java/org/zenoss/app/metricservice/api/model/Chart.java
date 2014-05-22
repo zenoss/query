@@ -113,14 +113,14 @@ public class Chart {
     }
 
     /**
-     * @return the datasets
+     * @return the datapoints
      */
     public final List<Datapoint> getDatapoints() {
         return datapoints;
     }
 
     /**
-     * @param datasets the datapoints to set
+     * @param datapoints the datapoints to set
      */
     public final void setDatapoints(List<Datapoint> datapoints) {
         this.datapoints = datapoints;

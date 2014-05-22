@@ -63,6 +63,7 @@ public class Utils {
     public static final String START = "start";
     public static final String END = "end";
     public static final String COUNT = "count";
+    private static ObjectMapper mapper = null;
 
     static public Response getErrorResponse(String id, int status,
             String message, String context) {
@@ -187,8 +188,7 @@ public class Utils {
 
 
     public static  String jsonStringFromObject(Object object) {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        ObjectMapper mapper = getObjectMapper();
         ObjectWriter ow = mapper.writer();
         String json = null;
         try {
@@ -197,5 +197,13 @@ public class Utils {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
         return json;
+    }
+
+    public static ObjectMapper getObjectMapper() {
+        if (null == mapper) {
+            mapper = new ObjectMapper();
+            mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        }
+        return mapper;
     }
 }

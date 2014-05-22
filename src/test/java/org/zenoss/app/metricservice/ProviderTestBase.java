@@ -38,6 +38,7 @@ import com.sun.jersey.api.client.WebResource.Builder;
 import com.yammer.dropwizard.testing.ResourceTest;
 import org.eclipse.jetty.util.ajax.JSON;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zenoss.app.metricservice.api.metric.remote.MetricResources;
@@ -56,6 +57,7 @@ import java.util.*;
  * @author David Bainbridge <dbainbridge@zenoss.com>
  * 
  */
+@Ignore
 public abstract class ProviderTestBase extends ResourceTest {
 
     @Autowired

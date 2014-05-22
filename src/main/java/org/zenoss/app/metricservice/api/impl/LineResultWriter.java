@@ -70,18 +70,18 @@ public class LineResultWriter extends BaseResultWriter {
         Value value;
         String name;
         boolean comma = false;
-        long downsample = buckets.getSecondsPerBucket();
+        long secondsPerBucket = buckets.getSecondsPerBucket();
 
         /*
          * Iterate over the queries and for each each metric or value output its
-         * values. This means that we are going to have to take multple trips
+         * values. This means that we are going to have to take multiple trips
          * over all buckets, but it is either that or use lots of memory.
          */
         for (MetricSpecification query : queries) {
             // Only return the result if the query is meant to be emitted.
-            if (query.getEmit()) {
+//            if (query.getEmit()) {
                 for (long bts : timestamps) {
-                    bts *= downsample;
+                    bts *= secondsPerBucket;
                     if ((returnset == ReturnSet.ALL || (bts >= startTs && bts <= endTs))
                             && (bucket = buckets.getBucket(bts)) != null) {
                         if ((value = bucket.getValueByShortcut((name = query
@@ -100,7 +100,7 @@ public class LineResultWriter extends BaseResultWriter {
                         }
                     }
                 }
-            }
+//            }
         }
     }
 }

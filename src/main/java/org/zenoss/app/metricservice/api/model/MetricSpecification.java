@@ -51,7 +51,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 @JsonInclude(Include.NON_NULL)
 public class MetricSpecification {
+
     public static final Aggregator DEFAULT_AGGREGATOR = Aggregator.avg;
+
+    @JsonProperty
+    private String id = null;
 
     @JsonProperty
     private String metric = null;
@@ -74,18 +78,22 @@ public class MetricSpecification {
     @JsonProperty
     private String expression = null;
     
-    /**
-     * Determines is the results queried via this specification should be
-     * returned or not. This is used when a metric calculation is leveraged in
-     * an expression of another metric, but the raw results of the first metric
-     * are not required by the client.
-     */
-    @JsonProperty
-    private Boolean emit = Boolean.TRUE;
-
     @JsonProperty
     private Map<String, List<String>> tags = null;
 
+    /**
+     * @return id string
+     */
+    public String getId() {
+        return id;
+    }
+
+    /**
+     *  @param id - id to set for query
+     */
+    public void setId(String id) {
+        this.id = id;
+    }
     /**
      * @return
      */
@@ -113,21 +121,6 @@ public class MetricSpecification {
      */
     public void setExpression(String expression) {
         this.expression = expression;
-    }
-    
-    /**
-     * @return the emit
-     */
-    public Boolean getEmit() {
-        return emit;
-    }
-
-    /**
-     * @param emit
-     *            the emit to set
-     */
-    public void setEmit(Boolean emit) {
-        this.emit = emit;
     }
 
     /**

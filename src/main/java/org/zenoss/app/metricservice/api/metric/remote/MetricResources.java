@@ -42,7 +42,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zenoss.app.AppConfiguration;
 import org.zenoss.app.metricservice.api.MetricServiceAPI;
 import org.zenoss.app.metricservice.api.impl.Utils;
-import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.PerformanceQuery;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.app.security.ZenossTenant;
@@ -95,20 +94,14 @@ public class MetricResources {
                     "Received an empty query request", "Empty Request");
         }
         Optional<String> id = Optional.absent();
-        Optional<String> start = Optional.fromNullable(query
-                .getStart());
+        Optional<String> start = Optional.fromNullable(query.getStart());
         Optional<String> end = Optional.fromNullable(query.getEnd());
-        Optional<ReturnSet> returnset = Optional.fromNullable(query
-                .getReturnset());
-        Optional<Boolean> series = Optional.fromNullable(query
-                .getSeries());
-        Optional<String> downsample = Optional.fromNullable(query
-                .getDownsample());
-        Optional<String> grouping = Optional.fromNullable(query
-                .getGrouping());
+        Optional<ReturnSet> returnset = Optional.fromNullable(query.getReturnset());
+        Optional<Boolean> series = Optional.fromNullable(query.getSeries());
+        Optional<String> downsample = Optional.fromNullable(query.getDownsample());
+        Optional<String> grouping = Optional.fromNullable(query.getGrouping());
         Optional<Map<String, List<String>>> tags = getTags( query.getTags());
-        return api.query(id, start, end, returnset, series, downsample,
-            grouping, tags, query.getMetrics());
+        return api.query(id, start, end, returnset, series, downsample, grouping, tags, query.getMetrics());
     }
 
     @OPTIONS

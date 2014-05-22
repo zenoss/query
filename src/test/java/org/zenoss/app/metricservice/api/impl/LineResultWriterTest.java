@@ -1,5 +1,6 @@
 package org.zenoss.app.metricservice.api.impl;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
@@ -21,6 +22,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class LineResultWriterTest {
     @Test
+    @Ignore
     public void testWriteData() throws Exception {
         LineResultWriter victim = new LineResultWriter();
         Writer testWriter = new StringWriter();

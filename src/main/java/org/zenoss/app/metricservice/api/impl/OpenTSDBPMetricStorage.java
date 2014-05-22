@@ -52,6 +52,7 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -81,8 +82,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             byte[] content = ByteStreams.toByteArray(is);
 
-            Pattern pattern = Pattern
-                    .compile("The reason provided was:\\<blockquote\\>(.*)\\</blockquote>\\</blockquote\\>");
+            Pattern pattern = Pattern.compile("The reason provided was:\\<blockquote\\>(.*)\\</blockquote>\\</blockquote\\>");
             Matcher matcher = pattern.matcher(new String(content, "UTF-8"));
             if (matcher.find()) {
                 String message = matcher.group(1);
@@ -180,6 +180,12 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             result.metric = metricSpecification.getMetric();
             result.rate = metricSpecification.getRate();
             result.rateOptions = openTSDBRateOptionFromRateOptions(metricSpecification.getRateOptions());
+            Map<String, List<String>> tags = metricSpecification.getTags();
+            for (Map.Entry<String, List<String>> tagEntry : tags.entrySet()) {
+                for (String tagValue : tagEntry.getValue()) {
+                    result.addTag(tagEntry.getKey(), tagValue);
+                }
+            }
         }
         return result;  //To change body of created methods use File | Settings | File Templates.
     }

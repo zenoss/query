@@ -34,7 +34,7 @@ public class JacksonTest {
     @Ignore
     public void testSerialization() throws JsonProcessingException {
         TestClass subject = makeTestClass();
-        ObjectWriter ow = new ObjectMapper().writer();
+        ObjectWriter ow = Utils.getObjectMapper().writer();
         String json = ow.writeValueAsString(subject);
         say(String.format("JSON STRING:\"%s\"", json));
     }
@@ -91,7 +91,7 @@ public class JacksonTest {
     }
 
     private void writeJsonString(Object object) {
-        ObjectWriter ow = new ObjectMapper().writer();
+        ObjectWriter ow = Utils.getObjectMapper().writer();
         String json = null;
         try {
             json = ow.writeValueAsString(object);

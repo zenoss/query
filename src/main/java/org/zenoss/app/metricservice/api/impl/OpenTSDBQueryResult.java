@@ -2,6 +2,8 @@ package org.zenoss.app.metricservice.api.impl;
 
 import com.google.common.base.Objects;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,5 +29,21 @@ public class OpenTSDBQueryResult {
             .add("tags", tags)
             .add("tsuids", tsuids)
             .toString();
+    }
+
+    public void addTags(Map<String, List<String>> tagsToAdd) {
+        if (null == tags) {
+            tags = new HashMap<String, String>();
+        }
+        for (Map.Entry<String, List<String>> entry : tagsToAdd.entrySet()) {
+            tags.put(entry.getKey(), entry.getValue().get(0));
+        }
+    }
+
+    public void addDataPoint(long i, double pointValue) {
+        if (null == dps) {
+            dps = new HashMap<Long, String>();
+        }
+        dps.put(i, Double.toString(pointValue));
     }
 }

@@ -35,6 +35,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Optional;
+import com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,6 +76,7 @@ public class MetricService implements MetricServiceAPI {
     public static final String RATE = "rate";
     public static final String DOWNSAMPLE = "downsample";
     public static final String METRIC = "metric";
+    public static final String ID = "id";
     public static final String RETURN_SET = "returnset";
     public static final String TIMESTAMP = "timestamp";
     public static final String SERIES = "series";
@@ -85,14 +87,14 @@ public class MetricService implements MetricServiceAPI {
     public final ObjectMapper objectMapper;
     public ResultProcessor resultsProcessor = new DefaultResultProcessor();
     public ResultWriter seriesResultsWriter = new SeriesResultWriter();
-    public ResultWriter asIsResultsWriter = new LineResultWriter();
+    public JacksonResultsWriter jacksonResultsWriter = new JacksonResultsWriter();
     @Autowired
     MetricServiceAppConfiguration config;
     @Autowired
     MetricStorageAPI api;
 
     public MetricService() {
-        objectMapper = new ObjectMapper();
+        objectMapper = Utils.getObjectMapper();
         objectMapper.enable(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS);
         objectMapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
         objectMapper.enable(SerializationFeature.WRITE_NULL_MAP_VALUES);
@@ -122,8 +124,8 @@ public class MetricService implements MetricServiceAPI {
      * @param list
      * @return
      */
-    public static List<MetricSpecification>  valueFilter(
-            List<? extends MetricSpecification> list) {
+    public static List<MetricSpecification> calculatedValueFilter(
+        List<? extends MetricSpecification> list) {
         List<MetricSpecification> result = new ArrayList<>();
         if (list != null) {
             for (MetricSpecification spec : list) {
@@ -136,23 +138,26 @@ public class MetricService implements MetricServiceAPI {
     }
 
     @Override
-    public Response query(Optional<String> id, Optional<String> start, Optional<String> end, Optional<ReturnSet> returnset, Optional<Boolean> series, Optional<String> downsample, Optional<String> grouping, Optional<Map<String, List<String>>> tags, List<MetricSpecification> metrics) {
+    public Response query(Optional<String> id, Optional<String> start, Optional<String> end,
+                          Optional<ReturnSet> returnset, Optional<Boolean> series, Optional<String> downsample,
+                          Optional<String> grouping, Optional<Map<String, List<String>>> tags,
+                          List<MetricSpecification> metrics) {
         log.info("entering MetricService.query()");
         try {
             return makeCORS(Response.ok(
-                    new MetricServiceWorker(config, id.or(NOT_SPECIFIED),
-                            start.or(config.getMetricServiceConfig().getDefaultStartTime()),
-                            end.or(config.getMetricServiceConfig().getDefaultEndTime()),
-                            returnset.or(config.getMetricServiceConfig().getDefaultReturnSet()),
-                            series.or(config.getMetricServiceConfig().getDefaultSeries()),
-                            downsample.orNull(),
-                            grouping.orNull(),
-                            tags.orNull(),
-                            metrics)));
+                new MetricServiceWorker(config, id.or(NOT_SPECIFIED),
+                    start.or(config.getMetricServiceConfig().getDefaultStartTime()),
+                    end.or(config.getMetricServiceConfig().getDefaultEndTime()),
+                    returnset.or(config.getMetricServiceConfig().getDefaultReturnSet()),
+                    series.or(config.getMetricServiceConfig().getDefaultSeries()),
+                    downsample.orNull(),
+                    grouping.orNull(),
+                    tags.orNull(),
+                    metrics)));
         } catch (Exception e) {
             log.error(String.format(
-                    "Error While attempting to query data source: %s : %s", e
-                    .getClass().getName(), e.getMessage()));
+                "Error While attempting to query data source: %s : %s", e
+                .getClass().getName(), e.getMessage()));
             return makeCORS(Response.status(500));
         }
     }
@@ -163,6 +168,7 @@ public class MetricService implements MetricServiceAPI {
         corsHeaders = request;
         return makeCORS(Response.ok(), request);
     }
+
     /**
      * Used as a buffer filter class when return the "last" values for a query.
      * This essentially only return the next line from the underlying reader
@@ -219,6 +225,7 @@ public class MetricService implements MetricServiceAPI {
     }
 
     private class MetricServiceWorker implements StreamingOutput {
+        private static final boolean USE_JACKSON_WRITER = false;
         private final String id;
         private final String startTime;
         private final String endTime;
@@ -260,7 +267,7 @@ public class MetricService implements MetricServiceAPI {
          */
         @Override
         public void write(OutputStream output) throws IOException,
-                WebApplicationException {
+            WebApplicationException {
 
             validateParameters();
             // Validate the input parameters. Throw exception if any are bad.
@@ -282,11 +289,11 @@ public class MetricService implements MetricServiceAPI {
             } catch (Exception e) {
                 log.error(String.format("Failed to connect to metric data source: %s : %s", e.getClass().getName(), e.getMessage()), e);
                 throw new WebApplicationException(
-                        Utils.getErrorResponse(
-                                id,
-                                500,
-                                String.format("Unable to connect to performance metric data source"),
-                                e.getMessage()));
+                    Utils.getErrorResponse(
+                        id,
+                        500,
+                        String.format("Unable to connect to performance metric data source"),
+                        e.getMessage()));
             }
 
             /**
@@ -300,27 +307,53 @@ public class MetricService implements MetricServiceAPI {
             if (grouping != null && grouping.length() > 1) {
                 bucketSize = Utils.parseDuration(grouping);
             }
-            try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(output))) {
-                Buckets<MetricKey, String> buckets = resultsProcessor.processResults(reader, queries, bucketSize);
+            if (USE_JACKSON_WRITER) {
+                try (JacksonWriter writer = new JacksonWriter(new OutputStreamWriter(output))) {
+                    log.info("processing results");
+                    Buckets<MetricKey, String> buckets = resultsProcessor.processResults(reader, queries, bucketSize);
+                    log.info("results processed.");
+                    log.info("calling seriesResultsWriter");
+                    jacksonResultsWriter.writeResults(writer, queries, buckets,
+                        id, api.getSourceId(), start, startTime, end, endTime, returnset, series);
+                    log.info("back from seriesResultsWriter");
 
-                if (series) {
-                    seriesResultsWriter.writeResults(writer, queries, buckets,
-                            id, api.getSourceId(), start, startTime, end, endTime, returnset, series);
-                } else {
-                    asIsResultsWriter.writeResults(writer, queries, buckets,
-                            id, api.getSourceId(), start, startTime,
-                            end, endTime, returnset, series);
-                }
-            } catch (Exception e) {
-                log.error(
+                } catch (WebApplicationException we) {
+                    log.error("Caught WebApplicationException: {},{}", we.getMessage());
+                } catch (Exception e) {
+                    log.error(
                         String.format(
-                                "Server error while processing metric source %s : %s:%s",
-                                api.getSourceId(), e.getClass().getName(),
-                                e.getMessage()), e);
-                throw new WebApplicationException(Response.status(500).build());
-            } finally {
-                if (reader != null) {
-                    reader.close();
+                            "Server error while processing metric source %s : %s:%s",
+                            api.getSourceId(), e.getClass().getName(),
+                            e.getMessage()), e);
+                    throw new WebApplicationException(Response.status(500).build());
+                } finally {
+                    if (reader != null) {
+                        reader.close();
+                    }
+                }
+            } else {
+                try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(output))) {
+                    log.info("processing results");
+                    Buckets<MetricKey, String> buckets = resultsProcessor.processResults(reader, queries, bucketSize);
+                    log.info("results processed.");
+                    log.info("About to call seriesResultsWriter. Buckets={}", Utils.jsonStringFromObject(buckets));
+                    seriesResultsWriter.writeResults(writer, queries, buckets,
+                        id, api.getSourceId(), start, startTime, end, endTime, returnset, series);
+                    log.info("back from seriesResultsWriter");
+
+                } catch (WebApplicationException we) {
+                    log.error("Caught WebApplicationException: {},{}", we.getMessage());
+                } catch (Exception e) {
+                    log.error(
+                        String.format(
+                            "Server error while processing metric source %s : %s:%s",
+                            api.getSourceId(), e.getClass().getName(),
+                            e.getMessage()), e);
+                    throw new WebApplicationException(Response.status(500).build());
+                } finally {
+                    if (reader != null) {
+                        reader.close();
+                    }
                 }
             }
         }
@@ -355,9 +388,9 @@ public class MetricService implements MetricServiceAPI {
                 response.put(CLIENT_ID, id);
                 response.put(Utils.ERRORS, errors);
                 throw new WebApplicationException(Response
-                        .status(400)
-                        .entity(objectMapper.writer().writeValueAsString(response))
-                        .build());
+                    .status(400)
+                    .entity(objectMapper.writer().writeValueAsString(response))
+                    .build());
             }
         }
 
@@ -371,15 +404,17 @@ public class MetricService implements MetricServiceAPI {
     }
 
 
-    /***************BEGIN CORS HACK***************/
+    /**
+     * ************BEGIN CORS HACK**************
+     */
     private String corsHeaders;
 
     private Response makeCORS(Response.ResponseBuilder responseBuilder, String returnMethod) {
         Response.ResponseBuilder rb = responseBuilder //Response.ok()
-                .header("Access-Control-Allow-Origin", "*")
-                .header("Access-Control-Allow-Methods", "POST, OPTIONS");
+            .header("Access-Control-Allow-Origin", "*")
+            .header("Access-Control-Allow-Methods", "POST, OPTIONS");
 
-        if (!"".equals(returnMethod)) {
+        if (!Strings.isNullOrEmpty(returnMethod)) {
             rb.header("Access-Control-Allow-Headers", returnMethod);
         }
 
