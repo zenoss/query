@@ -29,4 +29,5 @@ http:
 
 managedReporter:
     metricReporters:
-      - {posterType: http, username: "$zcreds[]", password: "$zcreds[]"}
+      - {posterType: http, username: "$env[CONTROLPLANE_CONSUMER_USERNAME]", password: "$env[CONTROLPLANE_CONSUMER_PASSWORD]", urlEnvironment: "CONTROLPLANE_CONSUMER_URL"}
+      - {posterType: http, username: "$zcreds[]", password: "$zcreds[]", protocol: http, host: localhost, port: 8080, apiPath: /api/metrics/store}
