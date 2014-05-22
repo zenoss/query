@@ -31,15 +31,8 @@
 
 package org.zenoss.app.metricservice.api.impl;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-//import org.apache.commons.lang.builder.ReflectionToStringBuilder;
+import com.fasterxml.jackson.databind.type.CollectionType;
 import com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,11 +40,16 @@ import org.zenoss.app.metricservice.api.metric.impl.MetricService;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.buckets.Buckets;
 import org.zenoss.app.metricservice.buckets.Value;
-import org.zenoss.app.metricservice.calculators.Closure;
-import org.zenoss.app.metricservice.calculators.MetricCalculator;
-import org.zenoss.app.metricservice.calculators.MetricCalculatorFactory;
-import org.zenoss.app.metricservice.calculators.ReferenceProvider;
-import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
+import org.zenoss.app.metricservice.calculators.*;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+//import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 
 /**
  * Processes the output stream from the back end metric query storage into
@@ -60,7 +58,7 @@ import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
  * @author Zenoss
  */
 public class DefaultResultProcessor implements ResultProcessor,
-        ReferenceProvider {
+    ReferenceProvider {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultResultProcessor.class);
 
@@ -81,7 +79,7 @@ public class DefaultResultProcessor implements ResultProcessor,
      */
     @Override
     public double lookup(String name, Closure closure)
-            throws UnknownReferenceException {
+        throws UnknownReferenceException {
         BucketClosure b = (BucketClosure) closure;
         if (null == b) {
             throw new NullPointerException("null closure passed to lookup() method.");
@@ -113,12 +111,11 @@ public class DefaultResultProcessor implements ResultProcessor,
      */
     @Override
     public Buckets<MetricKey, String> processResults(BufferedReader reader, List<MetricSpecification> queries, long bucketSize)
-            throws ClassNotFoundException, UnknownReferenceException, IOException {
+        throws ClassNotFoundException, UnknownReferenceException, IOException {
 
         Buckets<MetricKey, String> buckets = new Buckets<>(bucketSize);
 
         String line;
-        String[] terms;
         double val;
         String expr;
         long ts = 0, previousTs = 0;
@@ -151,19 +148,16 @@ public class DefaultResultProcessor implements ResultProcessor,
         List<MetricSpecification> calculatedValues = MetricService.calculatedValueFilter(queries);
         BucketClosure closure = new BucketClosure();
         Tags curTags = null;
-        key = null;
 
         List<OpenTSDBQueryResult> allResults = new ArrayList<>();
-        while ((line = reader.readLine()) != null) {
-            log.info("Processing line: {}", line);
-            ObjectMapper mapper = Utils.getObjectMapper();
-            try {
-                List<OpenTSDBQueryResult> resultList = mapper.readValue(line,
-                    mapper.getTypeFactory().constructCollectionType(List.class, OpenTSDBQueryResult.class));
-                allResults.addAll(resultList);
-            } catch (Exception e) {
-                log.error("Exception parsing json", e);
-            }
+
+        ObjectMapper mapper = Utils.getObjectMapper();
+        CollectionType collectionType = mapper.getTypeFactory().constructCollectionType(List.class, OpenTSDBQueryResult.class);
+        try {
+            List<OpenTSDBQueryResult> resultList = mapper.readValue(reader, collectionType);
+            allResults.addAll(resultList);
+        } catch (IOException e) {
+            log.error("{} exception parsing JSON from OpenTSDB: {}", e.getClass().getName(), e.getMessage());
         }
 
         for (OpenTSDBQueryResult result : allResults) {

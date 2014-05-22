@@ -165,7 +165,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
         if (response.getStatusLine().getStatusCode() != 200) {
             throw new RuntimeException("Failed : HTTP error code : "
-                    + response.getStatusLine().getStatusCode() + "Reason: " + response.getStatusLine().getReasonPhrase());
+                    + response.getStatusLine().getStatusCode() + " Reason: " + response.getStatusLine().getReasonPhrase());
         }
 
         return new BufferedReader(new InputStreamReader((response.getEntity().getContent())));

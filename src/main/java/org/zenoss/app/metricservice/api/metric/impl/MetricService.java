@@ -155,9 +155,7 @@ public class MetricService implements MetricServiceAPI {
                     tags.orNull(),
                     metrics)));
         } catch (Exception e) {
-            log.error(String.format(
-                "Error While attempting to query data source: %s : %s", e
-                .getClass().getName(), e.getMessage()));
+            log.error("Error While attempting to query data source: {} : {}", e.getClass().getName(), e.getMessage());
             return makeCORS(Response.status(500));
         }
     }
@@ -287,7 +285,7 @@ public class MetricService implements MetricServiceAPI {
             } catch (WebApplicationException wae) {
                 throw wae;
             } catch (Exception e) {
-                log.error(String.format("Failed to connect to metric data source: %s : %s", e.getClass().getName(), e.getMessage()), e);
+                log.error("Failed to connect to metric data source: {} : {}", e.getClass().getName(), e.getMessage(), e);
                 throw new WebApplicationException(
                     Utils.getErrorResponse(
                         id,
@@ -318,13 +316,13 @@ public class MetricService implements MetricServiceAPI {
                     log.info("back from seriesResultsWriter");
 
                 } catch (WebApplicationException we) {
-                    log.error("Caught WebApplicationException: {},{}", we.getMessage());
+                    log.error("Caught WebApplicationException: {}", we.getMessage(), we);
                 } catch (Exception e) {
-                    log.error(
-                        String.format(
-                            "Server error while processing metric source %s : %s:%s",
-                            api.getSourceId(), e.getClass().getName(),
-                            e.getMessage()), e);
+                    log.error("Server error while processing metric source {} : {}:{}",
+                        api.getSourceId(),
+                        e.getClass().getName(),
+                        e.getMessage(),
+                        e);
                     throw new WebApplicationException(Response.status(500).build());
                 } finally {
                     if (reader != null) {
@@ -342,13 +340,13 @@ public class MetricService implements MetricServiceAPI {
                     log.info("back from seriesResultsWriter");
 
                 } catch (WebApplicationException we) {
-                    log.error("Caught WebApplicationException: {},{}", we.getMessage());
+                    log.error("Caught WebApplicationException: {}", we.getMessage(), we);
                 } catch (Exception e) {
-                    log.error(
-                        String.format(
-                            "Server error while processing metric source %s : %s:%s",
-                            api.getSourceId(), e.getClass().getName(),
-                            e.getMessage()), e);
+                    log.error("Server error while processing metric source {} : {}:{}",
+                        api.getSourceId(),
+                        e.getClass().getName(),
+                        e.getMessage(),
+                        e);
                     throw new WebApplicationException(Response.status(500).build());
                 } finally {
                     if (reader != null) {
@@ -365,16 +363,14 @@ public class MetricService implements MetricServiceAPI {
             try {
                 start = Utils.parseDate(startTime);
             } catch (ParseException e) {
-                log.error("Failed to parse start time option of '{}': {} : {}", startTime, e.getClass().getName(), e.getMessage());
-                errors.add(makeError(String.format("Unable to parse specified start time value of '%s'", startTime), e.getMessage(), Utils.START));
+                handleTimeParseException(errors, startTime, e, Utils.START);
             }
 
             // Validate end time
             try {
                 end = Utils.parseDate(endTime);
             } catch (ParseException e) {
-                log.error("Failed to parse end time option of '{}': {} : {}", endTime, e.getClass().getName(), e.getMessage());
-                errors.add(makeError(String.format("Unable to parse specified end time value of '%s'", startTime), e.getMessage(), Utils.END));
+                handleTimeParseException(errors, endTime, e, Utils.END);
             }
 
             // Validate that there is at least one (1) metric specification
@@ -392,6 +388,12 @@ public class MetricService implements MetricServiceAPI {
                     .entity(objectMapper.writer().writeValueAsString(response))
                     .build());
             }
+        }
+
+        private void handleTimeParseException(List<Object> errors, String startTime, ParseException e, String timeType) {
+            log.error("Failed to parse {} time option of '{}': {} : {}", timeType, startTime, e.getClass().getName(), e.getMessage());
+            String errorString = String.format("Unable to parse specified %s time value of '%s'", timeType,startTime);
+            errors.add(makeError(errorString, e.getMessage(), timeType));
         }
 
         private Map<String, Object> makeError(String errorMessage, String errorCause, String errorPart) {
