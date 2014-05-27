@@ -1,6 +1,11 @@
 package org.zenoss.app.metricservice.api.impl;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Created with IntelliJ IDEA.
@@ -19,6 +24,8 @@ public class SeriesQueryResult {
     private String startTime;
     private long startTimeActual;
     private String id;
+    @JsonProperty("results")
+    private List<QueryResult> results;
 
     public void setClientId(String clientId) {
         this.clientId = clientId;
@@ -90,5 +97,12 @@ public class SeriesQueryResult {
 
     public String getId() {
         return id;
+    }
+
+    public void addResults(Collection<QueryResult> queryResults) {
+        if (null == results) {
+            results = new ArrayList<QueryResult>();
+        }
+        results.addAll(queryResults);
     }
 }

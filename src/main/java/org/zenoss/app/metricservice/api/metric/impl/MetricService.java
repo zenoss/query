@@ -292,6 +292,11 @@ public class MetricService implements MetricServiceAPI {
                         500,
                         String.format("Unable to connect to performance metric data source"),
                         e.getMessage()));
+            } finally {
+                if (null != reader) {
+                    reader.close();
+                    reader = null;
+                }
             }
 
             /**
@@ -310,10 +315,10 @@ public class MetricService implements MetricServiceAPI {
                     log.info("processing results");
                     Buckets<MetricKey, String> buckets = resultsProcessor.processResults(reader, queries, bucketSize);
                     log.info("results processed.");
-                    log.info("calling seriesResultsWriter");
+                    log.info("calling jacksonResultsWriter");
                     jacksonResultsWriter.writeResults(writer, queries, buckets,
                         id, api.getSourceId(), start, startTime, end, endTime, returnset, series);
-                    log.info("back from seriesResultsWriter");
+                    log.info("back from jacksonResultsWriter");
 
                 } catch (WebApplicationException we) {
                     log.error("Caught WebApplicationException: {}", we.getMessage(), we);
