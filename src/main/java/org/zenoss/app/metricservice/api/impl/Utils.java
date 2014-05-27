@@ -34,11 +34,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -48,8 +45,6 @@ import java.util.UUID;
 import javax.ws.rs.core.Response;
 
 public class Utils {
-
-    private static final Logger log = LoggerFactory.getLogger(Utils.class);
 
     // Time values
     public static final String NOW = "now";
@@ -72,9 +67,9 @@ public class Utils {
 
     static public Response getErrorResponse(String id, int status,
             String message, String context) {
-        log.debug("Entry: getErrorResponse({},{},{},{}", id, status, message, context);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (JsonWriter response = new JsonWriter(new OutputStreamWriter(baos))) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            JsonWriter response = new JsonWriter(new OutputStreamWriter(baos));
             response.objectS();
             String prefix = "";
             if (id != null) {
@@ -95,12 +90,6 @@ public class Utils {
             return Response.status(status).entity(baos.toString()).build();
         } catch (Exception e) {
             return Response.status(status).build();
-        } finally {
-            try {
-                baos.close();
-            } catch (IOException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-            }
         }
     }
 
