@@ -1,3 +1,9 @@
+/**
+ * ZenVis.js
+ * Fetches data from the API and wires it to a chart type for
+ * actual processing and rendering.
+ */
+
 var zenoss = zenoss || {};
 
 (function(){
@@ -26,12 +32,6 @@ var zenoss = zenoss || {};
 	// TODO - dynamically load/build chartRepo?
 	var chartRepo = zenoss.viz.charts;
 
-
-	/**
-	 * Retrieves data set from the api, transforms data to format d3 can
-	 * work with, creates a chart of the requested type, and attaches to 
-	 * a DOM element
-	 */
 	function ZenVis(config){
 		if(!config){
 			throw new Error("Must provide a configuration object for ZenVis");
