@@ -1354,9 +1354,11 @@
                 }
             }
 
-            if (config.series !== undefined) {
-                request.series = config.series;
-            }
+            request.series = true;
+            // series should always be true
+            // if (config.series !== undefined) {
+            //     request.series = config.series;
+            // }
 
             if (config.downsample !== undefined) {
                 request.downsample = config.downsample;
@@ -1425,9 +1427,10 @@
                             if (dp.expression !== undefined) {
                                 m.expression = dp.expression;
                             }
-                            if (dp.emit !== undefined) {
-                                m.emit = dp.emit;
-                            }
+                            // emit is deprecated, so ignore
+                            // if (dp.emit !== undefined) {
+                            //     m.emit = dp.emit;
+                            // }
                             request.metrics.push(m);
                         });
 
@@ -1495,6 +1498,8 @@
         return [ plots, this.__calculateAutoScaleFactor(max) ];
     };
 
+
+    // NOTE: processing results as anything but series is deprecated
     /**
      * Processes the result from the Zenoss performance metric query that is in
      * the default format into the data that can be utilized by the chart
@@ -1508,65 +1513,65 @@
      * @returns {object} the data in the format that can be utilized by the
      *          chart library.
      */
-    zenoss.visualization.Chart.prototype.__processResultAsDefault = function(
-            request, data) {
+    // zenoss.visualization.Chart.prototype.__processResultAsDefault = function(
+    //         request, data) {
 
-        var self = this, plotMap = [], i, result, max = 0, info, plot, plots, key, xcompare;
+    //     var self = this, plotMap = [], i, result, max = 0, info, plot, plots, key, xcompare;
 
-        /*
-         * Create a plot for each metric name, this is essentially grouping the
-         * results by metric name. This can cause problems if the request
-         * contains multiple queries for the same metric, but this is basically
-         * a restriction of the implementation (OpenTSDB) where it doesn't split
-         * the results logically when multiple requests are made in a single
-         * call.
-         */
-        for (i in data.results) {
-            result = data.results[i];
-            plot = plotMap[result.metric];
-            if (plot === undefined) {
-                info = self.plotInfo[result.metric];
-                plot = {
-                    'key' : info.legend,
-                    'color' : info.color,
-                    'fill' : info.fill,
-                    'values' : []
-                };
-                plotMap[result.metric] = plot;
-            }
+    //     /*
+    //      * Create a plot for each metric name, this is essentially grouping the
+    //      * results by metric name. This can cause problems if the request
+    //      * contains multiple queries for the same metric, but this is basically
+    //      * a restriction of the implementation (OpenTSDB) where it doesn't split
+    //      * the results logically when multiple requests are made in a single
+    //      * call.
+    //      */
+    //     for (i in data.results) {
+    //         result = data.results[i];
+    //         plot = plotMap[result.metric];
+    //         if (plot === undefined) {
+    //             info = self.plotInfo[result.metric];
+    //             plot = {
+    //                 'key' : info.legend,
+    //                 'color' : info.color,
+    //                 'fill' : info.fill,
+    //                 'values' : []
+    //             };
+    //             plotMap[result.metric] = plot;
+    //         }
 
-            max = Math.max(Math.abs(result.value), max);
-            plot.values.push({
-                'x' : result.timestamp * 1000,
-                'y' : result.value
-            });
-        }
+    //         max = Math.max(Math.abs(result.value), max);
+    //         plot.values.push({
+    //             'x' : result.timestamp * 1000,
+    //             'y' : result.value
+    //         });
+    //     }
 
-        xcompare = function(a, b) {
-            if (a.x < b.x) {
-                return -1;
-            }
-            if (a.x > b.x) {
-                return 1;
-            }
-            return 0;
-        };
+    //     xcompare = function(a, b) {
+    //         if (a.x < b.x) {
+    //             return -1;
+    //         }
+    //         if (a.x > b.x) {
+    //             return 1;
+    //         }
+    //         return 0;
+    //     };
 
-        /*
-         * Convert the plotMap into an array of plots for the graph library to
-         * process
-         */
-        plots = [];
-        for (key in plotMap) {
-            if (plotMap.hasOwnProperty(key)) {
-                // Sort the values of the plot as we put them in the
-                // plots aray.
-                plotMap[key].values.sort(xcompare);
-                plots.push(plotMap[key]);
-            }
-        }
-        return [ plots, this.__calculateAutoScaleFactor(max) ];
-    };
+    //     /*
+    //      * Convert the plotMap into an array of plots for the graph library to
+    //      * process
+    //      */
+    //     plots = [];
+    //     for (key in plotMap) {
+    //         if (plotMap.hasOwnProperty(key)) {
+    //             // Sort the values of the plot as we put them in the
+    //             // plots aray.
+    //             plotMap[key].values.sort(xcompare);
+    //             plots.push(plotMap[key]);
+    //         }
+    //     }
+    //     return [ plots, this.__calculateAutoScaleFactor(max) ];
+    // };
 
     /**
      * Wrapper function that redirects to the proper implementation to processes
@@ -1585,13 +1590,16 @@
             data) {
         var results, plots, i, overlay, minDate, maxDate, plot, k, firstMetric;
 
-        if (data.series) {
-            results = this.__processResultAsSeries(request, data);
-            plots = results[0];
-        } else {
-            results = this.__processResultAsDefault(request, data);
-            plots = results[0];
-        }
+        // NOTE: series is deprecated
+        // if (data.series) {
+        //     results = this.__processResultAsSeries(request, data);
+        //     plots = results[0];
+        // } else {
+        //     results = this.__processResultAsDefault(request, data);
+        //     plots = results[0];
+        // }
+        results = this.__processResultAsSeries(request, data);
+        plots = results[0];
 
         // add overlays
         if (this.overlays.length && plots.length) {
