@@ -159,6 +159,10 @@
                 return moment.utc(ts_seconds, "X").tz(timezone).format(zenoss.visualization.dateFormat);
             },
 
+
+            ////////////
+            // logging
+            
             /**
              * Wrapper around the console group function. This wrapper protects
              * the client from those browsers that don't support the group
@@ -1635,168 +1639,6 @@
     };
 
     /**
-     * Deep object merge. This merge differs significantly from the "extend"
-     * method provide by jQuery in that it will merge the value of arrays, but
-     * concatenating the arrays together using the jQuery method "merge".
-     * Neither of the objects passed are modified and a new object is returned.
-     *
-     * @access private
-     * @param {object}
-     *            base the object to which values are to be merged into
-     * @param {object}
-     *            extend the object from which values are merged
-     * @returns {object} the merged object
-     */
-    zenoss.visualization.__merge = function(base, extend) {
-        var m, k, v;
-        if (zenoss.visualization.debug) {
-            zenoss.visualization.__groupCollapsed('Object Merge');
-            zenoss.visualization.__group('SOURCES');
-            zenoss.visualization.__log(base);
-            zenoss.visualization.__log(extend);
-            zenoss.visualization.__groupEnd();
-        }
-
-        if (base === undefined || base === null) {
-            m = $.extend(true, {}, extend);
-            if (zenoss.visualization.debug) {
-                zenoss.visualization.__log(m);
-                zenoss.visualization.__groupEnd();
-            }
-            return m;
-        }
-        if (extend === undefined || extend === null) {
-            m = $.extend(true, {}, base);
-            if (zenoss.visualization.debug) {
-                zenoss.visualization.__log(m);
-                zenoss.visualization.__groupEnd();
-            }
-            return m;
-        }
-
-        m = $.extend(true, {}, base);
-        for (k in extend) {
-            if (extend.hasOwnProperty(k)) {
-                v = extend[k];
-                if (v.constructor === Number || v.constructor === String) {
-                    m[k] = v;
-                } else if (v instanceof Array) {
-                    m[k] = $.merge(m[k], v);
-                } else if (v instanceof Object) {
-                    if (m[k] === undefined) {
-                        m[k] = $.extend({}, v);
-                    } else {
-                        m[k] = zenoss.visualization.__merge(m[k], v);
-                    }
-                } else {
-                    m[k] = $.extend(m[k], v);
-                }
-            }
-        }
-
-        if (zenoss.visualization.debug) {
-            zenoss.visualization.__log(m);
-            zenoss.visualization.__groupEnd();
-        }
-        return m;
-    };
-
-    /**
-     * Given a dependency object, checks if the dependencies are already loaded
-     * and if so, calls the callback, else loads the dependencies and then calls
-     * the callback.
-     *
-     * @access private
-     * @param {object}
-     *            required the dependency object that contains a "defined" key
-     *            and a "source" key. The "defined" key is a name (string) that
-     *            is used to identify the dependency and the "source" key is an
-     *            array of JavaScript and CSS URIs that must be loaded to meet
-     *            the dependency.
-     * @param {function}
-     *            callback called after the dependencies are loaded
-     */
-    zenoss.visualization.__loadDependencies = function(required, callback) {
-        var base, o, c, js, css;
-
-        if (required === undefined) {
-            callback();
-            return;
-        }
-
-        // Check if it is already loaded, using the value in the 'defined' field
-        if (zenoss.visualization.__dependencies[required.defined] !== undefined
-                && zenoss.visualization.__dependencies[required.defined].state !== undefined) {
-            o = zenoss.visualization.__dependencies[required.defined].state;
-        }
-        if (o !== undefined) {
-            if (o === 'loaded') {
-                if (zenoss.visualization.debug) {
-                    zenoss.visualization.__log('Dependencies for "'
-                            + required.defined
-                            + '" already loaded, continuing.');
-                }
-                // Already loaded, so just invoke the callback
-                callback();
-            } else {
-                // It is in the process of being loaded, so add our callback to
-                // the
-                // list of callbacks to call when it is loaded.
-                if (zenoss.visualization.debug) {
-                    zenoss.visualization
-                            .__log('Dependencies for "'
-                                    + required.defined
-                                    + '" in process of being loaded, queuing until loaded.');
-                }
-
-                c = zenoss.visualization.__dependencies[required.defined].callbacks;
-                c.push(callback);
-            }
-            return;
-        } else {
-            // OK, not yet loaded or being loaded, so it is ours.
-            if (zenoss.visualization.debug) {
-                zenoss.visualization
-                        .__log('Dependencies for "'
-                                + required.defined
-                                + '" not loaded nor in process of loading, initiate loading.');
-            }
-
-            zenoss.visualization.__dependencies[required.defined] = {};
-            base = zenoss.visualization.__dependencies[required.defined];
-            base.state = 'loading';
-            base.callbacks = [];
-            base.callbacks.push(callback);
-        }
-
-        // Load the JS and CSS files. Divide the list of files into two lists:
-        // JS
-        // and CSS as we can load one async, and the other loads sync (CSS).
-        js = [];
-        css = [];
-        required.source.forEach(function(v) {
-            if (v.endsWith('.js')) {
-                js.push(v);
-            } else if (v.endsWith('.css')) {
-                css.push(v);
-            } else {
-                zenoss.visualization.__warn('Unknown required file type, "' + v
-                        + '" when loading dependencies for "' + 'unknown'
-                        + '". Ignored.');
-            }
-        });
-
-        base = zenoss.visualization.__dependencies[required.defined];
-        zenoss.visualization.__load(js, css, function() {
-            base.state = 'loaded';
-            base.callbacks.forEach(function(c) {
-                c();
-            });
-            base.callbacks.length = 0;
-        });
-    };
-
-    /**
      * Returns true if the chart has plots and they contain data points, else
      * false.
      *
@@ -1902,6 +1744,175 @@
                                         self.__resize();
                                     });
                         });
+    };
+
+
+    /////////////////
+    // utils
+
+    /**
+     * Deep object merge. This merge differs significantly from the "extend"
+     * method provide by jQuery in that it will merge the value of arrays, but
+     * concatenating the arrays together using the jQuery method "merge".
+     * Neither of the objects passed are modified and a new object is returned.
+     *
+     * @access private
+     * @param {object}
+     *            base the object to which values are to be merged into
+     * @param {object}
+     *            extend the object from which values are merged
+     * @returns {object} the merged object
+     */
+    zenoss.visualization.__merge = function(base, extend) {
+        var m, k, v;
+        if (zenoss.visualization.debug) {
+            zenoss.visualization.__groupCollapsed('Object Merge');
+            zenoss.visualization.__group('SOURCES');
+            zenoss.visualization.__log(base);
+            zenoss.visualization.__log(extend);
+            zenoss.visualization.__groupEnd();
+        }
+
+        if (base === undefined || base === null) {
+            m = $.extend(true, {}, extend);
+            if (zenoss.visualization.debug) {
+                zenoss.visualization.__log(m);
+                zenoss.visualization.__groupEnd();
+            }
+            return m;
+        }
+        if (extend === undefined || extend === null) {
+            m = $.extend(true, {}, base);
+            if (zenoss.visualization.debug) {
+                zenoss.visualization.__log(m);
+                zenoss.visualization.__groupEnd();
+            }
+            return m;
+        }
+
+        m = $.extend(true, {}, base);
+        for (k in extend) {
+            if (extend.hasOwnProperty(k)) {
+                v = extend[k];
+                if (v.constructor === Number || v.constructor === String) {
+                    m[k] = v;
+                } else if (v instanceof Array) {
+                    m[k] = $.merge(m[k], v);
+                } else if (v instanceof Object) {
+                    if (m[k] === undefined) {
+                        m[k] = $.extend({}, v);
+                    } else {
+                        m[k] = zenoss.visualization.__merge(m[k], v);
+                    }
+                } else {
+                    m[k] = $.extend(m[k], v);
+                }
+            }
+        }
+
+        if (zenoss.visualization.debug) {
+            zenoss.visualization.__log(m);
+            zenoss.visualization.__groupEnd();
+        }
+        return m;
+    };
+
+    /////////////////
+    // dependency injection
+
+    /**
+     * Given a dependency object, checks if the dependencies are already loaded
+     * and if so, calls the callback, else loads the dependencies and then calls
+     * the callback.
+     *
+     * @access private
+     * @param {object}
+     *            required the dependency object that contains a "defined" key
+     *            and a "source" key. The "defined" key is a name (string) that
+     *            is used to identify the dependency and the "source" key is an
+     *            array of JavaScript and CSS URIs that must be loaded to meet
+     *            the dependency.
+     * @param {function}
+     *            callback called after the dependencies are loaded
+     */
+    zenoss.visualization.__loadDependencies = function(required, callback) {
+        var base, o, c, js, css;
+
+        if (required === undefined) {
+            callback();
+            return;
+        }
+
+        // Check if it is already loaded, using the value in the 'defined' field
+        if (zenoss.visualization.__dependencies[required.defined] !== undefined
+                && zenoss.visualization.__dependencies[required.defined].state !== undefined) {
+            o = zenoss.visualization.__dependencies[required.defined].state;
+        }
+        if (o !== undefined) {
+            if (o === 'loaded') {
+                if (zenoss.visualization.debug) {
+                    zenoss.visualization.__log('Dependencies for "'
+                            + required.defined
+                            + '" already loaded, continuing.');
+                }
+                // Already loaded, so just invoke the callback
+                callback();
+            } else {
+                // It is in the process of being loaded, so add our callback to
+                // the
+                // list of callbacks to call when it is loaded.
+                if (zenoss.visualization.debug) {
+                    zenoss.visualization
+                            .__log('Dependencies for "'
+                                    + required.defined
+                                    + '" in process of being loaded, queuing until loaded.');
+                }
+
+                c = zenoss.visualization.__dependencies[required.defined].callbacks;
+                c.push(callback);
+            }
+            return;
+        } else {
+            // OK, not yet loaded or being loaded, so it is ours.
+            if (zenoss.visualization.debug) {
+                zenoss.visualization
+                        .__log('Dependencies for "'
+                                + required.defined
+                                + '" not loaded nor in process of loading, initiate loading.');
+            }
+
+            zenoss.visualization.__dependencies[required.defined] = {};
+            base = zenoss.visualization.__dependencies[required.defined];
+            base.state = 'loading';
+            base.callbacks = [];
+            base.callbacks.push(callback);
+        }
+
+        // Load the JS and CSS files. Divide the list of files into two lists:
+        // JS
+        // and CSS as we can load one async, and the other loads sync (CSS).
+        js = [];
+        css = [];
+        required.source.forEach(function(v) {
+            if (v.endsWith('.js')) {
+                js.push(v);
+            } else if (v.endsWith('.css')) {
+                css.push(v);
+            } else {
+                zenoss.visualization.__warn('Unknown required file type, "' + v
+                        + '" when loading dependencies for "' + 'unknown'
+                        + '". Ignored.');
+            }
+        });
+
+        base = zenoss.visualization.__dependencies[required.defined];
+        zenoss.visualization.__load(js, css, function() {
+            base.state = 'loaded';
+            base.callbacks.forEach(function(c) {
+                c();
+            });
+            base.callbacks.length = 0;
+        });
     };
 
     /**
@@ -2074,5 +2085,7 @@
             'source' : sources
         }, success, fail);
     };
+
     window.zenoss = zenoss;
+
 }(window));
