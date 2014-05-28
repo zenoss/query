@@ -500,7 +500,7 @@
                 if ($.isNumeric(config.maxy)) {
                     this.maxy = config.maxy;
                 }
-                this.timezone = config.timezone;
+                this.timezone = config.timezone || jstz.determine().name();
                 this.svgwrapper = document.createElement('div');
                 $(this.svgwrapper).addClass('zenchart');
                 $(this.div).append($(this.svgwrapper));
@@ -1020,7 +1020,7 @@
      */
     zenoss.visualization.Chart.prototype.__updateFooter = function(data) {
         var sta, eta, plot, dp, vals, cur, min, max, avg, cols, init, label, ll, i, v, vIdx, k, rows, row, box, color, resize = false,
-            timezone = this.timezone || jstz.determine().name();
+            timezone = this.timezone;
         if (!this.table) {
             return false;
         }
