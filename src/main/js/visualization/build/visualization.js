@@ -57,29 +57,29 @@ var visualization,
          *            extend the object from which values are merged
          * @returns {object} the merged object
          */
-        __merge: function(base, extend) {
+        __merge: function __merge(base, extend) {
             var m, k, v;
-            if (debug) {
-                __groupCollapsed('Object Merge');
-                __group('SOURCES');
-                __log(base);
-                __log(extend);
-                __groupEnd();
+            if (debug.debug) {
+                debug.__groupCollapsed('Object Merge');
+                debug.__group('SOURCES');
+                debug.__log(base);
+                debug.__log(extend);
+                debug.__groupEnd();
             }
 
             if (base === undefined || base === null) {
                 m = $.extend(true, {}, extend);
-                if (debug) {
-                    __log(m);
-                    __groupEnd();
+                if (debug.debug) {
+                    debug.__log(m);
+                    debug.__groupEnd();
                 }
                 return m;
             }
             if (extend === undefined || extend === null) {
                 m = $.extend(true, {}, base);
-                if (debug) {
-                    __log(m);
-                    __groupEnd();
+                if (debug.debug) {
+                    debug.__log(m);
+                    debug.__groupEnd();
                 }
                 return m;
             }
@@ -104,9 +104,9 @@ var visualization,
                 }
             }
 
-            if (debug) {
-                __log(m);
-                __groupEnd();
+            if (debug.debug) {
+                debug.__log(m);
+                debug.__groupEnd();
             }
             return m;
         },
@@ -137,7 +137,7 @@ var visualization,
          * @access public
          * @default false
          */
-        debug: false,
+        debug: true,
         
         /**
          * Wrapper around the console group function. This wrapper protects
@@ -344,9 +344,9 @@ var visualization,
             } else if (v.endsWith('.css')) {
                 css.push(v);
             } else {
-                visualization.__warn('Unknown required file type, "' + v
-                        + '" when loading dependencies for "' + 'unknown'
-                        + '". Ignored.');
+                visualization.__warn('Unknown required file type, "' +
+                    '" when loading dependencies for "' + 'unknown' +
+                    '". Ignored.');
             }
         });
 
@@ -1011,7 +1011,7 @@ var visualization,
                 var found = __charts[name];
                 if (found === undefined) {
                     debug.__warn('Attempt to modify a chart, "' + name +
-                                '", that does not exist.');
+                        '", that does not exist.');
                     return;
                 }
                 found.update(changes);
@@ -1049,84 +1049,81 @@ var visualization,
              *            The error that occurred will be passed as a
              *            parameter to the callback.
              */
-            create : function(name, arg1, arg2, success, fail) {
+            create : function(name, config) {
 
-                function loadChart(name, callback, onerror) {
-                    var _callback = callback;
-                    if (debug.debug) {
-                        debug.__log('Loading chart from: ' +
-                            url + '/chart/name/' +
-                            name);
-                    }
-                    $.ajax({
-                        'url' : url + '/chart/name/' + name,
-                        'type' : 'GET',
-                        'dataType' : 'json',
-                        'contentType' : 'application/json',
-                        'success' : function(data) {
-                            _callback(data);
-                        },
-                        'error' : function(response) {
-                            var err, detail;
-                            debug.__error(response.responseText);
-                            err = JSON.parse(response.responseText);
-                            detail = 'Error while attempting to fetch chart resource with the name "' +
-                                name + '", via the URL "' +
-                                url + '/chart/name/' +
-                                name + '", the reported error was "' +
-                                err.errorSource + ':' + err.errorMessage + '"';
-                            if (onerror !== undefined) {
-                                onerror(err, detail);
-                            }
-                        }
-                    });
-                }
+                // function loadChart(name, callback, onerror) {
+                //     var _callback = callback;
+                //     if (debug.debug) {
+                //         debug.__log('Loading chart from: ' +
+                //             url + '/chart/name/' +
+                //             name);
+                //     }
+                //     $.ajax({
+                //         'url' : url + '/chart/name/' + name,
+                //         'type' : 'GET',
+                //         'dataType' : 'json',
+                //         'contentType' : 'application/json',
+                //         'success' : function(data) {
+                //             _callback(data);
+                //         },
+                //         'error' : function(response) {
+                //             var err, detail;
+                //             debug.__error(response.responseText);
+                //             err = JSON.parse(response.responseText);
+                //             detail = 'Error while attempting to fetch chart resource with the name "' +
+                //                 name + '", via the URL "' +
+                //                 url + '/chart/name/' +
+                //                 name + '", the reported error was "' +
+                //                 err.errorSource + ':' + err.errorMessage + '"';
+                //             if (onerror !== undefined) {
+                //                 onerror(err, detail);
+                //             }
+                //         }
+                //     });
+                // }
 
-                var config, template, result;
-                if (typeof arg1 === 'string') {
-                    // A chart template name was specified, so we need to
-                    // first
-                    // load that template and then create the chart based on
-                    // that.
-                    config = arg2;
-                    if (window.jQuery === undefined) {
-                        dependency.__bootstrap(function() {
-                            loadChart(arg1, function(template){
-                                var merged = new Chart(name, utils.__merge(template, config));
-                                __charts[name] = merged;
-                                return merged;
-                            }, function(err, detail) {
-                                __showError(name, detail);
-                            }
-                            );
-                        });
-                        return;
-                    }
-                    loadChart(arg1, function(template) {
-                        var merged = new Chart(name,
-                            utils.__merge(template,
-                                config));
-                        __charts[name] = merged;
-                        return merged;
-                    }, function(err, detail) {
-                        __showError(name, detail);
-                    });
-                    return;
-                }
 
-                template = null;
-                config = arg1;
+                // if (typeof arg1 === 'string') {
+                //     // A chart template name was specified, so we need to
+                //     // first
+                //     // load that template and then create the chart based on
+                //     // that.
+                //     config = arg2;
+                //     if (window.jQuery === undefined) {
+                //         dependency.__bootstrap(function() {
+                //             loadChart(arg1, function(template){
+                //                 var merged = new Chart(name, utils.__merge(template, config));
+                //                 __charts[name] = merged;
+                //                 return merged;
+                //             }, function(err, detail) {
+                //                 __showError(name, detail);
+                //             }
+                //             );
+                //         });
+                //         return;
+                //     }
+                //     loadChart(arg1, function(template) {
+                //         var merged = new Chart(name,
+                //             utils.__merge(template,
+                //                 config));
+                //         __charts[name] = merged;
+                //         return merged;
+                //     }, function(err, detail) {
+                //         __showError(name, detail);
+                //     });
+                //     return;
+                // }
 
-                if (window.jQuery === undefined) {
+                if (!window.jQuery) {
+                    console.log("no jquery!");
                     dependency.__bootstrap(function() {
-                        var merged = new Chart(name, utils.__merge(template, config));
-                        __charts[name] = merged;
-                        return merged;
+                        __charts[name] = new Chart(name, config);
+                        // return __charts[name];
                     });
                     return;
                 }
-                result = new Chart(name, utils.__merge(template, config));
-                __charts[name] = result;
+
+                __charts[name] = new Chart(name, config);
             }
         },
 
@@ -1188,7 +1185,7 @@ var visualization,
         if ($.isNumeric(config.maxy)) {
             this.maxy = config.maxy;
         }
-        this.timezone = config.timezone;
+        this.timezone = config.timezone || jstz.determine().name();
         this.svgwrapper = document.createElement('div');
         $(this.svgwrapper).addClass('zenchart');
         $(this.div).append($(this.svgwrapper));
@@ -1478,7 +1475,7 @@ var visualization,
          */
         __updateFooter: function(data) {
             var sta, eta, plot, dp, vals, cur, min, max, avg, cols, init, label, ll, i, v, vIdx, k, rows, row, box, color, resize = false,
-                timezone = this.timezone || jstz.determine().name();
+                timezone = this.timezone;
             if (!this.table) {
                 return false;
             }
@@ -2090,7 +2087,7 @@ var visualization,
                         });
                         self.impl = i;
                     } catch (err) {
-                        throw new zenoss.Error(
+                        throw new utils.Error(
                             'DependencyError',
                             'Unable to locate loaded chart type, "' +
                                 self.config.type + '", error: ' + err

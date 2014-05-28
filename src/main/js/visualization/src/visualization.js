@@ -384,7 +384,7 @@
                 var found = __charts[name];
                 if (found === undefined) {
                     debug.__warn('Attempt to modify a chart, "' + name +
-                                '", that does not exist.');
+                        '", that does not exist.');
                     return;
                 }
                 found.update(changes);
@@ -422,84 +422,79 @@
              *            The error that occurred will be passed as a
              *            parameter to the callback.
              */
-            create : function(name, arg1, arg2, success, fail) {
+            create : function(name, config) {
 
-                function loadChart(name, callback, onerror) {
-                    var _callback = callback;
-                    if (debug.debug) {
-                        debug.__log('Loading chart from: ' +
-                            url + '/chart/name/' +
-                            name);
-                    }
-                    $.ajax({
-                        'url' : url + '/chart/name/' + name,
-                        'type' : 'GET',
-                        'dataType' : 'json',
-                        'contentType' : 'application/json',
-                        'success' : function(data) {
-                            _callback(data);
-                        },
-                        'error' : function(response) {
-                            var err, detail;
-                            debug.__error(response.responseText);
-                            err = JSON.parse(response.responseText);
-                            detail = 'Error while attempting to fetch chart resource with the name "' +
-                                name + '", via the URL "' +
-                                url + '/chart/name/' +
-                                name + '", the reported error was "' +
-                                err.errorSource + ':' + err.errorMessage + '"';
-                            if (onerror !== undefined) {
-                                onerror(err, detail);
-                            }
-                        }
-                    });
-                }
+                // function loadChart(name, callback, onerror) {
+                //     var _callback = callback;
+                //     if (debug.debug) {
+                //         debug.__log('Loading chart from: ' +
+                //             url + '/chart/name/' +
+                //             name);
+                //     }
+                //     $.ajax({
+                //         'url' : url + '/chart/name/' + name,
+                //         'type' : 'GET',
+                //         'dataType' : 'json',
+                //         'contentType' : 'application/json',
+                //         'success' : function(data) {
+                //             _callback(data);
+                //         },
+                //         'error' : function(response) {
+                //             var err, detail;
+                //             debug.__error(response.responseText);
+                //             err = JSON.parse(response.responseText);
+                //             detail = 'Error while attempting to fetch chart resource with the name "' +
+                //                 name + '", via the URL "' +
+                //                 url + '/chart/name/' +
+                //                 name + '", the reported error was "' +
+                //                 err.errorSource + ':' + err.errorMessage + '"';
+                //             if (onerror !== undefined) {
+                //                 onerror(err, detail);
+                //             }
+                //         }
+                //     });
+                // }
 
-                var config, template, result;
-                if (typeof arg1 === 'string') {
-                    // A chart template name was specified, so we need to
-                    // first
-                    // load that template and then create the chart based on
-                    // that.
-                    config = arg2;
-                    if (window.jQuery === undefined) {
-                        dependency.__bootstrap(function() {
-                            loadChart(arg1, function(template){
-                                var merged = new Chart(name, utils.__merge(template, config));
-                                __charts[name] = merged;
-                                return merged;
-                            }, function(err, detail) {
-                                __showError(name, detail);
-                            }
-                            );
-                        });
-                        return;
-                    }
-                    loadChart(arg1, function(template) {
-                        var merged = new Chart(name,
-                            utils.__merge(template,
-                                config));
-                        __charts[name] = merged;
-                        return merged;
-                    }, function(err, detail) {
-                        __showError(name, detail);
-                    });
-                    return;
-                }
 
-                template = null;
-                config = arg1;
+                // if (typeof arg1 === 'string') {
+                //     // A chart template name was specified, so we need to
+                //     // first
+                //     // load that template and then create the chart based on
+                //     // that.
+                //     config = arg2;
+                //     if (window.jQuery === undefined) {
+                //         dependency.__bootstrap(function() {
+                //             loadChart(arg1, function(template){
+                //                 var merged = new Chart(name, utils.__merge(template, config));
+                //                 __charts[name] = merged;
+                //                 return merged;
+                //             }, function(err, detail) {
+                //                 __showError(name, detail);
+                //             }
+                //             );
+                //         });
+                //         return;
+                //     }
+                //     loadChart(arg1, function(template) {
+                //         var merged = new Chart(name,
+                //             utils.__merge(template,
+                //                 config));
+                //         __charts[name] = merged;
+                //         return merged;
+                //     }, function(err, detail) {
+                //         __showError(name, detail);
+                //     });
+                //     return;
+                // }
 
-                if (window.jQuery === undefined) {
+                if (!window.jQuery) {
                     dependency.__bootstrap(function() {
-                        var merged = new Chart(name, utils.__merge(template, config));
-                        __charts[name] = merged;
-                        return merged;
+                        __charts[name] = new Chart(name, config);
                     });
                     return;
                 }
-                result = new Chart(name, utils.__merge(template, config));
-                __charts[name] = result;
+
+                __charts[name] = new Chart(name, config);
             }
         },
 

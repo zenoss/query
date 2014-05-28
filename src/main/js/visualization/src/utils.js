@@ -20,29 +20,29 @@
          *            extend the object from which values are merged
          * @returns {object} the merged object
          */
-        __merge: function(base, extend) {
+        __merge: function __merge(base, extend) {
             var m, k, v;
-            if (debug) {
-                __groupCollapsed('Object Merge');
-                __group('SOURCES');
-                __log(base);
-                __log(extend);
-                __groupEnd();
+            if (debug.debug) {
+                debug.__groupCollapsed('Object Merge');
+                debug.__group('SOURCES');
+                debug.__log(base);
+                debug.__log(extend);
+                debug.__groupEnd();
             }
 
             if (base === undefined || base === null) {
                 m = $.extend(true, {}, extend);
-                if (debug) {
-                    __log(m);
-                    __groupEnd();
+                if (debug.debug) {
+                    debug.__log(m);
+                    debug.__groupEnd();
                 }
                 return m;
             }
             if (extend === undefined || extend === null) {
                 m = $.extend(true, {}, base);
-                if (debug) {
-                    __log(m);
-                    __groupEnd();
+                if (debug.debug) {
+                    debug.__log(m);
+                    debug.__groupEnd();
                 }
                 return m;
             }
@@ -67,9 +67,9 @@
                 }
             }
 
-            if (debug) {
-                __log(m);
-                __groupEnd();
+            if (debug.debug) {
+                debug.__log(m);
+                debug.__groupEnd();
             }
             return m;
         },

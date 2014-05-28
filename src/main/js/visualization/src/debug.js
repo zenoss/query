@@ -14,7 +14,7 @@
          * @access public
          * @default false
          */
-        debug: false,
+        debug: true,
         
         /**
          * Wrapper around the console group function. This wrapper protects

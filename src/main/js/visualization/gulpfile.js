@@ -23,8 +23,8 @@ gulp.task("build", function(){
 			paths.src + "outro.js",
 		])
 		.pipe(concat("visualization.js"))
-		.pipe(gulp.dest(paths.build));
-		// .pipe(gulp.dest(paths.deploy))
+		.pipe(gulp.dest(paths.build))
+		.pipe(gulp.dest(paths.deploy));
 		// sadly livereload doesnt work with ssl :(
 		// .pipe(livereload());
 });
