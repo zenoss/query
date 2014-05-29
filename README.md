@@ -73,47 +73,9 @@ including "private" methods can be found at `doc/full/index.html`.
 Resources
 ----
 
-  - `GET /chart` - return a list of chart resources.
-  
-  This operation can take a `start` and `end` query parameter that specifies the range (inclusive) that the requester wishes to get back. This enables paging through the list of available charts. Additionally a `count=true` query parameter can be specified such that the total count of charts will be returned as well. This operation will return
-  a JSON structure of the form:
-  
-        {
-            "start" : #,
-            "end"   : #,
-            "count" : #,
-            "ids"   : [ "<id>", "<id>", ...]
-        }
-  
-  - `GET /chart/{id}`
-  
-  - `POST /chart`
-  
-  - `PUT /chart/{id}`
-  
-  - `DELETE /chart/{id}`
-  All operations on the `chart` resource assume a chart JSON structure as payload. The structure is 
-
-        {
-            "name" : "<chart-name>",
-            "type" : <type of chart>,
-            "range" : { [optional]
-                "start" : <datetime>,
-                "end"   : <datetime>,
-            },
-            "filter" : { [optional]
-                "name" : "value", ...
-            },
-            "datapoints" : [
-                {
-                    "consolidator" : avg, sum, etc
-                    "metric" : metric name
-                }, ...
-            ]
-        }
+  The /chart resource has been removed from this release.
 
 
-    __Currently supported chart types are: `line`, `bar`, `pie`, `focus`, `discretebar`, `area`, `dc.stacked`, and `dc.area`.__
 
   - `POST /query/performance` - return the performance metrics that match the search criteria. The results are the same as for the get request below, the difference is that instead of specifying the criteria as query parameters the criteria is specified as an JSON object in the POST data. The JSON structure that is supported on this POST call follows the following format:
 
@@ -121,7 +83,6 @@ Resources
             "start"      : "<datetime>",
             "end"        : "<datetime>",
             "returnset"  : exact | last | <undefined>
-            "series"     : true or false,
             "secondsPerBucket" : request default for secondsPerBucket over all metrics,
             "tags"       : request default for tags over all metrics
             "grouping"   : <integer> specifies the bucket size that values are grouped
@@ -129,8 +90,10 @@ Resources
             "metrics" : [
                 {
                     "metric"      : "<metric name>",
-                    "aggregator"  : "<aggregator>",
-                    "secondsPerBucket"  : "<secondsPerBucket>",
+                    "name"        : a friendly name for the metric - if supplied, will be returned in place of "metric" in the results,
+                    "id"          : a caller-defined tag for the series,
+                    "aggregator"  : "<aggregator>" valid values are "avg", "min", "max", and "sum",
+                    "secondsPerBucket"  : "<secondsPerBucket>", This determines the size (in seconds) of the "buckets" used for downsampling and aligning the results.
                     "rate"        : true or false,
                     "rateOptions" : { // optional
                         "counter"        : true or false,
@@ -138,7 +101,6 @@ Resources
                         "resetThreshold" : delta between consecutive values which should be considered at counter reset
                     },
                     "expression"  : RPN expression to perform on the raw value to get the returned value
-                    "emit"        : return this metric to the client? true or false
                     "tags"        : {
                         "tag-name" : "tag-value", ...
                     } 
@@ -185,28 +147,24 @@ The results of the query will be a JSON object of the form:
             "endTime" : "now",
             "endTimeActual": "2013/06/19-19:05:00-+0000",
             "exactTimeWindow": true,
-            "series": false,
-            "results" : [ 
+            "results" : [
                 {
-                    "metric" : "laLoadInt1",
-                    "timestamp" : 1371512029,
-                    "value" : 49,
-                    "tags" : {
-                        "tag1" : "value1",
-                        "tag2" : "value2",
-                        "tag3" : "value3"
-                    }
+                    "datapoints": [
+                        {
+                            "timestamp": 1371512029,
+                            "value": 49
+                        },
+                        {
+                            "timestamp": 1371512044,
+                            "value": 52
+                        },
+                        {
+                            "timestamp": 1371512029,
+                            "value": 49
+                        }, ...
+                    ],
+                    "metric" : "laLoadInt1"
                 },
-                {
-                    "metric" : "laLoadInt1",
-                    "timestamp" : 1371512044,
-                    "value" : 52,
-                    "tags" : {
-                        "tag1" : "value1",
-                        "tag2" : "value2",
-                        "tag3" : "value3"
-                    }
-                }
             ]
         }
 
