@@ -6,6 +6,7 @@
 /**
  * @namespace
  */
+
 (function(window) {
     "use strict";
 
@@ -360,7 +361,7 @@
              */
             __showError : function(name, detail) {
                 zenoss.visualization.__showMessage(name,
-                        '<span class="zenerror">' + detail + '</span>');
+                    '<span class="zenerror">' + detail + '</span>');
             },
 
             /**
@@ -373,7 +374,7 @@
              */
             __showNoData : function(name) {
                 zenoss.visualization.__showMessage(name,
-                        '<span class="nodata"></span>');
+                    '<span class="nodata"></span>');
             },
 
             /**
@@ -407,17 +408,17 @@
                 $('#' + name + ' .message').css('display', 'block');
                 $('#' + name + ' .message span').css('position', 'relative');
                 $('#' + name + ' .message span').width(
-                        $('#' + name + ' .message').width()
-                                - parseInt($('#' + name + ' .message span')
-                                        .css('margin-left'), 10)
-                                - parseInt($('#' + name + ' .message span')
-                                        .css('margin-right'), 10));
+                    $('#' + name + ' .message').width()
+                        - parseInt($('#' + name + ' .message span')
+                        .css('margin-left'), 10)
+                        - parseInt($('#' + name + ' .message span')
+                        .css('margin-right'), 10));
                 $('#' + name + ' .message span').css('top', '50%');
                 $('#' + name + ' .message span')
-                        .css(
-                                'margin-top',
-                                -parseInt($('#' + name + ' .message span')
-                                        .height(), 10) / 2);
+                    .css(
+                        'margin-top',
+                        -parseInt($('#' + name + ' .message span')
+                            .height(), 10) / 2);
             },
 
             /**
@@ -485,7 +486,7 @@
                 this.div = $('#' + this.name);
                 if (this.div[0] === undefined) {
                     throw new zenoss.visualization.Error('SelectorError',
-                            'unknown selector specified, "' + this.name + '"');
+                        'unknown selector specified, "' + this.name + '"');
                 }
 
                 // Build up a map of metric name to legend label.
@@ -521,9 +522,9 @@
 
                     if (zenoss.visualization.debug) {
                         zenoss.visualization
-                                .__groupCollapsed('POST Request Object');
+                            .__groupCollapsed('POST Request Object');
                         zenoss.visualization.__log(zenoss.visualization.url
-                                + zenoss.visualization.urlPerformance);
+                            + zenoss.visualization.urlPerformance);
                         zenoss.visualization.__log(this.request);
                         zenoss.visualization.__groupEnd();
                     }
@@ -535,7 +536,7 @@
                      */
                     if (this.request.metrics === undefined) {
                         zenoss.visualization
-                                .__warn('Chart configuration contains no metric sepcifications. No data will be displayed.');
+                            .__warn('Chart configuration contains no metric sepcifications. No data will be displayed.');
                     }
                     this.update();
                 } catch (x) {
@@ -565,8 +566,8 @@
                     var found = zenoss.visualization.__charts[name];
                     if (found === undefined) {
                         zenoss.visualization
-                                .__warn('Attempt to modify a chart, "' + name
-                                        + '", that does not exist.');
+                            .__warn('Attempt to modify a chart, "' + name
+                                + '", that does not exist.');
                         return;
                     }
                     found.update(changes);
@@ -605,44 +606,43 @@
                  *            parameter to the callback.
                  */
                 create : function(name, arg1, arg2, success, fail) {
-
                     function loadChart(name, callback, onerror) {
                         var _callback = callback;
                         if (zenoss.visualization.debug) {
                             zenoss.visualization.__log('Loading chart from: '
-                                    + zenoss.visualization.url + '/chart/name/'
-                                    + name);
+                                + zenoss.visualization.url + '/chart/name/'
+                                + name);
                         }
                         $
-                                .ajax({
-                                    'url' : zenoss.visualization.url
-                                            + '/chart/name/' + name,
-                                    'type' : 'GET',
-                                    'dataType' : 'json',
-                                    'contentType' : 'application/json',
-                                    'success' : function(data) {
-                                        _callback(data);
-                                    },
-                                    'error' : function(response) {
-                                        var err, detail;
-                                        zenoss.visualization
-                                                .__error(response.responseText);
-                                        err = JSON.parse(response.responseText);
-                                        detail = 'Error while attempting to fetch chart resource with the name "'
-                                                + name
-                                                + '", via the URL "'
-                                                + zenoss.visualization.url
-                                                + '/chart/name/'
-                                                + name
-                                                + '", the reported error was "'
-                                                + err.errorSource
-                                                + ':'
-                                                + err.errorMessage + '"';
-                                        if (onerror !== undefined) {
-                                            onerror(err, detail);
-                                        }
+                            .ajax({
+                                'url' : zenoss.visualization.url
+                                    + '/chart/name/' + name,
+                                'type' : 'GET',
+                                'dataType' : 'json',
+                                'contentType' : 'application/json',
+                                'success' : function(data) {
+                                    _callback(data);
+                                },
+                                'error' : function(response) {
+                                    var err, detail;
+                                    zenoss.visualization
+                                        .__error(response.responseText);
+                                    err = JSON.parse(response.responseText);
+                                    detail = 'Error while attempting to fetch chart resource with the name "'
+                                        + name
+                                        + '", via the URL "'
+                                        + zenoss.visualization.url
+                                        + '/chart/name/'
+                                        + name
+                                        + '", the reported error was "'
+                                        + err.errorSource
+                                        + ':'
+                                        + err.errorMessage + '"';
+                                    if (onerror !== undefined) {
+                                        onerror(err, detail);
                                     }
-                                });
+                                }
+                            });
                     }
 
                     var config, template, result;
@@ -651,33 +651,34 @@
                         // first
                         // load that template and then create the chart based on
                         // that.
+
                         config = arg2;
                         if (window.jQuery === undefined) {
                             zenoss.visualization
-                                    .__bootstrap(function() {
-                                        loadChart(
-                                                arg1,
-                                                function(template) {
-                                                    var merged = new zenoss.visualization.Chart(
-                                                            name,
-                                                            zenoss.visualization
-                                                                    .__merge(
-                                                                            template,
-                                                                            config));
-                                                    zenoss.visualization.__charts[name] = merged;
-                                                    return merged;
-                                                }, function(err, detail) {
-                                                    zenoss.visualization
-                                                            .__showError(name,
-                                                                    detail);
-                                                });
-                                    });
+                                .__bootstrap(function() {
+                                    loadChart(
+                                        arg1,
+                                        function(template) {
+                                            var merged = new zenoss.visualization.Chart(
+                                                name,
+                                                zenoss.visualization
+                                                    .__merge(
+                                                        template,
+                                                        config));
+                                            zenoss.visualization.__charts[name] = merged;
+                                            return merged;
+                                        }, function(err, detail) {
+                                            zenoss.visualization
+                                                .__showError(name,
+                                                    detail);
+                                        });
+                                });
                             return;
                         }
                         loadChart(arg1, function(template) {
                             var merged = new zenoss.visualization.Chart(name,
-                                    zenoss.visualization.__merge(template,
-                                            config));
+                                zenoss.visualization.__merge(template,
+                                    config));
                             zenoss.visualization.__charts[name] = merged;
                             return merged;
                         }, function(err, detail) {
@@ -692,15 +693,15 @@
                     if (window.jQuery === undefined) {
                         zenoss.visualization.__bootstrap(function() {
                             var merged = new zenoss.visualization.Chart(name,
-                                    zenoss.visualization.__merge(template,
-                                            config));
+                                zenoss.visualization.__merge(template,
+                                    config));
                             zenoss.visualization.__charts[name] = merged;
                             return merged;
                         });
                         return;
                     }
                     result = new zenoss.visualization.Chart(name,
-                            zenoss.visualization.__merge(template, config));
+                        zenoss.visualization.__merge(template, config));
                     zenoss.visualization.__charts[name] = result;
                 }
             },
@@ -755,22 +756,22 @@
      * Symbols used during autoscaling
      */
     zenoss.visualization.__scaleSymbols = [ 'y', // 10e-24 Yecto
-    'z', // 10^-21 Zepto
-    'a', // 10^-18 Atto
-    'f', // 10^-15 Femto
-    'p', // 10^-12 Pico
-    'n', // 10^-9 Nano
-    'u', // 10^-6 Micro
-    'm', // 10^-3 Milli
-    ' ', // Base
-    'k', // 10^3 Kilo
-    'M', // 10^6 Mega
-    'G', // 10^9 Giga
-    'T', // 10^12 Tera
-    'P', // 10^15 Peta
-    'E', // 10^18 Exa
-    'Z', // 10^21 Zetta
-    'Y' // 10^24 Yotta
+        'z', // 10^-21 Zepto
+        'a', // 10^-18 Atto
+        'f', // 10^-15 Femto
+        'p', // 10^-12 Pico
+        'n', // 10^-9 Nano
+        'u', // 10^-6 Micro
+        'm', // 10^-3 Milli
+        ' ', // Base
+        'k', // 10^3 Kilo
+        'M', // 10^6 Mega
+        'G', // 10^9 Giga
+        'T', // 10^12 Tera
+        'P', // 10^15 Peta
+        'E', // 10^18 Exa
+        'Z', // 10^21 Zetta
+        'Y' // 10^24 Yotta
     ];
 
     /**
@@ -802,7 +803,7 @@
      * @returns number the calculated scale factor
      */
     zenoss.visualization.Chart.prototype.__calculateAutoScaleFactor = function(
-            max) {
+        max) {
         var factor = 0, ceiling, upper, lower, unit;
         if (this.config.autoscale) {
             ceiling = this.config.autoscale.ceiling || 5;
@@ -882,7 +883,7 @@
             // chart.
             this.format = DEFAULT_NUMBER_FORMAT;
             zenoss.visualization.__warn('Invalid format string  ' + format
-                    + ' using the default format.');
+                + ' using the default format.');
             scaled = value / this.scale.term;
             try {
                 return sprintf(this.format, scaled) + this.scale.symbol;
@@ -944,7 +945,7 @@
         var fheight, height, span;
 
         fheight = this.__hasFooter() ? parseInt($(this.table).outerHeight(), 10)
-                : 0;
+            : 0;
         height = parseInt($(this.div).height(), 10) - fheight;
         span = $(this.message).find('span');
 
@@ -1020,7 +1021,7 @@
      */
     zenoss.visualization.Chart.prototype.__updateFooter = function(data) {
         var sta, eta, plot, dp, vals, cur, min, max, avg, cols, init, label, ll, i, v, vIdx, k, rows, row, box, color, resize = false,
-            timezone = this.timezone;
+            timezone = this.timezone || jstz.determine().name();
         if (!this.table) {
             return false;
         }
@@ -1033,7 +1034,7 @@
 
         }
         $($(rows[0]).find('td')).html(
-                sta + ' to ' + eta + ' (' + timezone + ')');
+            sta + ' to ' + eta + ' (' + timezone + ')');
 
         /*
          * The class on the value rows was set when they were created so get a
@@ -1052,7 +1053,7 @@
                 dp = this.config.datapoints[i];
                 plot = this.__getAssociatedPlot(dp);
                 if (!this.__isOverlay(dp.legend || dp.metric)
-                        && (dp.emit === undefined || dp.emit)) {
+                    && (dp.emit === undefined || dp.emit)) {
                     if (row >= rows.length) {
                         rows.push(this.__appendFooterRow());
                         resize = true;
@@ -1136,7 +1137,7 @@
      */
     zenoss.visualization.Chart.prototype.__hasFooter = function() {
         return (this.config.footer === undefined
-                || (typeof this.config.footer === 'boolean' && this.config.footer === true) || (typeof this.config.footer === 'string' && this.config.footer === 'range'));
+            || (typeof this.config.footer === 'boolean' && this.config.footer === true) || (typeof this.config.footer === 'string' && this.config.footer === 'range'));
     };
 
     /**
@@ -1186,15 +1187,15 @@
             // One row for the stats table header
             tr = document.createElement('tr');
             [ '', 'Metric', 'Ending', 'Minimum', 'Maximum', 'Average' ]
-                    .forEach(function(s) {
-                        th = document.createElement('th');
-                        $(th).addClass('footer_header');
-                        $(th).html(s);
-                        if (s.length === 0) {
-                            $(th).addClass('zenfooter_box_column');
-                        }
-                        $(tr).append($(th));
-                    });
+                .forEach(function(s) {
+                    th = document.createElement('th');
+                    $(th).addClass('footer_header');
+                    $(th).html(s);
+                    if (s.length === 0) {
+                        $(th).addClass('zenfooter_box_column');
+                    }
+                    $(tr).append($(th));
+                });
             $(this.table).append($(tr));
         }
 
@@ -1241,90 +1242,90 @@
         try {
             this.request = this.__buildDataRequest(this.config);
             $
-                    .ajax({
-                        'url' : zenoss.visualization.url
-                                + zenoss.visualization.urlPerformance,
-                        'type' : 'POST',
-                        'data' : JSON.stringify(this.request),
-                        'dataType' : 'json',
-                        'contentType' : 'application/json',
-                        'success' : function(data) {
-                            var results = self.__processResult(self.request,
-                                    data);
-                            self.plots = results[0];
-                            self.__configAutoScale(results[1]);
+                .ajax({
+                    'url' : zenoss.visualization.url
+                        + zenoss.visualization.urlPerformance,
+                    'type' : 'POST',
+                    'data' : JSON.stringify(this.request),
+                    'dataType' : 'json',
+                    'contentType' : 'application/json',
+                    'success' : function(data) {
+                        var results = self.__processResult(self.request,
+                            data);
+                        self.plots = results[0];
+                        self.__configAutoScale(results[1]);
 
-                            /*
-                             * If the chart has not been created yet, then
-                             * create it, else just update the data.
-                             */
-                            if (!self.closure) {
-                                if (self.config.type === undefined) {
-                                    self.config.type = 'line';
-                                }
-                                self.__render(data);
-                            } else {
-                                self.__updateData(data);
+                        /*
+                         * If the chart has not been created yet, then
+                         * create it, else just update the data.
+                         */
+                        if (!self.closure) {
+                            if (self.config.type === undefined) {
+                                self.config.type = 'line';
                             }
-
-                            // Update the footer
-                            if (self.__updateFooter(data)) {
-                                self.__resize();
-                            }
-                        },
-                        'error' : function(res) {
-                            /*
-                             * Many, many reasons that we might have gotten
-                             * here, with most of them we are not able to detect
-                             * why. If we have a readystate of 4 and an response
-                             * code in the 200s that likely means we were unable
-                             * to parse the JSON returned from the server. If
-                             * not that then who knows ....
-                             */
-                            self.plots = undefined;
-                            if (self.__updateFooter()) {
-                                self.__resize();
-                            }
-
-                            var err, detail;
-                            if (res.readyState === 4
-                                    && Math.floor(res.status / 100) === 2) {
-                                detail = 'Severe: Unable to parse data returned from Zenoss metric service as JSON object. Please copy / paste the REQUEST and RESPONSE written to your browser\'s Java Console into an email to Zenoss Support';
-                                zenoss.visualization
-                                        .__group('Severe error, please report');
-                                zenoss.visualization.__error('REQUEST : POST '
-                                        + zenoss.visualization.urlPerformance
-                                        + '  ' + JSON.stringify(self.request));
-                                zenoss.visualization.__error('RESPONSE: '
-                                        + res.responseText);
-                                zenoss.visualization.__groupEnd();
-                                zenoss.visualization.__showError(self.name,
-                                        detail);
-                            } else {
-                                try {
-                                    err = JSON.parse(res.responseText);
-                                    if (!err || !err.errorSoruce
-                                            || !err.errorMessage) {
-                                        detail = 'An unexpected failure response was received from the server. The reported message is: '
-                                                + res.responseText;
-                                    } else {
-                                        detail = 'An unexpected failure response was received from the server. The reported message is: '
-                                                + err.errorSource
-                                                + ' : '
-                                                + err.errorMessage;
-                                    }
-                                } catch (e) {
-                                    detail = 'An unexpected failure response was received from the server. The reported message is: '
-                                            + res.statusText
-                                            + ' : '
-                                            + res.status;
-                                }
-                                zenoss.visualization.__error(detail);
-                                zenoss.visualization.__showError(self.name,
-                                        detail);
-                            }
+                            self.__render(data);
+                        } else {
+                            self.__updateData(data);
                         }
-                    });
+
+                        // Update the footer
+                        if (self.__updateFooter(data)) {
+                            self.__resize();
+                        }
+                    },
+                    'error' : function(res) {
+                        /*
+                         * Many, many reasons that we might have gotten
+                         * here, with most of them we are not able to detect
+                         * why. If we have a readystate of 4 and an response
+                         * code in the 200s that likely means we were unable
+                         * to parse the JSON returned from the server. If
+                         * not that then who knows ....
+                         */
+                        self.plots = undefined;
+                        if (self.__updateFooter()) {
+                            self.__resize();
+                        }
+
+                        var err, detail;
+                        if (res.readyState === 4
+                            && Math.floor(res.status / 100) === 2) {
+                            detail = 'Severe: Unable to parse data returned from Zenoss metric service as JSON object. Please copy / paste the REQUEST and RESPONSE written to your browser\'s Java Console into an email to Zenoss Support';
+                            zenoss.visualization
+                                .__group('Severe error, please report');
+                            zenoss.visualization.__error('REQUEST : POST '
+                                + zenoss.visualization.urlPerformance
+                                + '  ' + JSON.stringify(self.request));
+                            zenoss.visualization.__error('RESPONSE: '
+                                + res.responseText);
+                            zenoss.visualization.__groupEnd();
+                            zenoss.visualization.__showError(self.name,
+                                detail);
+                        } else {
+                            try {
+                                err = JSON.parse(res.responseText);
+                                if (!err || !err.errorSoruce
+                                    || !err.errorMessage) {
+                                    detail = 'An unexpected failure response was received from the server. The reported message is: '
+                                        + res.responseText;
+                                } else {
+                                    detail = 'An unexpected failure response was received from the server. The reported message is: '
+                                        + err.errorSource
+                                        + ' : '
+                                        + err.errorMessage;
+                                }
+                            } catch (e) {
+                                detail = 'An unexpected failure response was received from the server. The reported message is: '
+                                    + res.statusText
+                                    + ' : '
+                                    + res.status;
+                            }
+                            zenoss.visualization.__error(detail);
+                            zenoss.visualization.__showError(self.name,
+                                detail);
+                        }
+                    }
+                });
         } catch (x) {
             this.plots = undefined;
             if (self.__updateFooter()) {
@@ -1359,10 +1360,10 @@
             }
 
             request.series = true;
-            // series should always be true
-            // if (config.series !== undefined) {
-            //     request.series = config.series;
-            // }
+            
+            if (config.series !== undefined) {
+                request.series = config.series;
+            }
 
             if (config.downsample !== undefined) {
                 request.downsample = config.downsample;
@@ -1383,60 +1384,59 @@
             if (config.datapoints !== undefined) {
                 request.metrics = [];
                 config.datapoints
-                        .forEach(function(dp) {
-                            var m = {}, key;
-                            if (dp.metric !== undefined) {
-                                m.metric = dp.metric;
+                    .forEach(function(dp) {
+                        var m = {}, key;
+                        if (dp.metric !== undefined) {
+                            m.metric = dp.metric;
 
-                                if (dp.rate !== undefined) {
-                                    m.rate = dp.rate;
-                                }
-                                if (dp.aggregator !== undefined) {
-                                    m.aggregator = dp.aggregator;
-                                }
+                            if (dp.rate !== undefined) {
+                                m.rate = dp.rate;
+                            }
+                            if (dp.aggregator !== undefined) {
+                                m.aggregator = dp.aggregator;
+                            }
 
-                                if (dp.tags !== undefined) {
-                                    m.tags = {};
-                                    for (key in dp.tags) {
-                                        if (dp.tags.hasOwnProperty(key)) {
-                                            m.tags[key] = dp.tags[key];
-                                        }
+                            if (dp.tags !== undefined) {
+                                m.tags = {};
+                                for (key in dp.tags) {
+                                    if (dp.tags.hasOwnProperty(key)) {
+                                        m.tags[key] = dp.tags[key];
                                     }
                                 }
+                            }
 
-                                if (dp.name === undefined) {
-                                    m.name = dp.metric;
-                                } else {
-                                    m.name = dp.name;
-                                }
-                            } else if (dp.name !== undefined) {
-                                m.name = dp.name;
+                            if (dp.name === undefined) {
+                                m.name = dp.metric;
                             } else {
-                                /*
-                                 * This data point has neither a metric
-                                 * definition nor a name (virtual metric)
-                                 * deffined. As such this is an invalid
-                                 * specification. Because of this we will fail
-                                 * the entire request so that the caller is not
-                                 * confused as to why partial data is returned.
-                                 */
-                                throw sprintf(
-                                        "Invalid data point specification in request, '%s'. No 'metric' or 'name' attribute specified, failing entire request.",
-                                        JSON.stringify(dp, null, ' '));
+                                m.name = dp.name;
                             }
+                        } else if (dp.name !== undefined) {
+                            m.name = dp.name;
+                        } else {
+                            /*
+                             * This data point has neither a metric
+                             * definition nor a name (virtual metric)
+                             * deffined. As such this is an invalid
+                             * specification. Because of this we will fail
+                             * the entire request so that the caller is not
+                             * confused as to why partial data is returned.
+                             */
+                            throw sprintf(
+                                "Invalid data point specification in request, '%s'. No 'metric' or 'name' attribute specified, failing entire request.",
+                                JSON.stringify(dp, null, ' '));
+                        }
 
-                            if (dp.downsample !== undefined) {
-                                m.downsample = dp.downsample;
-                            }
-                            if (dp.expression !== undefined) {
-                                m.expression = dp.expression;
-                            }
-                            // emit is deprecated, so ignore
-                            // if (dp.emit !== undefined) {
-                            //     m.emit = dp.emit;
-                            // }
-                            request.metrics.push(m);
-                        });
+                        if (dp.downsample !== undefined) {
+                            m.downsample = dp.downsample;
+                        }
+                        if (dp.expression !== undefined) {
+                            m.expression = dp.expression;
+                        }
+                        if (dp.emit !== undefined) {
+                            m.emit = dp.emit;
+                        }
+                        request.metrics.push(m);
+                    });
 
             }
         }
@@ -1457,7 +1457,7 @@
      *          chart library.
      */
     zenoss.visualization.Chart.prototype.__processResultAsSeries = function(
-            request, data) {
+        request, data) {
         var self = this, plots = [], max = 0, i, result, dpi, dp, info, key, plot, tag, prefix;
 
         for (i in data.results) {
@@ -1517,65 +1517,65 @@
      * @returns {object} the data in the format that can be utilized by the
      *          chart library.
      */
-    // zenoss.visualization.Chart.prototype.__processResultAsDefault = function(
-    //         request, data) {
+    zenoss.visualization.Chart.prototype.__processResultAsDefault = function(
+        request, data) {
 
-    //     var self = this, plotMap = [], i, result, max = 0, info, plot, plots, key, xcompare;
+        var self = this, plotMap = [], i, result, max = 0, info, plot, plots, key, xcompare;
 
-    //     /*
-    //      * Create a plot for each metric name, this is essentially grouping the
-    //      * results by metric name. This can cause problems if the request
-    //      * contains multiple queries for the same metric, but this is basically
-    //      * a restriction of the implementation (OpenTSDB) where it doesn't split
-    //      * the results logically when multiple requests are made in a single
-    //      * call.
-    //      */
-    //     for (i in data.results) {
-    //         result = data.results[i];
-    //         plot = plotMap[result.metric];
-    //         if (plot === undefined) {
-    //             info = self.plotInfo[result.metric];
-    //             plot = {
-    //                 'key' : info.legend,
-    //                 'color' : info.color,
-    //                 'fill' : info.fill,
-    //                 'values' : []
-    //             };
-    //             plotMap[result.metric] = plot;
-    //         }
+        /*
+         * Create a plot for each metric name, this is essentially grouping the
+         * results by metric name. This can cause problems if the request
+         * contains multiple queries for the same metric, but this is basically
+         * a restriction of the implementation (OpenTSDB) where it doesn't split
+         * the results logically when multiple requests are made in a single
+         * call.
+         */
+        for (i in data.results) {
+            result = data.results[i];
+            plot = plotMap[result.metric];
+            if (plot === undefined) {
+                info = self.plotInfo[result.metric];
+                plot = {
+                    'key' : info.legend,
+                    'color' : info.color,
+                    'fill' : info.fill,
+                    'values' : []
+                };
+                plotMap[result.metric] = plot;
+            }
 
-    //         max = Math.max(Math.abs(result.value), max);
-    //         plot.values.push({
-    //             'x' : result.timestamp * 1000,
-    //             'y' : result.value
-    //         });
-    //     }
+            max = Math.max(Math.abs(result.value), max);
+            plot.values.push({
+                'x' : result.timestamp * 1000,
+                'y' : result.value
+            });
+        }
 
-    //     xcompare = function(a, b) {
-    //         if (a.x < b.x) {
-    //             return -1;
-    //         }
-    //         if (a.x > b.x) {
-    //             return 1;
-    //         }
-    //         return 0;
-    //     };
+        xcompare = function(a, b) {
+            if (a.x < b.x) {
+                return -1;
+            }
+            if (a.x > b.x) {
+                return 1;
+            }
+            return 0;
+        };
 
-    //     /*
-    //      * Convert the plotMap into an array of plots for the graph library to
-    //      * process
-    //      */
-    //     plots = [];
-    //     for (key in plotMap) {
-    //         if (plotMap.hasOwnProperty(key)) {
-    //             // Sort the values of the plot as we put them in the
-    //             // plots aray.
-    //             plotMap[key].values.sort(xcompare);
-    //             plots.push(plotMap[key]);
-    //         }
-    //     }
-    //     return [ plots, this.__calculateAutoScaleFactor(max) ];
-    // };
+        /*
+         * Convert the plotMap into an array of plots for the graph library to
+         * process
+         */
+        plots = [];
+        for (key in plotMap) {
+            if (plotMap.hasOwnProperty(key)) {
+                // Sort the values of the plot as we put them in the
+                // plots aray.
+                plotMap[key].values.sort(xcompare);
+                plots.push(plotMap[key]);
+            }
+        }
+        return [ plots, this.__calculateAutoScaleFactor(max) ];
+    };
 
     /**
      * Wrapper function that redirects to the proper implementation to processes
@@ -1591,17 +1591,16 @@
      *          chart library.
      */
     zenoss.visualization.Chart.prototype.__processResult = function(request,
-            data) {
+                                                                    data) {
         var results, plots, i, overlay, minDate, maxDate, plot, k, firstMetric;
 
-        // NOTE: series is deprecated
-        // if (data.series) {
-        //     results = this.__processResultAsSeries(request, data);
-        //     plots = results[0];
-        // } else {
-        //     results = this.__processResultAsDefault(request, data);
-        //     plots = results[0];
-        // }
+        if (data.series) {
+            results = this.__processResultAsSeries(request, data);
+            plots = results[0];
+        } else {
+            results = this.__processResultAsDefault(request, data);
+            plots = results[0];
+        }
         results = this.__processResultAsSeries(request, data);
         plots = results[0];
 
@@ -1845,15 +1844,15 @@
 
         // Check if it is already loaded, using the value in the 'defined' field
         if (zenoss.visualization.__dependencies[required.defined] !== undefined
-                && zenoss.visualization.__dependencies[required.defined].state !== undefined) {
+            && zenoss.visualization.__dependencies[required.defined].state !== undefined) {
             o = zenoss.visualization.__dependencies[required.defined].state;
         }
         if (o !== undefined) {
             if (o === 'loaded') {
                 if (zenoss.visualization.debug) {
                     zenoss.visualization.__log('Dependencies for "'
-                            + required.defined
-                            + '" already loaded, continuing.');
+                        + required.defined
+                        + '" already loaded, continuing.');
                 }
                 // Already loaded, so just invoke the callback
                 callback();
@@ -1863,9 +1862,9 @@
                 // list of callbacks to call when it is loaded.
                 if (zenoss.visualization.debug) {
                     zenoss.visualization
-                            .__log('Dependencies for "'
-                                    + required.defined
-                                    + '" in process of being loaded, queuing until loaded.');
+                        .__log('Dependencies for "'
+                            + required.defined
+                            + '" in process of being loaded, queuing until loaded.');
                 }
 
                 c = zenoss.visualization.__dependencies[required.defined].callbacks;
@@ -1876,9 +1875,9 @@
             // OK, not yet loaded or being loaded, so it is ours.
             if (zenoss.visualization.debug) {
                 zenoss.visualization
-                        .__log('Dependencies for "'
-                                + required.defined
-                                + '" not loaded nor in process of loading, initiate loading.');
+                    .__log('Dependencies for "'
+                        + required.defined
+                        + '" not loaded nor in process of loading, initiate loading.');
             }
 
             zenoss.visualization.__dependencies[required.defined] = {};
@@ -1900,8 +1899,8 @@
                 css.push(v);
             } else {
                 zenoss.visualization.__warn('Unknown required file type, "' + v
-                        + '" when loading dependencies for "' + 'unknown'
-                        + '". Ignored.');
+                    + '" when loading dependencies for "' + 'unknown'
+                    + '". Ignored.');
             }
         });
 
@@ -1913,6 +1912,114 @@
             });
             base.callbacks.length = 0;
         });
+    };
+
+    /**
+     * Returns true if the chart has plots and they contain data points, else
+     * false.
+     *
+     * @access private
+     */
+    zenoss.visualization.Chart.prototype.__havePlotData = function() {
+        var i, ll;
+
+        if (!this.plots || this.plots.length === 0) {
+            return false;
+        }
+
+        ll = this.plots.length;
+        for (i = 0; i < ll; i += 1) {
+            if (this.plots[i].values.length > 0) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    /**
+     * Updates the chart with a new data set
+     *
+     * @access private
+     * @param {object}
+     *            the new data to display in the chart
+     */
+    zenoss.visualization.Chart.prototype.__updateData = function(data) {
+        if (!this.__havePlotData()) {
+            zenoss.visualization.__showNoData(this.name);
+        } else {
+            zenoss.visualization.__showChart(this.name);
+            this.impl.update(this, data);
+        }
+        if (this.__updateFooter(data)) {
+            this.__resize();
+        }
+    };
+
+    /**
+     * Constructs a chart from the given data
+     *
+     * @param data
+     *            the data returned from a metric query
+     * @access private
+     */
+    zenoss.visualization.Chart.prototype.__buildChart = function(data) {
+        $(this.svgwrapper).outerHeight(
+            $(this.div).height() - $(this.footer).outerHeight());
+        this.closure = this.impl.build(this, data);
+        this.impl.render(this);
+
+        // If there is not data, let the user know
+        if (!this.__havePlotData()) {
+            zenoss.visualization.__showNoData(this.name);
+        }
+    };
+
+    /**
+     * Loads the chart renderer as a dependency and then constructs and renders
+     * the chart.
+     *
+     * @access private
+     * @param {object}
+     *            data the data that is being rendered in the graph
+     */
+    zenoss.visualization.Chart.prototype.__render = function(data) {
+        var self = this;
+        zenoss.visualization
+            .__loadDependencies({
+                'defined' : self.config.type.replace('.', '_'),
+                'source' : [ 'charts/' + self.config.type.replace('.', '/')
+                    + '.js' ]
+            },
+            function() {
+                var i;
+                try {
+                    i = zenoss.visualization.chart;
+                    self.config.type.split('.').forEach(
+                        function(seg) {
+                            i = i[seg];
+                        });
+                    self.impl = i;
+                } catch (err) {
+                    throw new zenoss.visualization.Error(
+                        'DependencyError',
+                        'Unable to locate loaded chart type, "'
+                            + self.config.type
+                            + '", error: ' + err);
+                }
+
+                // Check the impl to see if a dependency is listed
+                // and
+                // if so load that.
+                zenoss.visualization.__loadDependencies(
+                    self.impl.required, function() {
+                        self.__buildChart(data);
+                        if (self.__hasFooter()) {
+                            self.__buildFooter(self.config,
+                                data);
+                        }
+                        self.__resize();
+                    });
+            });
     };
 
     /**
@@ -1929,7 +2036,7 @@
 
         if (!url.startsWith("http")) {
             css.href = zenoss.visualization.url + zenoss.visualization.urlPath
-                    + url;
+                + url;
         } else {
             css.href = url;
         }
@@ -2018,7 +2125,7 @@
     zenoss.visualization.__load = function(js, css, success, fail) {
         if (zenoss.visualization.debug) {
             zenoss.visualization.__log('Request to load "' + js + '" and "'
-                    + css + '".');
+                + css + '".');
         }
         if (js.length === 0) {
             // All JavaScript files are loaded, now the loading of CSS can begin
@@ -2026,7 +2133,7 @@
                 zenoss.visualization.__loadCSS(uri);
                 if (zenoss.visualization.debug) {
                     zenoss.visualization.__log('Loaded dependency "' + uri
-                            + '".');
+                        + '".');
                 }
             });
             if (typeof success === 'function') {
@@ -2051,16 +2158,16 @@
             }
             self.__load(_js, _css, success, fail);
         })
-                .fail(
-                        function(_1, _2, exception) {
-                            zenoss.visualization
-                                    .__error('Unable to load dependency "'
-                                            + uri
-                                            + '", with error "'
-                                            + exception
-                                            + '". Loading halted, will continue, but additional errors likely.');
-                            self.__load(_js, _css, success, fail);
-                        });
+            .fail(
+            function(_1, _2, exception) {
+                zenoss.visualization
+                    .__error('Unable to load dependency "'
+                        + uri
+                        + '", with error "'
+                        + exception
+                        + '". Loading halted, will continue, but additional errors likely.');
+                self.__load(_js, _css, success, fail);
+            });
     };
 
     /**
@@ -2075,7 +2182,7 @@
      */
     zenoss.visualization.__bootstrap = function(success, fail) {
         var sources = [ 'jquery.min.js', 'd3.v3.min.js', 'jstz-1.0.4.min.js',
-                    'css/zenoss.css', 'sprintf.min.js' ];
+            'css/zenoss.css', 'sprintf.min.js' ];
         // if moment isn't already loaded load it now, hopefully the versions will be compatible
         if (window.moment == null) {
             sources = sources.concat(['moment.min.js', 'moment-timezone.js', 'moment-timezone-data.js']);
