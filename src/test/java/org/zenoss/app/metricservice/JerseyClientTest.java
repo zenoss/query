@@ -3,6 +3,7 @@ package org.zenoss.app.metricservice;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.zenoss.app.metricservice.api.model.Aggregator;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
@@ -19,6 +20,7 @@ import java.util.*;
  */
 public class JerseyClientTest {
     @Test
+    @Ignore("not really a unit test")
     public void tryIt() {
         MetricSpecification request = makeMetricSpecification("df.bytes.percentused");
         Client c = Client.create();
