@@ -847,19 +847,7 @@ var visualization,
          * @access public
          */
         tickFormat: tickFormat,
-
-        /**
-         * Culls the plots in a chart so that only data points with a common
-         * time stamp remain.
-         *
-         * @param the
-         *            chart that contains the plots to cull
-         * @access private
-         */
-        __cull: __cull,
-
-        __reduceMax: __reduceMax,
-
+        
         /**
          * Used to augment the div element with an error message when an
          * error is encountered while creating a chart.

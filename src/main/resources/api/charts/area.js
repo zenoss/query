@@ -95,7 +95,14 @@
 
 
 
-    // chart method
+     /**
+     * Culls the plots in a chart so that only data points with a common
+     * time stamp remain.
+     *
+     * @param the
+     *            chart that contains the plots to cull
+     * @access private
+     */
     function __cull(chart) {
 
         var i, keys = [];
