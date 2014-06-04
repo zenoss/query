@@ -1,16 +1,9 @@
 (function() {
     "use strict";
-    var area = {
+    var bar = {
         required : {
             defined : 'nv',
             source : [ 'nv.d3.min.js', 'css/nv.d3.css' ]
-        },
-
-        color : function(chart, impl, idx) {
-            return {
-                'color' : impl.model().color()(0, idx),
-                'opacity' : 1
-            };
         },
 
         Chart : function() {
@@ -21,6 +14,13 @@
                     return _model;
                 }
                 _model = _;
+            };
+        },
+
+        color : function(chart, impl, idx) {
+            return {
+                'color' : impl.model().color()(0, idx),
+                'opacity' : 1
             };
         },
 
@@ -35,8 +35,8 @@
             var _chart = chart.closure;
 
             _chart.model().xAxis.tickFormat(function(ts) {
-                return zenoss.visualization.tickFormat(data.startTimeActual,
-                        data.endTimeActual, ts, chart.timezone);
+                return zenoss.visualization.tickFormat(data.startTimeActual, data.endTimeActual, ts,
+                                                      chart.timezone);
             });
 
             chart.svg.datum(chart.plots).transition().duration(0).call(
@@ -50,25 +50,24 @@
         },
 
         build : function(chart, data) {
-            // OK. Area charts really want data points to match up on keys,
-            // which
-            // makes sense as this is how they stack things. To make this work
-            // we
-            // going to walk the points and make sure they match
+            // Because we are dealing with stacked charts we need to make sure
+            // the the dimension for the data (timestamps) match up. So we cull
+            // the
+            // data to only those points that are in all the data sets.
             zenoss.visualization.__cull(chart);
 
-            var _chart = new zenoss.visualization.chart.area.Chart();
-            var model = nv.models.stackedAreaChart();
+            var _chart = new zenoss.visualization.chart.bar.Chart();
+            var model = nv.models.multiBarChart();
             _chart.model(model);
 
             model.xAxis.tickFormat(function(ts) {
                 return zenoss.visualization.tickFormat(data.startTimeActual,
-                        data.endTimeActual, ts, chart.timezone);
+                                                       data.endTimeActual, ts,
+                                                       chart.timezone);
             });
             model.yAxis.tickFormat(function(value){
                 return chart.formatValue(value);
             });
-            model.clipEdge(true);
             model.height($(chart.svgwrapper).height());
             model.width($(chart.svgwrapper).width());
             model.yAxis.axisLabel(chart.yAxisLabel);
@@ -82,21 +81,17 @@
 
             nv.addGraph(function() {
                 chart.svg.transition().duration(500).call(model);
-                nv.utils.windowResize(function() {
-                    chart.svg.call(model);
-                });
+                nv.utils.windowResize(model.update);
             });
+
             return _chart;
         },
         render : function() {
 
         }
     };
-
-
-
     $.extend(true, zenoss.visualization.chart, {
-        area : area
+        bar : bar
     });
 
 }());
