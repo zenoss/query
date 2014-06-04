@@ -1115,10 +1115,8 @@ var visualization,
                 // }
 
                 if (!window.jQuery) {
-                    console.log("no jquery!");
                     dependency.__bootstrap(function() {
                         __charts[name] = new Chart(name, config);
-                        // return __charts[name];
                     });
                     return;
                 }
