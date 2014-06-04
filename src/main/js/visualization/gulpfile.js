@@ -3,12 +3,17 @@ var gulp = require("gulp"),
 	concat = require("gulp-concat");
 
 var paths = {
-	src: "src/**/*",
+	src: "src/",
 	build: "build/",
 	deploy: "../../resources/api/"
 };
 
-gulp.task("default", ["build", "watch"]);
+gulp.task("default", ["build", "copyCharts"]);
+
+gulp.task("copyCharts", function(){
+	return gulp.src([paths.src + "charts/*",])
+		.pipe(gulp.dest(paths.deploy + "charts/"));
+});
 
 gulp.task("build", function(){
 
@@ -30,5 +35,5 @@ gulp.task("build", function(){
 });
 
 gulp.task("watch", function(){
-	gulp.watch(paths.src, ["build"]);
+	gulp.watch(paths.src + "**/*", ["build", "copyCharts"]);
 });

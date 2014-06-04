@@ -940,13 +940,13 @@
                     'defined' : self.config.type.replace('.', '_'),
                     'source' : [ 'charts/' + self.config.type.replace('.', '/') + '.js' ]
                 }, function() {
-                    var i;
+                    var impl;
                     try {
-                        i = visualization.chart;
+                        impl = visualization.chart;
                         self.config.type.split('.').forEach(function(seg) {
-                            i = i[seg];
+                            impl = impl[seg];
                         });
-                        self.impl = i;
+                        self.impl = impl;
                     } catch (err) {
                         throw new utils.Error(
                             'DependencyError',

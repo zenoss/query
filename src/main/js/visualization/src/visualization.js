@@ -13,10 +13,12 @@
         DEFAULT_NUMBER_FORMAT = "%6.2f",
         __charts = {};
 
+    // Chart method
     function dateFormatter(date, timezone) {
         return moment.utc(date, "X").tz(timezone).format(dateFormat);
     }
 
+    // chart method
     function tickFormat(start, end, ts, timezone) {
         var _start, _end, ts_seconds;
 
@@ -63,87 +65,18 @@
         return moment.utc(ts_seconds, "X").tz(timezone).format(dateFormat);
     }
 
-    function __cull(chart) {
-
-        var i, keys = [];
-        /*
-         * If there is only one plot in the chart we are done, there is
-         * nothing to be done.
-         */
-        if (chart.plots.length < 2) {
-            return;
-        }
-
-        chart.plots.forEach(function(plot) {
-            plot.values.forEach(function(v) {
-                if (keys[v.x] === undefined) {
-                    keys[v.x] = 1;
-                } else {
-                    keys[v.x] += 1;
-                }
-            });
-        });
-
-        // At this point, any entry in the keys array with a count of
-        // chart.plots.length is a key in every plot and we can use, so
-        // now
-        // we walk through the plots again removing any invalid key
-        chart.plots.forEach(function(plot) {
-            for (i = plot.values.length - 1; i >= 0; i -= 1) {
-                if (keys[plot.values[i].x] !== chart.plots.length) {
-                    plot.values.splice(i, 1);
-                }
-            }
-        });
-    }
-
-    function __reduceMax(group) {
-        return group.reduce(function(p, v) {
-            if (p.values[v.y] === undefined) {
-                p.values[v.y] = 1;
-            } else {
-                p.values[v.y] += 1;
-            }
-            p.max = Math.max(p.max, v.y);
-            return p;
-        }, function(p, v) {
-            var k;
-            // need to remove the value from the values array
-            p.values[v.y] -= 1;
-            if (p.values[v.y] <= 0) {
-                delete p.values[v.y];
-                if (p.max === v.y) {
-                    // pick new max, by iterating over keys
-                    // finding the largest.
-                    p.max = -1;
-                    for (k in p.values) {
-                        if (p.values.hasOwnProperty(k)) {
-                            p.max = Math.max(p.max, parseFloat(k));
-                        }
-                    }
-                }
-            }
-            p.total -= v.y;
-            return p;
-        }, function() {
-            return {
-                values : {},
-                max : -1,
-                toString : function() {
-                    return this.max;
-                }
-            };
-        });
-    }
-
+    // Chart method
     function __showError(name, detail) {
         __showMessage(name, '<span class="zenerror">' + detail + '</span>');
     }
 
+    // Chart method
     function __showNoData(name) {
         __showMessage(name, '<span class="nodata"></span>');
     }
 
+
+    // private methods
     function __hideMessage(name) {
         $('#' + name + ' .message').css('display', 'none');
     }
@@ -325,45 +258,6 @@
         __showNoData: __showNoData,
 
         /**
-         * Hides the message window
-         *
-         * @access private
-         * @param {string}
-         *            name of the div wrapper for the chart
-         */
-        __hideMessage: __hideMessage,
-
-        /**
-         * Show the message window and hide the chart elements. The message
-         * window is then populated with the given message.
-         *
-         * @access private
-         * @param {string}
-         *            name of the div wrapper for the chart
-         * @param {string}
-         *            html that represents the message to display.
-         */
-        __showMessage: __showMessage,
-
-        /**
-         * Hides the chart elements
-         *
-         * @access private
-         * @param {string}
-         *            name of the div wrapper of the chart
-         */
-        __hideChart: __hideChart,
-
-        /**
-         * Shows the chart elements
-         *
-         * @access private
-         * @param {string}
-         *            name of the div wrapper of the chart
-         */
-        __showChart: __showChart,
-
-        /**
          * @namespace
          * @access public
          */
@@ -423,69 +317,6 @@
              *            parameter to the callback.
              */
             create : function(name, config) {
-
-                // function loadChart(name, callback, onerror) {
-                //     var _callback = callback;
-                //     if (debug.debug) {
-                //         debug.__log('Loading chart from: ' +
-                //             url + '/chart/name/' +
-                //             name);
-                //     }
-                //     $.ajax({
-                //         'url' : url + '/chart/name/' + name,
-                //         'type' : 'GET',
-                //         'dataType' : 'json',
-                //         'contentType' : 'application/json',
-                //         'success' : function(data) {
-                //             _callback(data);
-                //         },
-                //         'error' : function(response) {
-                //             var err, detail;
-                //             debug.__error(response.responseText);
-                //             err = JSON.parse(response.responseText);
-                //             detail = 'Error while attempting to fetch chart resource with the name "' +
-                //                 name + '", via the URL "' +
-                //                 url + '/chart/name/' +
-                //                 name + '", the reported error was "' +
-                //                 err.errorSource + ':' + err.errorMessage + '"';
-                //             if (onerror !== undefined) {
-                //                 onerror(err, detail);
-                //             }
-                //         }
-                //     });
-                // }
-
-
-                // if (typeof arg1 === 'string') {
-                //     // A chart template name was specified, so we need to
-                //     // first
-                //     // load that template and then create the chart based on
-                //     // that.
-                //     config = arg2;
-                //     if (window.jQuery === undefined) {
-                //         dependency.__bootstrap(function() {
-                //             loadChart(arg1, function(template){
-                //                 var merged = new Chart(name, utils.__merge(template, config));
-                //                 __charts[name] = merged;
-                //                 return merged;
-                //             }, function(err, detail) {
-                //                 __showError(name, detail);
-                //             }
-                //             );
-                //         });
-                //         return;
-                //     }
-                //     loadChart(arg1, function(template) {
-                //         var merged = new Chart(name,
-                //             utils.__merge(template,
-                //                 config));
-                //         __charts[name] = merged;
-                //         return merged;
-                //     }, function(err, detail) {
-                //         __showError(name, detail);
-                //     });
-                //     return;
-                // }
 
                 if (!window.jQuery) {
                     dependency.__bootstrap(function() {
