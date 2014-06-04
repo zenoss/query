@@ -1,4 +1,4 @@
-authEnabled: false
+authEnabled: true
 logging:
   level: INFO
   loggers:
@@ -12,6 +12,9 @@ metrics:
   defaultTsdTimeZone: UTC
   connectionTimeoutMs: 20000
   sendRateOptions: false
+proxyConfiguration:
+  hostname: 127.0.0.1
+  port: 8080
 http:
   connectorType: nonblocking
   port: 8888
@@ -21,3 +24,8 @@ http:
       keyStore: ${ssl.cert.dir}/ssl.pfx
       keyStorePassword: zapp_pass
       keyStoreType: pkcs12
+
+managedReporter:
+    metricReporters:
+      - {posterType: http, username: "$env[CONTROLPLANE_CONSUMER_USERNAME]", password: "$env[CONTROLPLANE_CONSUMER_PASSWORD]", urlEnvironment: "CONTROLPLANE_CONSUMER_URL"}
+      - {posterType: http, username: "$zcreds[]", password: "$zcreds[]", protocol: http, host: localhost, port: 8080, apiPath: /api/metrics/store}
