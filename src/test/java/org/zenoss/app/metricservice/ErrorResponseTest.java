@@ -30,17 +30,15 @@
  */
 package org.zenoss.app.metricservice;
 
-import java.io.IOException;
-import java.util.Map;
-
-import javax.ws.rs.core.Response;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zenoss.app.metricservice.api.impl.Utils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
@@ -48,9 +46,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class ErrorResponseTest {
     @Test
-    public void nullTest() throws JsonProcessingException, IOException {
+    public void nullTest() throws IOException {
         Response er = Utils.getErrorResponse(null, 200, null, null);
-        Map<String, Object> obj = new ObjectMapper().reader(Map.class)
+        Map<String, Object> obj = Utils.getObjectMapper().reader(Map.class)
                 .readValue((String) er.getEntity());
         Assert.assertNotNull(obj);
         Assert.assertEquals(200, er.getStatus());
@@ -58,9 +56,9 @@ public class ErrorResponseTest {
     }
 
     @Test
-    public void idTest() throws JsonProcessingException, IOException {
+    public void idTest() throws IOException {
         Response er = Utils.getErrorResponse("myid", 200, null, null);
-        Map<String, Object> obj = new ObjectMapper().reader(Map.class)
+        Map<String, Object> obj = Utils.getObjectMapper().reader(Map.class)
                 .readValue((String) er.getEntity());
         Assert.assertNotNull(obj);
         Assert.assertEquals(200, er.getStatus());
@@ -69,9 +67,9 @@ public class ErrorResponseTest {
     }
 
     @Test
-    public void messageTest() throws JsonProcessingException, IOException {
+    public void messageTest() throws IOException {
         Response er = Utils.getErrorResponse(null, 200, "mymessage", null);
-        Map<String, Object> obj = new ObjectMapper().reader(Map.class)
+        Map<String, Object> obj = Utils.getObjectMapper().reader(Map.class)
                 .readValue((String) er.getEntity());
         Assert.assertNotNull(obj);
         Assert.assertEquals(200, er.getStatus());
@@ -80,9 +78,9 @@ public class ErrorResponseTest {
     }
 
     @Test
-    public void sourceTest() throws JsonProcessingException, IOException {
+    public void sourceTest() throws IOException {
         Response er = Utils.getErrorResponse(null, 200, null, "mysource");
-        Map<String, Object> obj = new ObjectMapper().reader(Map.class)
+        Map<String, Object> obj = Utils.getObjectMapper().reader(Map.class)
                 .readValue((String) er.getEntity());
         Assert.assertNotNull(obj);
         Assert.assertEquals(200, er.getStatus());
@@ -91,9 +89,9 @@ public class ErrorResponseTest {
     }
 
     @Test
-    public void idMessageTest() throws JsonProcessingException, IOException {
+    public void idMessageTest() throws IOException {
         Response er = Utils.getErrorResponse("myid", 200, "mymessage", null);
-        Map<String, Object> obj = new ObjectMapper().reader(Map.class)
+        Map<String, Object> obj = Utils.getObjectMapper().reader(Map.class)
                 .readValue((String) er.getEntity());
         Assert.assertNotNull(obj);
         Assert.assertEquals(200, er.getStatus());
@@ -103,9 +101,9 @@ public class ErrorResponseTest {
     }
 
     @Test
-    public void idSourceTest() throws JsonProcessingException, IOException {
+    public void idSourceTest() throws IOException {
         Response er = Utils.getErrorResponse("myid", 200, null, "mysource");
-        Map<String, Object> obj = new ObjectMapper().reader(Map.class)
+        Map<String, Object> obj = Utils.getObjectMapper().reader(Map.class)
                 .readValue((String) er.getEntity());
         Assert.assertNotNull(obj);
         Assert.assertEquals(200, er.getStatus());
@@ -115,9 +113,9 @@ public class ErrorResponseTest {
     }
 
     @Test
-    public void messageSourceTest() throws JsonProcessingException, IOException {
+    public void messageSourceTest() throws IOException {
         Response er = Utils.getErrorResponse(null, 200, "mymessage", "mysource");
-        Map<String, Object> obj = new ObjectMapper().reader(Map.class)
+        Map<String, Object> obj = Utils.getObjectMapper().reader(Map.class)
                 .readValue((String) er.getEntity());
         Assert.assertNotNull(obj);
         Assert.assertEquals(200, er.getStatus());
@@ -127,9 +125,9 @@ public class ErrorResponseTest {
     }
 
     @Test
-    public void allTest() throws JsonProcessingException, IOException {
+    public void allTest() throws IOException {
         Response er = Utils.getErrorResponse("myid", 200, "mymessage", "mysource");
-        Map<String, Object> obj = new ObjectMapper().reader(Map.class)
+        Map<String, Object> obj = Utils.getObjectMapper().reader(Map.class)
                 .readValue((String) er.getEntity());
         Assert.assertNotNull(obj);
         Assert.assertEquals(200, er.getStatus());

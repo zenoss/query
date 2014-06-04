@@ -1,9 +1,8 @@
-package org.zenoss.app.metricservice.api.remote;
+package org.zenoss.app.metricservice.api.metric.remote;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.eventbus.Subscribe;
 import org.apache.shiro.subject.PrincipalCollection;
 import org.apache.shiro.subject.Subject;
 import org.junit.Before;
@@ -12,12 +11,11 @@ import org.zenoss.app.AppConfiguration;
 import org.zenoss.app.metricservice.api.MetricServiceAPI;
 import org.zenoss.app.security.ZenossTenant;
 import org.zenoss.app.zauthbundle.ZappSecurity;
-import org.zenoss.app.zauthbundle.ZenossAuthenticationInfo;
 
 import java.util.List;
 import java.util.Map;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

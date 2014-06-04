@@ -31,14 +31,14 @@
 
 package org.zenoss.app.metricservice;
 
+import org.junit.Assert;
+import org.junit.Test;
+import org.zenoss.app.metricservice.api.impl.Tags;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.junit.Assert;
-import org.junit.Test;
-import org.zenoss.app.metricservice.api.impl.Tags;
 
 /**
  * @author Zenoss
@@ -50,14 +50,14 @@ public class TagsTest {
     public void factoryTest() {
         Tags tags1 = Tags.fromValue("tag1=value1|value2 tag2=value3");
 
-        List<String> val1 = new ArrayList<String>();
+        List<String> val1 = new ArrayList<>();
         val1.add("value1");
         val1.add("value2");
 
-        List<String> val2 = new ArrayList<String>();
+        List<String> val2 = new ArrayList<>();
         val2.add("value3");
 
-        Map<String, List<String>> spec = new HashMap<String, List<String>>();
+        Map<String, List<String>> spec = new HashMap<>();
         spec.put("tag1", val1);
         spec.put("tag2", val2);
         Tags tags2 = Tags.fromValue(spec);

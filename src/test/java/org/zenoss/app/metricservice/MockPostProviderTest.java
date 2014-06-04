@@ -30,8 +30,7 @@
  */
 package org.zenoss.app.metricservice;
 
-import java.util.Map;
-
+import com.google.common.base.Optional;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -42,10 +41,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
-import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 
-import com.google.common.base.Optional;
+import java.util.Map;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>

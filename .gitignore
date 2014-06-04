@@ -19,6 +19,8 @@ maven-eclipse.xml
 
 # intellij
 *.iml
+*.iws
+.idea/*
 
 #build
 .extracted

@@ -30,6 +30,11 @@
  */
 package org.zenoss.app.metricservice.api.impl;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.text.ParseException;
@@ -58,6 +63,7 @@ public class Utils {
     public static final String START = "start";
     public static final String END = "end";
     public static final String COUNT = "count";
+    private static ObjectMapper mapper = null;
 
     static public Response getErrorResponse(String id, int status,
             String message, String context) {
@@ -143,7 +149,7 @@ public class Utils {
         /*
          * Be a bit lenient here. If the value is actually a downsample
          * specification, which would be a duration followed by a dash and an
-         * aggregation method, simply use the durection bit.
+         * aggregation method, simply use the direction bit.
          */
         int idx;
         char last;
@@ -178,5 +184,26 @@ public class Utils {
         }
 
         return 0;
+    }
+
+
+    public static  String jsonStringFromObject(Object object) {
+        ObjectMapper mapper = getObjectMapper();
+        ObjectWriter ow = mapper.writer();
+        String json = null;
+        try {
+            json = ow.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+        return json;
+    }
+
+    public static ObjectMapper getObjectMapper() {
+        if (null == mapper) {
+            mapper = new ObjectMapper();
+            mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        }
+        return mapper;
     }
 }

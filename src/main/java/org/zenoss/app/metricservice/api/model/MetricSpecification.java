@@ -51,7 +51,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 @JsonInclude(Include.NON_NULL)
 public class MetricSpecification {
+
     public static final Aggregator DEFAULT_AGGREGATOR = Aggregator.avg;
+
+    @JsonProperty
+    private String id = null;
 
     @JsonProperty
     private String metric = null;
@@ -74,18 +78,22 @@ public class MetricSpecification {
     @JsonProperty
     private String expression = null;
     
-    /**
-     * Determines is the results queried via this specification should be
-     * returned or not. This is used when a metric calculation is leveraged in
-     * an expression of another metric, but the raw results of the first metric
-     * are not required by the client.
-     */
-    @JsonProperty
-    private Boolean emit = Boolean.TRUE;
-
     @JsonProperty
     private Map<String, List<String>> tags = null;
 
+    /**
+     * @return id string
+     */
+    public String getId() {
+        return id;
+    }
+
+    /**
+     *  @param id - id to set for query
+     */
+    public void setId(String id) {
+        this.id = id;
+    }
     /**
      * @return
      */
@@ -113,21 +121,6 @@ public class MetricSpecification {
      */
     public void setExpression(String expression) {
         this.expression = expression;
-    }
-    
-    /**
-     * @return the emit
-     */
-    public Boolean getEmit() {
-        return emit;
-    }
-
-    /**
-     * @param emit
-     *            the emit to set
-     */
-    public void setEmit(Boolean emit) {
-        this.emit = emit;
     }
 
     /**
@@ -291,7 +284,7 @@ public class MetricSpecification {
         }
         if ((baseTags != null && baseTags.size() > 0)
                 || (getTags() != null && getTags().size() > 0)) {
-            Map<String, List<String>> joined = new HashMap<String, List<String>>();
+            Map<String, List<String>> joined = new HashMap<>();
             if (baseTags != null) {
                 joined.putAll(baseTags);
             }
@@ -338,7 +331,7 @@ public class MetricSpecification {
      * @return
      */
     private static Map<String, List<String>> parseTags(String value) {
-        Map<String, List<String>> tags = new HashMap<String, List<String>>();
+        Map<String, List<String>> tags = new HashMap<>();
 
         if (value == null || (value = value.trim()).length() == 0) {
             return tags;
@@ -346,7 +339,7 @@ public class MetricSpecification {
         String[] pairs = value.substring(1, value.length() - 1).split(",");
         for (String pair : pairs) {
             String[] terms = pair.split("=", 2);
-            List<String> vals = new ArrayList<String>();
+            List<String> vals = new ArrayList<>();
             vals.add(terms[1].trim());
             tags.put(terms[0].trim(), vals);
         }
@@ -433,7 +426,7 @@ public class MetricSpecification {
                     .substring(idx).trim());
             metric = terms[terms.length - 1].substring(0, idx);
         } else {
-            tags = new HashMap<String, List<String>>();
+            tags = new HashMap<>();
             metric = terms[terms.length - 1];
         }
 

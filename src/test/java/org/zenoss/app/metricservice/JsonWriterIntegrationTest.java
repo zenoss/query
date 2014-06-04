@@ -30,20 +30,19 @@
  */
 package org.zenoss.app.metricservice;
 
-import java.io.IOException;
-import java.io.StringWriter;
-
+import com.google.common.base.Optional;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zenoss.app.metricservice.api.impl.JsonWriter;
 
-import com.google.common.base.Optional;
+import java.io.IOException;
+import java.io.StringWriter;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
  * 
  */
-public class JsonWriterTest {
+public class JsonWriterIntegrationTest {
 
     private void test(String name, Object value, Optional<Boolean> appendComma)
             throws IOException {

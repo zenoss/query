@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Zenoss and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Zenoss and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,25 +28,14 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package org.zenoss.app.metricservice.api;
 
-import javax.ws.rs.core.Response;
+import org.junit.Test;
 
-import org.zenoss.app.metricservice.api.model.Chart;
+public class MetricServiceAPITest {
+    @Test
+    public void testQuery() throws Exception {
 
-import com.google.common.base.Optional;
-
-public interface ChartServiceAPI {
-
-    public Response get(String id);
-
-    public Response delete(String id);
-
-    public Response post(Chart chart);
-
-    public Response put(String id, Chart chart);
-
-    public Response getList(Optional<Integer> start, Optional<Integer> end, Optional<Boolean> includeTotal);
-
-    public Response getByName(String name);
+    }
 }

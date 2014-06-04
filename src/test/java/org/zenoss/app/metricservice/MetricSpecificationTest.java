@@ -30,12 +30,12 @@
  */
 package org.zenoss.app.metricservice;
 
-import java.util.List;
-import java.util.Map;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>

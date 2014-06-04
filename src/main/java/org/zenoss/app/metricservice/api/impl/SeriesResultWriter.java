@@ -31,19 +31,20 @@
 
 package org.zenoss.app.metricservice.api.impl;
 
-import java.io.IOException;
-import java.util.List;
-
+import org.zenoss.app.metricservice.api.metric.impl.MetricService;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.app.metricservice.buckets.Buckets;
 import org.zenoss.app.metricservice.buckets.Value;
 
+import java.io.IOException;
+import java.util.List;
+
 /**
  * Writes the query results in a series format where the results are grouped by
  * the metric queried. This format eliminates the redundancy of repeating the
  * metric name in each result object.
- * 
+ *
  * @author Zenoss
  */
 public class SeriesResultWriter extends BaseResultWriter {
@@ -59,8 +60,8 @@ public class SeriesResultWriter extends BaseResultWriter {
      */
     @Override
     public void writeData(JsonWriter writer, List<MetricSpecification> queries,
-            Buckets<MetricKey, String> buckets, ReturnSet returnset,
-            long startTs, long endTs) throws IOException {
+                          Buckets<MetricKey, String> buckets, ReturnSet returnset,
+                          long startTs, long endTs) throws IOException {
         List<Long> timestamps = buckets.getTimestamps();
         Buckets<MetricKey, String>.Bucket bucket;
         Value value;
@@ -68,7 +69,7 @@ public class SeriesResultWriter extends BaseResultWriter {
         boolean valueComma;
         boolean needHeader;
         boolean needFooter;
-        long downsample = buckets.getDownsample();
+        long downsample = buckets.getSecondsPerBucket();
 
         /*
          * Iterate over the queries and for each each metric or value output its
@@ -76,51 +77,54 @@ public class SeriesResultWriter extends BaseResultWriter {
          * over all buckets, but it is either that or use lots of memory.
          */
         for (MetricSpecification query : queries) {
-            // Only return the result if the query is meant to be emitted.
-            if (query.getEmit()) {
-                needHeader = true;
-                needFooter = false;
-                valueComma = false;
-                for (long bts : timestamps) {
-                    bts *= downsample;
-                    if ((returnset == ReturnSet.ALL || (bts >= startTs && bts <= endTs))
-                            && (bucket = buckets.getBucket(bts)) != null) {
+            needHeader = true;
+            needFooter = false;
+            valueComma = false;
+            for (long bts : timestamps) {
+                bts *= downsample;
+                if ((returnset == ReturnSet.ALL || (bts >= startTs && bts <= endTs))
+                    && (bucket = buckets.getBucket(bts)) != null) {
 
-                        if ((value = bucket.getValueByShortcut(query
-                                .getNameOrMetric())) != null) {
+                    if ((value = bucket.getValueByShortcut(query.getNameOrMetric())) != null) {
 
-                            if (needHeader) {
-                                if (seriesComma) {
-                                    writer.append(',');
-                                } else {
-                                    seriesComma = true;
-                                }
-                                writer.objectS().value(MetricService.METRIC,
-                                        query.getNameOrMetric(), true);
-                                writer.arrayS(MetricService.DATAPOINTS);
-                                needHeader = false;
-                                needFooter = true;
-                            }
-
-                            if (valueComma) {
-                                writer.write(',');
-                            } else {
-                                valueComma = true;
-                            }
-
-                            // bucket.getKeyByName(query.getNameOrMetric());
-                            writer.objectS()
-                                    .value(MetricService.TIMESTAMP, bts, true)
-                                    .value(MetricService.VALUE,
-                                            value.getValue(), false);
-                            writer.objectE();
+                        if (needHeader) {
+                            seriesComma = writeHeader(writer, seriesComma, query);
+                            needHeader = false;
+                            needFooter = true;
                         }
+
+                        if (valueComma) {
+                            writer.write(',');
+                        } else {
+                            valueComma = true;
+                        }
+
+                        // bucket.getKeyByName(query.getNameOrMetric());
+                        writer.objectS()
+                            .value(MetricService.TIMESTAMP, bts, true)
+                            .value(MetricService.VALUE,
+                                value.getValue(), false);
+                        writer.objectE();
                     }
                 }
-                if (needFooter) {
-                    writer.arrayE().objectE();
-                }
+            }
+            if (needFooter) {
+                writer.arrayE().objectE();
             }
         }
+    }
+
+    private boolean writeHeader(JsonWriter writer, boolean seriesComma, MetricSpecification query) throws IOException {
+        if (seriesComma) {
+            writer.append(',');
+        } else {
+            seriesComma = true;
+        }
+        writer.objectS().value(MetricService.METRIC, query.getNameOrMetric(), true);
+        if (null != query.getId()) {
+            writer.value(MetricService.ID, query.getId(), true);
+        }
+        writer.arrayS(MetricService.DATAPOINTS);
+        return seriesComma;
     }
 }

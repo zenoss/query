@@ -30,11 +30,11 @@
  */
 package org.zenoss.app.metricservice;
 
-import javax.ws.rs.WebApplicationException;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
+
+import javax.ws.rs.WebApplicationException;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>

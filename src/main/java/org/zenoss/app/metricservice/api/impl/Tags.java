@@ -46,7 +46,7 @@ public class Tags {
     /**
      * Maps a tag name to its values.
      */
-    private Map<String, String> tags = new HashMap<String, String>();
+    private Map<String, String> tags = new HashMap<>();
 
     /*
      * Constructor
@@ -99,6 +99,12 @@ public class Tags {
             }
             result.tags.put(entry.getKey(), buf.toString());
         }
+        return result;
+    }
+
+    public static Tags fromOpenTsdbTags(Map<String,String> tags) {
+        Tags result = new Tags();
+        result.tags.putAll(tags);
         return result;
     }
 
@@ -203,13 +209,14 @@ public class Tags {
              * an exact match
              */
             if (tv.indexOf('|') != -1) {
-                if (btv.indexOf('|' + ov + '|') == -1) {
+                if (!btv.contains('|' + ov + '|')) {
                     return false;
                 }
-            } else if (btv.indexOf("|*|") == -1 && !tv.equals(ov)) {
+            } else if (!btv.contains("|*|") && !tv.equals(ov)) {
                 return false;
             }
         }
         return true;
     }
+
 }

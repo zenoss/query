@@ -30,6 +30,7 @@
  */
 package org.zenoss.app.metricservice.api.model;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -68,6 +69,7 @@ public class PerformanceQuery {
     
     @JsonProperty(value="returnset")
     private ReturnSet returnset = null;
+
 
     /**
      * @return the start
@@ -115,6 +117,9 @@ public class PerformanceQuery {
      * @return the metrics
      */
     public final List<MetricSpecification> getMetrics() {
+        if (null == metrics) {
+            metrics = new ArrayList<>();
+        }
         return metrics;
     }
 

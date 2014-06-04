@@ -1,4 +1,4 @@
-authEnabled: true
+authEnabled: false
 logging:
   level: INFO
   loggers:
@@ -7,13 +7,11 @@ metrics:
   defaultReturnSet: EXACT
   defaultStartTime: 1h-ago
   defaultEndTime: now
-  defaultSeries: false
+  defaultSeries: true
   openTsdbUrl: http://127.0.0.1:4242
   defaultTsdTimeZone: UTC
   connectionTimeoutMs: 20000
   sendRateOptions: false
-charts:
-  redisConnection: localhost:6379
 proxyConfiguration:
   hostname: 127.0.0.1
   port: 8080

@@ -30,10 +30,11 @@
  */
 package org.zenoss.app.metricservice;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.google.common.base.Optional;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,10 +51,9 @@ import org.zenoss.app.metricservice.api.impl.mocks.MockMetricStorage;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.google.common.base.Optional;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
@@ -62,6 +62,7 @@ import com.google.common.base.Optional;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
 @ActiveProfiles("prod")
+@Ignore("HTTP provider is going away.")
 public class HttpProviderTest extends ProviderTestBase {
     @Autowired
     ApplicationContext ctx;
@@ -98,7 +99,7 @@ public class HttpProviderTest extends ProviderTestBase {
 
         // Create some mock data for the request. This mock data will be
         // generated based on the request.
-        List<MetricSpecification> queryList = new ArrayList<MetricSpecification>();
+        List<MetricSpecification> queryList = new ArrayList<>();
         for (String query : queries) {
             queryList.add(MetricSpecification.fromString(query));
         }

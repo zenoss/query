@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Zenoss and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Zenoss and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,19 +28,46 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.metricservice;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.zenoss.app.metricservice.api.configs.ChartServiceConfig;
+package org.zenoss.app.metricservice.api.impl;
 
-public class ChartServiceConfigTest {
-    private static String connectionString = "localhost:1234";
+import com.google.common.base.Objects;
 
-    @Test
-    public void testChartConfig() {
-        ChartServiceConfig config = new ChartServiceConfig();
-        config.setRedisConnection(connectionString);
-        Assert.assertEquals(connectionString, config.getRedisConnection());
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class OpenTSDBQueryResult {
+    public List<String> aggregateTags;
+    public Map<Long,String> dps;
+    public String metric;
+    public Map<String, String> tags;
+    public List<String> tsuids;
+
+    public String debugString() {
+        return Objects.toStringHelper(getClass())
+            .add("aggregateTags", aggregateTags)
+            .add("dps", dps)
+            .add("metric", metric)
+            .add("tags", tags)
+            .add("tsuids", tsuids)
+            .toString();
+    }
+
+    public void addTags(Map<String, List<String>> tagsToAdd) {
+        if (null == tags) {
+            tags = new HashMap<String, String>();
+        }
+        for (Map.Entry<String, List<String>> entry : tagsToAdd.entrySet()) {
+            tags.put(entry.getKey(), entry.getValue().get(0));
+        }
+    }
+
+    public void addDataPoint(long i, double pointValue) {
+        if (null == dps) {
+            dps = new HashMap<Long, String>();
+        }
+        dps.put(i, Double.toString(pointValue));
     }
 }

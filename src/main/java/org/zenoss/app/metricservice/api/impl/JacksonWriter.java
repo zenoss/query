@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Zenoss and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Zenoss and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,46 +28,15 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.metricservice.api.impl.mocks;
 
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
-import org.zenoss.app.annotations.API;
-import org.zenoss.app.metricservice.api.impl.ResourcePersistenceAPI;
-import org.zenoss.app.metricservice.api.impl.ResourcePersistenceFactoryAPI;
+package org.zenoss.app.metricservice.api.impl;
 
-/**
- * @author David Bainbridge <dbainbridge@zenoss.com>
- * 
- */
-@API
-@Configuration
-@Profile({ "dev" })
-public class MockResourcePersistenceFactory implements
-        ResourcePersistenceFactoryAPI {
-    
-    private final ResourcePersistenceAPI persistence;
-    
-    public MockResourcePersistenceFactory() {
-        persistence = new MockResourcePersistence();
-    }
+import java.io.BufferedWriter;
+import java.io.Writer;
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.api.impl.ResourcePersistenceFactoryAPI#
-     * getInstance()
-     */
-    @Override
-    public ResourcePersistenceAPI getInstance(String resourceType) {
-        return persistence;
-    }
 
-    /* (non-Javadoc)
-     * @see org.zenoss.app.metricservice.api.impl.ResourcePersistenceFactoryAPI#isConnected()
-     */
-    @Override
-    public boolean isConnected() {
-        return true;
+public class JacksonWriter extends BufferedWriter  {
+    public JacksonWriter(Writer out) {
+        super(out);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Zenoss and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Zenoss and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,25 +28,11 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.metricservice.api.configs;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+package org.zenoss.app.metricservice.api.impl;
 
-public class ChartServiceConfig {
-    @JsonProperty
-    private String redisConnection = "localhost:6380";
-
-    /**
-     * @return the redisConnection
-     */
-    public final String getRedisConnection() {
-        return redisConnection;
-    }
-
-    /**
-     * @param redisConnection the redisConnection to set
-     */
-    public final void setRedisConnection(String redisConnection) {
-        this.redisConnection = redisConnection;
-    }
+public class OpenTSDBRateOption {
+    public boolean counter = true;
+    public long counterMax = 65535;
+    public long resetValue = 0;
 }

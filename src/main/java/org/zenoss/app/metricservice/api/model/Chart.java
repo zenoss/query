@@ -53,7 +53,7 @@ public class Chart {
     private Map<String, String> tags = null;
     
     @JsonProperty
-    private List<Datapoint> datapoints = new ArrayList<Datapoint>();
+    private List<Datapoint> datapoints = new ArrayList<>();
 
     /**
      * @return the name
@@ -113,14 +113,14 @@ public class Chart {
     }
 
     /**
-     * @return the datasets
+     * @return the datapoints
      */
     public final List<Datapoint> getDatapoints() {
         return datapoints;
     }
 
     /**
-     * @param datasets the datapoints to set
+     * @param datapoints the datapoints to set
      */
     public final void setDatapoints(List<Datapoint> datapoints) {
         this.datapoints = datapoints;

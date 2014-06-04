@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Zenoss and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Zenoss and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,38 +28,35 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.metricservice;
 
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.support.AnnotationConfigContextLoader;
-import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
+package org.zenoss.app.metricservice.api.metric.impl;
 
-/**
- * @author David Bainbridge <dbainbridge@zenoss.com>
- * 
- */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(loader = AnnotationConfigContextLoader.class)
-@ActiveProfiles("dev")
-public class MockChartServiceTest extends ChartServiceTestBase {
-    @Autowired
-    ApplicationContext ctx;
+import org.junit.Test;
 
-    @Configuration
-    @ComponentScan(basePackages = { "org.zenoss.app" })
-    static class ContextConfiguration {
-        @Bean
-        public MetricServiceAppConfiguration getQueryAppConfiguration() {
-            MetricServiceAppConfiguration config = new MetricServiceAppConfiguration();
-            return config;
-        }
+public class MetricServiceTest {
+    @Test
+    public void testMetricFilter() throws Exception {
+        MetricService victim = makeMetricService();
+
+    }
+
+    private MetricService makeMetricService() {
+        MetricService result = new MetricService();
+        return result;
+    }
+
+    @Test
+    public void testValueFilter() throws Exception {
+
+    }
+
+    @Test
+    public void testQuery() throws Exception {
+
+    }
+
+    @Test
+    public void testOptions() throws Exception {
+
     }
 }

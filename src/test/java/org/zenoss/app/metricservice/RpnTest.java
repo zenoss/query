@@ -31,18 +31,14 @@
 
 package org.zenoss.app.metricservice;
 
-import java.util.Date;
-import java.util.List;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.zenoss.app.metricservice.calculators.Closure;
-import org.zenoss.app.metricservice.calculators.MetricCalculator;
-import org.zenoss.app.metricservice.calculators.MetricCalculatorFactory;
-import org.zenoss.app.metricservice.calculators.ReferenceProvider;
-import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
+import org.zenoss.app.metricservice.calculators.*;
 import org.zenoss.app.metricservice.calculators.rpn.Calculator;
+
+import java.util.Date;
+import java.util.List;
 
 /**
  * @author david
@@ -170,8 +166,8 @@ public class RpnTest {
         calc.evaluate(in);
 
         Calculator rpn = (Calculator) calc;
-        for (int i = 0; i < out.length; ++i) {
-            Assert.assertEquals(out[i], rpn.pop(), 0.0);
+        for (double anOut : out) {
+            Assert.assertEquals(anOut, rpn.pop(), 0.0);
         }
     }
 
@@ -185,8 +181,8 @@ public class RpnTest {
         calc.evaluate(in);
 
         Calculator rpn = (Calculator) calc;
-        for (int i = 0; i < out.length; ++i) {
-            Assert.assertEquals(out[i], rpn.pop(), 0.0);
+        for (double anOut : out) {
+            Assert.assertEquals(anOut, rpn.pop(), 0.0);
         }
     }
 
