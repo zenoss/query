@@ -58,9 +58,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @author Zenoss
- */
+
 @API
 @Configuration
 public class MetricService implements MetricServiceAPI {

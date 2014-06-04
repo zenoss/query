@@ -39,7 +39,7 @@ import org.zenoss.app.metricservice.buckets.Buckets;
 import java.io.IOException;
 import java.util.List;
 
-                                                                                             OT
+
 public class JacksonResultsWriter {
 
     public void writeResults(JacksonWriter writer, List<MetricSpecification> queries, Buckets<MetricKey, String> buckets, String id, String sourceId, long startTs, String startTimeConfig, long endTs, String endTimeConfig, ReturnSet returnset, boolean series) throws Exception {

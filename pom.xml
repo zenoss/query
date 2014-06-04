@@ -80,6 +80,11 @@
             <version>${jersey.version}</version>
             <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <groupId>aopalliance</groupId>
+            <artifactId>aopalliance</artifactId>
+            <version>1.0</version>
+        </dependency>
     </dependencies>
 
     <build>
