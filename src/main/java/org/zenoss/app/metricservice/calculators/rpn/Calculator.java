@@ -31,16 +31,16 @@
 
 package org.zenoss.app.metricservice.calculators.rpn;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenoss.app.metricservice.calculators.BaseMetricCalculator;
 import org.zenoss.app.metricservice.calculators.Closure;
 import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 
 /**
  * A RPN expression metric calculator.
@@ -552,11 +552,8 @@ public class Calculator extends BaseMetricCalculator {
             log.error("Unable to get reference provider. Throwing exception.");
             throw new UnknownReferenceException(reference);
         }
-        //log.debug("pushing reference to '{}'",reference);
         double referenceValue = getReferenceProvider().lookup(reference, closure);
-        //log.debug("reference value is {}",referenceValue);
         push (referenceValue);
-        //push(getReferenceProvider().lookup(reference, closure));
     }
 
     /**
