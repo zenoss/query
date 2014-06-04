@@ -1,5 +1,17 @@
 (function() {
     "use strict";
+
+    function Chart() {
+        var _model = null;
+
+        this.model = function(_) {
+            if (!arguments.length) {
+                return _model;
+            }
+            _model = _;
+        };
+    }
+
     var area = {
         required : {
             defined : 'nv',
@@ -10,17 +22,6 @@
             return {
                 'color' : impl.model().color()(0, idx),
                 'opacity' : 1
-            };
-        },
-
-        Chart : function() {
-            var _model = null;
-
-            this.model = function(_) {
-                if (!arguments.length) {
-                    return _model;
-                }
-                _model = _;
             };
         },
 
@@ -35,7 +36,7 @@
             var _chart = chart.closure;
 
             _chart.model().xAxis.tickFormat(function(ts) {
-                return zenoss.visualization.tickFormat(data.startTimeActual,
+                return chart.tickFormat(data.startTimeActual,
                         data.endTimeActual, ts, chart.timezone);
             });
 
@@ -57,12 +58,13 @@
             // going to walk the points and make sure they match
             __cull(chart);
 
-            var _chart = new zenoss.visualization.chart.area.Chart();
+            // create new area Chart
+            var _chart = new Chart();
             var model = nv.models.stackedAreaChart();
             _chart.model(model);
 
             model.xAxis.tickFormat(function(ts) {
-                return zenoss.visualization.tickFormat(data.startTimeActual,
+                return chart.tickFormat(data.startTimeActual,
                         data.endTimeActual, ts, chart.timezone);
             });
             model.yAxis.tickFormat(function(value){

@@ -1,20 +1,21 @@
 (function() {
     "use strict";
+
+    function Chart() {
+        var _model = null;
+
+        this.model = function(_) {
+            if (!arguments.length) {
+                return _model;
+            }
+            _model = _;
+        };
+    }
+
     var line = {
         required : {
             defined : 'nv',
             source : [ 'nv.d3.min.js', 'css/nv.d3.css' ]
-        },
-
-        Chart : function() {
-            var _model = null;
-
-            this.model = function(_) {
-                if (!arguments.length) {
-                    return _model;
-                }
-                _model = _;
-            };
         },
 
         color : function(chart, impl, idx) {
@@ -28,7 +29,7 @@
             var _chart = chart.closure;
 
             _chart.model().xAxis.tickFormat(function(ts) {
-                return zenoss.visualization.tickFormat(data.startTimeActual,
+                return chart.tickFormat(data.startTimeActual,
                         data.endTimeActual, ts, chart.timezone);
             });
             chart.svg.datum(chart.plots).transition().duration(0).call(
@@ -36,12 +37,12 @@
         },
 
         build : function(chart, data) {
-            var _chart = new zenoss.visualization.chart.line.Chart();
+            var _chart = new Chart();
             var model = nv.models.lineChart();
             _chart.model(model);
 
             model.xAxis.tickFormat(function(ts) {
-                return zenoss.visualization.tickFormat(data.startTimeActual,
+                return chart.tickFormat(data.startTimeActual,
                         data.endTimeActual, ts, chart.timezone);
             });
             model.yAxis.tickFormat(function(value) {

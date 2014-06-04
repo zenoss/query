@@ -100,7 +100,7 @@
             } else if (v.endsWith('.css')) {
                 css.push(v);
             } else {
-                visualization.__warn('Unknown required file type, "' +
+                debug.__warn('Unknown required file type, "' +
                     '" when loading dependencies for "' + 'unknown' +
                     '". Ignored.');
             }
