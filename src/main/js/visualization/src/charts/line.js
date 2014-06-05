@@ -15,7 +15,7 @@
     var line = {
         required : {
             defined : 'nv',
-            source : [ 'nv.d3.min.js', 'css/nv.d3.css' ]
+            source : [ 'nv.d3.js', 'css/nv.d3.css' ]
         },
 
         color : function(chart, impl, idx) {
