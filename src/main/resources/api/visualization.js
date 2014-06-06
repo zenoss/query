@@ -137,7 +137,7 @@ var visualization,
          * @access public
          * @default false
          */
-        debug: true,
+        debug: false,
         
         /**
          * Wrapper around the console group function. This wrapper protects
@@ -257,6 +257,11 @@ var visualization,
      * @access private
      */
     var __dependencies = {};
+
+    // TODO - for debugging REMOVE!
+    Object.observe(__dependencies, function(changes){
+        debugger;
+    });
 
     /**
      * Main entry point for web pages. This method is used to first

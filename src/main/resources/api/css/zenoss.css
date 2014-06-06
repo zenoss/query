@@ -16,14 +16,14 @@
 }
 
 .nodata {
+  display: block;
+  position: relative;
+  margin: auto;
+  top: 40px;
   color: blue;
+  text-align: center;
   font-size: 18pt;
   font-style: italic;
-  text-align: center;
-  display: inline-block;
-  text-align: center;
-  margin-left: 20px;
-  margin-right: 20px;
 }
 
 .message {
