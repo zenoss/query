@@ -201,7 +201,6 @@
                 // override the number format for this chart
                 // since this method could be called several times to render a
                 // chart.
-                // this.format = DEFAULT_NUMBER_FORMAT;
                 debug.__warn('Invalid format string  ' + format +
                     ' using the default format.');
                 scaled = value / this.scale.term;
