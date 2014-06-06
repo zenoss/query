@@ -258,11 +258,6 @@ var visualization,
      */
     var __dependencies = {};
 
-    // TODO - for debugging REMOVE!
-    Object.observe(__dependencies, function(changes){
-        debugger;
-    });
-
     /**
      * Main entry point for web pages. This method is used to first
      * bootstrap the library and then call the callback to create
