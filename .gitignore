@@ -25,3 +25,7 @@ maven-eclipse.xml
 #build
 .extracted
 .externalToolBuilders
+src/main/js/visualization/build/*
+
+#node_modules
+src/main/js/visualization/node_modules/*
