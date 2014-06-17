@@ -738,6 +738,10 @@ var visualization,
                 }
 
                 __charts[name] = new Chart(name, config);
+            },
+
+            getChart: function(id){
+                return __charts[id];
             }
         }
     };
