@@ -1110,30 +1110,15 @@
                 _end = end;
             }
 
-            //NOTE: Javascript timestamps are usually in milliseconds,
-            // but moment.js uses seconds so we have to divide by 1000
-            ts_seconds = ts / 1000;
-            // Select a date/time format based on the range
-            if (_start.getFullYear() === _end.getFullYear()) {
-                if (_start.getMonth() === _end.getMonth()) {
-                    if (_start.getDate() === _end.getDate()) {
-                        if (_start.getHours() === _end.getHours()) {
-                            if (_start.getMinutes() === _end.getMinutes()) {
-                                // only show seconds
-                                return moment.utc(ts_seconds, "X").tz(timezone).format("::ss");
-                            }
-                            // show minutes and seconds
-                            return moment.utc(ts_seconds, "X").tz(timezone).format(":mm :ss");
-                        }
-                        // hours, minutes and seconds
-                        return moment.utc(ts_seconds, "X").tz(timezone).format("hh:mm:ssa");
-                    }
-                }
-                //show the date
-                return moment.utc(ts_seconds, "X").tz(timezone).format("MM/DD-hh:mm:ssa");
+            // if the range is less than a day, show only hours
+            if (_start.getDate() === _end.getDate()) {
+                return moment.utc(ts).tz(timezone).format("hh:mm:ssa");
+
+            // else show the full date
+            } else {
+                return moment.utc(ts).tz(timezone).format(this.dateFormat);
             }
-            // show the full date
-            return moment.utc(ts_seconds, "X").tz(timezone).format(this.dateFormat);
+            
         },
 
         /**
