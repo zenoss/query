@@ -79,6 +79,6 @@ public class MetricServiceApp extends
     @SuppressWarnings("rawtypes")
     @Override
     public Optional<Class> getRequiredConfig() {
-        return Optional.<Class> absent();
+        return Optional.absent();
     }
 }

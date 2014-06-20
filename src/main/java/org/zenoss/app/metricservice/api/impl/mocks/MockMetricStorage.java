@@ -113,10 +113,11 @@ public class MockMetricStorage implements MetricStorageAPI {
         // over the time range with 1 second steps.
         double inc = 1.0 / (double) (dur / step);
 
-        OpenTSDBQueryResult result = new OpenTSDBQueryResult();
+        List<OpenTSDBQueryResult> resultList = new ArrayList<>();
         int count = 0;
         //StringBuilder buf = new StringBuilder();
         for (MetricSpecification query : queries) {
+            OpenTSDBQueryResult result = new OpenTSDBQueryResult();
             // Need to join the global tags with the per metric tags,
             // overriding any global tag with that specified per metric
             if (tags != null || query.getTags() != null) {
@@ -148,8 +149,9 @@ public class MockMetricStorage implements MetricStorageAPI {
 
                 count++;
             }
+            resultList.add(result);
         }
-        baos.write(Utils.jsonStringFromObject(result).getBytes());
+        baos.write(Utils.jsonStringFromObject(resultList).getBytes());
 
         log.debug("Generated {} lines of data", count);
         return baos.toByteArray();

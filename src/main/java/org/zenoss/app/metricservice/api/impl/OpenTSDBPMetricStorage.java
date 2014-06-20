@@ -52,13 +52,10 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * @author David Bainbridge <dbainbridge@zenoss.com>
- */
+
 @API
 @Configuration
 @Profile({"default", "prod"})
@@ -67,19 +64,21 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
     MetricServiceAppConfiguration config;
 
     private static final Logger log = LoggerFactory
-            .getLogger(OpenTSDBPMetricStorage.class);
+        .getLogger(OpenTSDBPMetricStorage.class);
 
     private static final String SOURCE_ID = "OpenTSDB";
 
-    private WebApplicationException generateException(
-            HttpURLConnection connection) {
+    private static WebApplicationException generateException(
+        HttpURLConnection connection) {
         int code = 500;
-        try {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try
+            (JsonWriter writer = new JsonWriter(new OutputStreamWriter(
+            baos))){
             code = connection.getResponseCode();
             InputStream is = connection.getErrorStream();
 
             // Read the entire buffer as is should be a very short HTML page.
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
             byte[] content = ByteStreams.toByteArray(is);
 
             Pattern pattern = Pattern.compile("The reason provided was:\\<blockquote\\>(.*)\\</blockquote>\\</blockquote\\>");
@@ -88,14 +87,12 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
                 String message = matcher.group(1);
                 if (message != null) {
                     baos = new ByteArrayOutputStream();
-                    JsonWriter writer = new JsonWriter(new OutputStreamWriter(
-                            baos));
                     writer.objectS();
                     writer.value(Utils.ERROR_MESSAGE, message);
                     writer.objectE();
                     writer.close();
                     return new WebApplicationException(Response.status(code)
-                            .entity(baos.toString()).build());
+                        .entity(baos.toString()).build());
                 }
             } else {
                 log.error("MESSAGE NOT FOUND");
@@ -104,17 +101,15 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             return new WebApplicationException(Response.status(code).build());
         } catch (Exception e) {
             log.error(
-                    "Unexpected error while attempting to parse response from OpenTSDB: {} : {}",
-                    e.getClass().getName(), e.getMessage());
-            try {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                JsonWriter writer = new JsonWriter(new OutputStreamWriter(baos));
+                "Unexpected error while attempting to parse response from OpenTSDB: {} : {}",
+                e.getClass().getName(), e.getMessage());
+            try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(baos))) {
                 writer.objectS();
                 writer.value(Utils.ERROR_MESSAGE, e.getMessage());
                 writer.objectE();
                 writer.close();
                 return new WebApplicationException(Response.status(code)
-                        .entity(baos.toString()).build());
+                    .entity(baos.toString()).build());
             } catch (Exception ee) {
                 return new WebApplicationException(code);
             }
@@ -152,23 +147,41 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         if (log.isDebugEnabled()) {
             log.debug("OpenTSDB POST JSON: {}", jsonQueryString);
         }
+        HttpResponse response = postRequestToOpenTsdb(config, jsonQueryString);
+
+        log.info("Response code: {}", response.getStatusLine().getStatusCode());
+
+        checkHttpResponseAndThrowWebExceptionIfBad(response);
+
+        return new BufferedReader(new InputStreamReader((response.getEntity().getContent())));
+    }
+
+    private static void checkHttpResponseAndThrowWebExceptionIfBad(HttpResponse response) throws WebApplicationException {
+        int statusCode = response.getStatusLine().getStatusCode();
+
+        if (isNotOk(statusCode)) {
+            throw new WebApplicationException(
+                Response.status(statusCode)
+                    .entity("Operation failed: " + response.getStatusLine().toString())
+                    .build());
+        }
+    }
+
+    private static boolean isNotOk(int statusCode) {
+        return ((statusCode / 100) != 2);
+    }
+
+    private static HttpResponse postRequestToOpenTsdb(MetricServiceAppConfiguration config, String jsonQueryString) throws IOException {
         String postUrl = String.format("%s/api/query", config.getMetricServiceConfig().getOpenTsdbUrl());
         log.info("POSTing JSON to URL: {}", postUrl);
 
         DefaultHttpClient httpClient = new DefaultHttpClient();
         HttpPost postRequest = new HttpPost(postUrl);
         StringEntity input = new StringEntity(jsonQueryString);
+        log.info("Query to OpenTSDB: {}",input.getContent().toString());
         input.setContentType("application/json");
         postRequest.setEntity(input);
-        HttpResponse response = httpClient.execute(postRequest);
-        log.info("Response code: {}", response.getStatusLine().getStatusCode());
-
-        if (response.getStatusLine().getStatusCode() != 200) {
-            throw new RuntimeException("Failed : HTTP error code : "
-                    + response.getStatusLine().getStatusCode() + " Reason: " + response.getStatusLine().getReasonPhrase());
-        }
-
-        return new BufferedReader(new InputStreamReader((response.getEntity().getContent())));
+        return httpClient.execute(postRequest);
     }
 
     private OpenTSDBSubQuery openTSDBSubQueryFromMetricSpecification(MetricSpecification metricSpecification) {
@@ -181,16 +194,18 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             result.rate = metricSpecification.getRate();
             result.rateOptions = openTSDBRateOptionFromRateOptions(metricSpecification.getRateOptions());
             Map<String, List<String>> tags = metricSpecification.getTags();
-            for (Map.Entry<String, List<String>> tagEntry : tags.entrySet()) {
-                for (String tagValue : tagEntry.getValue()) {
-                    result.addTag(tagEntry.getKey(), tagValue);
+            if (null != tags) {
+                for (Map.Entry<String, List<String>> tagEntry : tags.entrySet()) {
+                    for (String tagValue : tagEntry.getValue()) {
+                        result.addTag(tagEntry.getKey(), tagValue);
+                    }
                 }
             }
         }
-        return result;  //To change body of created methods use File | Settings | File Templates.
+        return result;
     }
 
-    private OpenTSDBRateOption openTSDBRateOptionFromRateOptions(RateOptions rateOptions) {
+    private static OpenTSDBRateOption openTSDBRateOptionFromRateOptions(RateOptions rateOptions) {
         OpenTSDBRateOption result = null;
         if (null != rateOptions) {
             result = new OpenTSDBRateOption();

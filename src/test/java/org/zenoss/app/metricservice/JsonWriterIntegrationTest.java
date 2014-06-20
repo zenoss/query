@@ -102,8 +102,7 @@ public class JsonWriterIntegrationTest {
 
     private static final Optional<Boolean> OptFalse = Optional.of(false);
     private static final Optional<Boolean> OptTrue = Optional.of(true);
-    private static final Optional<Boolean> OptAbsent = Optional
-            .<Boolean> absent();
+    private static final Optional<Boolean> OptAbsent = Optional.absent();
 
     @Test
     public void intValueTests() throws IOException {

@@ -31,52 +31,50 @@
 
 package org.zenoss.app.metricservice.api.impl;
 
-import com.google.common.base.Objects;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
-public class OpenTSDBQueryResult {
-    public List<String> aggregateTags;
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class QueryResult {
 
-    public Map<Long,String> dps;
-    public String metric;
-    public Map<String, String> tags;
-    public List<String> tsuids;
+    public QueryResult() {}
 
-    public String debugString() {
-        return Objects.toStringHelper(getClass())
-            .add("aggregateTags", aggregateTags)
-            .add("dps", dps)
-            .add("metric", metric)
-            .add("tags", tags)
-            .add("tsuids", tsuids)
-            .toString();
+    public QueryResult(QueryResult other) {
+        this.id = other.id;
+        this.metric = other.metric;
+        this.datapoints = new ArrayList<>(other.datapoints.size());
+        Collections.copy(datapoints, other.datapoints);
     }
 
-    public void addTags(Map<String, List<String>> tagsToAdd) {
-        if (null == tags) {
-            tags = new HashMap<>();
-        }
-        for (Map.Entry<String, List<String>> entry : tagsToAdd.entrySet()) {
-            tags.put(entry.getKey(), entry.getValue().get(0));
-        }
+    private List<QueryResultDataPoint> datapoints;
+    private String metric;
+
+    public String getId() {
+        return id;
     }
 
-    public void addDataPoint(long i, double pointValue) {
-        if (null == dps) {
-            dps = new HashMap<>();
-        }
-        dps.put(i, Double.toString(pointValue));
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public Map<Long, String> getDataPoints() {
-        return dps;
+    private String id;
+
+    public String getMetric() {
+        return metric;
     }
 
-    public void setDataPoints(Map<Long, String> dps) {
-        this.dps = dps;
+    public void setMetric(String metric) {
+        this.metric = metric;
     }
 
+    public List<QueryResultDataPoint> getDatapoints() {
+        return datapoints;
+    }
+
+    public void setDatapoints(List<QueryResultDataPoint> datapoints) {
+        this.datapoints = datapoints;
+    }
 }

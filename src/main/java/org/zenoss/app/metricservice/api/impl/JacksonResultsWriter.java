@@ -31,32 +31,47 @@
 
 package org.zenoss.app.metricservice.api.impl;
 
-import org.zenoss.app.metricservice.api.metric.impl.MetricService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.app.metricservice.buckets.Buckets;
+import org.zenoss.app.metricservice.buckets.Value;
 
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 
 public class JacksonResultsWriter {
 
-    public void writeResults(JacksonWriter writer, List<MetricSpecification> queries, Buckets<MetricKey, String> buckets, String id, String sourceId, long startTs, String startTimeConfig, long endTs, String endTimeConfig, ReturnSet returnset, boolean series) throws Exception {
+//    public void writeResults(JacksonWriter writer, List<MetricSpecification> queries, Buckets<MetricKey, String> buckets, String id, String sourceId, long startTs, String startTimeConfig, long endTs, String endTimeConfig, ReturnSet returnset, boolean series) throws Exception {
+    private static final Logger log = LoggerFactory.getLogger(JacksonResultsWriter.class);
+
+    public void writeResults(Writer writer, List<MetricSpecification> queries, Buckets<MetricKey, String> buckets,
+                             String id, String sourceId, long startTs, String startTimeConfig, long endTs,
+                             String endTimeConfig, ReturnSet returnset, boolean series) throws IOException {
         if (series) {
             SeriesQueryResult results = makeResults(queries, buckets, id, sourceId, startTs, startTimeConfig, endTs, endTimeConfig, returnset);
             // write results (JSON serialization)
-            writer.write(Utils.jsonStringFromObject(results));
+            String resultJson = Utils.jsonStringFromObject(results);
+            log.debug("Resulting JSON: {}", resultJson);
+            writer.write(resultJson);
         } else {
-            //TODO: make a new exception type for this and throw it. Determine whether it needs to be a WebException or not.
-            throw new Exception("non-series data is no longer supported.");
+            UnsupportedOperationException e = new UnsupportedOperationException("Series is no longer supported.");
+            throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
         }
     }
 
-    private SeriesQueryResult makeResults(List<MetricSpecification> queries, Buckets<MetricKey, String> buckets, String id, String sourceId, long startTs, String startTimeConfig, long endTs, String endTimeConfig, ReturnSet returnset) {
+    private SeriesQueryResult makeResults(List<MetricSpecification> queries, Buckets<MetricKey, String> buckets,
+                                          String id, String sourceId, long startTs, String startTimeConfig, long endTs,
+                                          String endTimeConfig, ReturnSet returnset) {
         SeriesQueryResult result = new SeriesQueryResult();
-        result.setId(id);
-        result.setClientId(MetricService.CLIENT_ID);
+        result.setClientId(id);
         result.setEndTime(endTimeConfig);
         result.setEndTimeActual(endTs);
         result.setReturnset(returnset);
@@ -64,6 +79,52 @@ public class JacksonResultsWriter {
         result.setSource(sourceId);
         result.setStartTime(startTimeConfig);
         result.setStartTimeActual(startTs);
+        result.addResults(makeDataPointResults(queries, buckets, startTs, endTs, returnset));
         return result;
+    }
+
+
+
+    private Collection<QueryResult> makeDataPointResults(Collection<MetricSpecification> queries, Buckets<MetricKey,
+        String> buckets, long startTs, long endTs, ReturnSet returnset) {
+        if (null == buckets) {
+            log.info("buckets is null - returning.");
+            return null;
+        }
+        Collection<QueryResult> results = new ArrayList<>();
+        List<Long> timestamps = buckets.getTimestamps();
+        for (MetricSpecification query : queries) {
+            QueryResult qr = new QueryResult();
+            qr.setMetric(query.getNameOrMetric());
+            qr.setDatapoints(makeDataPoints(buckets, startTs, endTs, returnset, timestamps, query.getNameOrMetric()));
+            qr.setId(query.getId());
+            results.add(qr);
+        }
+        log.debug("Returning collection with {} QueryResults.", results.size());
+        return results;
+    }
+
+    private List<QueryResultDataPoint> makeDataPoints(Buckets<MetricKey, String> buckets, long startTs, long endTs,
+                                                      ReturnSet returnset, List<Long> timestamps, String metricShortcut) {
+        List<QueryResultDataPoint> dataPoints = new ArrayList<>();
+        for (long bts : timestamps) {
+            bts *= buckets.getSecondsPerBucket();
+            if (returnset == ReturnSet.ALL || (bts >= startTs && bts <= endTs)) {
+                log.debug("Attempting to get bucket for value {}", bts);
+                Buckets<MetricKey, String>.Bucket bucket = buckets.getBucket(bts);
+                if (null != bucket) {
+                    Value value = bucket.getValueByShortcut(metricShortcut);
+                    if (null != value) {
+                        dataPoints.add(new QueryResultDataPoint(bts, value.getValue()));
+                    } else {
+                        log.warn("No data point found for timestamp {}, metric {}", bts, metricShortcut);
+                    }
+                } else {
+                    log.warn("Unable to retrieve value for timestamp {}", bts);
+                }
+            }
+        }
+        log.debug("returning collection with {} QueryResultDataPoints.", dataPoints.size());
+        return dataPoints;
     }
 }

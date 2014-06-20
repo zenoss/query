@@ -72,7 +72,7 @@ public class MetricCalculatorFactory {
      *             located or if it is found and can't be narrowed to a
      *             MetricCalculator.
      */
-    public MetricCalculator newInstance(String expr)
+    public static MetricCalculator newInstance(String expr)
             throws ClassNotFoundException {
 
         String[] terms = expr.split(":", 2);
@@ -97,8 +97,8 @@ public class MetricCalculatorFactory {
         }
 
         StringBuilder classname = new StringBuilder();
-        Class<? extends MetricCalculator> clazz = null;
-        MetricCalculator calc = null;
+        Class<? extends MetricCalculator> clazz;
+        MetricCalculator calc;
 
         // Walk the path attempting to load the class.
         for (String path : paths) {
@@ -108,9 +108,8 @@ public class MetricCalculatorFactory {
             classname.append(terms[0]);
             classname.append('.');
             classname.append("Calculator");
-            clazz = null;
             try {
-                clazz = (Class<? extends MetricCalculator>) Class.forName(
+                clazz = Class.forName(
                         classname.toString())
                         .asSubclass(MetricCalculator.class);
                 calc = clazz.newInstance();

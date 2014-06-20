@@ -33,6 +33,7 @@ package org.zenoss.app.metricservice.buckets;
 
 import org.junit.Test;
 
+import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class ValueTest {
@@ -45,11 +46,11 @@ public class ValueTest {
         assertTrue("getValue() on an uninitialized value should return NaN.", Double.isNaN(test));
         double val1 = 1.1, val2 = 2.0;
         victim.add(val1);
-        assertTrue("Value with one entry should return that entry for getValue", val1 == victim.getValue());
+        assertEquals("Value with one entry should return that entry for getValue", val1, victim.getValue(), EPSILON);
         victim.add(val2);
         double expectedResult = (val1 + val2) / 2.0;
-        assertTrue(String.format("Value with two entries should return the average of the entries for getValue (expected = %f, actual = %f",
-            expectedResult, victim.getValue()), expectedResult == victim.getValue());
+        assertEquals(String.format("Value with two entries should return the average of the entries for getValue (expected = %f, actual = %f",
+            expectedResult, victim.getValue()), expectedResult,victim.getValue(), EPSILON);
     }
 
     @Test
@@ -61,7 +62,7 @@ public class ValueTest {
             victim.add(value);
             sum += value;
         }
-        assertTrue(sum == victim.getSum());
+        assertEquals(sum,victim.getSum(), EPSILON);
     }
 
     @Test
@@ -84,7 +85,7 @@ public class ValueTest {
             victim.add(value);
             sum += value;
         }
-        assertTrue(sum == victim.getSum());
+        assertEquals(sum,victim.getSum(), EPSILON);
 
     }
 
@@ -109,18 +110,14 @@ public class ValueTest {
         double appendedSum = originalSum + newValueSum;
         long appendedCount = originalCount + newValueCount;
         double appendedAverage = appendedSum / appendedCount;
-        assertTrue(String.format("Appended sum should match. expected %f, got %f", appendedSum, victim.getSum()), isPrettyMuchEqual(appendedSum,victim.getSum()));
-        assertTrue("Appended value (average) should match", isPrettyMuchEqual(appendedAverage, victim.getValue()));
+        assertEquals("Appended sum should match.", appendedSum, victim.getSum(), EPSILON);
+        assertEquals("Appended value (average) should match", appendedAverage, victim.getValue(), EPSILON);
         assertTrue("Appended count should match.", appendedCount == victim.getCount());
         for (Double value : newValues) {
             victim.remove(value);
         }
-        assertTrue("After remove, value should equal original value.", isPrettyMuchEqual(originalValue, victim.getValue()));
-        assertTrue("After remove, sum should equal original sum.", isPrettyMuchEqual(originalSum,victim.getSum()));
+        assertEquals("After remove, value should equal original value.", originalValue, victim.getValue(), EPSILON);
+        assertEquals("After remove, sum should equal original sum.", originalSum,victim.getSum(), EPSILON);
         assertTrue("After remove, count should equal original count.", originalCount == victim.getCount());
-    }
-
-    private boolean isPrettyMuchEqual(double originalValue, double value) {
-        return (Math.abs(originalValue - value) < EPSILON);
     }
 }

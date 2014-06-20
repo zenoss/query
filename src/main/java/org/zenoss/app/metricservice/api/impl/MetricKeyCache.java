@@ -126,8 +126,8 @@ public class MetricKeyCache {
      *            PrintStream instance to which to dump the information
      */
     public void dump(PrintStream ps) {
-        for (String key : map.keySet()) {
-            ps.format("%s : %s\n", key, map.get(key));
+        for (Map.Entry<String, List<MetricKey>> stringListEntry : map.entrySet()) {
+            ps.format("%s : %s\n", stringListEntry.getKey(), stringListEntry.getValue());
         }
     }
 }

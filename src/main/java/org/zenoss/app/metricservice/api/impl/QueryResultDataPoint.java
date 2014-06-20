@@ -31,52 +31,28 @@
 
 package org.zenoss.app.metricservice.api.impl;
 
-import com.google.common.base.Objects;
+public class QueryResultDataPoint {
+    private long timestamp;
+    private double value;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-public class OpenTSDBQueryResult {
-    public List<String> aggregateTags;
-
-    public Map<Long,String> dps;
-    public String metric;
-    public Map<String, String> tags;
-    public List<String> tsuids;
-
-    public String debugString() {
-        return Objects.toStringHelper(getClass())
-            .add("aggregateTags", aggregateTags)
-            .add("dps", dps)
-            .add("metric", metric)
-            .add("tags", tags)
-            .add("tsuids", tsuids)
-            .toString();
+    public QueryResultDataPoint(long timestamp, double value) {
+        this.timestamp = timestamp;
+        this.value = value;
     }
 
-    public void addTags(Map<String, List<String>> tagsToAdd) {
-        if (null == tags) {
-            tags = new HashMap<>();
-        }
-        for (Map.Entry<String, List<String>> entry : tagsToAdd.entrySet()) {
-            tags.put(entry.getKey(), entry.getValue().get(0));
-        }
+    public long getTimestamp() {
+        return timestamp;
     }
 
-    public void addDataPoint(long i, double pointValue) {
-        if (null == dps) {
-            dps = new HashMap<>();
-        }
-        dps.put(i, Double.toString(pointValue));
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
     }
 
-    public Map<Long, String> getDataPoints() {
-        return dps;
+    public double getValue() {
+        return value;
     }
 
-    public void setDataPoints(Map<Long, String> dps) {
-        this.dps = dps;
+    public void setValue(double value) {
+        this.value = value;
     }
-
 }

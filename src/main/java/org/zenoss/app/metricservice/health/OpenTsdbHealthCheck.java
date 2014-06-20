@@ -58,7 +58,7 @@ public class OpenTsdbHealthCheck extends com.yammer.metrics.core.HealthCheck {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setConnectTimeout(config.getMetricServiceConfig().getConnectionTimeoutMs());
             connection.setReadTimeout(config.getMetricServiceConfig().getConnectionTimeoutMs());
-            if (Math.floor(connection.getResponseCode() / 100) != 2) {
+            if (connection.getResponseCode() / 100 != 2) {
                 return Result.unhealthy("Unexpected result code from OpenTSDB Server: " + connection.getResponseCode());
             }
 

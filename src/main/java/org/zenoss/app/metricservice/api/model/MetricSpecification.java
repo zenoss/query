@@ -30,24 +30,22 @@
  */
 package org.zenoss.app.metricservice.api.model;
 
-import static org.springframework.util.StringUtils.arrayToDelimitedString;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.zenoss.app.metricservice.api.impl.Utils;
 
+import javax.ws.rs.WebApplicationException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.WebApplicationException;
-
-import org.zenoss.app.metricservice.api.impl.Utils;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import static org.springframework.util.StringUtils.arrayToDelimitedString;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
- * 
+ *
  */
 @JsonInclude(Include.NON_NULL)
 public class MetricSpecification {
@@ -77,7 +75,7 @@ public class MetricSpecification {
 
     @JsonProperty
     private String expression = null;
-    
+
     @JsonProperty
     private Map<String, List<String>> tags = null;
 
@@ -94,6 +92,7 @@ public class MetricSpecification {
     public void setId(String id) {
         this.id = id;
     }
+
     /**
      * @return
      */
@@ -202,7 +201,14 @@ public class MetricSpecification {
      * @return the tags
      */
     public final Map<String, List<String>> getTags() {
+        if (null == tags) {
+            initializeTags();
+        }
         return tags;
+    }
+
+    private void initializeTags() {
+        tags = new HashMap<>();
     }
 
     /**
@@ -210,7 +216,11 @@ public class MetricSpecification {
      *            the tags to set
      */
     public final void setTags(Map<String, List<String>> tags) {
-        this.tags = tags;
+        if (null == tags) {
+            initializeTags();
+        } else {
+            this.tags = tags;
+        }
     }
 
     public String getMetricOrName() {
@@ -234,15 +244,15 @@ public class MetricSpecification {
      * <em style="color: red">NOTE: This method supports a format that is
      * proposed to OpenTSDB, but is not yet committed. This format include
      * "rate" options to better support counter base metrics</em>
-     * 
+     *
      * @param baseTags
      *            specifies any base tags that should be applied to the metric
      *            before overriding with any metric specific tags.
-     * 
+     *
      * @return OpenTSDB URL query formatted String instance
      */
     public String toString(String downsample,
-            Map<String, List<String>> baseTags, boolean withRateOptions) {
+                           Map<String, List<String>> baseTags, boolean withRateOptions) {
         StringBuilder buf = new StringBuilder();
         if (getAggregator() != null) {
             buf.append(getAggregator()).append(':');
@@ -283,7 +293,7 @@ public class MetricSpecification {
             buf.append(']');
         }
         if ((baseTags != null && baseTags.size() > 0)
-                || (getTags() != null && getTags().size() > 0)) {
+            || (getTags() != null && getTags().size() > 0)) {
             Map<String, List<String>> joined = new HashMap<>();
             if (baseTags != null) {
                 joined.putAll(baseTags);
@@ -299,9 +309,9 @@ public class MetricSpecification {
                 }
                 comma = true;
                 buf.append(tag.getKey())
-                        .append('=')
-                        .append(arrayToDelimitedString(
-                                tag.getValue().toArray(), "|"));
+                    .append('=')
+                    .append(arrayToDelimitedString(
+                        tag.getValue().toArray(), "|"));
             }
             buf.append('}');
         }
@@ -315,7 +325,7 @@ public class MetricSpecification {
      * <em style="color: red">NOTE: This method supports a format that is
      * proposed to OpenTSDB, but is not yet committed. This format include
      * "rate" options to better support counter base metrics</em>
-     * 
+     *
      * @return OpenTSDB URL query formatted String instance
      */
     public String toString() {
@@ -351,7 +361,7 @@ public class MetricSpecification {
 
         // Format is "counter[,[max][,reset]]"
         String[] parts = content.substring("rate{".length(),
-                content.length() - 1).split(",");
+            content.length() - 1).split(",");
 
         if (parts[0].trim().length() == 0 || parts.length > 3) {
             throw new RateFormatException("invalid number of options");
@@ -359,7 +369,7 @@ public class MetricSpecification {
 
         if (!"counter".equals(parts[0].trim())) {
             throw new RateFormatException(
-                    "first option must be value \"counter\"");
+                "first option must be value \"counter\"");
         }
         options.setCounter(true);
 
@@ -372,9 +382,9 @@ public class MetricSpecification {
                     options.setCounterMax(Long.parseLong(v));
                 } catch (NumberFormatException nfe) {
                     throw new RateFormatException(
-                            String.format(
-                                    "Unable to parse counter max value '%s' as type long",
-                                    v), nfe);
+                        String.format(
+                            "Unable to parse counter max value '%s' as type long",
+                            v), nfe);
                 }
             }
 
@@ -386,9 +396,9 @@ public class MetricSpecification {
                         options.setResetThreshold(Long.parseLong(v));
                     } catch (NumberFormatException nfe) {
                         throw new RateFormatException(
-                                String.format(
-                                        "Unable to parse counter reset value '%s' as type long",
-                                        v), nfe);
+                            String.format(
+                                "Unable to parse counter reset value '%s' as type long",
+                                v), nfe);
                     }
                 }
             }
@@ -405,7 +415,7 @@ public class MetricSpecification {
      * <em style="color: red">NOTE: This method supports a format that is
      * proposed to OpenTSDB, but is not yet committed. This format include
      * "rate" options to better support counter base metrics</em>
-     * 
+     *
      * @param content
      *            the metric specification in the OpenTSDB format
      * @return model representation of the URL metric query parameter
@@ -423,7 +433,7 @@ public class MetricSpecification {
         Map<String, List<String>> tags = null;
         if (idx >= 0) {
             tags = MetricSpecification.parseTags(terms[terms.length - 1]
-                    .substring(idx).trim());
+                .substring(idx).trim());
             metric = terms[terms.length - 1].substring(0, idx);
         } else {
             tags = new HashMap<>();
@@ -445,8 +455,8 @@ public class MetricSpecification {
                         rateOptions = parseRateOptions(terms[1].trim());
                     } catch (Exception e) {
                         throw new WebApplicationException(
-                                Utils.getErrorResponse(null, 400,
-                                        e.getMessage(), e.getClass().getName()));
+                            Utils.getErrorResponse(null, 400,
+                                e.getMessage(), e.getClass().getName()));
                     }
                 }
                 if (terms.length > 3) {
@@ -461,9 +471,9 @@ public class MetricSpecification {
                             rateOptions = parseRateOptions(terms[2].trim());
                         } catch (Exception e) {
                             throw new WebApplicationException(
-                                    Utils.getErrorResponse(null, 400, e
-                                            .getMessage(), e.getClass()
-                                            .getName()));
+                                Utils.getErrorResponse(null, 400, e
+                                    .getMessage(), e.getClass()
+                                    .getName()));
                         }
                     }
                 } else if (terms.length >= 4) {
@@ -471,12 +481,12 @@ public class MetricSpecification {
                     // term that should be "rate" is some other random value,
                     // so this is a bad request.
                     throw new WebApplicationException(
-                            Utils.getErrorResponse(
-                                    null,
-                                    400,
-                                    String.format(
-                                            "unknown value '%s' specified, when only 'rate' value is allowed",
-                                            terms[2].trim()), "RequestParse"));
+                        Utils.getErrorResponse(
+                            null,
+                            400,
+                            String.format(
+                                "unknown value '%s' specified, when only 'rate' value is allowed",
+                                terms[2].trim()), "RequestParse"));
                 }
             }
         }

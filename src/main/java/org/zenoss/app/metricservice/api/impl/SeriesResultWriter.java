@@ -114,7 +114,7 @@ public class SeriesResultWriter extends BaseResultWriter {
         }
     }
 
-    private boolean writeHeader(JsonWriter writer, boolean seriesComma, MetricSpecification query) throws IOException {
+    private static boolean writeHeader(JsonWriter writer, boolean seriesComma, MetricSpecification query) throws IOException {
         if (seriesComma) {
             writer.append(',');
         } else {

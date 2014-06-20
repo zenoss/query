@@ -31,6 +31,7 @@
 package org.zenoss.app.metricservice;
 
 import com.google.common.base.Optional;
+import com.google.common.io.CharStreams;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -40,7 +41,10 @@ import org.eclipse.jetty.util.ajax.JSON;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zenoss.app.metricservice.api.impl.Utils;
 import org.zenoss.app.metricservice.api.metric.remote.MetricResources;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.PerformanceQuery;
@@ -55,12 +59,14 @@ import java.util.*;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
- * 
+ *
  */
 public abstract class ProviderTestBase extends ResourceTest {
+    private static final Logger log = LoggerFactory.getLogger(ProviderTestBase.class);
 
     @Autowired
     MetricResources resource;
+    public static final String PERFORMANCE_QUERY_URL = "/api/performance/query";
 
     /*
      * (non-Javadoc)
@@ -113,33 +119,39 @@ public abstract class ProviderTestBase extends ResourceTest {
         Object o;
         try (InputStreamReader reader = new InputStreamReader(
                 response.getEntityInputStream())) {
-            o = JSON.parse(reader);
+            String jsonString = CharStreams.toString((reader));
+            //String jsonString = reader.toString();
+            log.debug("About to parse objects from JSON String: {}", jsonString);
+            o = JSON.parse(jsonString);
+            //o = JSON.parse(reader);
             Assert.assertNotNull("Unable to parse response as JSON Object", o);
-            Assert.assertTrue(Map.class.isInstance(o));
+            Assert.assertTrue("Parsed JSON object should be instance of Map.",Map.class.isInstance(o));
         }
         Map<?, ?> json = (Map<?, ?>) o;
+        Assert.assertNotNull("Unable to cast response as map", o);
+
 
         // Verify the basic values
 //        if (id.isPresent()) {
 //            Assert.assertEquals(id.get(), json.get("clientId"));
 //        }
         if (start.isPresent()) {
-            Assert.assertEquals(start.get(), json.get("startTime"));
+            Assert.assertEquals("StartTime value from object should match json value",start.get(), json.get("startTime"));
         }
         if (end.isPresent()) {
-            Assert.assertEquals(end.get(), json.get("endTime"));
+            Assert.assertEquals("EndTime value from object should match json value", end.get(), json.get("endTime"));
         }
         if (returnset.isPresent()) {
-            Assert.assertEquals(returnset.get(),
-                    ReturnSet.fromJson((String) json.get("returnset")));
+            Assert.assertEquals("ReturnSet from object should match json value.", returnset.get(), ReturnSet.fromJson((String) json.get("returnset")));
         }
         if (series.isPresent()) {
-            Assert.assertEquals(series.get(), json.get("series"));
+            Assert.assertEquals("Series get from object should match json value.", series.get(), json.get("series"));
         }
-        Assert.assertNotNull(json.get("results"));
+        Assert.assertNotNull("json value for results should not be null.",json.get("results"));
 
         // Verify the structure of the results
         Object[] results = (Object[]) json.get("results");
+        log.debug("results = {}", Utils.jsonStringFromObject(results));
 
         if (results.length > 0) {
             // If we are using the mock generator then we can calculate
@@ -161,45 +173,40 @@ public abstract class ProviderTestBase extends ResourceTest {
 
             count = (int) Math.floor(dur / step) + 1;
 
-            if ((Boolean) json.get("series")) {
+            if (true || (Boolean) json.get("series")) {
 
                 // If we are a series then there will be at least 2 entries in
                 // the result set; if our mock source then exactly two
                 if ("mock".equals(json.get("source"))) {
-                    Assert.assertEquals(queries.length, results.length);
+                    Assert.assertEquals("length of queries and results should be same for mock source.", queries.length, results.length);
                 } else {
-                    Assert.assertTrue(results.length >= queries.length);
+                    Assert.assertTrue("length of results should be >= length of queries for non-mock source.", results.length >= queries.length);
                 }
 
                 for (Object r : results) {
                     Map<?, ?> value = (Map<?, ?>) r;
-                    Assert.assertNotNull("no metric specification found",
-                            value.get("metric"));
-                    Assert.assertNotNull("no data points array found",
-                            value.get("datapoints"));
+                    Assert.assertNotNull("no metric specification found", value.get("metric"));
+                    Assert.assertNotNull("no data points array found", value.get("datapoints"));
                     Object[] dps = (Object[]) value.get("datapoints");
-                    Assert.assertTrue(dps.length > 0);
+                    log.debug("count = {}; dps.length = {}", count, dps.length);
+                    Assert.assertTrue("data points array is empty.", dps.length > 0);
 
                     switch (ReturnSet.fromJson((String) json.get("returnset"))) {
                     case EXACT:
-                        Assert.assertEquals("number of data points found",
-                                count, dps.length);
+                        Assert.assertEquals("EXACT - number of data points found should match count.", count, dps.length);
                         break;
                     case ALL:
-                        Assert.assertTrue("number of data points found",
-                                dps.length >= count);
+                        Assert.assertTrue("ALL - number of data points found should be >= count", dps.length >= count);
                         break;
                     case LAST:
-                        Assert.assertEquals("number of data points found", 1,
-                                dps.length);
+                        Assert.assertEquals("LAST - number of data points found should be 1", 1, dps.length);
                         break;
                     default:
                         break;
                     }
                     for (Object dpo : dps) {
                         Map<?, ?> dp = (Map<?, ?>) dpo;
-                        Assert.assertNotNull("timestampt not found",
-                                dp.get("timestamp"));
+                        Assert.assertNotNull("timestamp not found", dp.get("timestamp"));
                         Assert.assertNotNull("value not found", dp.get("value"));
                     }
                 }
@@ -209,13 +216,12 @@ public abstract class ProviderTestBase extends ResourceTest {
                     // count is queries.length because the mock generates
                     // a data point for each step in the time span for each
                     // query
-                    Assert.assertEquals("number of data points found", count
-                            * queries.length, results.length);
+                    Assert.assertEquals("EXACT - number of data points found", count * queries.length, results.length);
                     break;
                 case LAST:
                     // If the request was for the "last" value then there should
                     // be exactly one data point per metric requested
-                    Assert.assertEquals(queries.length, results.length);
+                    Assert.assertEquals("LAST - should have exactly 1 data point per metric.", queries.length, results.length);
                     break;
                 case ALL:
                 default:
@@ -224,14 +230,14 @@ public abstract class ProviderTestBase extends ResourceTest {
 
                 for (Object r : results) {
                     Map<?, ?> value = (Map<?, ?>) r;
-                    Assert.assertNotNull(value.get("metric"));
-                    Assert.assertNotNull(value.get("timestamp"));
-                    Assert.assertNotNull(value.get("value"));
+                    Assert.assertNotNull("Metric should not be null.", value.get("metric"));
+                    Assert.assertNotNull("Timestamp should not be null.", value.get("timestamp"));
+                    Assert.assertNotNull("Value should not be null.", value.get("value"));
                 }
             }
         }
 
-        return (Map<?, ?>) json;
+        return json;
     }
 
     protected Map<?, ?> testPostQuery(Optional<String> id,
@@ -239,34 +245,34 @@ public abstract class ProviderTestBase extends ResourceTest {
             Optional<ReturnSet> returnset, Optional<Boolean> series,
             String[] queries) throws Exception {
         // Build up a query object to post
-        PerformanceQuery pq = new PerformanceQuery();
+        PerformanceQuery performanceQuery = new PerformanceQuery();
         if (start.isPresent()) {
-            pq.setStart(start.get());
+            performanceQuery.setStart(start.get());
         }
         if (end.isPresent()) {
-            pq.setEnd(end.get());
+            performanceQuery.setEnd(end.get());
         }
         if (returnset.isPresent()) {
-            pq.setReturnset(returnset.get());
+            performanceQuery.setReturnset(returnset.get());
         }
         if (series.isPresent()) {
-            pq.setSeries(series.get());
+            performanceQuery.setSeries(series.get());
         }
         List<MetricSpecification> list = new ArrayList<>();
         for (String s : queries) {
             list.add(MetricSpecification.fromString(s));
         }
-        pq.setMetrics(list);
+        performanceQuery.setMetrics(list);
         Client client = client();
         client.setConnectTimeout(1000000);
         client.setReadTimeout(1000000);
         WebResource wr = client.resource("/api/performance/query");
-        Assert.assertNotNull(wr);
+        Assert.assertNotNull("WebResource for /api/performance/query was null.", wr);
         wr.accept(MediaType.APPLICATION_JSON);
         Builder request = wr.type(MediaType.APPLICATION_JSON);
         request.accept(MediaType.APPLICATION_JSON);
-        ClientResponse response = request.post(ClientResponse.class, pq);
-        Assert.assertNotNull(response);
+        ClientResponse response = request.post(ClientResponse.class, performanceQuery);
+        Assert.assertNotNull("POST response was null.", response);
         Assert.assertEquals("Invalid response code", 200, response.getStatus());
 
         return parseAndVerifyResponse(Optional.<String> absent(), start, end,
@@ -302,17 +308,16 @@ public abstract class ProviderTestBase extends ResourceTest {
 
         // Build up the URI query
         char prefix = '?';
-        StringBuilder buf = new StringBuilder("/api/performance/query");
         PerformanceQuery request = makeRequestObject(id, start, end, returnset, series, queries);
 
         // Invoke the URI and make sure we get a response
         Client client = client();
         client.setConnectTimeout(1000000);
         client.setReadTimeout(1000000);
-        WebResource wr = client.resource(buf.toString());
-        Assert.assertNotNull(wr);
+        WebResource wr = client.resource(PERFORMANCE_QUERY_URL);
+        Assert.assertNotNull(String.format("Null WebResource for %s", PERFORMANCE_QUERY_URL), wr);
         ClientResponse response = wr.type(MediaType.APPLICATION_JSON_TYPE).post(ClientResponse.class, request);
-        Assert.assertNotNull(response);
+        Assert.assertNotNull("Null response from WebRequest.", response);
         Assert.assertEquals("Invalid response code", 200, response.getStatus());
         return parseAndVerifyResponse(id, start, end, returnset, series,
                 queries, response);
@@ -353,7 +358,7 @@ public abstract class ProviderTestBase extends ResourceTest {
     @Test
     public void queryTestEpochInSeconds10sAgo1QuerySeries() throws Exception {
         String start = String
-                .valueOf(((long) new Date().getTime() / 1000) - 10L);
+                .valueOf((new Date().getTime() / 1000) - 10L);
         testQuery(Optional.of("my-client-id"), Optional.of(start),
                 Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
                 Optional.of(true), Optional.<String> absent(),
@@ -373,6 +378,7 @@ public abstract class ProviderTestBase extends ResourceTest {
     }
 
     @Test
+    @Ignore("Series=false no longer supported.")
     public void queryTest10sAgo1QueryNoSeries() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
                 Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
@@ -391,6 +397,7 @@ public abstract class ProviderTestBase extends ResourceTest {
     }
 
     @Test
+    @Ignore("Series=false no longer supported.")
     public void queryTest10sAgo2QueryNoSeries() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
                 Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
@@ -400,6 +407,7 @@ public abstract class ProviderTestBase extends ResourceTest {
     }
 
     @Test
+
     public void queryTest10sAgo1QuerySeriesWithTags() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
                 Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
@@ -409,6 +417,7 @@ public abstract class ProviderTestBase extends ResourceTest {
     }
 
     @Test
+    @Ignore("Series=false no longer supported.")
     public void queryTest10sAgo1QueryNoSeriesWithTags() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
                 Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
@@ -428,6 +437,7 @@ public abstract class ProviderTestBase extends ResourceTest {
     }
 
     @Test
+    @Ignore("Series=false no longer supported.")
     public void queryTest10sAgo2QueryNoSeriesWithTags() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
                 Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
@@ -449,18 +459,8 @@ public abstract class ProviderTestBase extends ResourceTest {
     }
 
     @Test
+    @Ignore("Series=false no longer supported.")
     public void queryTestTimeRangeNoSeries() throws Exception {
-        testQuery(Optional.of("my-client-id"),
-                Optional.of("2013/04/30-16:00:00-GMT"),
-                Optional.of("2013/04/30-18:00:00-GMT"),
-                Optional.of(ReturnSet.EXACT), Optional.of(true),
-                Optional.<String> absent(),
-                Optional.<Map<String, List<String>>> absent(),
-                new String[] { "avg:laLoadInt1" });
-    }
-
-    @Test
-    public void queryTestOutsideExactTimeRange() throws Exception {
         testQuery(Optional.of("my-client-id"),
                 Optional.of("2013/04/30-16:00:00-GMT"),
                 Optional.of("2013/04/30-18:00:00-GMT"),
@@ -471,11 +471,22 @@ public abstract class ProviderTestBase extends ResourceTest {
     }
 
     @Test
+    public void queryTestOutsideExactTimeRange() throws Exception {
+        testQuery(Optional.of("my-client-id"),
+                Optional.of("2013/04/30-16:00:00-GMT"),
+                Optional.of("2013/04/30-18:00:00-GMT"),
+                Optional.of(ReturnSet.EXACT), Optional.of(true),
+                Optional.<String> absent(),
+                Optional.<Map<String, List<String>>> absent(),
+                new String[] { "avg:laLoadInt1" });
+    }
+
+    @Test
     public void queryTestOutsideTimeRange() throws Exception {
         testQuery(Optional.of("my-client-id"),
                 Optional.of("2013/04/30-16:00:00-GMT"),
                 Optional.of("2013/04/30-18:00:00-GMT"),
-                Optional.of(ReturnSet.ALL), Optional.of(false),
+                Optional.of(ReturnSet.ALL), Optional.of(true),
                 Optional.<String> absent(),
                 Optional.<Map<String, List<String>>> absent(),
                 new String[] { "avg:laLoadInt1" });
@@ -485,7 +496,7 @@ public abstract class ProviderTestBase extends ResourceTest {
     public void queryTestLastValue() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("1h-ago"),
                 Optional.<String> absent(), Optional.of(ReturnSet.LAST),
-                Optional.of(false), Optional.<String> absent(),
+                Optional.of(true), Optional.<String> absent(),
                 Optional.<Map<String, List<String>>> absent(),
                 new String[] { "avg:laLoadInt1" });
     }
@@ -494,7 +505,7 @@ public abstract class ProviderTestBase extends ResourceTest {
     public void queryTestLastValueWithTags() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("1h-ago"),
                 Optional.<String> absent(), Optional.of(ReturnSet.LAST),
-                Optional.of(false), Optional.<String> absent(),
+                Optional.of(true), Optional.<String> absent(),
                 Optional.<Map<String, List<String>>> absent(), new String[] {
                         "avg:laLoadInt1{tag1=*,tag2=*}",
                         "sum:laLoadInt5{tag1=*,tag2=*}" });

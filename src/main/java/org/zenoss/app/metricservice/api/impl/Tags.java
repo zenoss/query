@@ -140,37 +140,21 @@ public class Tags {
         return tags.size();
     }
 
-    /**
-     * Determines if two instances are equivalent. Two instances are considered
-     * equivalent if they have the same tags and if the tags have the same
-     * values.
-     * 
-     * @param other
-     *            instance to which to compare
-     * @return true if they are equal, else false
-     */
-    public boolean equals(Object object) {
-        if (object == null || !(object instanceof Tags)) {
-            return false;
-        }
-        
-        Tags other = (Tags) object;
-        if (this.tags.size() != other.tags.size()) {
-            return false;
-        }
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) return true;
+        if (other == null || getClass() != other.getClass()) return false;
 
-        /*
-         * Both the left and right side exist and they have the same number of
-         * elements, so now the element have to be walked to determine if they
-         * contain the same keys and values.
-         */
-        for (String key : this.tags.keySet()) {
-            if (!other.tags.containsKey(key)
-                    || !this.tags.get(key).equals(other.tags.get(key))) {
-                return false;
-            }
-        }
+        Tags otherTags = (Tags) other;
+
+        if (tags != null ? !tags.equals(otherTags.tags) : otherTags.tags != null) return false;
+
         return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return tags != null ? tags.hashCode() : 0;
     }
 
     /**

@@ -132,7 +132,7 @@ public class Calculator extends BaseMetricCalculator {
      * side and the second is considered the left hand side.
      */
     public void eq() {
-        push((double) (pop() == pop() ? 1 : 0));
+        push((double) (pop().equals(pop()) ? 1 : 0));
     }
 
     /**
@@ -142,7 +142,7 @@ public class Calculator extends BaseMetricCalculator {
      * side and the second is considered the left hand side.
      */
     public void ne() {
-        push((double) (pop() != pop() ? 1 : 0));
+        push((double) (!pop().equals(pop()) ? 1 : 0));
     }
 
     /**
@@ -761,7 +761,7 @@ public class Calculator extends BaseMetricCalculator {
     @Override
     public double evaluate(double value, String expression)
             throws UnknownReferenceException {
-        return evaluate(value, expression, (Closure) null);
+        return evaluate(value, expression, null);
     }
 
     /*
@@ -773,7 +773,7 @@ public class Calculator extends BaseMetricCalculator {
      */
     @Override
     public double evaluate(String expression) throws UnknownReferenceException {
-        return evaluate(expression, (Closure) null);
+        return evaluate(expression, null);
     }
 
     /*

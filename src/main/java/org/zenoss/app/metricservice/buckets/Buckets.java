@@ -181,7 +181,7 @@ public class Buckets<P, S> {
      */
     final public void add(final P primaryKey, final S shortcutKey,
             final long timestamp, final double value) {
-        long ts = (long) (timestamp / secondsPerBucket);
+        long ts = timestamp / secondsPerBucket;
 
         // Get existing or create new bucket for this timestamp
         Bucket b = bucketList.get(ts);
@@ -238,13 +238,13 @@ public class Buckets<P, S> {
         Collections.sort(keys);
 
         for (long k : keys) {
-            ps.format("BUCKET: %d (%s)\n", k, new Date(k * secondsPerBucket * 1000));
+            ps.format("BUCKET: %d (%d) (%s)\n", k, k * secondsPerBucket, new Date(k * secondsPerBucket * 1000));
             for (P key : bucketList.get(k).values.keySet()) {
+                Value value = bucketList.get(k).values.get(key);
                 ps.format("    %-40s : %10.2f (%10.2f / %d)\n", key.toString(),
-                        bucketList.get(k).values.get(key).getValue(),
-                        bucketList.get(k).values.get(key).getSum(),
-                        bucketList.get(k).values.get(key).getCount());
-
+                        value.getValue(),
+                        value.getSum(),
+                        value.getCount());
             }
         }
     }
