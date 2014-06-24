@@ -1861,7 +1861,7 @@ var visualization,
 
             // if the range is less than a day, show only hours
             if (_start.getDate() === _end.getDate()) {
-                return moment.utc(ts).tz(timezone).format("hh:mm:ssa");
+                return moment.utc(ts).tz(timezone).format("HH:mm:ss");
 
             // else show the full date
             } else {
@@ -1877,7 +1877,7 @@ var visualization,
          * @access public
          * @default "MM/DD/YY hh:mm:ss a"
          */
-        dateFormat: "MM/DD/YY hh:mm:ss a"
+        dateFormat: "MM/DD/YY HH:mm:ss"
 
     };
 
