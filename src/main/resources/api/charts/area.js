@@ -72,14 +72,14 @@
             });
             model.clipEdge(true);
             model.height($(chart.svgwrapper).height());
-            model.width($(chart.svgwrapper).width());
+            model.width($(chart.svgwrapper).width() - 10);
             model.yAxis.axisLabel(chart.yAxisLabel);
             if (chart.maxy !== undefined && chart.miny !== undefined) {
                 model.forceY([chart.miny, chart.maxy]);
             }
             // magic to make the yaxis label show up
             // see https://github.com/novus/nvd3/issues/17
-            model.margin({left: 100});
+            model.margin({left: 90});
             chart.svg.datum(chart.plots);
 
             nv.addGraph(function() {
