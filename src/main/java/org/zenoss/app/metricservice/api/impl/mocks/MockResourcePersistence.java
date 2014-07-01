@@ -46,8 +46,8 @@ import com.fasterxml.jackson.databind.ObjectReader;
 
 public class MockResourcePersistence implements ResourcePersistenceAPI {
     private boolean connected = false;
-    private List<String> list = new ArrayList<String>();
-    private Map<String, String> idHash = new HashMap<String, String>();
+    private List<String> list = new ArrayList<>();
+    private Map<String, String> idHash = new HashMap<>();
 
     @Override
     public void connect(String prefix, String host) {
@@ -85,7 +85,7 @@ public class MockResourcePersistence implements ResourcePersistenceAPI {
     public String getResourceByName(String name) {
         // Walk the list of charts and if we find one with the attribute
         // name and value specified
-        ObjectMapper om = new ObjectMapper();
+        ObjectMapper om = Utils.getObjectMapper();
         ObjectReader reader = om.reader(Chart.class);
         Chart chart = null;
 
@@ -135,7 +135,7 @@ public class MockResourcePersistence implements ResourcePersistenceAPI {
     @Override
     public List<String> range(int start, int end) {
         if (start < 0 || end < 0) {
-            return new ArrayList<String>();
+            return new ArrayList<>();
         }
         if (end + 1 > list.size()) {
             return list.subList(start, list.size());

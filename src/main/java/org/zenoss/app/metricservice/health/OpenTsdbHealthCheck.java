@@ -54,19 +54,12 @@ public class OpenTsdbHealthCheck extends com.yammer.metrics.core.HealthCheck {
     @Override
     protected Result check() throws Exception {
         try {
-            URL url = new URL(config.getMetricServiceConfig()
-                    .getOpenTsdbUrl() + "/version?json");
-            HttpURLConnection connection = (HttpURLConnection) url
-                    .openConnection();
-            connection
-                    .setConnectTimeout(config.getMetricServiceConfig()
-                            .getConnectionTimeoutMs());
-            connection.setReadTimeout(config.getMetricServiceConfig()
-                    .getConnectionTimeoutMs());
+            URL url = new URL(config.getMetricServiceConfig().getOpenTsdbUrl() + "/version?json");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(config.getMetricServiceConfig().getConnectionTimeoutMs());
+            connection.setReadTimeout(config.getMetricServiceConfig().getConnectionTimeoutMs());
             if (Math.floor(connection.getResponseCode() / 100) != 2) {
-                return Result
-                        .unhealthy("Unexpected result code from OpenTSDB Server: "
-                                + connection.getResponseCode());
+                return Result.unhealthy("Unexpected result code from OpenTSDB Server: " + connection.getResponseCode());
             }
 
             // Exception if unable to parse object from input stream

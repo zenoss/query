@@ -42,42 +42,34 @@ import com.google.common.base.Optional;
 
 /**
  * @author Zenoss
- * 
  */
 public interface MetricServiceAPI {
 
     /**
      * Specifies the interface for querying performance metric data.
-     * 
-     * @param id
-     *            id of the request
-     * @param startTime
-     *            start time of the query range
-     * @param endTime
-     *            end time of the query range
-     * @param returnset
-     *            return all or only those values in the query range, this is
-     *            needed because OpenTSDB returns values outside the query
-     *            range.
-     * @param series
-     *            should the results be returned as a series or in line
-     * @param downsample
-     *            global downsample value
-     * @param grouping
-     *            specifies the size, in seconds, into which results should be
-     *            grouped. This is useful / required when dealing with RPN
-     *            expressions that reference other metric values so that metrics
-     *            that come in a different times can be "lined up"
-     * @param tags
-     *            global filters for the query
-     * @param queries
-     *            metric queries
+     *
+     * @param id         id of the request
+     * @param start      start time of the query range
+     * @param end        end time of the query range
+     * @param returnset  return all or only those values in the query range, this is
+     *                   needed because OpenTSDB returns values outside the query
+     *                   range.
+     * @param series     should the results be returned as a series or in line
+     * @param downsample global downsample value
+     * @param grouping   specifies the size, in seconds, into which results should be
+     *                   grouped. This is useful / required when dealing with RPN
+     *                   expressions that reference other metric values so that metrics
+     *                   that come in a different times can be "lined up"
+     * @param tags       global filters for the query
+     * @param metrics    metric queries
      * @return response of the request
      */
-    public Response query(Optional<String> id, Optional<String> startTime,
-            Optional<String> endTime, Optional<ReturnSet> returnset,
-            Optional<Boolean> series, Optional<String> downsample,
-            Optional<String> grouping,
-            Optional<Map<String, List<String>>> tags,
-            List<MetricSpecification> queries);
+    public Response query(Optional<String> id, Optional<String> start,
+                          Optional<String> end, Optional<ReturnSet> returnset,
+                          Optional<Boolean> series, Optional<String> downsample,
+                          Optional<String> grouping,
+                          Optional<Map<String, List<String>>> tags,
+                          List<MetricSpecification> metrics);
+
+    public Response options(String request);
 }

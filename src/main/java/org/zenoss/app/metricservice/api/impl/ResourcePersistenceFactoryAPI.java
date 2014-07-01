@@ -37,5 +37,4 @@ package org.zenoss.app.metricservice.api.impl;
 public interface ResourcePersistenceFactoryAPI {
     public boolean isConnected();
     public ResourcePersistenceAPI getInstance(String resourceType);
-    public void returnInstance(ResourcePersistenceAPI api);
 }

@@ -31,6 +31,10 @@
 
 package org.zenoss.app.metricservice.buckets;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,6 +55,8 @@ import java.util.Map;
  *            shortcut key type
  */
 public class Buckets<P, S> {
+
+    private final Logger log = LoggerFactory.getLogger(Bucket.class);
     /**
      * Default bucket size of 5 minutes
      */
@@ -59,12 +65,16 @@ public class Buckets<P, S> {
     /**
      * Specifies the size of each bucket in seconds
      */
-    private long downsample = 5 * 60;
+    private long secondsPerBucket = 5 * 60;
+
+    public Map<Long, Bucket> getBucketList() {
+        return bucketList;
+    }
 
     /**
      * Set of buckets indexed by time in seconds
      */
-    private Map<Long, Bucket> bucketList = new HashMap<Long, Bucket>();
+    private Map<Long, Bucket> bucketList = new HashMap<>();
 
     /**
      * Each bucket maintains a summary of the values that fall within that
@@ -80,12 +90,14 @@ public class Buckets<P, S> {
         /**
          * Map from the primary key to the values within a bucket
          */
-        private Map<P, Value> values = new HashMap<P, Value>();
+        @JsonProperty("values")
+        private Map<P, Value> values = new HashMap<>();
 
         /**
          * Map from the shortcut key to the values within a bucket
          */
-        private Map<S, Value> valuesByName = new HashMap<S, Value>();
+        @JsonProperty("valuesByName")
+        private Map<S, Value> valuesByName = new HashMap<>();
 
         /**
          * Add a value to a bucket
@@ -147,11 +159,11 @@ public class Buckets<P, S> {
     /**
      * Constructs an instance of buckets with a specified bucket size.
      * 
-     * @param downsample
+     * @param secondsPerBucket
      *            the number of seconds per each bucket
      */
-    public Buckets(final long downsample) {
-        this.downsample = downsample;
+    public Buckets(final long secondsPerBucket) {
+        this.secondsPerBucket = secondsPerBucket;
     }
 
     /**
@@ -162,14 +174,14 @@ public class Buckets<P, S> {
      * @param shortcutKey
      *            shortcut key for the value
      * @param timestamp
-     *            timestamp of the value (will be rounded based on downsample
+     *            timestamp of the value (will be rounded based on secondsPerBucket
      *            size)
      * @param value
      *            value to add
      */
     final public void add(final P primaryKey, final S shortcutKey,
             final long timestamp, final double value) {
-        long ts = (long) (timestamp / downsample);
+        long ts = (long) (timestamp / secondsPerBucket);
 
         // Get existing or create new bucket for this timestamp
         Bucket b = bucketList.get(ts);
@@ -189,29 +201,29 @@ public class Buckets<P, S> {
      * @return bucket of the given timestamp (that will be downsampled) or null
      */
     final public Bucket getBucket(long timestamp) {
-        return bucketList.get(timestamp / downsample);
+        return bucketList.get(timestamp / secondsPerBucket);
     }
 
     /**
      * Returns a sorted copy of the timestamps for the buckets. The timestamps
      * returned are the downsampled values. To get the correct timestamp these
-     * values should be multiplied by the downsample value.
+     * values should be multiplied by the secondsPerBucket value.
      * 
      * @return sorted list of downsampled time values
      */
     final public List<Long> getTimestamps() {
-        List<Long> result = new ArrayList<Long>(bucketList.keySet());
+        List<Long> result = new ArrayList<>(bucketList.keySet());
         Collections.sort(result);
         return result;
     }
 
     /**
-     * Returns the downsample value
+     * Returns the secondsPerBucket value
      * 
-     * @return downsample
+     * @return secondsPerBucket
      */
-    final public long getDownsample() {
-        return downsample;
+    final public long getSecondsPerBucket() {
+        return secondsPerBucket;
     }
 
     /**
@@ -222,11 +234,11 @@ public class Buckets<P, S> {
      *            printstream instance to use for the dump
      */
     final public void dump(PrintStream ps) {
-        List<Long> keys = new ArrayList<Long>(bucketList.keySet());
+        List<Long> keys = new ArrayList<>(bucketList.keySet());
         Collections.sort(keys);
 
         for (long k : keys) {
-            ps.format("BUCKET: %d (%s)\n", k, new Date(k * downsample * 1000));
+            ps.format("BUCKET: %d (%s)\n", k, new Date(k * secondsPerBucket * 1000));
             for (P key : bucketList.get(k).values.keySet()) {
                 ps.format("    %-40s : %10.2f (%10.2f / %d)\n", key.toString(),
                         bucketList.get(k).values.get(key).getValue(),

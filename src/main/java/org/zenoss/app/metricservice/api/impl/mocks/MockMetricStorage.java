@@ -36,10 +36,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.ParseException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +47,7 @@ import org.zenoss.app.annotations.API;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.impl.MetricStorageAPI;
 import org.zenoss.app.metricservice.api.impl.OpenTSDBPMetricStorage;
+import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryResult;
 import org.zenoss.app.metricservice.api.impl.Utils;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
@@ -106,17 +104,92 @@ public class MockMetricStorage implements MetricStorageAPI {
         long postEnd = end + 60; // 60 seconds
         long dur = end - start;
 
-        log.debug("Generating mock data for '{}' to '{}', a duraction of '{}'",
+        log.debug("Generating mock data for '{}' to '{}', a duration of '{}'",
                 start, end, dur);
-        long step = 0;
-        if (dur < 60) {
-            step = 1;
-        } else if (dur < 60 * 60) {
-            step = 5;
-        } else {
-            step = 15;
+        long step = determineStepFromDuration(dur);
+        log.debug("Mock data generated at an interval of '{}' seconds", step);
+
+        // Return an array of results from 0.0 to 1.0 equally distributed
+        // over the time range with 1 second steps.
+        double inc = 1.0 / (double) (dur / step);
+
+        OpenTSDBQueryResult result = new OpenTSDBQueryResult();
+        int count = 0;
+        //StringBuilder buf = new StringBuilder();
+        for (MetricSpecification query : queries) {
+            // Need to join the global tags with the per metric tags,
+            // overriding any global tag with that specified per metric
+            if (tags != null || query.getTags() != null) {
+                Map<String, List<String>> joined = new HashMap<>();
+                if (tags != null) {
+                    joined.putAll(tags);
+                }
+                if (query.getTags() != null) {
+                    joined.putAll(query.getTags());
+                }
+                List<String> mockValue = new ArrayList<String>();
+                mockValue.add(MOCK_VALUE);
+                for (Map.Entry<String, List<String>> tag : joined.entrySet()) {
+                    tag.setValue(mockValue);
+                }
+                result.addTags(joined);
+            }
+            result.addTags(query.getTags());
+            result.metric = query.getMetric();
+            double val = 0.0;
+            for (long i = preStart; i <= postEnd; i += step) {
+                double pointValue = 2.0;
+                if (i >= start && i <= end) {
+                    pointValue = val;
+                    val += inc;
+                }
+                result.addDataPoint(i, pointValue);
+
+
+                count++;
+            }
         }
-        log.debug("Mock data geneated at an interval of '{}' seconds", step);
+        baos.write(Utils.jsonStringFromObject(result).getBytes());
+
+        log.debug("Generated {} lines of data", count);
+        return baos.toByteArray();
+    }
+
+    public byte[] oldGenerateData(MetricServiceAppConfiguration config, String id,
+                               String startTime, String endTime, ReturnSet returnset,
+                               Boolean series, String downsample, Map<String, List<String>> tags,
+                               List<MetricSpecification> queries) throws IOException {
+        log.debug("Generate data for '{}' to '{}' requested", startTime,
+            endTime);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        long start = 0;
+        try {
+            start = Utils.parseDate(startTime);
+        } catch (ParseException e) {
+            log.debug(
+                "Unable to parse start time specification of '{}' : {}:{}",
+                startTime, e.getClass().getName(), e.getMessage());
+            return null;
+        }
+        long end = 0;
+        try {
+            end = Utils.parseDate(endTime);
+        } catch (ParseException e) {
+            log.debug("Unable to parse end time specification of '{}' : {}:{}",
+                endTime, e.getClass().getName(), e.getMessage());
+            return null;
+        }
+
+        long preStart = start - 60; // 60 seconds
+        long postEnd = end + 60; // 60 seconds
+        long dur = end - start;
+
+        log.debug("Generating mock data for '{}' to '{}', a duration of '{}'",
+            start, end, dur);
+        long step = determineStepFromDuration(dur);
+        log.debug("Mock data generated at an interval of '{}' seconds", step);
 
         // Return an array of results from 0.0 to 1.0 equally distributed
         // over the time range with 1 second steps.
@@ -141,7 +214,7 @@ public class MockMetricStorage implements MetricStorageAPI {
                 // Need to join the global tags with the per metric tags,
                 // overriding any global tag with that specified per metric
                 if (tags != null || query.getTags() != null) {
-                    Map<String, List<String>> joined = new HashMap<String, List<String>>();
+                    Map<String, List<String>> joined = new HashMap<>();
                     if (tags != null) {
                         joined.putAll(tags);
                     }
@@ -150,7 +223,7 @@ public class MockMetricStorage implements MetricStorageAPI {
                     }
                     for (Map.Entry<String, List<String>> tag : joined.entrySet()) {
                         buf.append(' ').append(tag.getKey()).append(EQ)
-                                .append(MOCK_VALUE);
+                            .append(MOCK_VALUE);
                     }
                 }
                 buf.append(LF);
@@ -161,6 +234,18 @@ public class MockMetricStorage implements MetricStorageAPI {
 
         log.debug("Generated {} lines of data", count);
         return baos.toByteArray();
+    }
+
+    private long determineStepFromDuration(long dur) {
+        long step = 0;
+        if (dur < 60) {
+            step = 1;
+        } else if (dur < 60 * 60) {
+            step = 5;
+        } else {
+            step = 15;
+        }
+        return step;
     }
 
     /*

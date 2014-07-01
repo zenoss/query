@@ -63,17 +63,6 @@ public class MockResourcePersistenceFactory implements
         return persistence;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.metricservice.api.impl.ResourcePersistenceFactoryAPI#
-     * returnInstance
-     * (org.zenoss.app.metricservice.api.impl.ResourcePersistenceAPI)
-     */
-    @Override
-    public void returnInstance(ResourcePersistenceAPI api) {
-    }
-
     /* (non-Javadoc)
      * @see org.zenoss.app.metricservice.api.impl.ResourcePersistenceFactoryAPI#isConnected()
      */

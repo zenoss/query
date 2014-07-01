@@ -50,12 +50,12 @@ public class MetricKeyCache {
     /**
      * Current set of all metric keys in the cache
      */
-    Set<MetricKey> keys = new HashSet<MetricKey>();
+    Set<MetricKey> keys = new HashSet<>();
 
     /**
      * Map of a simple string name to the metric keys
      */
-    Map<String, List<MetricKey>> map = new HashMap<String, List<MetricKey>>();
+    Map<String, List<MetricKey>> map = new HashMap<>();
 
     /**
      * Place a metric key in the cache and return the key just added. This
@@ -69,7 +69,7 @@ public class MetricKeyCache {
         keys.add(key);
         List<MetricKey> list = map.get(key.getMetric());
         if (list == null) {
-            list = new ArrayList<MetricKey>();
+            list = new ArrayList<>();
             map.put(key.getMetric(), list);
         }
         list.add(key);
