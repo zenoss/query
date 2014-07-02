@@ -56,10 +56,10 @@
             // magic to make the yaxis label show up
             // see https://github.com/novus/nvd3/issues/17
             model.margin({
-                left : 100
+                left : 90
             });
             model.height($(chart.svgwrapper).height());
-            model.width($(chart.svgwrapper).width());
+            model.width($(chart.svgwrapper).width() - 10);
             chart.svg.datum(chart.plots);
             nv.addGraph(function() {
                 chart.svg.transition().duration(0).call(model);
