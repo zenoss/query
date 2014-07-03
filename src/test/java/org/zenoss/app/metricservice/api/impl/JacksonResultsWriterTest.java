@@ -75,7 +75,7 @@ public class JacksonResultsWriterTest {
         ReturnSet returnset = ReturnSet.ALL;
         boolean series = true;
         StringWriter writer = new StringWriter();
-        //victim.writeResults(writer, queries, buckets, id, sourceId, startTs, startTimeConfig, endTs, endTimeConfig, returnset, series);
+        victim.writeResults(writer, queries, buckets, id, sourceId, startTs, startTimeConfig, endTs, endTimeConfig, returnset, series);
         say("RESULTS:");
         say(writer.toString());
     }

@@ -29,66 +29,35 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.zenoss.app.metricservice.api.impl;
+package org.zenoss.app.metricservice.testutil;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
+import java.util.HashMap;
+import java.util.Map;
 
-import java.util.*;
+public class ConstantSeriesGenerator implements SeriesGenerator {
+    private final double generatedValue;
 
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class QueryResult {
-
-    //private Map<String, List<String>> tags = HashMultimap.create();
-
-    public QueryResult() {}
-
-    public QueryResult(QueryResult other) {
-        this.id = other.id;
-        this.metric = other.metric;
-        this.datapoints = new ArrayList<>(other.datapoints.size());
-        Collections.copy(datapoints, other.datapoints);
+    public ConstantSeriesGenerator(double i) {
+        generatedValue = i;
     }
 
-    private List<QueryResultDataPoint> datapoints;
-    private String metric;
-    private Multimap<String, String> tags = HashMultimap.create();
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    private String id;
-
-    public String getMetric() {
-        return metric;
-    }
-
-    public void setMetric(String metric) {
-        this.metric = metric;
-    }
-
-    public List<QueryResultDataPoint> getDatapoints() {
-        return datapoints;
-    }
-
-    public void setDatapoints(List<QueryResultDataPoint> datapoints) {
-        this.datapoints = datapoints;
-    }
-
-    public void setTags(Map<String, List<String>> newTags) {
-        tags.clear();
-        for (Map.Entry<String, List<String>> entry : newTags.entrySet()) {
-            tags.putAll(entry.getKey(), entry.getValue());
+    @Override
+    public Map<Long, Double> generateValues(long startTimestamp, long endTimestamp, long step) {
+        validateTimeArguments(startTimestamp, endTimestamp, step);
+        Map<Long, Double> result = new HashMap<>();
+        for (long x = startTimestamp; x <= endTimestamp; x += step) {
+            result.put(x, generatedValue);
         }
+        return result;
     }
 
-    public Map<String, Collection<String>> getTags() {
-        return tags.asMap();
+    private static void validateTimeArguments(long startTimestamp, long endTimestamp, long step) {
+        if (0 == step) {
+            throw new IllegalArgumentException("Step value must be nonzero");
+        }
+        if (Long.signum(endTimestamp - startTimestamp) != Long.signum(step)) {
+            throw new IllegalArgumentException("Time specification will result in infinite loop.");
+        }
+
     }
 }

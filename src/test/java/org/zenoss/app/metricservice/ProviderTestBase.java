@@ -39,7 +39,6 @@ import com.sun.jersey.api.client.WebResource.Builder;
 import com.yammer.dropwizard.testing.ResourceTest;
 import org.eclipse.jetty.util.ajax.JSON;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +49,7 @@ import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.PerformanceQuery;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
@@ -377,8 +377,8 @@ public abstract class ProviderTestBase extends ResourceTest {
                 new String[] { "avg:laLoadInt1" });
     }
 
-    @Test
-    @Ignore("Series=false no longer supported.")
+    // Series=false is no longer supported, so expect exception
+    @Test(expected=WebApplicationException.class)
     public void queryTest10sAgo1QueryNoSeries() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
                 Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
@@ -396,8 +396,8 @@ public abstract class ProviderTestBase extends ResourceTest {
                         "avg:laLoadInt1", "sum:laLoadInt5" });
     }
 
-    @Test
-    @Ignore("Series=false no longer supported.")
+    // Series=false is no longer supported, so expect exception
+    @Test(expected=WebApplicationException.class)
     public void queryTest10sAgo2QueryNoSeries() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
                 Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
@@ -407,7 +407,6 @@ public abstract class ProviderTestBase extends ResourceTest {
     }
 
     @Test
-
     public void queryTest10sAgo1QuerySeriesWithTags() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
                 Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
@@ -416,8 +415,8 @@ public abstract class ProviderTestBase extends ResourceTest {
                 new String[] { "avg:laLoadInt1{tag1=*,tag2=*}" });
     }
 
-    @Test
-    @Ignore("Series=false no longer supported.")
+    // Series=false is no longer supported, so expect exception
+    @Test(expected=WebApplicationException.class)
     public void queryTest10sAgo1QueryNoSeriesWithTags() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
                 Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
@@ -436,8 +435,8 @@ public abstract class ProviderTestBase extends ResourceTest {
                         "sum:laLoadInt5{tag1=*,tag2=*}" });
     }
 
-    @Test
-    @Ignore("Series=false no longer supported.")
+    // Series=false is no longer supported, so expect exception
+    @Test(expected=WebApplicationException.class)
     public void queryTest10sAgo2QueryNoSeriesWithTags() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
                 Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
@@ -446,6 +445,7 @@ public abstract class ProviderTestBase extends ResourceTest {
                         "avg:laLoadInt1{tag1=*,tag2=*}",
                         "sum:laLoadInt5{tag1=*,tag2=*}" });
     }
+
 
     @Test
     public void queryTestTimeRange() throws Exception {
@@ -458,8 +458,8 @@ public abstract class ProviderTestBase extends ResourceTest {
                 new String[] { "avg:laLoadInt1" });
     }
 
-    @Test
-    @Ignore("Series=false no longer supported.")
+    // Series=false is no longer supported, so expect exception
+    @Test(expected=WebApplicationException.class)
     public void queryTestTimeRangeNoSeries() throws Exception {
         testQuery(Optional.of("my-client-id"),
                 Optional.of("2013/04/30-16:00:00-GMT"),

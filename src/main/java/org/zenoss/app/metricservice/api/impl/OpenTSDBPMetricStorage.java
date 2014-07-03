@@ -110,7 +110,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
                 writer.close();
                 return new WebApplicationException(Response.status(code)
                     .entity(baos.toString()).build());
-            } catch (Exception ee) {
+            } catch (IOException ee) {
                 return new WebApplicationException(code);
             }
         }
@@ -177,8 +177,8 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
         DefaultHttpClient httpClient = new DefaultHttpClient();
         HttpPost postRequest = new HttpPost(postUrl);
+        log.info("Query to OpenTSDB: {}",jsonQueryString);
         StringEntity input = new StringEntity(jsonQueryString);
-        log.info("Query to OpenTSDB: {}",input.getContent().toString());
         input.setContentType("application/json");
         postRequest.setEntity(input);
         return httpClient.execute(postRequest);

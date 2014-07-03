@@ -45,7 +45,7 @@ import java.util.Set;
  * 
  * @author Zenoss
  */
-public class MetricKeyCache {
+public class  MetricKeyCache {
 
     /**
      * Current set of all metric keys in the cache
@@ -127,7 +127,7 @@ public class MetricKeyCache {
      */
     public void dump(PrintStream ps) {
         for (Map.Entry<String, List<MetricKey>> stringListEntry : map.entrySet()) {
-            ps.format("%s : %s\n", stringListEntry.getKey(), stringListEntry.getValue());
+            ps.format("%s : %s%n", stringListEntry.getKey(), stringListEntry.getValue());
         }
     }
 }

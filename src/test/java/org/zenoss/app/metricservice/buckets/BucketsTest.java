@@ -80,7 +80,6 @@ public class BucketsTest {
         assertTrue("Buckets should default to 300 seconds per bucket.", 300 == testSubject.getSecondsPerBucket());
         Buckets<MetricKey, String> testSubject2 = new Buckets<>(123);
         assertTrue("Buckets created with specified seconds per bucket should have that value.", 123 == testSubject2.getSecondsPerBucket());
-
     }
 
     @Test

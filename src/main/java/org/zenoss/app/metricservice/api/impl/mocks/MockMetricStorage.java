@@ -111,7 +111,7 @@ public class MockMetricStorage implements MetricStorageAPI {
 
         // Return an array of results from 0.0 to 1.0 equally distributed
         // over the time range with 1 second steps.
-        double inc = 1.0 / (double) (dur / step);
+        double inc = 1.0 *  step / dur;
 
         List<OpenTSDBQueryResult> resultList = new ArrayList<>();
         int count = 0;
@@ -195,7 +195,7 @@ public class MockMetricStorage implements MetricStorageAPI {
 
         // Return an array of results from 0.0 to 1.0 equally distributed
         // over the time range with 1 second steps.
-        double inc = 1.0 / (double) (dur / step);
+        double inc = 1.0 * step / dur;
 
         int count = 0;
         StringBuilder buf = new StringBuilder();

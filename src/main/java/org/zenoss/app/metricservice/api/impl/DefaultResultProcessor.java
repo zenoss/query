@@ -57,26 +57,17 @@ public class DefaultResultProcessor implements ResultProcessor,
 
     private static final Logger log = LoggerFactory.getLogger(DefaultResultProcessor.class);
 
-    private class BucketClosure implements Closure {
-        public BucketClosure() {
-
-        }
-
-        public long ts;
-        public Buckets<MetricKey, String>.Bucket bucket;
-    }
-
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.zenoss.app.metricservice.calculators.ReferenceProvider#lookup
      * (java .lang.String, org.zenoss.app.metricservice.calculators.Closure)
      */
     @Override
     public double lookup(String name, Closure closure)
         throws UnknownReferenceException {
-        BucketClosure b = (BucketClosure) closure;
-        if (null == b) {
+        //BucketClosure b = (BucketClosure) closure;
+        if (null == closure) {
             throw new NullPointerException("null closure passed to lookup() method.");
         }
         /**
@@ -84,13 +75,15 @@ public class DefaultResultProcessor implements ResultProcessor,
          * that.
          */
         if ("time".equalsIgnoreCase(name)) {
-            return b.ts;
+            return closure.getTimeStamp();
+            //return b.ts;
         }
 
         /**
          * Check for metrics or values in the bucket
          */
-        Value v = b.bucket.getValueByShortcut(name);
+        Value v = closure.getValueByShortcut(name);
+        //Value v = b.bucket.getValueByShortcut(name);
         if (v == null) {
             throw new UnknownReferenceException(name);
         }
@@ -99,7 +92,7 @@ public class DefaultResultProcessor implements ResultProcessor,
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.zenoss.app.metricservice.api.impl.ResultProcessor#processResults(
      * java.io.BufferedReader, java.util.List, long)
@@ -111,7 +104,7 @@ public class DefaultResultProcessor implements ResultProcessor,
 
 
         //MetricKey key;
-        Map<MetricKey, MetricCalculator> calcs = new HashMap<>();
+        Map<MetricKey, MetricCalculator> calculatorMap = new HashMap<>();
         MetricCalculatorFactory calcFactory = new MetricCalculatorFactory();
 
         // Walk the queries and build up a map of metric name to RPN
@@ -123,7 +116,7 @@ public class DefaultResultProcessor implements ResultProcessor,
          */
         MetricKeyCache keyCache = new MetricKeyCache();
         for (MetricSpecification spec : queries) {
-            addKeyToCacheAndSetUpCalculatorForExpression(calcs, calcFactory, keyCache, spec);
+            addKeyToCacheAndSetUpCalculatorForExpression(calculatorMap, calcFactory, keyCache, spec);
         }
 
         // Get a list of calculated values
@@ -157,11 +150,11 @@ public class DefaultResultProcessor implements ResultProcessor,
 
                 MetricKey key = keyCache.get(metricName, curTags);
                 if (null == key) {
-                    log.warn("null key retrieved for metric {} and tags {}", metricName, null == curTags ? "NULL" : curTags.toString());
+                    log.warn("null key retrieved for metric {} and tags {}", metricName, curTags.toString());
                     continue;
                 }
 
-                MetricCalculator calc = calcs.get(key);
+                MetricCalculator calc = calculatorMap.get(key);
                 if (null != calc) {
                     dataPointValue = calc.evaluate(dataPointValue);
                 }
@@ -171,14 +164,14 @@ public class DefaultResultProcessor implements ResultProcessor,
                 currentBucket = buckets.getBucket(dataPointTimeStamp);
                 if (previousBucket != null && currentBucket != previousBucket) {
                     for (MetricSpecification value : calculatedValues) {
-                        calculateValue2(buckets, calcs, keyCache, closure, curTags, previousBucket, previousTs, value);
-                        //calculateValue(buckets, calcs, keyCache, closure, curTags, previousBucket, previousTs, calc, value);
+                        calculateValue2(buckets, calculatorMap, keyCache, closure, curTags, previousBucket, previousTs, value);
+                        //calculateValue(buckets, calculatorMap, keyCache, closure, curTags, previousBucket, previousTs, calc, value);
                     }
                 }
             }
         }
         for (MetricSpecification value : calculatedValues) {
-            calculateValue2(buckets, calcs, keyCache, closure, curTags, previousBucket, previousTs, value);
+            calculateValue2(buckets, calculatorMap, keyCache, closure, curTags, previousBucket, previousTs, value);
         }
         return buckets;
     }
@@ -200,7 +193,7 @@ public class DefaultResultProcessor implements ResultProcessor,
         MetricKey key = keyCache.get(metricSpecification.getName(), curTags);
 
         try {
-            MetricCalculator calculator = calculators.get(metricSpecification.getName());
+            MetricCalculator calculator = calculators.get(key);
             if (null != calculator) {
                 closure.ts = previousTs;
                 closure.bucket = previousBucket;
@@ -264,6 +257,25 @@ public class DefaultResultProcessor implements ResultProcessor,
         reader = new BufferedReader(new StringReader(contents));
         log.debug("Reader Content: {}", contents);
         return reader;
+    }
+
+    private static class BucketClosure implements Closure {
+        public long ts;
+        public Buckets<MetricKey, String>.Bucket bucket;
+
+        public BucketClosure() {
+
+        }
+
+        @Override
+        public long getTimeStamp() {
+            return ts;
+        }
+
+        @Override
+        public Value getValueByShortcut(String name) {
+            return bucket.getValueByShortcut(name);
+        }
     }
 
 }

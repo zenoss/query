@@ -96,6 +96,7 @@ public class JacksonResultsWriter {
         for (MetricSpecification query : queries) {
             QueryResult qr = new QueryResult();
             qr.setMetric(query.getNameOrMetric());
+            qr.setTags(query.getTags());
             qr.setDatapoints(makeDataPoints(buckets, startTs, endTs, returnset, timestamps, query.getNameOrMetric()));
             qr.setId(query.getId());
             results.add(qr);

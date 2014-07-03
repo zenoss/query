@@ -78,6 +78,8 @@ public class MetricSpecification {
 
     @JsonProperty
     private Map<String, List<String>> tags = null;
+    @JsonProperty
+    private boolean emit = true;
 
     /**
      * @return id string
@@ -235,6 +237,15 @@ public class MetricSpecification {
             return name;
         }
         return metric;
+    }
+
+
+    public boolean getEmit() {
+        return emit;
+    }
+
+    public void setEmit(boolean emit) {
+        this.emit = emit;
     }
 
     /**

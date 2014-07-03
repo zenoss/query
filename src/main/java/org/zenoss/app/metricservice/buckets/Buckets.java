@@ -60,12 +60,12 @@ public class Buckets<P, S> {
     /**
      * Default bucket size of 5 minutes
      */
-    static public final long DEFAULT_BUCKET_SIZE = 300; // 5 Minutes
+    static public final long DEFAULT_BUCKET_SIZE = 5 * 60; // 5 Minutes
 
     /**
      * Specifies the size of each bucket in seconds
      */
-    private long secondsPerBucket = 5 * 60;
+    private long secondsPerBucket = DEFAULT_BUCKET_SIZE;
 
     public Map<Long, Bucket> getBucketList() {
         return bucketList;
@@ -163,7 +163,11 @@ public class Buckets<P, S> {
      *            the number of seconds per each bucket
      */
     public Buckets(final long secondsPerBucket) {
-        this.secondsPerBucket = secondsPerBucket;
+        if (secondsPerBucket > 0) {
+            this.secondsPerBucket = secondsPerBucket;
+        } else {
+            log.warn("secondsPerBucket must be positive. {} was specified. Defaulting to {}.", secondsPerBucket, this.secondsPerBucket);
+        }
     }
 
     /**
@@ -238,10 +242,10 @@ public class Buckets<P, S> {
         Collections.sort(keys);
 
         for (long k : keys) {
-            ps.format("BUCKET: %d (%d) (%s)\n", k, k * secondsPerBucket, new Date(k * secondsPerBucket * 1000));
+            ps.format("BUCKET: %d (%d) (%s)%n", k, k * secondsPerBucket, new Date(k * secondsPerBucket * 1000));
             for (P key : bucketList.get(k).values.keySet()) {
                 Value value = bucketList.get(k).values.get(key);
-                ps.format("    %-40s : %10.2f (%10.2f / %d)\n", key.toString(),
+                ps.format("    %-40s : %10.2f (%10.2f / %d)%n", key.toString(),
                         value.getValue(),
                         value.getSum(),
                         value.getCount());

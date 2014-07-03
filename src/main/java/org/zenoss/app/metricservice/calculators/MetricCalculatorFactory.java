@@ -38,14 +38,14 @@ import org.slf4j.LoggerFactory;
  * engines based on a simplified URI specification. The URI specification is
  * essentially the expression language, followed by a colon, followed by an
  * intial expression.
- * 
+ *
  * If the initial expression is ommited, the colon can be ommited as well.
- * 
+ *
  * The implementation of the expression language calculated is dynamically
  * created by using a well known class name, Calculator, located in a subpackage
  * the shares the name of the expression language, i.e. if the expression
  * language is 'rpn', then the implementation class will be 'rpn.Calculator'.
- * 
+ *
  * The implementation class is searched for as a sub-package under the packages
  * specified in the system property
  * 'org.zenoss.app.metricservice.calculator.path'. This property contains a list
@@ -54,7 +54,7 @@ import org.slf4j.LoggerFactory;
  */
 public class MetricCalculatorFactory {
     private static final Logger log = LoggerFactory
-            .getLogger(MetricCalculatorFactory.class);
+        .getLogger(MetricCalculatorFactory.class);
 
     public static final String CALCULATOR_PATH_PROPERTY = "org.zenoss.app.metricservice.calculator.path";
     public static final String DEFAULT_CALCULATOR_PATH = "org.zenoss.app.metricservice.calculators";
@@ -62,7 +62,7 @@ public class MetricCalculatorFactory {
     /**
      * Constructs an expression evaluator calculator based on the expression
      * given as the parameter.
-     * 
+     *
      * @param expr
      *            a full or partial expression URI of the format
      *            <i>language></i>[:<i>language expression</i>].
@@ -73,11 +73,11 @@ public class MetricCalculatorFactory {
      *             MetricCalculator.
      */
     public static MetricCalculator newInstance(String expr)
-            throws ClassNotFoundException {
+        throws ClassNotFoundException {
 
         String[] terms = expr.split(":", 2);
         String[] paths = System.getProperty(CALCULATOR_PATH_PROPERTY,
-                DEFAULT_CALCULATOR_PATH).split(":");
+            DEFAULT_CALCULATOR_PATH).split(":");
 
         // If we are in debug mode, log the search path
         if (log.isDebugEnabled()) {
@@ -110,28 +110,27 @@ public class MetricCalculatorFactory {
             classname.append("Calculator");
             try {
                 clazz = Class.forName(
-                        classname.toString())
-                        .asSubclass(MetricCalculator.class);
+                    classname.toString())
+                    .asSubclass(MetricCalculator.class);
                 calc = clazz.newInstance();
                 if (terms.length > 1) {
                     calc.setExpression(terms[1]);
                 }
                 log.debug(
-                        "Found class '{}' to evaluate expressions of type '{}'",
-                        classname, terms[0]);
+                    "Found class '{}' to evaluate expressions of type '{}'",
+                    classname, terms[0]);
                 return calc;
-            } catch (Exception e) {
+            } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
                 log.debug(
-                        "Expression evaluation implementation '{}' does not exist",
-                        classname.toString());
-                // ignore, maybe on the next path segment
+                    "Expression evaluation implementation '{}' does not exist or could not be accessed.",
+                    classname.toString(), e);
             }
         }
 
         // Nothing found, throw an exception
         throw new ClassNotFoundException(
-                String.format(
-                        "Unable to find a class that implementations the expression evaluation for type '%s'",
-                        terms[0]));
+            String.format(
+                "Unable to find a class that implements the expression evaluation for type '%s'",
+                terms[0]));
     }
 }

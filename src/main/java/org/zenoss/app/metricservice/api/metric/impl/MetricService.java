@@ -26,7 +26,7 @@
  * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                                                      q
  */
 package org.zenoss.app.metricservice.api.metric.impl;
 
@@ -53,7 +53,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.*;
-import java.nio.CharBuffer;
 import java.text.ParseException;
 import java.util.*;
 
@@ -189,8 +188,6 @@ public class MetricService implements MetricServiceAPI {
     private static class LastFilter extends BufferedReader {
         private final long startTs;
         private final long endTs;
-        private String lastLine = null;
-        private long lastTs = -1;
 
         /**
          * @param in
@@ -231,27 +228,6 @@ public class MetricService implements MetricServiceAPI {
             String resultJson = Utils.jsonStringFromObject(originalResult);
             log.debug("Resulting JSON: {}", resultJson);
             return resultJson;
-//
-//            while ((line = super.readLine()) != null) {
-//                log.debug("line = {}", line);
-//                ts = Long.parseLong(line.split(" ", 4)[1]);
-//                // Remove any TS that is outside the start/end range
-//                if (ts < startTs || ts > endTs) {
-//                    continue;
-//                }
-//                if (ts < lastTs) {
-//                    lastTs = ts;
-//                    result = lastLine;
-//                    lastLine = line;
-//                    return result;
-//                }
-//                lastLine = line;
-//                lastTs = ts;
-//            }
-//
-//            result = lastLine;
-//            lastLine = null;
-//            return result;
         }
 
         private void replaceSeriesDataPointsWithLastInRangeDataPoint(QueryResult series) {
@@ -278,7 +254,7 @@ public class MetricService implements MetricServiceAPI {
         private final String startTime;
         private final String endTime;
         private final ReturnSet returnset;
-        private final Boolean series;
+        private final Boolean outputAsSeries;
         private final String downsample;
         private final String grouping;
         private final Map<String, List<String>> tags;
@@ -288,7 +264,7 @@ public class MetricService implements MetricServiceAPI {
 
         public MetricServiceWorker(String id,
                                    String startTime, String endTime, ReturnSet returnset,
-                                   Boolean series, String downsample, String grouping,
+                                   Boolean outputAsSeries, String downsample, String grouping,
                                    Map<String, List<String>> tags,
                                    List<MetricSpecification> queries) {
             if (queries == null) {
@@ -301,7 +277,7 @@ public class MetricService implements MetricServiceAPI {
             this.startTime = startTime;
             this.endTime = endTime;
             this.returnset = returnset;
-            this.series = series;
+            this.outputAsSeries = outputAsSeries;
             this.tags = tags;
             this.downsample = downsample;
             this.grouping = grouping;
@@ -325,7 +301,8 @@ public class MetricService implements MetricServiceAPI {
             log.info("write() entry.");
             BufferedReader reader = null;
             try {
-                reader = api.getReader(config, id, convertedStartTime, convertedEndTime, returnset, series, downsample, tags, MetricService.metricFilter(queries));
+                // The getReader call queries the datastore (e.g. openTSDB) and returns a reader for streaming the results.
+                reader = api.getReader(config, id, convertedStartTime, convertedEndTime, returnset, outputAsSeries, downsample, tags, MetricService.metricFilter(queries));
                 if (null == reader) {
                     throw new IOException("Unable to get reader from api.");
                 }
@@ -358,6 +335,7 @@ public class MetricService implements MetricServiceAPI {
             long bucketSize = 1;
             if (grouping != null && grouping.length() > 1) {
                 bucketSize = Utils.parseDuration(grouping);
+                log.info("Grouping was {}: setting bucketSize to {}.",grouping, bucketSize);
             }
             try {
                 if (config.getMetricServiceConfig().getUseJacksonWriter()) {
@@ -447,7 +425,7 @@ public class MetricService implements MetricServiceAPI {
                 log.info("results processed.");
                 log.info("About to call seriesResultsWriter. Buckets={}", Utils.jsonStringFromObject(buckets));
                 seriesResultsWriter.writeResults(writer, queries, buckets,
-                    id, api.getSourceId(), start, startTime, end, endTime, returnset, series);
+                    id, api.getSourceId(), start, startTime, end, endTime, returnset, outputAsSeries);
                 log.info("back from seriesResultsWriter");
             }
         }
@@ -461,7 +439,7 @@ public class MetricService implements MetricServiceAPI {
                 log.info("results processed.");
                 log.info("calling jacksonResultsWriter. Buckets = {}", Utils.jsonStringFromObject(buckets));
                 jacksonResultsWriter.writeResults(writer, queries, buckets,
-                    id, api.getSourceId(), start, startTime, end, endTime, returnset, series);
+                    id, api.getSourceId(), start, startTime, end, endTime, returnset, outputAsSeries);
                 log.info("back from jacksonResultsWriter");
             }
         }

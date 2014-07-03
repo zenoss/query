@@ -172,7 +172,7 @@ public class Tags {
             return false;
         }
 
-        String btv, tv, ov;
+        String btv, thisValue, otherValue;
         for (Entry<String, String> entry : tags.entrySet()) {
             /*
              * If the key is not in the "other" then done. Other may have more
@@ -182,21 +182,21 @@ public class Tags {
                 return false;
             }
 
-            tv = entry.getValue();
-            ov = other.tags.get(entry.getKey());
-            btv = '|' + tv + '|';
+            thisValue = entry.getValue();
+            otherValue = other.tags.get(entry.getKey());
+            btv = '|' + thisValue + '|';
 
             /*
-             * Now we need to look at the two values. if "tv" contains "*" or
-             * then any "ov" is accepted. If "tv" contains "|" then we have to
-             * check if any of the options are in "ov". Else we are looking for
+             * Now we need to look at the two values. if "thisValue" contains "*" or
+             * then any "otherValue" is accepted. If "thisValue" contains "|" then we have to
+             * check if any of the options are in "otherValue". Else we are looking for
              * an exact match
              */
-            if (tv.indexOf('|') != -1) {
-                if (!btv.contains('|' + ov + '|')) {
+            if (thisValue.contains("|")) {
+                if (!btv.contains('|' + otherValue + '|')) {
                     return false;
                 }
-            } else if (!btv.contains("|*|") && !tv.equals(ov)) {
+            } else if (!btv.contains("|*|") && !thisValue.equals(otherValue)) {
                 return false;
             }
         }

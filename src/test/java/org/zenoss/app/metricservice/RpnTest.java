@@ -39,7 +39,7 @@ import org.zenoss.app.metricservice.calculators.rpn.Calculator;
 
 import java.util.Date;
 import java.util.List;
-
+import static org.mockito.Mockito.mock;
 /**
  * @author david
  * 
@@ -353,8 +353,7 @@ public class RpnTest {
             UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
-        final Closure data = new Closure() {
-        };
+        final Closure data = mock(Closure.class);
 
         calc.setReferenceProvider(new ReferenceProvider() {
 

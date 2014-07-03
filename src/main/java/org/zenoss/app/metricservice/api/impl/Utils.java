@@ -38,6 +38,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 
 import javax.ws.rs.core.Response;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -68,6 +69,7 @@ public class Utils {
     static public Response getErrorResponse(String id, int status,
                                             String message, String context) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        //TODO: Replace this with Jackson.
         try (JsonWriter response = new JsonWriter(new OutputStreamWriter(baos))){
             response.objectS();
             String prefix = "";
@@ -87,7 +89,7 @@ public class Utils {
             response.objectE();
             response.close();
             return Response.status(status).entity(baos.toString()).build();
-        } catch (Exception e) {
+        } catch (IOException e) {
             return Response.status(status).build();
         }
     }
@@ -160,9 +162,9 @@ public class Utils {
             last = v.charAt(idx);
         }
 
-        int period = 0;
+        long period = 0;
         try {
-            period = Integer.parseInt(v.substring(0, idx));
+            period = Long.parseLong(v.substring(0, idx));
         } catch (NumberFormatException e) {
             return 0;
         }

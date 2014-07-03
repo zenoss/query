@@ -31,64 +31,47 @@
 
 package org.zenoss.app.metricservice.api.impl;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.zenoss.app.metricservice.api.model.MetricSpecification;
+import org.zenoss.app.metricservice.buckets.Value;
+import org.zenoss.app.metricservice.calculators.Closure;
 
-import java.util.*;
+import java.io.BufferedReader;
+import java.util.ArrayList;
+import java.util.List;
 
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class QueryResult {
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-    //private Map<String, List<String>> tags = HashMultimap.create();
+//TODO: Flesh out these tests.
+public class DefaultResultProcessorTest {
 
-    public QueryResult() {}
+    @Test
+    public void testLookup() throws Exception {
+        Closure closure = mock(Closure.class);
+        when(closure.getValueByShortcut("name")).thenReturn(new Value());
 
-    public QueryResult(QueryResult other) {
-        this.id = other.id;
-        this.metric = other.metric;
-        this.datapoints = new ArrayList<>(other.datapoints.size());
-        Collections.copy(datapoints, other.datapoints);
+        DefaultResultProcessor victim = new DefaultResultProcessor();
+        victim.lookup("name", closure);
     }
 
-    private List<QueryResultDataPoint> datapoints;
-    private String metric;
-    private Multimap<String, String> tags = HashMultimap.create();
-
-    public String getId() {
-        return id;
+    @Test
+    @Ignore
+    public void testProcessResults() throws Exception {
+        DefaultResultProcessor victim = new DefaultResultProcessor();
+        BufferedReader reader = null;
+        List<MetricSpecification> queries = makeQueries();
+        long bucketSize = 60;
+        victim.processResults(reader, queries, bucketSize);
     }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    private String id;
-
-    public String getMetric() {
-        return metric;
-    }
-
-    public void setMetric(String metric) {
-        this.metric = metric;
-    }
-
-    public List<QueryResultDataPoint> getDatapoints() {
-        return datapoints;
-    }
-
-    public void setDatapoints(List<QueryResultDataPoint> datapoints) {
-        this.datapoints = datapoints;
-    }
-
-    public void setTags(Map<String, List<String>> newTags) {
-        tags.clear();
-        for (Map.Entry<String, List<String>> entry : newTags.entrySet()) {
-            tags.putAll(entry.getKey(), entry.getValue());
+    private List<MetricSpecification> makeQueries() {
+        List<MetricSpecification> result = new ArrayList<>();
+        String[] specifications = {"foo", "bar", "baz"};
+        for (String specification : specifications) {
+            result.add(MetricSpecification.fromString(specification));
         }
-    }
-
-    public Map<String, Collection<String>> getTags() {
-        return tags.asMap();
+        return result;
     }
 }
