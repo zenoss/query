@@ -79,7 +79,7 @@ public class MetricSpecification {
     private String expression = null;
     
     @JsonProperty
-    private Map<String, List<String>> tags = null;
+    private Map<String, List<String>> tags = new HashMap<String, List<String>>();
 
     /**
      * @return id string
