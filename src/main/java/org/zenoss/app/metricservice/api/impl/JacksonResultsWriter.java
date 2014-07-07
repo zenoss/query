@@ -94,6 +94,10 @@ public class JacksonResultsWriter {
         Collection<QueryResult> results = new ArrayList<>();
         List<Long> timestamps = buckets.getTimestamps();
         for (MetricSpecification query : queries) {
+            if (false == query.getEmit()) {
+                log.info("emit is false for metric {} - skipping.", query.getNameOrMetric());
+                continue;
+            }
             QueryResult qr = new QueryResult();
             qr.setMetric(query.getNameOrMetric());
             qr.setTags(query.getTags());

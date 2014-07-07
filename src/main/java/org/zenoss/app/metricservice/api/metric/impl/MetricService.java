@@ -111,7 +111,7 @@ public class MetricService implements MetricServiceAPI {
                 if (spec.getMetric() != null) {
                     result.add(spec);
                 } else {
-                    log.warn("skipping metricSpecification - no metric value found.");
+                    log.warn("skipping metricSpecification {} - no metric value found.", spec.getNameOrMetric());
                 }
             }
         }

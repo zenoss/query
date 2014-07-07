@@ -163,7 +163,10 @@ The results of the query will be a JSON object of the form:
                             "value": 49
                         }, ...
                     ],
-                    "metric" : "laLoadInt1"
+                    "metric" : "laLoadInt1",
+                    "tags": {
+                        "<tagname>": [ <tagvalue> ...]
+                    }
                 },
             ]
         }
