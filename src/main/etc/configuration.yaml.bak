@@ -1,0 +1,32 @@
+authEnabled: false
+logging:
+  level: INFO
+  loggers:
+    "org.zenoss": INFO
+metrics:
+  defaultReturnSet: EXACT
+  defaultStartTime: 1h-ago
+  defaultEndTime: now
+  defaultSeries: true
+  useJacksonWriter: true
+  openTsdbUrl: http://127.0.0.1:4242
+  defaultTsdTimeZone: UTC
+  connectionTimeoutMs: 20000
+  sendRateOptions: false
+#proxyConfiguration:
+#  hostname: 127.0.0.1
+#  port: 8080
+http:
+  connectorType: nonblocking
+  port: 8888
+  adminPort: 58888
+# ssl:
+#     #Example is using a java keystore in the target directory.
+#     keyStore: ${ssl.cert.dir}/ssl.pfx
+#     keyStorePassword: zapp_pass
+#     keyStoreType: pkcs12
+
+#managedReporter:
+#    metricReporters:
+#      - {posterType: http, username: "$env[CONTROLPLANE_CONSUMER_USERNAME]", password: "$env[CONTROLPLANE_CONSUMER_PASSWORD]", urlEnvironment: "CONTROLPLANE_CONSUMER_URL"}
+#      - {posterType: http, username: "$zcreds[]", password: "$zcreds[]", protocol: http, host: localhost, port: 8080, apiPath: /api/metrics/store}

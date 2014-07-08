@@ -126,7 +126,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
      */
     public BufferedReader getReader(MetricServiceAppConfiguration config,
                                     String id, String startTime, String endTime, ReturnSet returnset,
-                                    Boolean series, String downsample,
+                                    Boolean series, String downsample, double downsampleMultiplier,
                                     Map<String, List<String>> globalTags,
                                     List<MetricSpecification> queries) throws IOException {
 
@@ -139,24 +139,32 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             query.end = endTime;
         }
 
+        String appliedDownsample = Utils.createModifiedDownsampleRequest(downsample, downsampleMultiplier);
+        log.info("Specified Downsample = {}, Specified Multiplier = {}, Applied Downsample = {}.", downsample, downsampleMultiplier, appliedDownsample);
+
         for (MetricSpecification metricSpecification : queries) {
+            String oldDownsample = metricSpecification.getDownsample();
+            if (null != oldDownsample && !oldDownsample.isEmpty()) {
+                log.info("Overriding specified series downsample ({}) with global specification of {}", oldDownsample, appliedDownsample);
+            }
+            metricSpecification.setDownsample(appliedDownsample);
             query.addSubQuery(openTSDBSubQueryFromMetricSpecification(metricSpecification));
         }
 
         String jsonQueryString = Utils.jsonStringFromObject(query);
-        if (log.isDebugEnabled()) {
-            log.debug("OpenTSDB POST JSON: {}", jsonQueryString);
+        if (log.isInfoEnabled()) {
+            log.info("OpenTSDB POST JSON: {}", jsonQueryString);
         }
         HttpResponse response = postRequestToOpenTsdb(config, jsonQueryString);
 
-        log.info("Response code: {}", response.getStatusLine().getStatusCode());
+        log.info("Response code from OpenTSDB POST: {}", response.getStatusLine().getStatusCode());
 
-        checkHttpResponseAndThrowWebExceptionIfBad(response);
+        throwWebExceptionIfHttpResponseIsBad(response);
 
         return new BufferedReader(new InputStreamReader((response.getEntity().getContent())));
     }
 
-    private static void checkHttpResponseAndThrowWebExceptionIfBad(HttpResponse response) throws WebApplicationException {
+    private static void throwWebExceptionIfHttpResponseIsBad(HttpResponse response) throws WebApplicationException {
         int statusCode = response.getStatusLine().getStatusCode();
 
         if (isNotOk(statusCode)) {

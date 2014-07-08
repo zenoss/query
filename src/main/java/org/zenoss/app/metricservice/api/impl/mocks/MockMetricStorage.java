@@ -260,7 +260,7 @@ public class MockMetricStorage implements MetricStorageAPI {
      */
     public BufferedReader getReader(MetricServiceAppConfiguration config,
             String id, String startTime, String endTime, ReturnSet returnset,
-            Boolean series, String downsample, Map<String, List<String>> tags,
+            Boolean series, String downsample, double downsampleMultiplier, Map<String, List<String>> tags,
             List<MetricSpecification> queries) throws IOException {
         byte[] data = generateData(config, id, startTime, endTime, returnset,
                 series, downsample, tags, queries);

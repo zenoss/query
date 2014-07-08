@@ -80,7 +80,6 @@ public class MetricService implements MetricServiceAPI {
     public static final String TAGS = "tags";
     public static final String NOT_SPECIFIED = "not-specified";
     private static final Logger log = LoggerFactory.getLogger(MetricService.class);
-
     public final ObjectMapper objectMapper;
     public ResultProcessor resultsProcessor = new DefaultResultProcessor();
     public ResultWriter seriesResultsWriter = new SeriesResultWriter();
@@ -89,8 +88,6 @@ public class MetricService implements MetricServiceAPI {
     MetricServiceAppConfiguration config;
     @Autowired
     MetricStorageAPI api;
-
-
     private String corsHeaders;
 
     public MetricService() {
@@ -152,7 +149,7 @@ public class MetricService implements MetricServiceAPI {
     @Override
     public Response query(Optional<String> id, Optional<String> start, Optional<String> end,
                           Optional<ReturnSet> returnset, Optional<Boolean> series, Optional<String> downsample,
-                          Optional<String> grouping, Optional<Map<String, List<String>>> tags,
+                          double downsampleMultiplier, Optional<Map<String, List<String>>> tags,
                           List<MetricSpecification> metrics) {
         log.info("entering MetricService.query()");
         return makeCORS(Response.ok(
@@ -161,8 +158,7 @@ public class MetricService implements MetricServiceAPI {
                 end.or(config.getMetricServiceConfig().getDefaultEndTime()),
                 returnset.or(config.getMetricServiceConfig().getDefaultReturnSet()),
                 series.or(config.getMetricServiceConfig().getDefaultSeries()),
-                downsample.orNull(),
-                grouping.orNull(),
+                downsample.orNull(), downsampleMultiplier,
                 tags.orNull(),
                 metrics)));
     }
@@ -200,10 +196,10 @@ public class MetricService implements MetricServiceAPI {
         }
 
         /*
-                 * (non-Javadoc)
-                 *
-                 * @see java.io.BufferedReader#readLine()
-                 */
+         * (non-Javadoc)
+         *
+         * @see java.io.BufferedReader#readLine()
+         */
         @Override
         public String readLine() throws IOException {
             log.info("readLine() entry.");
@@ -231,15 +227,16 @@ public class MetricService implements MetricServiceAPI {
         }
 
         private void replaceSeriesDataPointsWithLastInRangeDataPoint(QueryResult series) {
-            long ts;List<QueryResultDataPoint> dataPointSingleton = new ArrayList<>(1);
+            long ts;
+            List<QueryResultDataPoint> dataPointSingleton = new ArrayList<>(1);
             QueryResultDataPoint lastDataPoint = null;
             for (QueryResultDataPoint dataPoint : series.getDatapoints()) {
-               ts = dataPoint.getTimestamp();
+                ts = dataPoint.getTimestamp();
                 if (ts < startTs || ts > endTs) {
                     continue;
                 }
                 if (null == lastDataPoint || ts > lastDataPoint.getTimestamp()) {
-                        lastDataPoint = dataPoint;
+                    lastDataPoint = dataPoint;
                 }
             }
             if (null != lastDataPoint) {
@@ -256,7 +253,7 @@ public class MetricService implements MetricServiceAPI {
         private final ReturnSet returnset;
         private final Boolean outputAsSeries;
         private final String downsample;
-        private final String grouping;
+        private final double downsampleMultiplier;
         private final Map<String, List<String>> tags;
         private final List<MetricSpecification> queries;
         private long start = -1;
@@ -264,7 +261,7 @@ public class MetricService implements MetricServiceAPI {
 
         public MetricServiceWorker(String id,
                                    String startTime, String endTime, ReturnSet returnset,
-                                   Boolean outputAsSeries, String downsample, String grouping,
+                                   Boolean outputAsSeries, String downsample, double downsampleMultiplier,
                                    Map<String, List<String>> tags,
                                    List<MetricSpecification> queries) {
             if (queries == null) {
@@ -280,7 +277,7 @@ public class MetricService implements MetricServiceAPI {
             this.outputAsSeries = outputAsSeries;
             this.tags = tags;
             this.downsample = downsample;
-            this.grouping = grouping;
+            this.downsampleMultiplier = downsampleMultiplier;
             this.queries = queries;
         }
 
@@ -302,7 +299,7 @@ public class MetricService implements MetricServiceAPI {
             BufferedReader reader = null;
             try {
                 // The getReader call queries the datastore (e.g. openTSDB) and returns a reader for streaming the results.
-                reader = api.getReader(config, id, convertedStartTime, convertedEndTime, returnset, outputAsSeries, downsample, tags, MetricService.metricFilter(queries));
+                reader = api.getReader(config, id, convertedStartTime, convertedEndTime, returnset, outputAsSeries, downsample, downsampleMultiplier, tags, MetricService.metricFilter(queries));
                 if (null == reader) {
                     throw new IOException("Unable to get reader from api.");
                 }
@@ -333,9 +330,10 @@ public class MetricService implements MetricServiceAPI {
              * buckets.
              */
             long bucketSize = 1;
-            if (grouping != null && grouping.length() > 1) {
-                bucketSize = Utils.parseDuration(grouping);
-                log.info("Grouping was {}: setting bucketSize to {}.",grouping, bucketSize);
+            if (downsample != null && downsample.length() > 1) {
+                bucketSize = Utils.parseDuration(downsample);
+                log.info("Downsample was {}: setting bucketSize to {}.", downsample, bucketSize);
+
             }
             try {
                 if (config.getMetricServiceConfig().getUseJacksonWriter()) {
@@ -396,16 +394,16 @@ public class MetricService implements MetricServiceAPI {
 
         }
 
-        private void replaceSeriesDataPointsWithLastInRangeDataPoint(OpenTSDBQueryResult series, long startTs, long endTs) {
-            long ts;
-           Map<Long, String> dataPointSingleton = new HashMap<>(1);
+        private void replaceSeriesDataPointsWithLastInRangeDataPoint(OpenTSDBQueryResult series, long startTimeStamp, long endTimeStamp) {
+            long currentPointTimeStamp;
+            Map<Long, String> dataPointSingleton = new HashMap<>(1);
             Map.Entry<Long, String> lastDataPoint = null;
-            for ( Map.Entry<Long, String> dataPoint : series.getDataPoints().entrySet()) {
-                ts = dataPoint.getKey();
-                if (ts < startTs || ts > endTs) {
+            for (Map.Entry<Long, String> dataPoint : series.getDataPoints().entrySet()) {
+                currentPointTimeStamp = dataPoint.getKey();
+                if (currentPointTimeStamp < startTimeStamp || currentPointTimeStamp > endTimeStamp) {
                     continue;
                 }
-                if (null == lastDataPoint || ts > lastDataPoint.getKey()) {
+                if (null == lastDataPoint || currentPointTimeStamp > lastDataPoint.getKey()) {
                     lastDataPoint = dataPoint;
                 }
             }
@@ -414,7 +412,6 @@ public class MetricService implements MetricServiceAPI {
             }
             series.setDataPoints(dataPointSingleton);
         }
-
 
         private void writeResultsUsingJsonWriter(OutputStream output, BufferedReader reader, long bucketSize)
             throws IOException, UnknownReferenceException, ClassNotFoundException {
@@ -434,9 +431,9 @@ public class MetricService implements MetricServiceAPI {
             throws IOException, UnknownReferenceException, ClassNotFoundException {
             log.info("Using JacksonWriter to generate JSON results.");
             try (JacksonWriter writer = new JacksonWriter(new OutputStreamWriter(output))) {
-                log.info("processing results");
+                log.debug("processing results");
                 Buckets<MetricKey, String> buckets = resultsProcessor.processResults(reader, queries, bucketSize);
-                log.info("results processed.");
+                log.debug("results processed.");
                 log.info("calling jacksonResultsWriter. Buckets = {}", Utils.jsonStringFromObject(buckets));
                 jacksonResultsWriter.writeResults(writer, queries, buckets,
                     id, api.getSourceId(), start, startTime, end, endTime, returnset, outputAsSeries);

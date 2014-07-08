@@ -234,22 +234,12 @@ public class DefaultResultProcessor implements ResultProcessor,
     private BufferedReader logDebugInformation(BufferedReader reader) throws IOException {
         StringBuffer readerPeekBuffer = new StringBuffer(4096);
         long lineCount = 0;
-        String line = reader.readLine();
-        if (null != line) {
+        String line;
+        while (null != (line = reader.readLine())) {
             lineCount++;
-        }
-        while (null != line) {
             readerPeekBuffer.append(line);
             readerPeekBuffer.append("\n");
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-            }
-            line = reader.readLine();
-            if (null != line) {
-                lineCount++;
-            }
+
         }
         log.debug("LINES READ FROM OPENTSDB: {}", lineCount);
 

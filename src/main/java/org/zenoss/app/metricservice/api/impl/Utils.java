@@ -37,9 +37,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
 import javax.ws.rs.core.Response;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -64,34 +61,24 @@ public class Utils {
     public static final String START = "start";
     public static final String END = "end";
     public static final String COUNT = "count";
+    public static final double DEFAULT_DOWNSAMPLE_MULTIPLIER = 4.0;
     private static ObjectMapper mapper = null;
+
+
+    static class ErrorResponse {
+        public String id;
+        public String errorMessage;
+        public String errorSource;
+    }
 
     static public Response getErrorResponse(String id, int status,
                                             String message, String context) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        //TODO: Replace this with Jackson.
-        try (JsonWriter response = new JsonWriter(new OutputStreamWriter(baos))){
-            response.objectS();
-            String prefix = "";
-            if (id != null) {
-                response.value(CLIENT_ID, id);
-                prefix = ",";
-            }
-            if (message != null) {
-                response.write(prefix);
-                response.value(ERROR_MESSAGE, message);
-                prefix = ",";
-            }
-            if (context != null) {
-                response.write(prefix);
-                response.value(ERROR_CAUSE, context);
-            }
-            response.objectE();
-            response.close();
-            return Response.status(status).entity(baos.toString()).build();
-        } catch (IOException e) {
-            return Response.status(status).build();
-        }
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.id = id;
+        errorResponse.errorSource = context;
+        errorResponse.errorMessage = message;
+
+        return Response.status(status).entity(jsonStringFromObject(errorResponse)).build();
     }
 
     static public String createUuid() {
@@ -187,6 +174,27 @@ public class Utils {
         return 0;
     }
 
+    public static String parseAggregation(String v) {
+        String result = "";
+        int dashPosition = v.indexOf('-');
+        if (dashPosition > 0 && dashPosition < v.length()) {
+            result = v.substring(dashPosition + 1);
+        }
+        return result;
+    }
+
+    public static String createModifiedDownsampleRequest(String downsample, double downsampleMultiplier) {
+        if (null == downsample || downsample.isEmpty() || downsampleMultiplier <= 0.0) {
+            return downsample;
+        }
+        long duration = parseDuration(downsample);
+        String aggregation = parseAggregation(downsample);
+        long newDuration = (long)(duration / downsampleMultiplier);
+        if (newDuration <= 0) {
+            return downsample;
+        }
+        return String.format("%ds-%s", newDuration, aggregation);
+    }
 
     public static  String jsonStringFromObject(Object object) {
         ObjectMapper mapper = getObjectMapper();

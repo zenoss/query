@@ -99,9 +99,9 @@ public class MetricResources {
         Optional<ReturnSet> returnset = Optional.fromNullable(query.getReturnset());
         Optional<Boolean> series = Optional.fromNullable(query.getSeries());
         Optional<String> downsample = Optional.fromNullable(query.getDownsample());
-        Optional<String> grouping = Optional.fromNullable(query.getGrouping());
+        double downsampleMultiplier = query.getDownsampleMultiplier();
         Optional<Map<String, List<String>>> tags = getTags( query.getTags());
-        return api.query(id, start, end, returnset, series, downsample, grouping, tags, query.getMetrics());
+        return api.query(id, start, end, returnset, series, downsample, downsampleMultiplier, tags, query.getMetrics());
     }
 
     @OPTIONS

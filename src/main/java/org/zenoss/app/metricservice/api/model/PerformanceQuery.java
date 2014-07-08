@@ -30,15 +30,14 @@
  */
 package org.zenoss.app.metricservice.api.model;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import org.zenoss.app.metricservice.api.impl.Utils;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.zenoss.app.metricservice.api.impl.Utils;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
@@ -51,6 +50,9 @@ public class PerformanceQuery {
     
     @JsonProperty
     private String end = Utils.DEFAULT_END_TIME;
+
+    @JsonProperty
+    private double downsampleMultiplier = Utils.DEFAULT_DOWNSAMPLE_MULTIPLIER;
     
     @JsonProperty(required=true)
     private List<MetricSpecification> metrics = null;
@@ -63,10 +65,7 @@ public class PerformanceQuery {
     
     @JsonProperty(required=false)
     private String downsample = null;
-    
-    @JsonProperty(required=false)
-    private String grouping = null;
-    
+
     @JsonProperty(value="returnset")
     private ReturnSet returnset = null;
 
@@ -158,18 +157,12 @@ public class PerformanceQuery {
         this.downsample = downsample;
     }
 
-	/**
-     * @return the grouping
-     */
-    public String getGrouping() {
-        return grouping;
+    public double getDownsampleMultiplier() {
+        return downsampleMultiplier;
     }
 
-    /**
-     * @param grouping the grouping to set
-     */
-    public void setGrouping(String grouping) {
-        this.grouping = grouping;
+    public void setDownsampleMultiplier(double downsampleMultiplier) {
+        this.downsampleMultiplier = downsampleMultiplier;
     }
 
     /**
