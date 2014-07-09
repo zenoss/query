@@ -36,6 +36,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.zenoss.app.metricservice.api.impl.Utils;
 
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -466,7 +467,7 @@ public class MetricSpecification {
                         rateOptions = parseRateOptions(terms[1].trim());
                     } catch (Exception e) {
                         throw new WebApplicationException(
-                            Utils.getErrorResponse(null, 400,
+                            Utils.getErrorResponse(null, Response.Status.BAD_REQUEST.getStatusCode(),
                                 e.getMessage(), e.getClass().getName()));
                     }
                 }
@@ -482,7 +483,7 @@ public class MetricSpecification {
                             rateOptions = parseRateOptions(terms[2].trim());
                         } catch (Exception e) {
                             throw new WebApplicationException(
-                                Utils.getErrorResponse(null, 400, e
+                                Utils.getErrorResponse(null, Response.Status.BAD_REQUEST.getStatusCode(), e
                                     .getMessage(), e.getClass()
                                     .getName()));
                         }
@@ -494,7 +495,7 @@ public class MetricSpecification {
                     throw new WebApplicationException(
                         Utils.getErrorResponse(
                             null,
-                            400,
+                            Response.Status.BAD_REQUEST.getStatusCode(),
                             String.format(
                                 "unknown value '%s' specified, when only 'rate' value is allowed",
                                 terms[2].trim()), "RequestParse"));

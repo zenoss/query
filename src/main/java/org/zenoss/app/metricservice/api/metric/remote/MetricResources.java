@@ -90,7 +90,7 @@ public class MetricResources {
         System.out.println("NewMetricResources.query - POST");
         log.info("Entered NewMetricResources.query with single param (POST).");
         if (query == null) {
-            return Utils.getErrorResponse(null, 400,
+            return Utils.getErrorResponse(null, Response.Status.BAD_REQUEST.getStatusCode(),
                     "Received an empty query request", "Empty Request");
         }
         Optional<String> id = Optional.absent();

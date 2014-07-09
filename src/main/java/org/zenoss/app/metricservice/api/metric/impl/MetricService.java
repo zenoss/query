@@ -434,7 +434,7 @@ public class MetricService implements MetricServiceAPI {
                 response.put(CLIENT_ID, id);
                 response.put(Utils.ERRORS, errors);
                 throw new WebApplicationException(Response
-                    .status(400)
+                    .status(Response.Status.BAD_REQUEST.getStatusCode())
                     .entity(objectMapper.writer().writeValueAsString(response))
                     .build());
             }
