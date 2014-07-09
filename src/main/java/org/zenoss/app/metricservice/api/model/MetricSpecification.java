@@ -265,30 +265,30 @@ public class MetricSpecification {
     public String toString(String downsample,
                            Map<String, List<String>> baseTags, boolean withRateOptions) {
         StringBuilder buf = new StringBuilder();
-        if (getAggregator() != null) {
-            buf.append(getAggregator()).append(':');
+        if (aggregator != null) {
+            buf.append(aggregator).append(':');
         }
-        if (getDownsample() != null) {
-            buf.append(getDownsample()).append(':');
+        if (this.downsample != null) {
+            buf.append(this.downsample).append(':');
         } else if (downsample != null) {
             buf.append(downsample).append(':');
         }
-        if (getRate()) {
+        if (rate) {
             buf.append("rate");
-            if (withRateOptions && getRateOptions() != null) {
+            if (withRateOptions && rateOptions != null) {
                 buf.append('{');
-                if (getRateOptions().getCounter() != null) {
-                    if (getRateOptions().getCounter()) {
+                if (rateOptions.getCounter() != null) {
+                    if (rateOptions.getCounter()) {
                         buf.append("counter");
-                        if (getRateOptions().getCounterMax() != null) {
+                        if (rateOptions.getCounterMax() != null) {
                             buf.append(',');
-                            buf.append(getRateOptions().getCounterMax());
-                        } else if (getRateOptions().getResetThreshold() != null) {
+                            buf.append(rateOptions.getCounterMax());
+                        } else if (rateOptions.getResetThreshold() != null) {
                             buf.append(',');
                         }
-                        if (getRateOptions().getResetThreshold() != null) {
+                        if (rateOptions.getResetThreshold() != null) {
                             buf.append(',');
-                            buf.append(getRateOptions().getResetThreshold());
+                            buf.append(rateOptions.getResetThreshold());
                         }
                     }
                 }
@@ -296,11 +296,11 @@ public class MetricSpecification {
             }
             buf.append(':');
         }
-        if (getMetric() != null) {
-            buf.append(getMetric());
+        if (metric != null) {
+            buf.append(metric);
         } else {
             buf.append('[');
-            buf.append(getName());
+            buf.append(name);
             buf.append(']');
         }
         if ((baseTags != null && baseTags.size() > 0)
@@ -503,11 +503,11 @@ public class MetricSpecification {
         }
 
         MetricSpecification ms = new MetricSpecification();
-        ms.setAggregator(aggregator);
-        ms.setDownsample(downsample);
-        ms.setRate(rate);
-        ms.setRateOptions(rateOptions);
-        ms.setMetric(metric);
+        ms.aggregator = aggregator;
+        ms.downsample = downsample;
+        ms.rate = rate;
+        ms.rateOptions = rateOptions;
+        ms.metric = metric;
         ms.setTags(tags);
         return ms;
     }

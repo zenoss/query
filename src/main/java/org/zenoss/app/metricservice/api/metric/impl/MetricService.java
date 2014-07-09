@@ -61,28 +61,27 @@ import java.util.*;
 @Configuration
 public class MetricService implements MetricServiceAPI {
     public static final String CLIENT_ID = "clientId";
-    public static final String SOURCE = "source";
-    public static final String START_TIME = "startTime";
-    public static final String START_TIME_ACTUAL = "startTimeActual";
-    public static final String END_TIME = "endTime";
-    public static final String END_TIME_ACTUAL = "endTimeActual";
-    public static final String RESULTS = "results";
-    public static final String DATAPOINTS = "datapoints";
-    public static final String AGGREGATOR = "aggregator";
-    public static final String RATE = "rate";
-    public static final String DOWNSAMPLE = "downsample";
+//    public static final String SOURCE = "source";
+//    public static final String START_TIME = "startTime";
+//    public static final String START_TIME_ACTUAL = "startTimeActual";
+//    public static final String END_TIME = "endTime";
+//    public static final String END_TIME_ACTUAL = "endTimeActual";
+//    public static final String RESULTS = "results";
+//    public static final String DATAPOINTS = "datapoints";
+//    public static final String AGGREGATOR = "aggregator";
+//    public static final String RATE = "rate";
+//    public static final String DOWNSAMPLE = "downsample";
     public static final String METRIC = "metric";
     public static final String ID = "id";
-    public static final String RETURN_SET = "returnset";
-    public static final String TIMESTAMP = "timestamp";
-    public static final String SERIES = "series";
-    public static final String VALUE = "value";
-    public static final String TAGS = "tags";
+//    public static final String RETURN_SET = "returnset";
+//    public static final String TIMESTAMP = "timestamp";
+//    public static final String SERIES = "series";
+//    public static final String VALUE = "value";
+//    public static final String TAGS = "tags";
     public static final String NOT_SPECIFIED = "not-specified";
     private static final Logger log = LoggerFactory.getLogger(MetricService.class);
     public final ObjectMapper objectMapper;
     public ResultProcessor resultsProcessor = new DefaultResultProcessor();
-    public ResultWriter seriesResultsWriter = new SeriesResultWriter();
     public JacksonResultsWriter jacksonResultsWriter = new JacksonResultsWriter();
     @Autowired
     MetricServiceAppConfiguration config;
@@ -206,8 +205,6 @@ public class MetricService implements MetricServiceAPI {
             // Read from the input stream until we see the timestamp
             // go backward and then return the previous value
             String line;
-            String result;
-            long ts;
 
             StringBuilder jsonString = new StringBuilder();
             while ((line = super.readLine()) != null) {
@@ -336,11 +333,11 @@ public class MetricService implements MetricServiceAPI {
 
             }
             try {
-                if (config.getMetricServiceConfig().getUseJacksonWriter()) {
+//                if (config.getMetricServiceConfig().getUseJacksonWriter()) {
                     writeResultsUsingJacksonWriter(output, reader, bucketSize);
-                } else {
-                    writeResultsUsingJsonWriter(output, reader, bucketSize);
-                }
+//                } else {
+//                    writeResultsUsingJsonWriter(output, reader, bucketSize);
+//                }
             } catch (ClassNotFoundException e) {
                 throw new WebApplicationException(
                     Utils.getErrorResponse(id,
@@ -363,15 +360,6 @@ public class MetricService implements MetricServiceAPI {
         //  TODO: THIS NEEDS COMMENTS
         private BufferedReader translateOpenTsdbInputToLastInput(BufferedReader reader, long start, long end) throws IOException {
             // read all from reader
-//            StringBuilder openTSDBResult = new StringBuilder();
-//            String line = reader.readLine();
-//            while (null != line) {
-//                openTSDBResult.append(line);
-//                line = reader.readLine();
-//            }
-//            log.info("")
-//            // parse into openTSDB input
-
             List<OpenTSDBQueryResult> allResults = new ArrayList<>();
             ObjectMapper mapper = Utils.getObjectMapper();
             OpenTSDBQueryResult[] queryResult = mapper.readValue(reader, OpenTSDBQueryResult[].class);
@@ -380,7 +368,7 @@ public class MetricService implements MetricServiceAPI {
             List<OpenTSDBQueryResult> lastDataPointResults = getLastDataPoints(allResults, start, end);
             // re-encode
             String resultJson = Utils.jsonStringFromObject(lastDataPointResults);
-            log.debug("Resulting JSON: {}", resultJson);
+            //log.debug("Resulting JSON: {}", resultJson);
 
             return new BufferedReader(new StringReader(resultJson));
         }
@@ -413,20 +401,6 @@ public class MetricService implements MetricServiceAPI {
             series.setDataPoints(dataPointSingleton);
         }
 
-        private void writeResultsUsingJsonWriter(OutputStream output, BufferedReader reader, long bucketSize)
-            throws IOException, UnknownReferenceException, ClassNotFoundException {
-            log.info("Using JsonWriter to generate JSON results.");
-            try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(output))) {
-                log.info("processing results");
-                Buckets<MetricKey, String> buckets = resultsProcessor.processResults(reader, queries, bucketSize);
-                log.info("results processed.");
-                log.info("About to call seriesResultsWriter. Buckets={}", Utils.jsonStringFromObject(buckets));
-                seriesResultsWriter.writeResults(writer, queries, buckets,
-                    id, api.getSourceId(), start, startTime, end, endTime, returnset, outputAsSeries);
-                log.info("back from seriesResultsWriter");
-            }
-        }
-
         private void writeResultsUsingJacksonWriter(OutputStream output, BufferedReader reader, long bucketSize)
             throws IOException, UnknownReferenceException, ClassNotFoundException {
             log.info("Using JacksonWriter to generate JSON results.");
@@ -434,7 +408,7 @@ public class MetricService implements MetricServiceAPI {
                 log.debug("processing results");
                 Buckets<MetricKey, String> buckets = resultsProcessor.processResults(reader, queries, bucketSize);
                 log.debug("results processed.");
-                log.info("calling jacksonResultsWriter. Buckets = {}", Utils.jsonStringFromObject(buckets));
+                //log.info("calling jacksonResultsWriter. Buckets = {}", Utils.jsonStringFromObject(buckets));
                 jacksonResultsWriter.writeResults(writer, queries, buckets,
                     id, api.getSourceId(), start, startTime, end, endTime, returnset, outputAsSeries);
                 log.info("back from jacksonResultsWriter");

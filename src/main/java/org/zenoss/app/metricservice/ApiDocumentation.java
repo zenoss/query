@@ -67,7 +67,7 @@ public class ApiDocumentation implements AutoBundle {
     @SuppressWarnings("rawtypes")
     @Override
     public Optional<Class> getRequiredConfig() {
-        return Optional.<Class> absent();
+        return Optional.absent();
 
     }
 

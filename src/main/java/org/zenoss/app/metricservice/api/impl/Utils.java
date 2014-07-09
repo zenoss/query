@@ -35,6 +35,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.Response;
 import java.text.ParseException;
@@ -44,9 +46,11 @@ import java.util.UUID;
 
 public class Utils {
 
+    private static final Logger log = LoggerFactory.getLogger(Utils.class);
+
     // Time values
     public static final String NOW = "now";
-    public static final String DETAULT_START_TIME = "1h-ago";
+    public static final String DEFAULT_START_TIME = "1h-ago";
     public static final String DEFAULT_END_TIME = NOW;
 
     private static final long HEURISTIC_EPOCH = 649753200000L;
@@ -61,7 +65,18 @@ public class Utils {
     public static final String START = "start";
     public static final String END = "end";
     public static final String COUNT = "count";
-    public static final double DEFAULT_DOWNSAMPLE_MULTIPLIER = 4.0;
+    public static final double DEFAULT_DOWNSAMPLE_MULTIPLIER = 2.0;
+    public static final int DAYS_PER_YEAR = 365;
+    public static final int DAYS_PER_WEEK= 7;
+    public static final int HOURS_PER_DAY = 24;
+    public static final int MINUTES_PER_HOUR = 60;
+    public static final int SECONDS_PER_MINUTE = 60;
+    public static final int SECONDS_PER_HOUR = MINUTES_PER_HOUR * SECONDS_PER_MINUTE;
+    public static final int SECONDS_PER_DAY = SECONDS_PER_HOUR * HOURS_PER_DAY;
+    public static final int SECONDS_PER_WEEK = SECONDS_PER_DAY * DAYS_PER_WEEK;
+    public static final int SECONDS_PER_YEAR = SECONDS_PER_DAY * DAYS_PER_YEAR;
+
+
     private static ObjectMapper mapper = null;
 
 
@@ -160,15 +175,15 @@ public class Utils {
             case 's':
                 return period;
             case 'm':
-                return period * 60;
+                return period * SECONDS_PER_MINUTE;
             case 'h':
-                return period * 60 * 60;
+                return period * SECONDS_PER_HOUR;
             case 'd':
-                return period * 60 * 60 * 24;
+                return period * SECONDS_PER_DAY;
             case 'w':
-                return period * 60 * 60 * 24 * 7;
+                return period * SECONDS_PER_WEEK;
             case 'y':
-                return period * 60 * 60 * 24 * 365;
+                return period * SECONDS_PER_YEAR;
         }
 
         return 0;
@@ -185,13 +200,15 @@ public class Utils {
 
     public static String createModifiedDownsampleRequest(String downsample, double downsampleMultiplier) {
         if (null == downsample || downsample.isEmpty() || downsampleMultiplier <= 0.0) {
+            log.warn("Bad downsample or multiplier. Returning original downsample value.");
             return downsample;
         }
         long duration = parseDuration(downsample);
         String aggregation = parseAggregation(downsample);
         long newDuration = (long)(duration / downsampleMultiplier);
         if (newDuration <= 0) {
-            return downsample;
+            log.warn("Applying value {} of downsampleMultiplier to downsample value of {} would result in a request with resolution finer than 1 sec. returning 1 second.", downsampleMultiplier, downsample);
+            newDuration = 1;
         }
         return String.format("%ds-%s", newDuration, aggregation);
     }

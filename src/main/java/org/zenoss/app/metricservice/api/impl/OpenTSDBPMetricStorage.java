@@ -30,7 +30,6 @@
  */
 package org.zenoss.app.metricservice.api.impl;
 
-import com.google.common.io.ByteStreams;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -48,12 +47,11 @@ import org.zenoss.app.metricservice.api.model.ReturnSet;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
-import java.io.*;
-import java.net.HttpURLConnection;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
 @API
@@ -67,54 +65,6 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         .getLogger(OpenTSDBPMetricStorage.class);
 
     private static final String SOURCE_ID = "OpenTSDB";
-
-    private static WebApplicationException generateException(
-        HttpURLConnection connection) {
-        int code = 500;
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try
-            (JsonWriter writer = new JsonWriter(new OutputStreamWriter(
-            baos))){
-            code = connection.getResponseCode();
-            InputStream is = connection.getErrorStream();
-
-            // Read the entire buffer as is should be a very short HTML page.
-            byte[] content = ByteStreams.toByteArray(is);
-
-            Pattern pattern = Pattern.compile("The reason provided was:\\<blockquote\\>(.*)\\</blockquote>\\</blockquote\\>");
-            Matcher matcher = pattern.matcher(new String(content, "UTF-8"));
-            if (matcher.find()) {
-                String message = matcher.group(1);
-                if (message != null) {
-                    baos = new ByteArrayOutputStream();
-                    writer.objectS();
-                    writer.value(Utils.ERROR_MESSAGE, message);
-                    writer.objectE();
-                    writer.close();
-                    return new WebApplicationException(Response.status(code)
-                        .entity(baos.toString()).build());
-                }
-            } else {
-                log.error("MESSAGE NOT FOUND");
-            }
-
-            return new WebApplicationException(Response.status(code).build());
-        } catch (Exception e) {
-            log.error(
-                "Unexpected error while attempting to parse response from OpenTSDB: {} : {}",
-                e.getClass().getName(), e.getMessage());
-            try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(baos))) {
-                writer.objectS();
-                writer.value(Utils.ERROR_MESSAGE, e.getMessage());
-                writer.objectE();
-                writer.close();
-                return new WebApplicationException(Response.status(code)
-                    .entity(baos.toString()).build());
-            } catch (IOException ee) {
-                return new WebApplicationException(code);
-            }
-        }
-    }
 
     /*
      * (non-Javadoc)
@@ -192,7 +142,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         return httpClient.execute(postRequest);
     }
 
-    private OpenTSDBSubQuery openTSDBSubQueryFromMetricSpecification(MetricSpecification metricSpecification) {
+    private static OpenTSDBSubQuery openTSDBSubQueryFromMetricSpecification(MetricSpecification metricSpecification) {
         OpenTSDBSubQuery result = null;
         if (null != metricSpecification) {
             result = new OpenTSDBSubQuery();

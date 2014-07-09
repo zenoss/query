@@ -129,7 +129,7 @@ public class DefaultResultProcessor implements ResultProcessor,
         ObjectMapper mapper = Utils.getObjectMapper();
         //CollectionType collectionType = mapper.getTypeFactory().constructCollectionType(List.class, OpenTSDBQueryResult.class);
 
-        if (log.isDebugEnabled()) {
+        if (false && log.isDebugEnabled()) {
             reader = logDebugInformation(reader);
         }
 
@@ -162,7 +162,7 @@ public class DefaultResultProcessor implements ResultProcessor,
                 buckets.add(key, key.getName(), dataPointTimeStamp, dataPointValue);
                 previousBucket = currentBucket;
                 currentBucket = buckets.getBucket(dataPointTimeStamp);
-                if (previousBucket != null && currentBucket != previousBucket) {
+                if (previousBucket != null && !previousBucket.equals(currentBucket)) {
                     for (MetricSpecification value : calculatedValues) {
                         calculateValue2(buckets, calculatorMap, keyCache, closure, curTags, previousBucket, previousTs, value);
                         //calculateValue(buckets, calculatorMap, keyCache, closure, curTags, previousBucket, previousTs, calc, value);
@@ -208,37 +208,37 @@ public class DefaultResultProcessor implements ResultProcessor,
         }
     }
 
-    private void calculateValue(Buckets<MetricKey, String> buckets, Map<MetricKey, MetricCalculator> calcs,
-                                MetricKeyCache keyCache, BucketClosure closure, Tags curTags,
-                                Buckets<MetricKey, String>.Bucket previousBucket, long previousTs,
-                                MetricCalculator calc, MetricSpecification value) {
-        double val;
-        log.debug("Processing calculatedValue {}", value);
-        MetricKey k2 = keyCache.get(value.getName(), curTags);
-        try {
-            MetricCalculator calc2 = calcs.get(k2);
-            if (null != calc2) {
-                closure.ts = previousTs;
-                closure.bucket = previousBucket;
-                val = calc.evaluate(closure);
-                buckets.add(k2, k2.getName(), previousTs, val);
-            }
-        } catch (UnknownReferenceException e) {
-        /*
-         * Just because a reference was not in the same bucket
-         * does not mean a real failure. It is legitimate.
-         */
-        }
-    }
+//    private void calculateValue(Buckets<MetricKey, String> buckets, Map<MetricKey, MetricCalculator> calcs,
+//                                MetricKeyCache keyCache, BucketClosure closure, Tags curTags,
+//                                Buckets<MetricKey, String>.Bucket previousBucket, long previousTs,
+//                                MetricCalculator calc, MetricSpecification value) {
+//        double val;
+//        log.debug("Processing calculatedValue {}", value);
+//        MetricKey k2 = keyCache.get(value.getName(), curTags);
+//        try {
+//            MetricCalculator calc2 = calcs.get(k2);
+//            if (null != calc2) {
+//                closure.ts = previousTs;
+//                closure.bucket = previousBucket;
+//                val = calc.evaluate(closure);
+//                buckets.add(k2, k2.getName(), previousTs, val);
+//            }
+//        } catch (UnknownReferenceException e) {
+//        /*
+//         * Just because a reference was not in the same bucket
+//         * does not mean a real failure. It is legitimate.
+//         */
+//        }
+//    }
 
-    private BufferedReader logDebugInformation(BufferedReader reader) throws IOException {
+    private static BufferedReader logDebugInformation(BufferedReader reader) throws IOException {
         StringBuffer readerPeekBuffer = new StringBuffer(4096);
         long lineCount = 0;
         String line;
         while (null != (line = reader.readLine())) {
             lineCount++;
             readerPeekBuffer.append(line);
-            readerPeekBuffer.append("\n");
+            readerPeekBuffer.append('\n');
 
         }
         log.debug("LINES READ FROM OPENTSDB: {}", lineCount);

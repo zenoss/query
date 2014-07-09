@@ -46,7 +46,7 @@ import java.util.Map;
 @JsonInclude(Include.NON_NULL)
 public class PerformanceQuery {
     @JsonProperty
-    private String start = Utils.DETAULT_START_TIME;
+    private String start = Utils.DEFAULT_START_TIME;
     
     @JsonProperty
     private String end = Utils.DEFAULT_END_TIME;

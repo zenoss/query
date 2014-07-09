@@ -87,26 +87,31 @@ public class JacksonResultsWriter {
 
     private Collection<QueryResult> makeDataPointResults(Collection<MetricSpecification> queries, Buckets<MetricKey,
         String> buckets, long startTs, long endTs, ReturnSet returnset) {
+        Collection<QueryResult> results = new ArrayList<>();
         if (null == buckets) {
             log.info("buckets is null - returning.");
-            return null;
+            return results;
         }
-        Collection<QueryResult> results = new ArrayList<>();
         List<Long> timestamps = buckets.getTimestamps();
         for (MetricSpecification query : queries) {
             if (false == query.getEmit()) {
                 log.info("emit is false for metric {} - skipping.", query.getNameOrMetric());
                 continue;
             }
-            QueryResult qr = new QueryResult();
-            qr.setMetric(query.getNameOrMetric());
-            qr.setTags(query.getTags());
-            qr.setDatapoints(makeDataPoints(buckets, startTs, endTs, returnset, timestamps, query.getNameOrMetric()));
-            qr.setId(query.getId());
+            QueryResult qr = getQueryResult(buckets, startTs, endTs, returnset, timestamps, query);
             results.add(qr);
         }
         log.debug("Returning collection with {} QueryResults.", results.size());
         return results;
+    }
+
+    private QueryResult getQueryResult(Buckets<MetricKey, String> buckets, long startTs, long endTs, ReturnSet returnset, List<Long> timestamps, MetricSpecification query) {
+        QueryResult qr = new QueryResult();
+        qr.setMetric(query.getNameOrMetric());
+        qr.setTags(query.getTags());
+        qr.setDatapoints(makeDataPoints(buckets, startTs, endTs, returnset, timestamps, query.getNameOrMetric()));
+        qr.setId(query.getId());
+        return qr;
     }
 
     private List<QueryResultDataPoint> makeDataPoints(Buckets<MetricKey, String> buckets, long startTs, long endTs,
@@ -115,7 +120,8 @@ public class JacksonResultsWriter {
         for (long bts : timestamps) {
             bts *= buckets.getSecondsPerBucket();
             if (returnset == ReturnSet.ALL || (bts >= startTs && bts <= endTs)) {
-                log.debug("Attempting to get bucket for value {}", bts);
+                //TODO: remove this log statement before commit
+                //log.debug("Attempting to get bucket for value {}", bts);
                 Buckets<MetricKey, String>.Bucket bucket = buckets.getBucket(bts);
                 if (null != bucket) {
                     Value value = bucket.getValueByShortcut(metricShortcut);

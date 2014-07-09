@@ -52,9 +52,6 @@ public class MetricServiceConfig {
     private Boolean defaultSeries = Boolean.FALSE;
 
     @JsonProperty
-    private Boolean useJacksonWriter = Boolean.TRUE;
-
-    @JsonProperty
     private String openTsdbUrl = "http://tsdb.zenaas.com:4242";
 
     @JsonProperty
@@ -188,13 +185,4 @@ public class MetricServiceConfig {
     public void setSendRateOptions(Boolean sendRateOptions) {
         this.sendRateOptions = sendRateOptions;
     }
-
-    public Boolean getUseJacksonWriter() {
-        return useJacksonWriter;
-    }
-
-    public void setUseJacksonWriter(Boolean useJacksonWriter) {
-        this.useJacksonWriter = useJacksonWriter;
-    }
-
 }
