@@ -100,8 +100,8 @@ Resources
                     "rateOptions" : { // optional
                         "counter"        : true or false,
                         "counterMax"     : roll over value for the counter,
-                        "resetThreshold" : delta between consecutive values which should be considered at
-                                           counter reset
+                        "resetThreshold" : delta between consecutive values which should be considered
+                                           at counter reset
                     },
                     "expression"  : RPN expression to perform on the raw value to get the returned value
                     "tags"        : {
