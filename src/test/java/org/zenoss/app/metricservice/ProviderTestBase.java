@@ -82,7 +82,7 @@ public abstract class ProviderTestBase extends ResourceTest {
      * If the value is present then add the given name/value pair as a query
      * parameter to the given buffer and return the '&' as the prefix, else just
      * return the given prefix.
-     * 
+     *
      * @param buf
      *            the buffer to which to append
      * @param name
@@ -94,18 +94,18 @@ public abstract class ProviderTestBase extends ResourceTest {
      * @return the prefix that should be used for the next parameter
      */
     protected char addArgument(StringBuilder buf, String name,
-            Optional<?> value, char prefix) {
+                               Optional<?> value, char prefix) {
         if (value.isPresent()) {
             try {
                 buf.append(prefix)
-                        .append(name)
-                        .append('=')
-                        .append(URLEncoder.encode(value.get().toString(),
-                                "UTF-8"));
+                    .append(name)
+                    .append('=')
+                    .append(URLEncoder.encode(value.get().toString(),
+                        "UTF-8"));
             } catch (UnsupportedEncodingException e) {
                 // If encoding fails, then just try the value raw
                 buf.append(prefix).append(name).append('=')
-                        .append(value.get().toString());
+                    .append(value.get().toString());
             }
             return '&';
         }
@@ -113,12 +113,12 @@ public abstract class ProviderTestBase extends ResourceTest {
     }
 
     protected Map<?, ?> parseAndVerifyResponse(Optional<String> id,
-            Optional<String> start, Optional<String> end,
-            Optional<ReturnSet> returnset, Optional<Boolean> series,
-            String[] queries, ClientResponse response) throws Exception {
+                                               Optional<String> start, Optional<String> end,
+                                               Optional<ReturnSet> returnset, Optional<Boolean> series,
+                                               String[] queries, ClientResponse response) throws Exception {
         Object o;
         try (InputStreamReader reader = new InputStreamReader(
-                response.getEntityInputStream())) {
+            response.getEntityInputStream())) {
             String jsonString = CharStreams.toString((reader));
             //String jsonString = reader.toString();
             log.debug("About to parse objects from JSON String: {}", jsonString);
@@ -192,17 +192,17 @@ public abstract class ProviderTestBase extends ResourceTest {
                     Assert.assertTrue("data points array is empty.", dps.length > 0);
 
                     switch (ReturnSet.fromJson((String) json.get("returnset"))) {
-                    case EXACT:
-                        Assert.assertEquals("EXACT - number of data points found should match count.", count, dps.length);
-                        break;
-                    case ALL:
-                        Assert.assertTrue("ALL - number of data points found should be >= count", dps.length >= count);
-                        break;
-                    case LAST:
-                        Assert.assertEquals("LAST - number of data points found should be 1", 1, dps.length);
-                        break;
-                    default:
-                        break;
+                        case EXACT:
+                            Assert.assertEquals("EXACT - number of data points found should match count.", count, dps.length);
+                            break;
+                        case ALL:
+                            Assert.assertTrue("ALL - number of data points found should be >= count", dps.length >= count);
+                            break;
+                        case LAST:
+                            Assert.assertEquals("LAST - number of data points found should be 1", 1, dps.length);
+                            break;
+                        default:
+                            break;
                     }
                     for (Object dpo : dps) {
                         Map<?, ?> dp = (Map<?, ?>) dpo;
@@ -212,20 +212,20 @@ public abstract class ProviderTestBase extends ResourceTest {
                 }
             } else {
                 switch (ReturnSet.fromJson((String) json.get("returnset"))) {
-                case EXACT:
-                    // count is queries.length because the mock generates
-                    // a data point for each step in the time span for each
-                    // query
-                    Assert.assertEquals("EXACT - number of data points found", count * queries.length, results.length);
-                    break;
-                case LAST:
-                    // If the request was for the "last" value then there should
-                    // be exactly one data point per metric requested
-                    Assert.assertEquals("LAST - should have exactly 1 data point per metric.", queries.length, results.length);
-                    break;
-                case ALL:
-                default:
-                    break;
+                    case EXACT:
+                        // count is queries.length because the mock generates
+                        // a data point for each step in the time span for each
+                        // query
+                        Assert.assertEquals("EXACT - number of data points found", count * queries.length, results.length);
+                        break;
+                    case LAST:
+                        // If the request was for the "last" value then there should
+                        // be exactly one data point per metric requested
+                        Assert.assertEquals("LAST - should have exactly 1 data point per metric.", queries.length, results.length);
+                        break;
+                    case ALL:
+                    default:
+                        break;
                 }
 
                 for (Object r : results) {
@@ -241,9 +241,9 @@ public abstract class ProviderTestBase extends ResourceTest {
     }
 
     protected Map<?, ?> testPostQuery(Optional<String> id,
-            Optional<String> start, Optional<String> end,
-            Optional<ReturnSet> returnset, Optional<Boolean> series,
-            String[] queries) throws Exception {
+                                      Optional<String> start, Optional<String> end,
+                                      Optional<ReturnSet> returnset, Optional<Boolean> series,
+                                      String[] queries) throws Exception {
         // Build up a query object to post
         PerformanceQuery performanceQuery = new PerformanceQuery();
         if (start.isPresent()) {
@@ -276,14 +276,14 @@ public abstract class ProviderTestBase extends ResourceTest {
         Assert.assertEquals("Invalid response code", 200, response.getStatus());
 
         return parseAndVerifyResponse(Optional.<String> absent(), start, end,
-                returnset, series, queries, response);
+            returnset, series, queries, response);
     }
 
     /**
      * Constructs a URI to test the performance query service given the various
      * optional parameters, invokes the URI and does some basic structural
      * checks on the results.
-     * 
+     *
      * @param id
      *            the id of the request
      * @param start
@@ -301,10 +301,10 @@ public abstract class ProviderTestBase extends ResourceTest {
      *             if the process encounters an exception
      */
     protected Map<?, ?> testQuery(Optional<String> id, Optional<String> start,
-            Optional<String> end, Optional<ReturnSet> returnset,
-            Optional<Boolean> series, Optional<String> downsample,
-            Optional<Map<String, List<String>>> globalTags, String[] queries)
-            throws Exception {
+                                  Optional<String> end, Optional<ReturnSet> returnset,
+                                  Optional<Boolean> series, Optional<String> downsample,
+                                  Optional<Map<String, List<String>>> globalTags, String[] queries)
+        throws Exception {
 
         // Build up the URI query
         char prefix = '?';
@@ -320,7 +320,28 @@ public abstract class ProviderTestBase extends ResourceTest {
         Assert.assertNotNull("Null response from WebRequest.", response);
         Assert.assertEquals("Invalid response code", 200, response.getStatus());
         return parseAndVerifyResponse(id, start, end, returnset, series,
-                queries, response);
+            queries, response);
+    }
+
+    protected void testErrorQuery(Optional<String> id, Optional<String> start,
+                                  Optional<String> end, Optional<ReturnSet> returnset,
+                                  Optional<Boolean> series, Optional<String> downsample,
+                                  Optional<Map<String, List<String>>> globalTags, String[] queries, int expectedResponseCode)
+        throws Exception {
+
+        // Build up the URI query
+        char prefix = '?';
+        PerformanceQuery request = makeRequestObject(id, start, end, returnset, series, queries);
+
+        // Invoke the URI and make sure we get a response
+        Client client = client();
+        client.setConnectTimeout(1000000);
+        client.setReadTimeout(1000000);
+        WebResource wr = client.resource(PERFORMANCE_QUERY_URL);
+        Assert.assertNotNull(String.format("Null WebResource for %s", PERFORMANCE_QUERY_URL), wr);
+        ClientResponse response = wr.type(MediaType.APPLICATION_JSON_TYPE).post(ClientResponse.class, request);
+        Assert.assertNotNull("Null response from WebRequest.", response);
+        Assert.assertEquals("Invalid response code", expectedResponseCode, response.getStatus());
     }
 
     protected PerformanceQuery makeRequestObject(Optional<String> id, Optional<String> start,
@@ -349,184 +370,193 @@ public abstract class ProviderTestBase extends ResourceTest {
     @Test
     public void queryTest10sAgo1QuerySeries() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
-                Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
-                Optional.of(true), Optional.<String> absent(),
-                Optional.<Map<String, List<String>>> absent(),
-                new String[] { "avg:laLoadInt1" });
+            Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
+            Optional.of(true), Optional.<String> absent(),
+            Optional.<Map<String, List<String>>> absent(),
+            new String[] { "avg:laLoadInt1" });
     }
 
     @Test
     public void queryTestEpochInSeconds10sAgo1QuerySeries() throws Exception {
         String start = String
-                .valueOf((new Date().getTime() / 1000) - 10L);
+            .valueOf((new Date().getTime() / 1000) - 10L);
         testQuery(Optional.of("my-client-id"), Optional.of(start),
-                Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
-                Optional.of(true), Optional.<String> absent(),
-                Optional.<Map<String, List<String>>> absent(),
-                new String[] { "avg:laLoadInt1" });
+            Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
+            Optional.of(true), Optional.<String> absent(),
+            Optional.<Map<String, List<String>>> absent(),
+            new String[] { "avg:laLoadInt1" });
     }
 
     @Test
     public void queryTestEpochInMs10sAgo1QuerySeries() throws Exception {
         String start = String
-                .valueOf(new Date().getTime() - (10 * 1000));
+            .valueOf(new Date().getTime() - (10 * 1000));
         testQuery(Optional.of("my-client-id"), Optional.of(start),
-                Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
-                Optional.of(true), Optional.<String> absent(),
-                Optional.<Map<String, List<String>>> absent(),
-                new String[] { "avg:laLoadInt1" });
+            Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
+            Optional.of(true), Optional.<String> absent(),
+            Optional.<Map<String, List<String>>> absent(),
+            new String[] { "avg:laLoadInt1" });
     }
 
     // Series=false is no longer supported, so expect exception
     @Test(expected=WebApplicationException.class)
     public void queryTest10sAgo1QueryNoSeries() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
-                Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
-                Optional.of(false), Optional.<String> absent(),
-                Optional.<Map<String, List<String>>> absent(),
-                new String[] { "avg:laLoadInt1" });
+            Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
+            Optional.of(false), Optional.<String> absent(),
+            Optional.<Map<String, List<String>>> absent(),
+            new String[] { "avg:laLoadInt1" });
     }
 
     @Test
     public void queryTest10sAgo2QuerySeries() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
-                Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
-                Optional.of(true), Optional.<String> absent(),
-                Optional.<Map<String, List<String>>> absent(), new String[] {
-                        "avg:laLoadInt1", "sum:laLoadInt5" });
+            Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
+            Optional.of(true), Optional.<String> absent(),
+            Optional.<Map<String, List<String>>> absent(), new String[] {
+            "avg:laLoadInt1", "sum:laLoadInt5" });
     }
 
     // Series=false is no longer supported, so expect exception
     @Test(expected=WebApplicationException.class)
     public void queryTest10sAgo2QueryNoSeries() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
-                Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
-                Optional.of(false), Optional.<String> absent(),
-                Optional.<Map<String, List<String>>> absent(), new String[] {
-                        "avg:laLoadInt1", "sum:laLoadInt5" });
+            Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
+            Optional.of(false), Optional.<String> absent(),
+            Optional.<Map<String, List<String>>> absent(), new String[] {
+            "avg:laLoadInt1", "sum:laLoadInt5" });
     }
 
     @Test
     public void queryTest10sAgo1QuerySeriesWithTags() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
-                Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
-                Optional.of(true), Optional.<String> absent(),
-                Optional.<Map<String, List<String>>> absent(),
-                new String[] { "avg:laLoadInt1{tag1=*,tag2=*}" });
+            Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
+            Optional.of(true), Optional.<String> absent(),
+            Optional.<Map<String, List<String>>> absent(),
+            new String[] { "avg:laLoadInt1{tag1=value,tag2=value}" });
     }
 
     // Series=false is no longer supported, so expect exception
     @Test(expected=WebApplicationException.class)
     public void queryTest10sAgo1QueryNoSeriesWithTags() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
-                Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
-                Optional.of(false), Optional.<String> absent(),
-                Optional.<Map<String, List<String>>> absent(),
-                new String[] { "avg:laLoadInt1{tag1=*,tag2=*}" });
+            Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
+            Optional.of(false), Optional.<String> absent(),
+            Optional.<Map<String, List<String>>> absent(),
+            new String[] { "avg:laLoadInt1{tag1=value,tag2=value}" });
+    }
+
+    @Test
+    public void queryTest10sAgo1QueryNoSeriesWithAsteriskInTagsShouldFail() throws Exception {
+        testErrorQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
+            Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
+            Optional.of(false), Optional.<String> absent(),
+            Optional.<Map<String, List<String>>> absent(),
+            new String[] { "avg:laLoadInt1{tag1=*,tag2=*}" }, 400);
     }
 
     @Test
     public void queryTest10sAgo2QuerySeriesWithTags() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
-                Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
-                Optional.of(true), Optional.<String> absent(),
-                Optional.<Map<String, List<String>>> absent(), new String[] {
-                        "avg:laLoadInt1{tag1=*,tag2=*}",
-                        "sum:laLoadInt5{tag1=*,tag2=*}" });
+            Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
+            Optional.of(true), Optional.<String> absent(),
+            Optional.<Map<String, List<String>>> absent(), new String[] {
+            "avg:laLoadInt1{tag1=value,tag2=value}",
+            "sum:laLoadInt5{tag1=value,tag2=value}" });
     }
 
     // Series=false is no longer supported, so expect exception
     @Test(expected=WebApplicationException.class)
     public void queryTest10sAgo2QueryNoSeriesWithTags() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("10s-ago"),
-                Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
-                Optional.of(false), Optional.<String> absent(),
-                Optional.<Map<String, List<String>>> absent(), new String[] {
-                        "avg:laLoadInt1{tag1=*,tag2=*}",
-                        "sum:laLoadInt5{tag1=*,tag2=*}" });
+            Optional.<String> absent(), Optional.of(ReturnSet.EXACT),
+            Optional.of(false), Optional.<String> absent(),
+            Optional.<Map<String, List<String>>> absent(), new String[] {
+            "avg:laLoadInt1{tag1=value,tag2=value}",
+            "sum:laLoadInt5{tag1=value,tag2=value}" });
     }
 
 
     @Test
     public void queryTestTimeRange() throws Exception {
         testQuery(Optional.of("my-client-id"),
-                Optional.of("2013/04/30-16:00:00-GMT"),
-                Optional.of("2013/04/30-18:00:00-GMT"),
-                Optional.of(ReturnSet.ALL), Optional.of(true),
-                Optional.<String> absent(),
-                Optional.<Map<String, List<String>>> absent(),
-                new String[] { "avg:laLoadInt1" });
+            Optional.of("2013/04/30-16:00:00-GMT"),
+            Optional.of("2013/04/30-18:00:00-GMT"),
+            Optional.of(ReturnSet.ALL), Optional.of(true),
+            Optional.<String> absent(),
+            Optional.<Map<String, List<String>>> absent(),
+            new String[] { "avg:laLoadInt1" });
     }
 
     // Series=false is no longer supported, so expect exception
     @Test(expected=WebApplicationException.class)
     public void queryTestTimeRangeNoSeries() throws Exception {
         testQuery(Optional.of("my-client-id"),
-                Optional.of("2013/04/30-16:00:00-GMT"),
-                Optional.of("2013/04/30-18:00:00-GMT"),
-                Optional.of(ReturnSet.EXACT), Optional.of(false),
-                Optional.<String> absent(),
-                Optional.<Map<String, List<String>>> absent(),
-                new String[] { "avg:laLoadInt1" });
+            Optional.of("2013/04/30-16:00:00-GMT"),
+            Optional.of("2013/04/30-18:00:00-GMT"),
+            Optional.of(ReturnSet.EXACT), Optional.of(false),
+            Optional.<String> absent(),
+            Optional.<Map<String, List<String>>> absent(),
+            new String[] { "avg:laLoadInt1" });
     }
 
     @Test
     public void queryTestOutsideExactTimeRange() throws Exception {
         testQuery(Optional.of("my-client-id"),
-                Optional.of("2013/04/30-16:00:00-GMT"),
-                Optional.of("2013/04/30-18:00:00-GMT"),
-                Optional.of(ReturnSet.EXACT), Optional.of(true),
-                Optional.<String> absent(),
-                Optional.<Map<String, List<String>>> absent(),
-                new String[] { "avg:laLoadInt1" });
+            Optional.of("2013/04/30-16:00:00-GMT"),
+            Optional.of("2013/04/30-18:00:00-GMT"),
+            Optional.of(ReturnSet.EXACT), Optional.of(true),
+            Optional.<String> absent(),
+            Optional.<Map<String, List<String>>> absent(),
+            new String[] { "avg:laLoadInt1" });
     }
 
     @Test
     public void queryTestOutsideTimeRange() throws Exception {
         testQuery(Optional.of("my-client-id"),
-                Optional.of("2013/04/30-16:00:00-GMT"),
-                Optional.of("2013/04/30-18:00:00-GMT"),
-                Optional.of(ReturnSet.ALL), Optional.of(true),
-                Optional.<String> absent(),
-                Optional.<Map<String, List<String>>> absent(),
-                new String[] { "avg:laLoadInt1" });
+            Optional.of("2013/04/30-16:00:00-GMT"),
+            Optional.of("2013/04/30-18:00:00-GMT"),
+            Optional.of(ReturnSet.ALL), Optional.of(true),
+            Optional.<String> absent(),
+            Optional.<Map<String, List<String>>> absent(),
+            new String[] { "avg:laLoadInt1" });
     }
 
     @Test
     public void queryTestLastValue() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("1h-ago"),
-                Optional.<String> absent(), Optional.of(ReturnSet.LAST),
-                Optional.of(true), Optional.<String> absent(),
-                Optional.<Map<String, List<String>>> absent(),
-                new String[] { "avg:laLoadInt1" });
+            Optional.<String> absent(), Optional.of(ReturnSet.LAST),
+            Optional.of(true), Optional.<String> absent(),
+            Optional.<Map<String, List<String>>> absent(),
+            new String[] { "avg:laLoadInt1" });
     }
 
     @Test
     public void queryTestLastValueWithTags() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("1h-ago"),
-                Optional.<String> absent(), Optional.of(ReturnSet.LAST),
-                Optional.of(true), Optional.<String> absent(),
-                Optional.<Map<String, List<String>>> absent(), new String[] {
-                        "avg:laLoadInt1{tag1=*,tag2=*}",
-                        "sum:laLoadInt5{tag1=*,tag2=*}" });
+            Optional.<String> absent(), Optional.of(ReturnSet.LAST),
+            Optional.of(true), Optional.<String> absent(),
+            Optional.<Map<String, List<String>>> absent(), new String[] {
+            "avg:laLoadInt1{tag1=value,tag2=value}",
+            "sum:laLoadInt5{tag1=value,tag2=value}" });
     }
 
     @Test
     public void queryTestLastValueSeries() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("1h-ago"),
-                Optional.<String> absent(), Optional.of(ReturnSet.LAST),
-                Optional.of(true), Optional.<String> absent(),
-                Optional.<Map<String, List<String>>> absent(),
-                new String[] { "avg:laLoadInt1" });
+            Optional.<String> absent(), Optional.of(ReturnSet.LAST),
+            Optional.of(true), Optional.<String> absent(),
+            Optional.<Map<String, List<String>>> absent(),
+            new String[] { "avg:laLoadInt1" });
     }
 
     @Test
     public void queryTestLastValueSeriesWithTags() throws Exception {
         testQuery(Optional.of("my-client-id"), Optional.of("1h-ago"),
-                Optional.<String> absent(), Optional.of(ReturnSet.LAST),
-                Optional.of(true), Optional.<String> absent(),
-                Optional.<Map<String, List<String>>> absent(), new String[] {
-                        "avg:laLoadInt1{tag1=*,tag2=*}",
-                        "sum:laLoadInt5{tag1=*,tag2=*}" });
+            Optional.<String> absent(), Optional.of(ReturnSet.LAST),
+            Optional.of(true), Optional.<String> absent(),
+            Optional.<Map<String, List<String>>> absent(), new String[] {
+            "avg:laLoadInt1{tag1=value,tag2=value}",
+            "sum:laLoadInt5{tag1=value,tag2=value}" });
     }
 }

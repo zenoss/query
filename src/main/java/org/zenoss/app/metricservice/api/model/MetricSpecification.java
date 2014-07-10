@@ -79,6 +79,8 @@ public class MetricSpecification {
 
     @JsonProperty
     private Map<String, List<String>> tags = null;
+
+
     @JsonProperty
     private boolean emit = true;
 
@@ -511,5 +513,21 @@ public class MetricSpecification {
         ms.metric = metric;
         ms.setTags(tags);
         return ms;
+    }
+
+    public void validateWithErrorHandling(List<Object> errors) {
+        // Add error if '*' is specified within a tag
+        if (null != tags) {
+            for (Map.Entry<String, List<String>> entry : tags.entrySet()) {
+                for (String tagValue : entry.getValue()) {
+                    if (tagValue.contains("*")) {
+                        String tagKey = entry.getKey();
+                        String errorMessage = String.format("Tag %s has value %s, which contains '*'.", tagKey, tagValue);
+                        String tagLocation = String.format("Value %s in tag %s of series %s", tagValue, tagKey, getNameOrMetric());
+                        errors.add(Utils.makeError(errorMessage,"Tag values may not contain '*'", tagLocation));
+                    }
+                }
+            }
+        }
     }
 }

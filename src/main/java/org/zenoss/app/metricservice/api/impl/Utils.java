@@ -42,6 +42,8 @@ import javax.ws.rs.core.Response;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class Utils {
@@ -78,6 +80,15 @@ public class Utils {
 
 
     private static ObjectMapper mapper = null;
+
+
+    static public Map<String, Object> makeError(String errorMessage, String errorCause, String errorPart) {
+        Map<String, Object> error = new HashMap<>();
+        error.put(ERROR_MESSAGE, errorMessage);
+        error.put(ERROR_CAUSE, errorCause);
+        error.put(ERROR_PART, errorPart);
+        return error;
+    }
 
 
     static class ErrorResponse {

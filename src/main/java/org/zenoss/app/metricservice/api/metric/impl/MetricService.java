@@ -424,10 +424,7 @@ public class MetricService implements MetricServiceAPI {
             end = parseTimeWithErrorHandling(endTime, Utils.END, errors);
 
             // Validate that there is at least one (1) metric specification
-            if (queries.size() == 0) {
-                log.error("No queries specified for request");
-                errors.add(makeError("At least one (1) metric query term must be specified, none found", METRIC, METRIC));
-            }
+            validateQueriesWithErrorHandling(errors);
 
             if (errors.size() > 0) {
                 Map<String, Object> response = new HashMap<>();
@@ -440,12 +437,22 @@ public class MetricService implements MetricServiceAPI {
             }
         }
 
-        private long parseTimeWithErrorHandling(String endTime, String timeTypeDescription, List<Object> errors) {
+        private void validateQueriesWithErrorHandling(List<Object> errors) {
+            if (queries.size() == 0) {
+                log.error("No queries specified for request");
+                errors.add(Utils.makeError("At least one (1) metric query term must be specified, none found", METRIC, METRIC));
+            }
+            for (MetricSpecification query : queries) {
+                query.validateWithErrorHandling(errors);
+            }
+        }
+
+        private long parseTimeWithErrorHandling(String timeString, String timeTypeDescription, List<Object> errors) {
             long result = -1;
             try {
-                result = Utils.parseDate(endTime);
+                result = Utils.parseDate(timeString);
             } catch (ParseException e) {
-                handleTimeParseException(errors, endTime, e, timeTypeDescription);
+                handleTimeParseException(errors, timeString, e, timeTypeDescription);
             }
             return result;
         }
@@ -453,16 +460,9 @@ public class MetricService implements MetricServiceAPI {
         private void handleTimeParseException(List<Object> errors, String startTime, ParseException e, String timeType) {
             log.error("Failed to parse {} time option of '{}': {} : {}", timeType, startTime, e.getClass().getName(), e.getMessage());
             String errorString = String.format("Unable to parse specified %s time value of '%s'", timeType, startTime);
-            errors.add(makeError(errorString, e.getMessage(), timeType));
+            errors.add(Utils.makeError(errorString, e.getMessage(), timeType));
         }
 
-        private Map<String, Object> makeError(String errorMessage, String errorCause, String errorPart) {
-            Map<String, Object> error = new HashMap<>();
-            error.put(Utils.ERROR_MESSAGE, errorMessage);
-            error.put(Utils.ERROR_CAUSE, errorCause);
-            error.put(Utils.ERROR_PART, errorPart);
-            return error;
-        }
     }
 
 }
