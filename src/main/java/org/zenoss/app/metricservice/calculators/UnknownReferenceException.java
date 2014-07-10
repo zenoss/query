@@ -38,15 +38,13 @@ package org.zenoss.app.metricservice.calculators;
 public class UnknownReferenceException extends Exception {
     private static final long serialVersionUID = 7470448997172692107L;
 
-    private String reference = null;
+    private final String reference;
 
     public UnknownReferenceException(String reference) {
         this.reference = reference;
     }
 
     public String toString() {
-        return String
-                .format("Unknown reference,  %s, encountered while performing metric calculation",
-                        reference);
+        return String.format("Unknown reference,  %s, encountered while performing metric calculation", reference);
     }
 }

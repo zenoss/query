@@ -30,7 +30,6 @@
  */
 package org.zenoss.app.metricservice.api.impl;
 
-import com.google.common.io.ByteStreams;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -48,17 +47,15 @@ import org.zenoss.app.metricservice.api.model.ReturnSet;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
-import java.io.*;
-import java.net.HttpURLConnection;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Scanner;
 
-/**
- * @author David Bainbridge <dbainbridge@zenoss.com>
- */
+
 @API
 @Configuration
 @Profile({"default", "prod"})
@@ -67,59 +64,9 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
     MetricServiceAppConfiguration config;
 
     private static final Logger log = LoggerFactory
-            .getLogger(OpenTSDBPMetricStorage.class);
+        .getLogger(OpenTSDBPMetricStorage.class);
 
     private static final String SOURCE_ID = "OpenTSDB";
-
-    private WebApplicationException generateException(
-            HttpURLConnection connection) {
-        int code = 500;
-        try {
-            code = connection.getResponseCode();
-            InputStream is = connection.getErrorStream();
-
-            // Read the entire buffer as is should be a very short HTML page.
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte[] content = ByteStreams.toByteArray(is);
-
-            Pattern pattern = Pattern.compile("The reason provided was:\\<blockquote\\>(.*)\\</blockquote>\\</blockquote\\>");
-            Matcher matcher = pattern.matcher(new String(content, "UTF-8"));
-            if (matcher.find()) {
-                String message = matcher.group(1);
-                if (message != null) {
-                    baos = new ByteArrayOutputStream();
-                    JsonWriter writer = new JsonWriter(new OutputStreamWriter(
-                            baos));
-                    writer.objectS();
-                    writer.value(Utils.ERROR_MESSAGE, message);
-                    writer.objectE();
-                    writer.close();
-                    return new WebApplicationException(Response.status(code)
-                            .entity(baos.toString()).build());
-                }
-            } else {
-                log.error("MESSAGE NOT FOUND");
-            }
-
-            return new WebApplicationException(Response.status(code).build());
-        } catch (Exception e) {
-            log.error(
-                    "Unexpected error while attempting to parse response from OpenTSDB: {} : {}",
-                    e.getClass().getName(), e.getMessage());
-            try {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                JsonWriter writer = new JsonWriter(new OutputStreamWriter(baos));
-                writer.objectS();
-                writer.value(Utils.ERROR_MESSAGE, e.getMessage());
-                writer.objectE();
-                writer.close();
-                return new WebApplicationException(Response.status(code)
-                        .entity(baos.toString()).build());
-            } catch (Exception ee) {
-                return new WebApplicationException(code);
-            }
-        }
-    }
 
     /*
      * (non-Javadoc)
@@ -131,47 +78,83 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
      */
     public BufferedReader getReader(MetricServiceAppConfiguration config,
                                     String id, String startTime, String endTime, ReturnSet returnset,
-                                    Boolean series, String downsample,
+                                    Boolean series, String downsample, double downsampleMultiplier,
                                     Map<String, List<String>> globalTags,
                                     List<MetricSpecification> queries) throws IOException {
 
         OpenTSDBQuery query = new OpenTSDBQuery();
 
-        if (!Utils.NOW.equals(startTime)) {
-            query.start = startTime;
-        }
+        // This could maybe be better - for now, it works : end time defaults to 'now', start time does not default.
+        query.start = startTime;
         if (!Utils.NOW.equals(endTime)) {
             query.end = endTime;
         }
 
+        String appliedDownsample = Utils.createModifiedDownsampleRequest(downsample, downsampleMultiplier);
+        log.info("Specified Downsample = {}, Specified Multiplier = {}, Applied Downsample = {}.", downsample, downsampleMultiplier, appliedDownsample);
+
         for (MetricSpecification metricSpecification : queries) {
+            String oldDownsample = metricSpecification.getDownsample();
+            if (null != oldDownsample && !oldDownsample.isEmpty()) {
+                log.info("Overriding specified series downsample ({}) with global specification of {}", oldDownsample, appliedDownsample);
+            }
+            metricSpecification.setDownsample(appliedDownsample);
             query.addSubQuery(openTSDBSubQueryFromMetricSpecification(metricSpecification));
         }
 
         String jsonQueryString = Utils.jsonStringFromObject(query);
-        if (log.isDebugEnabled()) {
-            log.debug("OpenTSDB POST JSON: {}", jsonQueryString);
+        if (log.isInfoEnabled()) {
+            log.info("OpenTSDB POST JSON: {}", jsonQueryString);
         }
+        HttpResponse response = postRequestToOpenTsdb(config, jsonQueryString);
+
+        log.info("Response code from OpenTSDB POST: {}", response.getStatusLine().getStatusCode());
+
+        throwWebExceptionIfHttpResponseIsBad(response);
+
+        return new BufferedReader(new InputStreamReader((response.getEntity().getContent())));
+    }
+
+    private static void throwWebExceptionIfHttpResponseIsBad(HttpResponse response) throws WebApplicationException {
+        int statusCode = response.getStatusLine().getStatusCode();
+
+        if (isNotOk(statusCode)) {
+            String content = "";
+            try {
+                content = streamToString(response.getEntity().getContent());
+            } catch (IOException e) {
+                content = "Unable to read content from openTSDB.";
+            }
+            throw new WebApplicationException(
+                Response.status(statusCode)
+                    .entity("Operation failed: " + response.getStatusLine().toString() + "Response from OpenTSDB: " + content)
+                    .build());
+        }
+    }
+
+    private static String streamToString(InputStream stream) {
+        Scanner s = new Scanner(stream).useDelimiter("\\A");
+        return s.hasNext() ? s.next() : "";
+    }
+
+    private static boolean isNotOk(int statusCode) {
+        return ((statusCode / 100) != 2);
+    }
+
+    private static HttpResponse postRequestToOpenTsdb(MetricServiceAppConfiguration config, String jsonQueryString) throws IOException {
         String postUrl = String.format("%s/api/query", config.getMetricServiceConfig().getOpenTsdbUrl());
         log.info("POSTing JSON to URL: {}", postUrl);
 
         DefaultHttpClient httpClient = new DefaultHttpClient();
         HttpPost postRequest = new HttpPost(postUrl);
+        log.info("Query to OpenTSDB: {}",jsonQueryString);
         StringEntity input = new StringEntity(jsonQueryString);
         input.setContentType("application/json");
         postRequest.setEntity(input);
-        HttpResponse response = httpClient.execute(postRequest);
-        log.info("Response code: {}", response.getStatusLine().getStatusCode());
-
-        if (response.getStatusLine().getStatusCode() != 200) {
-            throw new RuntimeException("Failed : HTTP error code : "
-                    + response.getStatusLine().getStatusCode() + " Reason: " + response.getStatusLine().getReasonPhrase());
-        }
-
-        return new BufferedReader(new InputStreamReader((response.getEntity().getContent())));
+        return httpClient.execute(postRequest);
     }
 
-    private OpenTSDBSubQuery openTSDBSubQueryFromMetricSpecification(MetricSpecification metricSpecification) {
+    private static OpenTSDBSubQuery openTSDBSubQueryFromMetricSpecification(MetricSpecification metricSpecification) {
         OpenTSDBSubQuery result = null;
         if (null != metricSpecification) {
             result = new OpenTSDBSubQuery();
@@ -181,16 +164,18 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             result.rate = metricSpecification.getRate();
             result.rateOptions = openTSDBRateOptionFromRateOptions(metricSpecification.getRateOptions());
             Map<String, List<String>> tags = metricSpecification.getTags();
-            for (Map.Entry<String, List<String>> tagEntry : tags.entrySet()) {
-                for (String tagValue : tagEntry.getValue()) {
-                    result.addTag(tagEntry.getKey(), tagValue);
+            if (null != tags) {
+                for (Map.Entry<String, List<String>> tagEntry : tags.entrySet()) {
+                    for (String tagValue : tagEntry.getValue()) {
+                        result.addTag(tagEntry.getKey(), tagValue);
+                    }
                 }
             }
         }
-        return result;  //To change body of created methods use File | Settings | File Templates.
+        return result;
     }
 
-    private OpenTSDBRateOption openTSDBRateOptionFromRateOptions(RateOptions rateOptions) {
+    private static OpenTSDBRateOption openTSDBRateOptionFromRateOptions(RateOptions rateOptions) {
         OpenTSDBRateOption result = null;
         if (null != rateOptions) {
             result = new OpenTSDBRateOption();

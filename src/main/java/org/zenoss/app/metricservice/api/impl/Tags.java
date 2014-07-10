@@ -140,37 +140,21 @@ public class Tags {
         return tags.size();
     }
 
-    /**
-     * Determines if two instances are equivalent. Two instances are considered
-     * equivalent if they have the same tags and if the tags have the same
-     * values.
-     * 
-     * @param other
-     *            instance to which to compare
-     * @return true if they are equal, else false
-     */
-    public boolean equals(Object object) {
-        if (object == null || !(object instanceof Tags)) {
-            return false;
-        }
-        
-        Tags other = (Tags) object;
-        if (this.tags.size() != other.tags.size()) {
-            return false;
-        }
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) return true;
+        if (other == null || getClass() != other.getClass()) return false;
 
-        /*
-         * Both the left and right side exist and they have the same number of
-         * elements, so now the element have to be walked to determine if they
-         * contain the same keys and values.
-         */
-        for (String key : this.tags.keySet()) {
-            if (!other.tags.containsKey(key)
-                    || !this.tags.get(key).equals(other.tags.get(key))) {
-                return false;
-            }
-        }
+        Tags otherTags = (Tags) other;
+
+        if (tags != null ? !tags.equals(otherTags.tags) : otherTags.tags != null) return false;
+
         return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return tags != null ? tags.hashCode() : 0;
     }
 
     /**
@@ -188,7 +172,7 @@ public class Tags {
             return false;
         }
 
-        String btv, tv, ov;
+        String btv, thisValue, otherValue;
         for (Entry<String, String> entry : tags.entrySet()) {
             /*
              * If the key is not in the "other" then done. Other may have more
@@ -198,21 +182,21 @@ public class Tags {
                 return false;
             }
 
-            tv = entry.getValue();
-            ov = other.tags.get(entry.getKey());
-            btv = '|' + tv + '|';
+            thisValue = entry.getValue();
+            otherValue = other.tags.get(entry.getKey());
+            btv = '|' + thisValue + '|';
 
             /*
-             * Now we need to look at the two values. if "tv" contains "*" or
-             * then any "ov" is accepted. If "tv" contains "|" then we have to
-             * check if any of the options are in "ov". Else we are looking for
+             * Now we need to look at the two values. if "thisValue" contains "*" or
+             * then any "otherValue" is accepted. If "thisValue" contains "|" then we have to
+             * check if any of the options are in "otherValue". Else we are looking for
              * an exact match
              */
-            if (tv.indexOf('|') != -1) {
-                if (!btv.contains('|' + ov + '|')) {
+            if (thisValue.contains("|")) {
+                if (!btv.contains('|' + otherValue + '|')) {
                     return false;
                 }
-            } else if (!btv.contains("|*|") && !tv.equals(ov)) {
+            } else if (!btv.contains("|*|") && !thisValue.equals(otherValue)) {
                 return false;
             }
         }

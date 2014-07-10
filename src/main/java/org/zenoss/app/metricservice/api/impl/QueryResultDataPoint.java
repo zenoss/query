@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Zenoss and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Zenoss and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,46 +28,31 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.metricservice;
 
-import com.google.common.base.Optional;
-import com.yammer.dropwizard.assets.AssetsBundle;
-import org.zenoss.app.annotations.Bundle;
-import org.zenoss.app.autobundle.AutoBundle;
+package org.zenoss.app.metricservice.api.impl;
 
-/**
- * @author David Bainbridge <dbainbridge@zenoss.com>
- * 
- */
-@Bundle
-public class ApiDocumentation implements AutoBundle {
+public class QueryResultDataPoint {
+    private long timestamp;
+    private double value;
 
-    /**
-     * 
-     */
-    public ApiDocumentation() {
+    public QueryResultDataPoint(long timestamp, double value) {
+        this.timestamp = timestamp;
+        this.value = value;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.autobundle.AutoBundle#getBundle()
-     */
-    @Override
-    public com.yammer.dropwizard.Bundle getBundle() {
-        return new AssetsBundle("/doc", "/doc/", "index.html");
+    public long getTimestamp() {
+        return timestamp;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.autobundle.AutoBundle#getRequiredConfig()
-     */
-    @SuppressWarnings("rawtypes")
-    @Override
-    public Optional<Class> getRequiredConfig() {
-        return Optional.absent();
-
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
     }
 
+    public double getValue() {
+        return value;
+    }
+
+    public void setValue(double value) {
+        this.value = value;
+    }
 }

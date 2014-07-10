@@ -36,12 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Provides a utility to bucket metrics into defined sized chunks, averaging the
@@ -60,12 +55,12 @@ public class Buckets<P, S> {
     /**
      * Default bucket size of 5 minutes
      */
-    static public final long DEFAULT_BUCKET_SIZE = 300; // 5 Minutes
+    static public final long DEFAULT_BUCKET_SIZE = 5 * 60; // 5 Minutes
 
     /**
      * Specifies the size of each bucket in seconds
      */
-    private long secondsPerBucket = 5 * 60;
+    private long secondsPerBucket = DEFAULT_BUCKET_SIZE;
 
     public Map<Long, Bucket> getBucketList() {
         return bucketList;
@@ -163,7 +158,11 @@ public class Buckets<P, S> {
      *            the number of seconds per each bucket
      */
     public Buckets(final long secondsPerBucket) {
-        this.secondsPerBucket = secondsPerBucket;
+        if (secondsPerBucket > 0) {
+            this.secondsPerBucket = secondsPerBucket;
+        } else {
+            log.warn("secondsPerBucket must be positive. {} was specified. Defaulting to {}.", secondsPerBucket, this.secondsPerBucket);
+        }
     }
 
     /**
@@ -181,7 +180,7 @@ public class Buckets<P, S> {
      */
     final public void add(final P primaryKey, final S shortcutKey,
             final long timestamp, final double value) {
-        long ts = (long) (timestamp / secondsPerBucket);
+        long ts = timestamp / secondsPerBucket;
 
         // Get existing or create new bucket for this timestamp
         Bucket b = bucketList.get(ts);
@@ -238,13 +237,13 @@ public class Buckets<P, S> {
         Collections.sort(keys);
 
         for (long k : keys) {
-            ps.format("BUCKET: %d (%s)\n", k, new Date(k * secondsPerBucket * 1000));
+            ps.format("BUCKET: %d (%d) (%s)%n", k, k * secondsPerBucket, new Date(k * secondsPerBucket * 1000));
             for (P key : bucketList.get(k).values.keySet()) {
-                ps.format("    %-40s : %10.2f (%10.2f / %d)\n", key.toString(),
-                        bucketList.get(k).values.get(key).getValue(),
-                        bucketList.get(k).values.get(key).getSum(),
-                        bucketList.get(k).values.get(key).getCount());
-
+                Value value = bucketList.get(k).values.get(key);
+                ps.format("    %-40s : %10.2f (%10.2f / %d)%n", key.toString(),
+                        value.getValue(),
+                        value.getSum(),
+                        value.getCount());
             }
         }
     }

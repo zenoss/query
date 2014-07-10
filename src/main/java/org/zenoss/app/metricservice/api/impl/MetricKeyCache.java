@@ -32,12 +32,7 @@
 package org.zenoss.app.metricservice.api.impl;
 
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Maintains a cache of metric keys. This class does not check for duplication
@@ -45,7 +40,7 @@ import java.util.Set;
  * 
  * @author Zenoss
  */
-public class MetricKeyCache {
+public class  MetricKeyCache {
 
     /**
      * Current set of all metric keys in the cache
@@ -91,12 +86,11 @@ public class MetricKeyCache {
         List<MetricKey> list = map.get(metric);
         if (list != null) {
             for (MetricKey key : list) {
-                if (tags == key.getTags() || key.getTags() == null || key.getTags().match(tags)) {
+                if (null != tags && tags.equals(key.getTags()) || key.getTags() == null || key.getTags().match(tags)) {
                     return key;
                 }
             }
         }
-
         return null;
     }
 
@@ -126,8 +120,8 @@ public class MetricKeyCache {
      *            PrintStream instance to which to dump the information
      */
     public void dump(PrintStream ps) {
-        for (String key : map.keySet()) {
-            ps.format("%s : %s\n", key, map.get(key));
+        for (Map.Entry<String, List<MetricKey>> stringListEntry : map.entrySet()) {
+            ps.format("%s : %s%n", stringListEntry.getKey(), stringListEntry.getValue());
         }
     }
 }

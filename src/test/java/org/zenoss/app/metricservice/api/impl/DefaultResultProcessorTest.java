@@ -31,52 +31,53 @@
 
 package org.zenoss.app.metricservice.api.impl;
 
-import com.google.common.base.Objects;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.zenoss.app.metricservice.api.model.MetricSpecification;
+import org.zenoss.app.metricservice.buckets.Value;
+import org.zenoss.app.metricservice.calculators.Closure;
 
-import java.util.HashMap;
+import java.io.BufferedReader;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-public class OpenTSDBQueryResult {
-    public List<String> aggregateTags;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-    public Map<Long,String> dps;
-    public String metric;
-    public Map<String, String> tags;
-    public List<String> tsuids;
 
-    public String debugString() {
-        return Objects.toStringHelper(getClass())
-            .add("aggregateTags", aggregateTags)
-            .add("dps", dps)
-            .add("metric", metric)
-            .add("tags", tags)
-            .add("tsuids", tsuids)
-            .toString();
+public class DefaultResultProcessorTest {
+
+    private static final double EPSILON = 0.00000001;
+
+    @Test
+    public void testLookup() throws Exception {
+        Closure closure = mock(Closure.class);
+        Value myValue = new Value();
+        myValue.add(1.0);
+        when(closure.getValueByShortcut("name")).thenReturn(myValue);
+
+        DefaultResultProcessor victim = new DefaultResultProcessor();
+        double foundValue = victim.lookup("name", closure);
+        assertEquals("lookup should return correct value for series.", myValue.getValue(), foundValue, EPSILON);
     }
 
-    public void addTags(Map<String, List<String>> tagsToAdd) {
-        if (null == tags) {
-            tags = new HashMap<>();
+    @Test
+    @Ignore
+    public void testProcessResults() throws Exception {
+        DefaultResultProcessor victim = new DefaultResultProcessor();
+        BufferedReader reader = null;
+        List<MetricSpecification> queries = makeQueries();
+        long bucketSize = 60;
+        victim.processResults(reader, queries, bucketSize);
+    }
+
+    private List<MetricSpecification> makeQueries() {
+        List<MetricSpecification> result = new ArrayList<>();
+        String[] specifications = {"foo", "bar", "baz"};
+        for (String specification : specifications) {
+            result.add(MetricSpecification.fromString(specification));
         }
-        for (Map.Entry<String, List<String>> entry : tagsToAdd.entrySet()) {
-            tags.put(entry.getKey(), entry.getValue().get(0));
-        }
+        return result;
     }
-
-    public void addDataPoint(long i, double pointValue) {
-        if (null == dps) {
-            dps = new HashMap<>();
-        }
-        dps.put(i, Double.toString(pointValue));
-    }
-
-    public Map<Long, String> getDataPoints() {
-        return dps;
-    }
-
-    public void setDataPoints(Map<Long, String> dps) {
-        this.dps = dps;
-    }
-
 }
