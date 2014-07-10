@@ -61,23 +61,8 @@ import java.util.*;
 @Configuration
 public class MetricService implements MetricServiceAPI {
     public static final String CLIENT_ID = "clientId";
-//    public static final String SOURCE = "source";
-//    public static final String START_TIME = "startTime";
-//    public static final String START_TIME_ACTUAL = "startTimeActual";
-//    public static final String END_TIME = "endTime";
-//    public static final String END_TIME_ACTUAL = "endTimeActual";
-//    public static final String RESULTS = "results";
-//    public static final String DATAPOINTS = "datapoints";
-//    public static final String AGGREGATOR = "aggregator";
-//    public static final String RATE = "rate";
-//    public static final String DOWNSAMPLE = "downsample";
     public static final String METRIC = "metric";
     public static final String ID = "id";
-//    public static final String RETURN_SET = "returnset";
-//    public static final String TIMESTAMP = "timestamp";
-//    public static final String SERIES = "series";
-//    public static final String VALUE = "value";
-//    public static final String TAGS = "tags";
     public static final String NOT_SPECIFIED = "not-specified";
     private static final Logger log = LoggerFactory.getLogger(MetricService.class);
     public final ObjectMapper objectMapper;
