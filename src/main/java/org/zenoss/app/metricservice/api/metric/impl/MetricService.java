@@ -333,11 +333,7 @@ public class MetricService implements MetricServiceAPI {
 
             }
             try {
-//                if (config.getMetricServiceConfig().getUseJacksonWriter()) {
-                    writeResultsUsingJacksonWriter(output, reader, bucketSize);
-//                } else {
-//                    writeResultsUsingJsonWriter(output, reader, bucketSize);
-//                }
+                writeResultsUsingJacksonWriter(output, reader, bucketSize);
             } catch (ClassNotFoundException e) {
                 throw new WebApplicationException(
                     Utils.getErrorResponse(id,
@@ -357,18 +353,26 @@ public class MetricService implements MetricServiceAPI {
             }
         }
 
-        //  TODO: THIS NEEDS COMMENTS
+        /**
+         * translateOpenTsdbInputtoLastInput:
+         *
+         * Handler for 'last' specification - reads through datapoints in series, remembering and returning the datapoint
+         * with the greatest timestamp betweeen start and end.
+         *
+         * */
         private BufferedReader translateOpenTsdbInputToLastInput(BufferedReader reader, long start, long end) throws IOException {
-            // read all from reader
+
+            // read query results from datastream (reader)
             List<OpenTSDBQueryResult> allResults = new ArrayList<>();
             ObjectMapper mapper = Utils.getObjectMapper();
             OpenTSDBQueryResult[] queryResult = mapper.readValue(reader, OpenTSDBQueryResult[].class);
             allResults.addAll(Arrays.asList(queryResult));
-            // remove all but last data points per series
+
+            // make a new list of resulsts, containing only the last data points per series (between start and end)
             List<OpenTSDBQueryResult> lastDataPointResults = getLastDataPoints(allResults, start, end);
-            // re-encode
+
+            // encode the results as JSON for return
             String resultJson = Utils.jsonStringFromObject(lastDataPointResults);
-            //log.debug("Resulting JSON: {}", resultJson);
 
             return new BufferedReader(new StringReader(resultJson));
         }

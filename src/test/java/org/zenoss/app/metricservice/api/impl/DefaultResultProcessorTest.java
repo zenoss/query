@@ -41,19 +41,25 @@ import java.io.BufferedReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-//TODO: Flesh out these tests.
+
 public class DefaultResultProcessorTest {
+
+    private static final double EPSILON = 0.00000001;
 
     @Test
     public void testLookup() throws Exception {
         Closure closure = mock(Closure.class);
-        when(closure.getValueByShortcut("name")).thenReturn(new Value());
+        Value myValue = new Value();
+        myValue.add(1.0);
+        when(closure.getValueByShortcut("name")).thenReturn(myValue);
 
         DefaultResultProcessor victim = new DefaultResultProcessor();
-        victim.lookup("name", closure);
+        double foundValue = victim.lookup("name", closure);
+        assertEquals("lookup should return correct value for series.", myValue.getValue(), foundValue, EPSILON);
     }
 
     @Test

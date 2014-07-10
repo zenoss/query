@@ -119,8 +119,6 @@ public class JacksonResultsWriter {
         for (long bts : timestamps) {
             bts *= buckets.getSecondsPerBucket();
             if (returnset == ReturnSet.ALL || (bts >= startTs && bts <= endTs)) {
-                //TODO: remove this log statement before commit
-                //log.debug("Attempting to get bucket for value {}", bts);
                 Buckets<MetricKey, String>.Bucket bucket = buckets.getBucket(bts);
                 if (null != bucket) {
                     Value value = bucket.getValueByShortcut(metricShortcut);
