@@ -40,8 +40,6 @@ import java.util.*;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class QueryResult {
 
-    //private Map<String, List<String>> tags = HashMultimap.create();
-
     public QueryResult() {}
 
     public QueryResult(QueryResult other) {

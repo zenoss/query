@@ -49,7 +49,7 @@ import java.util.List;
 
 public class JacksonResultsWriter {
 
-//    public void writeResults(JacksonWriter writer, List<MetricSpecification> queries, Buckets<MetricKey, String> buckets, String id, String sourceId, long startTs, String startTimeConfig, long endTs, String endTimeConfig, ReturnSet returnset, boolean series) throws Exception {
+    //    public void writeResults(JacksonWriter writer, List<MetricSpecification> queries, Buckets<MetricKey, String> buckets, String id, String sourceId, long startTs, String startTimeConfig, long endTs, String endTimeConfig, ReturnSet returnset, boolean series) throws Exception {
     private static final Logger log = LoggerFactory.getLogger(JacksonResultsWriter.class);
 
     public void writeResults(Writer writer, List<MetricSpecification> queries, Buckets<MetricKey, String> buckets,
@@ -83,40 +83,39 @@ public class JacksonResultsWriter {
         return result;
     }
 
-
-
-    private Collection<QueryResult> makeDataPointResults(Collection<MetricSpecification> queries, Buckets<MetricKey,
-        String> buckets, long startTs, long endTs, ReturnSet returnset) {
+    private Collection<QueryResult> makeDataPointResults(Collection<MetricSpecification> queries,
+                                                         Buckets<MetricKey,String> buckets, long startTs, long endTs,
+                                                         ReturnSet returnset) {
         Collection<QueryResult> results = new ArrayList<>();
         if (null == buckets) {
             log.info("buckets is null - returning.");
             return results;
         }
-        List<Long> timestamps = buckets.getTimestamps();
         for (MetricSpecification query : queries) {
             if (false == query.getEmit()) {
                 log.info("emit is false for metric {} - skipping.", query.getNameOrMetric());
                 continue;
             }
-            QueryResult qr = getQueryResult(buckets, startTs, endTs, returnset, timestamps, query);
+            QueryResult qr = getQueryResult(buckets, startTs, endTs, returnset, query);
             results.add(qr);
         }
         log.debug("Returning collection with {} QueryResults.", results.size());
         return results;
     }
 
-    private QueryResult getQueryResult(Buckets<MetricKey, String> buckets, long startTs, long endTs, ReturnSet returnset, List<Long> timestamps, MetricSpecification query) {
+    private QueryResult getQueryResult(Buckets<MetricKey, String> buckets, long startTs, long endTs, ReturnSet returnset, MetricSpecification query) {
         QueryResult qr = new QueryResult();
         qr.setMetric(query.getNameOrMetric());
         qr.setTags(query.getTags());
-        qr.setDatapoints(makeDataPoints(buckets, startTs, endTs, returnset, timestamps, query.getNameOrMetric()));
+        qr.setDatapoints(makeDataPoints(buckets, startTs, endTs, returnset, query.getNameOrMetric()));
         qr.setId(query.getId());
         return qr;
     }
 
     private List<QueryResultDataPoint> makeDataPoints(Buckets<MetricKey, String> buckets, long startTs, long endTs,
-                                                      ReturnSet returnset, List<Long> timestamps, String metricShortcut) {
+                                                      ReturnSet returnset, String metricShortcut) {
         List<QueryResultDataPoint> dataPoints = new ArrayList<>();
+        List<Long> timestamps = buckets.getTimestamps();
         for (long bts : timestamps) {
             bts *= buckets.getSecondsPerBucket();
             if (returnset == ReturnSet.ALL || (bts >= startTs && bts <= endTs)) {
