@@ -26,7 +26,7 @@ from a stored chart or even create a complete chart from within the HTML page.
             "series" : true,
             "type" : "line",
             "returnset" : "exact",
-            "secondsPerBucket" : "1m-avg",
+            "downsample" : "1m-avg",
             "grouping" : "5m",
             "autoscale" : {
                 "ceiling" : 5,
@@ -60,7 +60,7 @@ from a stored chart or even create a complete chart from within the HTML page.
             }, {
                 "metric" : "laLoadInt5",
                 "aggregator" : "sum",
-                "secondsPerBucket" : "5m-avg"
+                "downsample" : "5m-avg"
             }, {
                 "metric" : "laLoadInt15",
             } ]
@@ -73,27 +73,27 @@ including "private" methods can be found at `doc/full/index.html`.
 Resources
 ----
 
-  The /chart resource has been removed from this release.
+  The /chart resource has been removed from the API.
 
 
 
   - `POST /query/performance` - return the performance metrics that match the search criteria. The results are the same as for the get request below, the difference is that instead of specifying the criteria as query parameters the criteria is specified as an JSON object in the POST data. The JSON structure that is supported on this POST call follows the following format:
 
         {
-            "start"      : "<datetime>",
-            "end"        : "<datetime>",
-            "returnset"  : exact | last | <undefined>
-            "secondsPerBucket" : request default for secondsPerBucket over all metrics,
-            "tags"       : request default for tags over all metrics
-            "grouping"   : <integer> specifies the bucket size that values are grouped
-                           into to align data from multiple metrics that are created at essentially random times 
+            "start"                : "<datetime>",
+            "end"                  : "<datetime>",
+            "returnset"            : exact | last | <undefined>
+            "downsample"           : request default for downsample over all metrics,
+            "downsampleMultiplier" : approximate number of datapoints to retrieve from backend for each data point requested.
+            "tags"                 : request default for tags over all metrics
+            "grouping"             : <integer> specifies the bucket size that values are grouped into to align data from multiple metrics that are created at essentially random times
             "metrics" : [
                 {
                     "metric"      : "<metric name>",
-                    "name"        : a friendly name for the metric - if supplied, will be returned in place of "metric" in the results,
+                    "name"        : a friendly name for the metric - if supplied, will be returned in place of "metric" in the results. Name can be used to specify the series as a participant in a calculated expression (see "expression" below)
                     "id"          : a caller-defined tag for the series,
                     "aggregator"  : "<aggregator>" valid values are "avg", "min", "max", and "sum",
-                    "secondsPerBucket"  : "<secondsPerBucket>", This determines the size (in seconds) of the "buckets" used for downsampling and aligning the results.
+                    "downsample"  : "<downsample>", This determines the size (in seconds) of the "buckets" used for downsampling and aligning the results.
                     "rate"        : true or false,
                     "rateOptions" : { // optional
                         "counter"        : true or false,
@@ -108,7 +108,7 @@ Resources
             ]
         }
 
-  - `GET /query/performance` - returns the performance metrics that match the search criteria.
+  - `GET /query/performance` - There is no GET API. It has been replaced by POST.
 
     This resource is loosely based on the OpenTSDB HTTP query API at [OpenTsdb](http://opentsdb.net/http-api.html#/q) and supports the following query parameters:
 
@@ -125,11 +125,11 @@ Resources
     - `exact=<_true_ | _false_>`
     - `series-<_true_ | _false_><br/>`
       Determines is the results are grouped as individual series based on the results based on metric name and tag values not based on the number of queries specified.
-    - `query=<_AGG:[rate:][secondsPerBucket:]metric[{tags}]_>`
+    - `query=<_AGG:[rate:][downsample:]metric[{tags}]_>`
 
         `AGG = min | max | sum | avg`
 
-        `secondsPerBucket = _like_ 10m-avg`
+        `downsample = _like_ 10m-avg`
 
         `tags = name=tag-value`
 
