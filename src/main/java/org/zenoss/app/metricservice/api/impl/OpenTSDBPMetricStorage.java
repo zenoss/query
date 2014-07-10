@@ -49,9 +49,11 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
 
 @API
@@ -119,11 +121,22 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         int statusCode = response.getStatusLine().getStatusCode();
 
         if (isNotOk(statusCode)) {
+            String content = "";
+            try {
+                content = streamToString(response.getEntity().getContent());
+            } catch (IOException e) {
+                content = "Unable to read content from openTSDB.";
+            }
             throw new WebApplicationException(
                 Response.status(statusCode)
-                    .entity("Operation failed: " + response.getStatusLine().toString())
+                    .entity("Operation failed: " + response.getStatusLine().toString() + "Response from OpenTSDB: " + content)
                     .build());
         }
+    }
+
+    private static String streamToString(InputStream stream) {
+        Scanner s = new Scanner(stream).useDelimiter("\\A");
+        return s.hasNext() ? s.next() : "";
     }
 
     private static boolean isNotOk(int statusCode) {
