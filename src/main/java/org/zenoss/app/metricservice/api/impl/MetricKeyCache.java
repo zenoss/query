@@ -32,12 +32,7 @@
 package org.zenoss.app.metricservice.api.impl;
 
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Maintains a cache of metric keys. This class does not check for duplication

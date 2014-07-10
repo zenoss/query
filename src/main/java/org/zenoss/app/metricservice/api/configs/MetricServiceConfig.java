@@ -30,9 +30,8 @@
  */
 package org.zenoss.app.metricservice.api.configs;
 
-import org.zenoss.app.metricservice.api.model.ReturnSet;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.zenoss.app.metricservice.api.model.ReturnSet;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>

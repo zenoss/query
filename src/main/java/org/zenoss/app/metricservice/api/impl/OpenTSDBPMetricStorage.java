@@ -82,6 +82,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
         OpenTSDBQuery query = new OpenTSDBQuery();
 
+        //TODO: think about this - is this right?
         if (!Utils.NOW.equals(startTime)) {
             query.start = startTime;
         }

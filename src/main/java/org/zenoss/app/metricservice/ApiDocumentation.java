@@ -30,11 +30,10 @@
  */
 package org.zenoss.app.metricservice;
 
-import org.zenoss.app.annotations.Bundle;
-import org.zenoss.app.autobundle.AutoBundle;
-
 import com.google.common.base.Optional;
 import com.yammer.dropwizard.assets.AssetsBundle;
+import org.zenoss.app.annotations.Bundle;
+import org.zenoss.app.autobundle.AutoBundle;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>

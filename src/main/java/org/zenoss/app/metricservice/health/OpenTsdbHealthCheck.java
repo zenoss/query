@@ -30,16 +30,15 @@
  */
 package org.zenoss.app.metricservice.health;
 
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.Map;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.dropwizardspring.annotations.HealthCheck;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Map;
 
 @Configuration
 @HealthCheck
