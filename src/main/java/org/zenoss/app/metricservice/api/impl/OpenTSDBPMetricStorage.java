@@ -84,10 +84,8 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
         OpenTSDBQuery query = new OpenTSDBQuery();
 
-        //TODO: think about this - is this right?
-        if (!Utils.NOW.equals(startTime)) {
-            query.start = startTime;
-        }
+        // This could maybe be better - for now, it works : end time defaults to 'now', start time does not default.
+        query.start = startTime;
         if (!Utils.NOW.equals(endTime)) {
             query.end = endTime;
         }
