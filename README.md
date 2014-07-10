@@ -84,21 +84,24 @@ Resources
             "end"                  : "<datetime>",
             "returnset"            : exact | last | <undefined>
             "downsample"           : request default for downsample over all metrics,
-            "downsampleMultiplier" : approximate number of datapoints to retrieve from backend for each data point requested.
+            "downsampleMultiplier" : approximate number of datapoints to retrieve from backend for each
+                                     data point requested.
             "tags"                 : request default for tags over all metrics
-            "grouping"             : <integer> specifies the bucket size that values are grouped into to align data from multiple metrics that are created at essentially random times
             "metrics" : [
                 {
                     "metric"      : "<metric name>",
-                    "name"        : a friendly name for the metric - if supplied, will be returned in place of "metric" in the results. Name can be used to specify the series as a participant in a calculated expression (see "expression" below)
+                    "name"        : a friendly name for the metric - if supplied, will be returned in
+                                    place of "metric" in the results. Name can be used to specify the
+                                    series as a participant in a calculated expression (see
+                                    "expression" below)
                     "id"          : a caller-defined tag for the series,
                     "aggregator"  : "<aggregator>" valid values are "avg", "min", "max", and "sum",
-                    "downsample"  : "<downsample>", This determines the size (in seconds) of the "buckets" used for downsampling and aligning the results.
                     "rate"        : true or false,
                     "rateOptions" : { // optional
                         "counter"        : true or false,
                         "counterMax"     : roll over value for the counter,
-                        "resetThreshold" : delta between consecutive values which should be considered at counter reset
+                        "resetThreshold" : delta between consecutive values which should be considered at
+                                           counter reset
                     },
                     "expression"  : RPN expression to perform on the raw value to get the returned value
                     "tags"        : {
