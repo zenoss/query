@@ -66,7 +66,6 @@ public class DefaultResultProcessor implements ResultProcessor,
     @Override
     public double lookup(String name, Closure closure)
         throws UnknownReferenceException {
-        //BucketClosure b = (BucketClosure) closure;
         if (null == closure) {
             throw new NullPointerException("null closure passed to lookup() method.");
         }
