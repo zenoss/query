@@ -118,7 +118,7 @@ public class RateOptionsTest {
         Assert.assertNotNull(ms);
         Assert.assertNotNull(ms.getRateOptions());
         Assert.assertTrue(ms.getRateOptions().getCounter());
-        Assert.assertEquals((long) Long.MAX_VALUE, (long) ms.getRateOptions()
+        Assert.assertEquals(Long.MAX_VALUE, (long) ms.getRateOptions()
                 .getCounterMax());
         Assert.assertEquals((long) 2000, (long) ms.getRateOptions()
                 .getResetThreshold());
@@ -135,7 +135,7 @@ public class RateOptionsTest {
         Assert.assertNotNull(ms);
         Assert.assertNotNull(ms.getRateOptions());
         Assert.assertTrue(ms.getRateOptions().getCounter());
-        Assert.assertEquals((long) Long.MAX_VALUE, (long) ms.getRateOptions()
+        Assert.assertEquals(Long.MAX_VALUE, (long) ms.getRateOptions()
                 .getCounterMax());
         Assert.assertEquals((long) 2000, (long) ms.getRateOptions()
                 .getResetThreshold());

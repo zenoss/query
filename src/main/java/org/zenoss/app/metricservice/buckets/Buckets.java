@@ -36,12 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Provides a utility to bucket metrics into defined sized chunks, averaging the
@@ -60,12 +55,12 @@ public class Buckets<P, S> {
     /**
      * Default bucket size of 5 minutes
      */
-    static public final long DEFAULT_BUCKET_SIZE = 300; // 5 Minutes
+    public static final long DEFAULT_BUCKET_SIZE = 5 * 60; // 5 Minutes
 
     /**
      * Specifies the size of each bucket in seconds
      */
-    private long secondsPerBucket = 5 * 60;
+    private long secondsPerBucket = DEFAULT_BUCKET_SIZE;
 
     public Map<Long, Bucket> getBucketList() {
         return bucketList;
@@ -85,7 +80,7 @@ public class Buckets<P, S> {
      * 
      * @author Zenoss
      */
-    final public class Bucket {
+    public final class Bucket {
 
         /**
          * Map from the primary key to the values within a bucket
@@ -109,7 +104,7 @@ public class Buckets<P, S> {
          * @param value
          *            value to add
          */
-        final public void add(final P primaryKey, final S shortcutKey,
+        public final void add(final P primaryKey, final S shortcutKey,
                 final double value) {
 
             // Fetch existing value, if it exists
@@ -133,7 +128,7 @@ public class Buckets<P, S> {
          *            primary key
          * @return the value associated with the primary key or null
          */
-        final public Value getValue(final P key) {
+        public final Value getValue(final P key) {
             return values.get(key);
         }
 
@@ -144,7 +139,7 @@ public class Buckets<P, S> {
          *            shortcut key
          * @return the value associated with the shortcut key or null
          */
-        final public Value getValueByShortcut(S shortcut) {
+        public final Value getValueByShortcut(S shortcut) {
             return valuesByName.get(shortcut);
         }
     }
@@ -163,7 +158,11 @@ public class Buckets<P, S> {
      *            the number of seconds per each bucket
      */
     public Buckets(final long secondsPerBucket) {
-        this.secondsPerBucket = secondsPerBucket;
+        if (secondsPerBucket > 0) {
+            this.secondsPerBucket = secondsPerBucket;
+        } else {
+            log.warn("secondsPerBucket must be positive. {} was specified. Defaulting to {}.", secondsPerBucket, this.secondsPerBucket);
+        }
     }
 
     /**
@@ -179,9 +178,9 @@ public class Buckets<P, S> {
      * @param value
      *            value to add
      */
-    final public void add(final P primaryKey, final S shortcutKey,
+    public final void add(final P primaryKey, final S shortcutKey,
             final long timestamp, final double value) {
-        long ts = (long) (timestamp / secondsPerBucket);
+        long ts = timestamp / secondsPerBucket;
 
         // Get existing or create new bucket for this timestamp
         Bucket b = bucketList.get(ts);
@@ -200,7 +199,7 @@ public class Buckets<P, S> {
      * 
      * @return bucket of the given timestamp (that will be downsampled) or null
      */
-    final public Bucket getBucket(long timestamp) {
+    public final Bucket getBucket(long timestamp) {
         return bucketList.get(timestamp / secondsPerBucket);
     }
 
@@ -211,7 +210,7 @@ public class Buckets<P, S> {
      * 
      * @return sorted list of downsampled time values
      */
-    final public List<Long> getTimestamps() {
+    public final List<Long> getTimestamps() {
         List<Long> result = new ArrayList<>(bucketList.keySet());
         Collections.sort(result);
         return result;
@@ -222,7 +221,7 @@ public class Buckets<P, S> {
      * 
      * @return secondsPerBucket
      */
-    final public long getSecondsPerBucket() {
+    public final long getSecondsPerBucket() {
         return secondsPerBucket;
     }
 
@@ -233,18 +232,18 @@ public class Buckets<P, S> {
      * @param ps
      *            printstream instance to use for the dump
      */
-    final public void dump(PrintStream ps) {
+    public final void dump(PrintStream ps) {
         List<Long> keys = new ArrayList<>(bucketList.keySet());
         Collections.sort(keys);
 
         for (long k : keys) {
-            ps.format("BUCKET: %d (%s)\n", k, new Date(k * secondsPerBucket * 1000));
+            ps.format("BUCKET: %d (%d) (%s)%n", k, k * secondsPerBucket, new Date(k * secondsPerBucket * 1000));
             for (P key : bucketList.get(k).values.keySet()) {
-                ps.format("    %-40s : %10.2f (%10.2f / %d)\n", key.toString(),
-                        bucketList.get(k).values.get(key).getValue(),
-                        bucketList.get(k).values.get(key).getSum(),
-                        bucketList.get(k).values.get(key).getCount());
-
+                Value value = bucketList.get(k).values.get(key);
+                ps.format("    %-40s : %10.2f (%10.2f / %d)%n", key.toString(),
+                        value.getValue(),
+                        value.getSum(),
+                        value.getCount());
             }
         }
     }

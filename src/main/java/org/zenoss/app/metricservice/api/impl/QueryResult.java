@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Zenoss and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Zenoss and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,13 +28,65 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package org.zenoss.app.metricservice.api.impl;
 
-/**
- * @author David Bainbridge <dbainbridge@zenoss.com>
- * 
- */
-public interface ResourcePersistenceFactoryAPI {
-    public boolean isConnected();
-    public ResourcePersistenceAPI getInstance(String resourceType);
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+
+import java.util.*;
+
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class QueryResult {
+
+    public QueryResult() {}
+
+    public QueryResult(QueryResult other) {
+        this.id = other.id;
+        this.metric = other.metric;
+        this.datapoints = new ArrayList<>(other.datapoints.size());
+        Collections.copy(datapoints, other.datapoints);
+    }
+
+    private List<QueryResultDataPoint> datapoints;
+    private String metric;
+    private Multimap<String, String> tags = HashMultimap.create();
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    private String id;
+
+    public String getMetric() {
+        return metric;
+    }
+
+    public void setMetric(String metric) {
+        this.metric = metric;
+    }
+
+    public List<QueryResultDataPoint> getDatapoints() {
+        return datapoints;
+    }
+
+    public void setDatapoints(List<QueryResultDataPoint> datapoints) {
+        this.datapoints = datapoints;
+    }
+
+    public void setTags(Map<String, List<String>> newTags) {
+        tags.clear();
+        for (Map.Entry<String, List<String>> entry : newTags.entrySet()) {
+            tags.putAll(entry.getKey(), entry.getValue());
+        }
+    }
+
+    public Map<String, Collection<String>> getTags() {
+        return tags.asMap();
+    }
 }

@@ -17,7 +17,14 @@ public class OpenTSDBSubQuery {
         if (null == tags) {
             tags = new HashMap<>();
         }
-        tags.put(key, value);
+        String existingValue = tags.get(key);
+        StringBuilder newValue = new StringBuilder();
+        if (null != existingValue) {
+            newValue.append(existingValue).append('|');
+        }
+        newValue.append(value);
+
+        tags.put(key, newValue.toString());
     }
 }
 

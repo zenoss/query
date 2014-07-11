@@ -31,8 +31,8 @@
 package org.zenoss.app.metricservice.api.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>

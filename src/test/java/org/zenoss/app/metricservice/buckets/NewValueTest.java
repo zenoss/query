@@ -32,34 +32,44 @@
 package org.zenoss.app.metricservice.buckets;
 
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class ValueTest {
+public class NewValueTest {
+    private static final Logger log = LoggerFactory.getLogger(NewValueTest.class);
     private static final double EPSILON = 0.0000000000001;
 
     @Test
-    public void testGetValue() {
-        Value victim = new Value();
-        double test = victim.getValue();
-        assertTrue("getValue() on an uninitialized value should return NaN.", Double.isNaN(test));
+    public void testGetMean() {
+        NewValue victim = new NewValue();
+        double test = victim.getMean();
+        assertTrue("getMean() on an uninitialized value should return NaN.", Double.isNaN(test));
         double val1 = 1.1, val2 = 2.0;
-        victim.add(val1);
-        assertEquals("Value with one entry should return that entry for getValue", val1, victim.getValue(), EPSILON);
-        victim.add(val2);
+        victim.push(val1);
+        assertEquals("Value with one entry should return that entry for getMean", val1, victim.getMean(), EPSILON);
+        victim.push(val2);
         double expectedResult = (val1 + val2) / 2.0;
-        assertEquals(String.format("Value with two entries should return the average of the entries for getValue (expected = %f, actual = %f",
-            expectedResult, victim.getValue()), expectedResult,victim.getValue(), EPSILON);
+        assertEquals("Value with two entries should return the average of the entries for getMean", expectedResult,victim.getMean(), EPSILON);
+        Double [] testValues = new Double[] {1.0, -1.0, 2.0, 2.1, 0.0, 53.0, -27.5};
+        victim.clear();
+        for (double value : testValues) {
+            victim.push(value);
+        }
+        double mean = getMean(testValues);
+        assertEquals("Calculated variance should match variance from test object.", mean, victim.getMean(), EPSILON);
+
     }
 
     @Test
     public void testGetSum() throws Exception {
-        Value victim = new Value();
+        NewValue victim = new NewValue();
         Double[] testValues = new Double[]{1.0, 1.1, 2.0, -23.4, 0.0, 1.0, 2.1};
         double sum = 0.0;
         for (Double value : testValues) {
-            victim.add(value);
+            victim.push(value);
             sum += value;
         }
         assertEquals(sum,victim.getSum(), EPSILON);
@@ -67,57 +77,60 @@ public class ValueTest {
 
     @Test
     public void testGetCount() throws Exception {
-        Value victim = new Value();
+        NewValue victim = new NewValue();
         Double[] testValues = new Double[]{1.0, 1.1, 2.0, 2.1};
         for (Double value : testValues) {
-            victim.add(value);
+            victim.push(value);
         }
-        assertTrue(testValues.length == victim.getCount());
+        assertTrue(testValues.length == victim.getNumDataValues());
 
     }
 
     @Test
     public void testAdd() throws Exception {
-        Value victim = new Value();
+        NewValue victim = new NewValue();
         Double[] testValues = new Double[]{1.0, -1.0, 2.0, 2.1, 0.0, 53.0, -27.5};
         double sum = 0.0;
         for (Double value : testValues) {
-            victim.add(value);
+            victim.push(value);
             sum += value;
         }
-        assertEquals(sum,victim.getSum(), EPSILON);
+        assertEquals("Calculated sum should match sum from test object.", sum,victim.getSum(), EPSILON);
 
     }
 
     @Test
-    public void testRemove() throws Exception {
-        Value victim = new Value();
+    public void testGetVariance() {
+        NewValue victim = new NewValue();
         Double[] testValues = new Double[]{1.0, -1.0, 2.0, 2.1, 0.0, 53.0, -27.5};
-        for (Double value : testValues) {
-            victim.add(value);
+        for (double value : testValues) {
+            victim.push(value);
         }
-        double originalValue = victim.getValue();
-        double originalSum = victim.getSum();
-        long  originalCount = victim.getCount();
-
-        Double[] newValues = new Double[] {2.1, -27.0, 2.1, 0.0 };
-        double newValueSum = 0.0;
-        long newValueCount = newValues.length;
-        for (Double value : newValues) {
-            newValueSum += value;
-            victim.add(value);
-        }
-        double appendedSum = originalSum + newValueSum;
-        long appendedCount = originalCount + newValueCount;
-        double appendedAverage = appendedSum / appendedCount;
-        assertEquals("Appended sum should match.", appendedSum, victim.getSum(), EPSILON);
-        assertEquals("Appended value (average) should match", appendedAverage, victim.getValue(), EPSILON);
-        assertTrue("Appended count should match.", appendedCount == victim.getCount());
-        for (Double value : newValues) {
-            victim.remove(value);
-        }
-        assertEquals("After remove, value should equal original value.", originalValue, victim.getValue(), EPSILON);
-        assertEquals("After remove, sum should equal original sum.", originalSum,victim.getSum(), EPSILON);
-        assertTrue("After remove, count should equal original count.", originalCount == victim.getCount());
+        double variance = getVariance(testValues);
+        assertEquals("Calculated variance should match variance from test object.", variance, victim.getVariance(), EPSILON);
+        assertEquals("Calculated standard deviation should match standard deviation from test object.", Math.sqrt(variance), victim.getStandardDeviation(), EPSILON);
     }
+
+    private double getVariance(Double[] testValues) {
+        double mean = getMean(testValues);
+        double temp = 0.0;
+        for (double a : testValues) {
+            double delta = mean - a;
+            temp += (delta * delta);
+        }
+        double result = temp / (testValues.length - 1);
+        log.info("getVariance: returning {}", result);
+        return result;
+    }
+
+    private double getMean(Double[] testValues) {
+        double sum = 0;
+        for (double a : testValues) {
+            sum += a;
+        }
+        double result =  sum / testValues.length;
+        log.info("getMean: returning {}", result);
+        return result;
+    }
+
 }

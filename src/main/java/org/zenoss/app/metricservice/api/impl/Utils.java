@@ -32,23 +32,27 @@ package org.zenoss.app.metricservice.api.impl;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStreamWriter;
+import javax.ws.rs.core.Response;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
-
-import javax.ws.rs.core.Response;
 
 public class Utils {
 
+    private static final Logger log = LoggerFactory.getLogger(Utils.class);
+
     // Time values
     public static final String NOW = "now";
-    public static final String DETAULT_START_TIME = "1h-ago";
+    public static final String DEFAULT_START_TIME = "1h-ago";
     public static final String DEFAULT_END_TIME = NOW;
 
     private static final long HEURISTIC_EPOCH = 649753200000L;
@@ -63,41 +67,51 @@ public class Utils {
     public static final String START = "start";
     public static final String END = "end";
     public static final String COUNT = "count";
+    public static final double DEFAULT_DOWNSAMPLE_MULTIPLIER = 2.0;
+    public static final int DAYS_PER_YEAR = 365;
+    public static final int DAYS_PER_WEEK= 7;
+    public static final int HOURS_PER_DAY = 24;
+    public static final int MINUTES_PER_HOUR = 60;
+    public static final int SECONDS_PER_MINUTE = 60;
+    public static final int SECONDS_PER_HOUR = MINUTES_PER_HOUR * SECONDS_PER_MINUTE;
+    public static final int SECONDS_PER_DAY = SECONDS_PER_HOUR * HOURS_PER_DAY;
+    public static final int SECONDS_PER_WEEK = SECONDS_PER_DAY * DAYS_PER_WEEK;
+    public static final int SECONDS_PER_YEAR = SECONDS_PER_DAY * DAYS_PER_YEAR;
+
+
     private static ObjectMapper mapper = null;
 
-    static public Response getErrorResponse(String id, int status,
-            String message, String context) {
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            JsonWriter response = new JsonWriter(new OutputStreamWriter(baos));
-            response.objectS();
-            String prefix = "";
-            if (id != null) {
-                response.value(CLIENT_ID, id);
-                prefix = ",";
-            }
-            if (message != null) {
-                response.write(prefix);
-                response.value(ERROR_MESSAGE, message);
-                prefix = ",";
-            }
-            if (context != null) {
-                response.write(prefix);
-                response.value(ERROR_CAUSE, context);
-            }
-            response.objectE();
-            response.close();
-            return Response.status(status).entity(baos.toString()).build();
-        } catch (Exception e) {
-            return Response.status(status).build();
-        }
+
+    public static Map<String, Object> makeError(String errorMessage, String errorCause, String errorPart) {
+        Map<String, Object> error = new HashMap<>();
+        error.put(ERROR_MESSAGE, errorMessage);
+        error.put(ERROR_CAUSE, errorCause);
+        error.put(ERROR_PART, errorPart);
+        return error;
     }
 
-    static public String createUuid() {
+
+    static class ErrorResponse {
+        public String id;
+        public String errorMessage;
+        public String errorSource;
+    }
+
+    public static Response getErrorResponse(String id, int status,
+                                            String message, String context) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.id = id;
+        errorResponse.errorSource = context;
+        errorResponse.errorMessage = message;
+
+        return Response.status(status).entity(jsonStringFromObject(errorResponse)).build();
+    }
+
+    public static String createUuid() {
         return UUID.randomUUID().toString();
     }
 
-    static public long parseDate(String value) throws ParseException {
+    public static long parseDate(String value) throws ParseException {
         String v = value.trim();
 
         if (NOW.equals(v)) {
@@ -106,7 +120,7 @@ public class Utils {
 
         if (v.endsWith("-ago")) {
             return new Date().getTime() / 1000
-                    - parseDuration(v.substring(0, v.length() - 4));
+                - parseDuration(v.substring(0, v.length() - 4));
         }
 
         if (v.indexOf('/') == -1) {
@@ -135,12 +149,12 @@ public class Utils {
 
         try {
             return new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss-Z").parse(v)
-                    .getTime() / 1000;
+                .getTime() / 1000;
         } catch (ParseException e) {
             // If it failed to parse with a timezone then attempt to parse
             // w/o and use the default timezone
             return new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss").parse(v)
-                    .getTime() / 1000;
+                .getTime() / 1000;
         }
     }
 
@@ -161,31 +175,54 @@ public class Utils {
             last = v.charAt(idx);
         }
 
-        int period = 0;
+        long period = 0;
         try {
-            period = Integer.parseInt(v.substring(0, idx));
+            period = Long.parseLong(v.substring(0, idx));
         } catch (NumberFormatException e) {
             return 0;
         }
 
         switch (last) {
-        case 's':
-            return period;
-        case 'm':
-            return period * 60;
-        case 'h':
-            return period * 60 * 60;
-        case 'd':
-            return period * 60 * 60 * 24;
-        case 'w':
-            return period * 60 * 60 * 24 * 7;
-        case 'y':
-            return period * 60 * 60 * 24 * 365;
+            case 's':
+                return period;
+            case 'm':
+                return period * SECONDS_PER_MINUTE;
+            case 'h':
+                return period * SECONDS_PER_HOUR;
+            case 'd':
+                return period * SECONDS_PER_DAY;
+            case 'w':
+                return period * SECONDS_PER_WEEK;
+            case 'y':
+                return period * SECONDS_PER_YEAR;
         }
 
         return 0;
     }
 
+    public static String parseAggregation(String v) {
+        String result = "";
+        int dashPosition = v.indexOf('-');
+        if (dashPosition > 0 && dashPosition < v.length()) {
+            result = v.substring(dashPosition + 1);
+        }
+        return result;
+    }
+
+    public static String createModifiedDownsampleRequest(String downsample, double downsampleMultiplier) {
+        if (null == downsample || downsample.isEmpty() || downsampleMultiplier <= 0.0) {
+            log.warn("Bad downsample or multiplier. Returning original downsample value.");
+            return downsample;
+        }
+        long duration = parseDuration(downsample);
+        String aggregation = parseAggregation(downsample);
+        long newDuration = (long)(duration / downsampleMultiplier);
+        if (newDuration <= 0) {
+            log.warn("Applying value {} of downsampleMultiplier to downsample value of {} would result in a request with resolution finer than 1 sec. returning 1 second.", downsampleMultiplier, downsample);
+            newDuration = 1;
+        }
+        return String.format("%ds-%s", newDuration, aggregation);
+    }
 
     public static  String jsonStringFromObject(Object object) {
         ObjectMapper mapper = getObjectMapper();
@@ -194,7 +231,7 @@ public class Utils {
         try {
             json = ow.writeValueAsString(object);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
         }
         return json;
     }
@@ -203,6 +240,7 @@ public class Utils {
         if (null == mapper) {
             mapper = new ObjectMapper();
             mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         }
         return mapper;
     }

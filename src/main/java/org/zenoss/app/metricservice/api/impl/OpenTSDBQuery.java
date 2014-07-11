@@ -32,11 +32,9 @@
 package org.zenoss.app.metricservice.api.impl;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.zenoss.app.metricservice.api.model.Aggregator;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class OpenTSDBQuery {
     public String start = null;
@@ -45,7 +43,7 @@ public class OpenTSDBQuery {
     public boolean noAnnotations = false;
     public boolean globalAnnotations = false;
     public boolean msResolution = false;
-    public boolean showTSUIDs = true;
+    public boolean showTSUIDs = false;
 
     public void addSubQuery(OpenTSDBSubQuery openTSDBSubQuery) {
         if (null == queries) {

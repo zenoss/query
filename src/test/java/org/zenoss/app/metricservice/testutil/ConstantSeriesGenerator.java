@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Zenoss and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Zenoss and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,46 +28,36 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.metricservice;
 
-import com.google.common.base.Optional;
-import com.yammer.dropwizard.assets.AssetsBundle;
-import org.zenoss.app.annotations.Bundle;
-import org.zenoss.app.autobundle.AutoBundle;
+package org.zenoss.app.metricservice.testutil;
 
-/**
- * @author David Bainbridge <dbainbridge@zenoss.com>
- * 
- */
-@Bundle
-public class ApiDocumentation implements AutoBundle {
+import java.util.HashMap;
+import java.util.Map;
 
-    /**
-     * 
-     */
-    public ApiDocumentation() {
+public class ConstantSeriesGenerator implements SeriesGenerator {
+    private final double generatedValue;
+
+    public ConstantSeriesGenerator(double i) {
+        generatedValue = i;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.autobundle.AutoBundle#getBundle()
-     */
     @Override
-    public com.yammer.dropwizard.Bundle getBundle() {
-        return new AssetsBundle("/doc", "/doc/", "index.html");
+    public Map<Long, Double> generateValues(long startTimestamp, long endTimestamp, long step) {
+        validateTimeArguments(startTimestamp, endTimestamp, step);
+        Map<Long, Double> result = new HashMap<>();
+        for (long x = startTimestamp; x <= endTimestamp; x += step) {
+            result.put(x, generatedValue);
+        }
+        return result;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.zenoss.app.autobundle.AutoBundle#getRequiredConfig()
-     */
-    @SuppressWarnings("rawtypes")
-    @Override
-    public Optional<Class> getRequiredConfig() {
-        return Optional.absent();
+    private static void validateTimeArguments(long startTimestamp, long endTimestamp, long step) {
+        if (0 == step) {
+            throw new IllegalArgumentException("Step value must be nonzero");
+        }
+        if (Long.signum(endTimestamp - startTimestamp) != Long.signum(step)) {
+            throw new IllegalArgumentException("Time specification will result in infinite loop.");
+        }
 
     }
-
 }
