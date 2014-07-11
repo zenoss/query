@@ -49,7 +49,6 @@ import java.util.List;
 
 public class JacksonResultsWriter {
 
-    //    public void writeResults(JacksonWriter writer, List<MetricSpecification> queries, Buckets<MetricKey, String> buckets, String id, String sourceId, long startTs, String startTimeConfig, long endTs, String endTimeConfig, ReturnSet returnset, boolean series) throws Exception {
     private static final Logger log = LoggerFactory.getLogger(JacksonResultsWriter.class);
 
     public void writeResults(Writer writer, List<MetricSpecification> queries, Buckets<MetricKey, String> buckets,

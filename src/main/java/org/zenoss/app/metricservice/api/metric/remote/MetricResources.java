@@ -87,7 +87,6 @@ public class MetricResources {
     @Timed
     @Consumes(MediaType.APPLICATION_JSON)
     public Response query(PerformanceQuery query) {
-        System.out.println("NewMetricResources.query - POST");
         log.info("Entered NewMetricResources.query with single param (POST).");
         if (query == null) {
             return Utils.getErrorResponse(null, Response.Status.BAD_REQUEST.getStatusCode(),

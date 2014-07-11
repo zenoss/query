@@ -51,7 +51,6 @@ public class SeriesQueryResult {
     private String source;
     private String startTime;
     private long startTimeActual;
-    //private String id;
     @JsonProperty("results")
     private List<QueryResult> results;
 
@@ -134,14 +133,6 @@ public class SeriesQueryResult {
     public long getStartTimeActual() {
         return startTimeActual;
     }
-
-//    public void setId(String id) {
-//        this.id = id;
-//    }
-//
-//    public String getId() {
-//        return id;
-//    }
 
     public void addResults(Collection<QueryResult> queryResults) {
         if (null == results) {

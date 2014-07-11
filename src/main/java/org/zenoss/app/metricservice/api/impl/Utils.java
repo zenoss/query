@@ -82,7 +82,7 @@ public class Utils {
     private static ObjectMapper mapper = null;
 
 
-    static public Map<String, Object> makeError(String errorMessage, String errorCause, String errorPart) {
+    public static Map<String, Object> makeError(String errorMessage, String errorCause, String errorPart) {
         Map<String, Object> error = new HashMap<>();
         error.put(ERROR_MESSAGE, errorMessage);
         error.put(ERROR_CAUSE, errorCause);
@@ -97,7 +97,7 @@ public class Utils {
         public String errorSource;
     }
 
-    static public Response getErrorResponse(String id, int status,
+    public static Response getErrorResponse(String id, int status,
                                             String message, String context) {
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.id = id;
@@ -107,11 +107,11 @@ public class Utils {
         return Response.status(status).entity(jsonStringFromObject(errorResponse)).build();
     }
 
-    static public String createUuid() {
+    public static String createUuid() {
         return UUID.randomUUID().toString();
     }
 
-    static public long parseDate(String value) throws ParseException {
+    public static long parseDate(String value) throws ParseException {
         String v = value.trim();
 
         if (NOW.equals(v)) {
@@ -231,7 +231,7 @@ public class Utils {
         try {
             json = ow.writeValueAsString(object);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
         }
         return json;
     }

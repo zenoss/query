@@ -55,7 +55,7 @@ public class Buckets<P, S> {
     /**
      * Default bucket size of 5 minutes
      */
-    static public final long DEFAULT_BUCKET_SIZE = 5 * 60; // 5 Minutes
+    public static final long DEFAULT_BUCKET_SIZE = 5 * 60; // 5 Minutes
 
     /**
      * Specifies the size of each bucket in seconds
@@ -80,7 +80,7 @@ public class Buckets<P, S> {
      * 
      * @author Zenoss
      */
-    final public class Bucket {
+    public final class Bucket {
 
         /**
          * Map from the primary key to the values within a bucket
@@ -104,7 +104,7 @@ public class Buckets<P, S> {
          * @param value
          *            value to add
          */
-        final public void add(final P primaryKey, final S shortcutKey,
+        public final void add(final P primaryKey, final S shortcutKey,
                 final double value) {
 
             // Fetch existing value, if it exists
@@ -128,7 +128,7 @@ public class Buckets<P, S> {
          *            primary key
          * @return the value associated with the primary key or null
          */
-        final public Value getValue(final P key) {
+        public final Value getValue(final P key) {
             return values.get(key);
         }
 
@@ -139,7 +139,7 @@ public class Buckets<P, S> {
          *            shortcut key
          * @return the value associated with the shortcut key or null
          */
-        final public Value getValueByShortcut(S shortcut) {
+        public final Value getValueByShortcut(S shortcut) {
             return valuesByName.get(shortcut);
         }
     }
@@ -178,7 +178,7 @@ public class Buckets<P, S> {
      * @param value
      *            value to add
      */
-    final public void add(final P primaryKey, final S shortcutKey,
+    public final void add(final P primaryKey, final S shortcutKey,
             final long timestamp, final double value) {
         long ts = timestamp / secondsPerBucket;
 
@@ -199,7 +199,7 @@ public class Buckets<P, S> {
      * 
      * @return bucket of the given timestamp (that will be downsampled) or null
      */
-    final public Bucket getBucket(long timestamp) {
+    public final Bucket getBucket(long timestamp) {
         return bucketList.get(timestamp / secondsPerBucket);
     }
 
@@ -210,7 +210,7 @@ public class Buckets<P, S> {
      * 
      * @return sorted list of downsampled time values
      */
-    final public List<Long> getTimestamps() {
+    public final List<Long> getTimestamps() {
         List<Long> result = new ArrayList<>(bucketList.keySet());
         Collections.sort(result);
         return result;
@@ -221,7 +221,7 @@ public class Buckets<P, S> {
      * 
      * @return secondsPerBucket
      */
-    final public long getSecondsPerBucket() {
+    public final long getSecondsPerBucket() {
         return secondsPerBucket;
     }
 
@@ -232,7 +232,7 @@ public class Buckets<P, S> {
      * @param ps
      *            printstream instance to use for the dump
      */
-    final public void dump(PrintStream ps) {
+    public final void dump(PrintStream ps) {
         List<Long> keys = new ArrayList<>(bucketList.keySet());
         Collections.sort(keys);
 

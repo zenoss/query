@@ -20,7 +20,7 @@ public class OpenTSDBSubQuery {
         String existingValue = tags.get(key);
         StringBuilder newValue = new StringBuilder();
         if (null != existingValue) {
-            newValue.append(existingValue).append("|");
+            newValue.append(existingValue).append('|');
         }
         newValue.append(value);
 

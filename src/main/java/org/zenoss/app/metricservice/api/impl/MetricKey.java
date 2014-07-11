@@ -137,7 +137,7 @@ public class MetricKey {
      *            instance from which to create the MetricKey
      * @return MetricKey instance
      */
-    static public MetricKey fromValue(MetricSpecification spec) {
+    public static MetricKey fromValue(MetricSpecification spec) {
         MetricKey key = new MetricKey();
         key.metric = spec.getMetricOrName();
         key.name = spec.getNameOrMetric();
@@ -159,7 +159,7 @@ public class MetricKey {
      *            tags
      * @return MetricKey instance
      */
-    static public MetricKey fromValue(String name, String metric, String tags) {
+    public static MetricKey fromValue(String name, String metric, String tags) {
         MetricKey key = new MetricKey();
         key.name = name;
         key.metric = metric;

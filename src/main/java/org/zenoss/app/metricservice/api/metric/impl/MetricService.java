@@ -281,7 +281,8 @@ public class MetricService implements MetricServiceAPI {
             BufferedReader reader = null;
             try {
                 // The getReader call queries the datastore (e.g. openTSDB) and returns a reader for streaming the results.
-                reader = api.getReader(config, id, convertedStartTime, convertedEndTime, returnset, outputAsSeries, downsample, downsampleMultiplier, tags, MetricService.metricFilter(queries));
+                reader = api.getReader(config, id, convertedStartTime, convertedEndTime, returnset, outputAsSeries,
+                    downsample, downsampleMultiplier, tags, metricFilter(queries));
                 if (null == reader) {
                     throw new IOException("Unable to get reader from api.");
                 }

@@ -446,7 +446,7 @@ public class MetricSpecification {
         String metric = null;
         Map<String, List<String>> tags = null;
         if (idx >= 0) {
-            tags = MetricSpecification.parseTags(terms[terms.length - 1]
+            tags = parseTags(terms[terms.length - 1]
                 .substring(idx).trim());
             metric = terms[terms.length - 1].substring(0, idx);
         } else {
@@ -454,7 +454,7 @@ public class MetricSpecification {
             metric = terms[terms.length - 1];
         }
 
-        Aggregator aggregator = MetricSpecification.DEFAULT_AGGREGATOR;
+        Aggregator aggregator = DEFAULT_AGGREGATOR;
         if (terms.length > 1) {
             aggregator = Aggregator.valueOf(terms[0].trim());
         }
