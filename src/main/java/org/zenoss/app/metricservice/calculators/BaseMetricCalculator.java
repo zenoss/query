@@ -51,8 +51,8 @@ public abstract class BaseMetricCalculator implements MetricCalculator {
      * (java.lang.String)
      */
     @Override
-    public void setExpression(String expression) {
-        this.expression = expression;
+    public void setExpression(String newExpression) {
+        this.expression = newExpression;
     }
 
     /*
@@ -74,10 +74,10 @@ public abstract class BaseMetricCalculator implements MetricCalculator {
     }
 
     /**
-     * @param referenceProvider
+     * @param newReferenceProvider
      *            the referenceProvider to set
      */
-    public void setReferenceProvider(ReferenceProvider referenceProvider) {
-        this.referenceProvider = referenceProvider;
+    public void setReferenceProvider(ReferenceProvider newReferenceProvider) {
+        this.referenceProvider = newReferenceProvider;
     }
 }

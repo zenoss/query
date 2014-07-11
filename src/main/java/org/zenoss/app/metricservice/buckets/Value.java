@@ -36,7 +36,7 @@ package org.zenoss.app.metricservice.buckets;
  * 
  * @author Zenoss
  */
-final public class Value {
+public final class Value {
 
     /**
      * The running sum of all the values added into this value
@@ -53,7 +53,7 @@ final public class Value {
      * 
      * @return average of the value
      */
-    final public double getValue() {
+    public final double getValue() {
         return sum / (double) count;
     }
 
@@ -62,7 +62,7 @@ final public class Value {
      * 
      * @return running total
      */
-    final public double getSum() {
+    public final double getSum() {
         return sum;
     }
 
@@ -71,7 +71,7 @@ final public class Value {
      * 
      * @return the number of items added
      */
-    final public long getCount() {
+    public final long getCount() {
         return count;
     }
 
@@ -81,7 +81,7 @@ final public class Value {
      * @param value
      *            the number to add
      */
-    final public void add(final double value) {
+    public final void add(final double value) {
         sum += value;
         count++;
     }
@@ -92,7 +92,7 @@ final public class Value {
      * @param value
      *            the number to remove
      */
-    final public void remove(final double value) {
+    public final void remove(final double value) {
         sum -= value;
         count--;
     }

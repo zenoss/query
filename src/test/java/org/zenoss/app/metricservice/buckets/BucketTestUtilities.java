@@ -29,54 +29,37 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.zenoss.app.metricservice.api.impl;
+package org.zenoss.app.metricservice.buckets;
 
-import com.google.common.base.Objects;
+import org.zenoss.app.metricservice.api.impl.MetricKey;
+import org.zenoss.app.metricservice.testutil.ConstantSeriesGenerator;
+import org.zenoss.app.metricservice.testutil.SeriesGenerator;
 
-import java.util.HashMap;
-import java.util.List;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.Map;
 
-public class OpenTSDBQueryResult {
-    public List<String> aggregateTags;
-
-    public Map<Long,String> dps;
-    public String metric;
-    public Map<String, String> tags;
-    public List<String> tsuids;
-
-    public String debugString() {
-        return Objects.toStringHelper(getClass())
-            .add("aggregateTags", aggregateTags)
-            .add("dps", dps)
-            .add("metric", metric)
-            .add("tags", tags)
-            .add("tsuids", tsuids)
-            .toString();
-    }
-
-    public void addTags(Map<String, List<String>> tagsToAdd) {
-        if (null == tags) {
-            tags = new HashMap<>();
+public class BucketTestUtilities {
+    public static Buckets<MetricKey, String> makeAndPopulateTestBuckets() {
+        Buckets<MetricKey, String> result = new Buckets<>(51);
+        MetricKey metric1 = MetricKey.fromValue("Metric1", "GizmosPerGadget", "device=dev1 Series=M1");
+        SeriesGenerator generator = new ConstantSeriesGenerator(5.0);
+        Map<Long, Double> metric1Values = generator.generateValues(3, 1203, 7);
+        for (Map.Entry<Long, Double> e : metric1Values.entrySet()) {
+            result.add(metric1, "M1", e.getKey(), e.getValue());
         }
-        for (Map.Entry<String, List<String>> entry : tagsToAdd.entrySet()) {
-            tags.put(entry.getKey(), entry.getValue().get(0));
+        MetricKey metric2 = MetricKey.fromValue("Metric2", "WidgetThroughput", "device=dev1 Series=M2");
+        Map<Long, Double> metric2Values = generator.generateValues(0, 1200, 13);
+        for (Map.Entry<Long, Double> e : metric2Values.entrySet()) {
+            result.add(metric2, "M2", e.getKey(), e.getValue());
         }
+        return result;
     }
 
-    public void addDataPoint(long i, double pointValue) {
-        if (null == dps) {
-            dps = new HashMap<>();
-        }
-        dps.put(i, Double.toString(pointValue));
+    public static void dumpBucketsToStdout(Buckets<MetricKey, String> testSubject) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream testStream = new PrintStream(baos);
+        testSubject.dump(testStream);
+        System.out.println(String.format("TestSubject: %s", baos.toString()));
     }
-
-    public Map<Long, String> getDataPoints() {
-        return dps;
-    }
-
-    public void setDataPoints(Map<Long, String> dps) {
-        this.dps = dps;
-    }
-
 }

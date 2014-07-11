@@ -30,15 +30,13 @@
  */
 package org.zenoss.app.metricservice.api;
 
-import java.util.List;
-import java.util.Map;
-
-import javax.ws.rs.core.Response;
-
+import com.google.common.base.Optional;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 
-import com.google.common.base.Optional;
+import javax.ws.rs.core.Response;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Zenoss
@@ -48,6 +46,7 @@ public interface MetricServiceAPI {
     /**
      * Specifies the interface for querying performance metric data.
      *
+     *
      * @param id         id of the request
      * @param start      start time of the query range
      * @param end        end time of the query range
@@ -56,18 +55,14 @@ public interface MetricServiceAPI {
      *                   range.
      * @param series     should the results be returned as a series or in line
      * @param downsample global downsample value
-     * @param grouping   specifies the size, in seconds, into which results should be
-     *                   grouped. This is useful / required when dealing with RPN
-     *                   expressions that reference other metric values so that metrics
-     *                   that come in a different times can be "lined up"
-     * @param tags       global filters for the query
-     * @param metrics    metric queries
-     * @return response of the request
+     * @param downsampleMultiplier
+     *@param tags       global filters for the query
+     * @param metrics    metric queries   @return response of the request
      */
     public Response query(Optional<String> id, Optional<String> start,
                           Optional<String> end, Optional<ReturnSet> returnset,
                           Optional<Boolean> series, Optional<String> downsample,
-                          Optional<String> grouping,
+                          double downsampleMultiplier,
                           Optional<Map<String, List<String>>> tags,
                           List<MetricSpecification> metrics);
 

@@ -30,12 +30,11 @@
  */
 package org.zenoss.app.metricservice;
 
+import com.google.common.base.Optional;
+import com.yammer.dropwizard.assets.AssetsBundle;
 import org.zenoss.app.AutowiredApp;
 import org.zenoss.app.annotations.Bundle;
 import org.zenoss.app.autobundle.AutoBundle;
-
-import com.google.common.base.Optional;
-import com.yammer.dropwizard.assets.AssetsBundle;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
@@ -79,6 +78,6 @@ public class MetricServiceApp extends
     @SuppressWarnings("rawtypes")
     @Override
     public Optional<Class> getRequiredConfig() {
-        return Optional.<Class> absent();
+        return Optional.absent();
     }
 }

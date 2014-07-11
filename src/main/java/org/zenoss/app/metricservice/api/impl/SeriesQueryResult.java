@@ -31,9 +31,18 @@
 
 package org.zenoss.app.metricservice.api.impl;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class SeriesQueryResult {
+
     private String clientId;
     private String endTime;
     private long endTimeActual;
@@ -42,7 +51,24 @@ public class SeriesQueryResult {
     private String source;
     private String startTime;
     private long startTimeActual;
-    private String id;
+    @JsonProperty("results")
+    private List<QueryResult> results;
+
+
+    public SeriesQueryResult() {}
+
+    public SeriesQueryResult(SeriesQueryResult other) {
+        this.clientId = other.clientId;
+        this.endTime = other.endTime;
+        this.endTimeActual = other.endTimeActual;
+        this.returnset = other.returnset;
+        this.series = other.series;
+        this.source = other.source;
+        this.startTime = other.startTime;
+        this.startTimeActual = other.startTimeActual;
+        this.results = new ArrayList<>(other.results.size());
+        Collections.copy(results, other.results);
+    }
 
     public void setClientId(String clientId) {
         this.clientId = clientId;
@@ -108,11 +134,14 @@ public class SeriesQueryResult {
         return startTimeActual;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void addResults(Collection<QueryResult> queryResults) {
+        if (null == results) {
+            results = new ArrayList<QueryResult>();
+        }
+        results.addAll(queryResults);
     }
 
-    public String getId() {
-        return id;
+    public Collection<QueryResult> getResults() {
+        return new ArrayList<>(results);
     }
 }
