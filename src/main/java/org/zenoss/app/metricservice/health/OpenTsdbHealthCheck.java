@@ -62,7 +62,7 @@ public class OpenTsdbHealthCheck extends com.yammer.metrics.core.HealthCheck {
             }
 
             // Exception if unable to parse object from input stream
-            new ObjectMapper().reader(Map.class)
+            new ObjectMapper().reader(Map[].class)
                     .readValue(connection.getInputStream()).toString();
 
             return Result.healthy();
