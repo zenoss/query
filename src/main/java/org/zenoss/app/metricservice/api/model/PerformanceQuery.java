@@ -53,7 +53,7 @@ public class PerformanceQuery {
 
     @JsonProperty
     private double downsampleMultiplier = Utils.DEFAULT_DOWNSAMPLE_MULTIPLIER;
-    
+
     @JsonProperty(required=true)
     private List<MetricSpecification> metrics = null;
         

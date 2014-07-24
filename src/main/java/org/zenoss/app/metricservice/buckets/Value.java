@@ -48,13 +48,23 @@ public final class Value {
      */
     private long count = 0;
 
+    private double interpolated = 0.0;
+
+    private boolean hasInterpolated = false;
+
     /**
      * The average of the values added into the value
      * 
-     * @return average of the value
+     * @return average of the value; if count is zero, return interpolated value.
      */
     public final double getValue() {
-        return sum / (double) count;
+        if (count != 0) {
+            return sum / (double) count;
+        }
+        if (hasInterpolated) {
+            return interpolated;
+        }
+        return Double.NaN;
     }
 
     /**
@@ -85,6 +95,22 @@ public final class Value {
         sum += value;
         count++;
     }
+
+    /**
+     * Add an interpolated value to the object.
+     *
+     * @param value
+     *            the number to add
+     */
+    public final void addInterpolated(final double value) {
+        interpolated = value;
+        hasInterpolated = true;
+    }
+
+    public final boolean valueIsInterpolated() {
+        return count == 0 && hasInterpolated;
+    }
+
 
     /**
      * Removes a given number from the value
