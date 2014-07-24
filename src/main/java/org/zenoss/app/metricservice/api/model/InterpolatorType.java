@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2013, Zenoss and/or its affiliates. All rights reserved.
+package org.zenoss.app.metricservice.api.model;/*
+ * Copyright (c) 2014, Zenoss and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,33 +28,7 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.metricservice;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.zenoss.app.AppConfiguration;
-import org.zenoss.app.metric.zapp.ManagedReporterConfig;
-import org.zenoss.app.metricservice.api.configs.MetricServiceConfig;
-
-import javax.validation.Valid;
-
-/**
- * @author David Bainbridge <dbainbridge@zenoss.com>
- * 
- */
-public class MetricServiceAppConfiguration extends AppConfiguration {
-    @Valid
-    @JsonProperty("metrics")
-    private final MetricServiceConfig metricServiceConfig = new MetricServiceConfig();
-
-    @Valid
-    @JsonProperty("managedReporter")
-    private final ManagedReporterConfig managedReporterConfig = new ManagedReporterConfig();
-
-    public MetricServiceConfig getMetricServiceConfig() {
-        return metricServiceConfig;
-    }
-
-    public ManagedReporterConfig getManagedReporterConfig() {
-        return managedReporterConfig;
-    }
+public enum InterpolatorType {
+    none, linear;
 }

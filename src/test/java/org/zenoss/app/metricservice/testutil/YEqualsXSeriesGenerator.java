@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2013, Zenoss and/or its affiliates. All rights reserved.
+package org.zenoss.app.metricservice.testutil;/*
+ * Copyright (c) 2014, Zenoss and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,52 +28,30 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.metricservice.api.model;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.HashMap;
+import java.util.Map;
 
-/**
- * Resource class that contains the boundaries of a time window
- * 
- * @author David Bainbridge <dbainbridge@zenoss.com>
- */
-@JsonInclude(Include.NON_NULL)
-public class Range {
-    @JsonProperty
-    private String start = "1h-ago";
-
-    @JsonProperty
-    private String end = "now";
-
-    /**
-     * @return the start
-     */
-    public final String getStart() {
-        return start;
+public class YEqualsXSeriesGenerator implements  SeriesGenerator {
+    @Override
+    public Map<Long, Double> generateValues(long startTimestamp, long endTimestamp, long step) {
+        validateTimeArguments(startTimestamp, endTimestamp, step);
+        Map<Long, Double> result = new HashMap<>();
+        for (long x = startTimestamp; x <= endTimestamp; x += step) {
+            result.put(x, (double)x);
+        }
+        return result;
     }
 
-    /**
-     * @param start
-     *            the start to set
-     */
-    public final void setStart(String start) {
-        this.start = start;
-    }
 
-    /**
-     * @return the end
-     */
-    public final String getEnd() {
-        return end;
-    }
+    private static void validateTimeArguments(long startTimestamp, long endTimestamp, long step) {
+        if (0 == step) {
+            throw new IllegalArgumentException("Step value must be nonzero");
+        }
+        if (Long.signum(endTimestamp - startTimestamp) != Long.signum(step)) {
+            throw new IllegalArgumentException("Time specification will result in infinite loop.");
+        }
 
-    /**
-     * @param end
-     *            the end to set
-     */
-    public final void setEnd(String end) {
-        this.end = end;
     }
 }
+

@@ -31,13 +31,9 @@
 
 package org.zenoss.app.metricservice.api.impl;
 
-import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.buckets.Buckets;
-import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.List;
 
 /**
  * Specifies the interface for implementations that process the results from the
@@ -50,25 +46,13 @@ public interface ResultProcessor {
     /**
      * Processes the input stream from the metric storage engine to a Buckets
      * representation
-     * 
-     * @param reader
-     *            input stream from which lines should be read from the the
-     *            metric storage engine
-     * @param queries
-     *            queries that generated the results
-     * @param bucketsize
-     *            the size of the buckets that should be generated
-     * @return
+     *
+     * @return Buckets<IHasShortcut> - processed buckets.
      * @throws IOException
      *             when an exception occurs when reading from the metric storage
      *             engine
      * @throws ClassNotFoundException
      *             when a calculation engine cannot be loaded
-     * @throws UnknownReferenceException
-     *             when a reference in an expression cannot be found.
      */
-    public Buckets<MetricKey, String> processResults(BufferedReader reader,
-            List<MetricSpecification> queries, long bucketsize)
-            throws IOException, ClassNotFoundException,
-            UnknownReferenceException;
+    public Buckets<IHasShortcut> processResults() throws IOException, ClassNotFoundException;
 }

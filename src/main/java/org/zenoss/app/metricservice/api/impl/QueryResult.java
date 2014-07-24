@@ -51,7 +51,7 @@ public class QueryResult {
 
     private List<QueryResultDataPoint> datapoints;
     private String metric;
-    private Multimap<String, String> tags = HashMultimap.create();
+    private final Multimap<String, String> tags = HashMultimap.create();
 
     public String getId() {
         return id;
