@@ -41,7 +41,7 @@ import org.zenoss.app.metricservice.api.model.MetricSpecification;
  * @author Zenoss
  * 
  */
-public class MetricKey {
+public class MetricKey implements IHasShortcut {
     /**
      * Name of the metric specification
      */
@@ -176,5 +176,10 @@ public class MetricKey {
      */
     public String toString() {
         return String.format("MetricKey=[metric=%s,  name=%s, tags=%s, id=%s]", metric, name, tags, id);
+    }
+
+    @Override
+    public String getShortcut() {
+        return getName();
     }
 }

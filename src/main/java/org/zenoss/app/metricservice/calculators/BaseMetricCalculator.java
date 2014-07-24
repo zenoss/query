@@ -77,6 +77,7 @@ public abstract class BaseMetricCalculator implements MetricCalculator {
      * @param newReferenceProvider
      *            the referenceProvider to set
      */
+    @Override
     public void setReferenceProvider(ReferenceProvider newReferenceProvider) {
         this.referenceProvider = newReferenceProvider;
     }

@@ -33,10 +33,7 @@ package org.zenoss.app.metricservice.calculators;
 
 import org.zenoss.app.metricservice.buckets.Value;
 
-/**
- * @author david
- *
- */
+
 public interface Closure {
 
     long getTimeStamp();

@@ -168,7 +168,7 @@ public class Calculator extends BaseMetricCalculator {
      */
     public void ifte() {
         Double a = pop(), b = pop(), c = pop();
-        push(c > 0 ? a : b);
+        push(c > 0.0 ? a : b);
     }
 
     /**
@@ -459,7 +459,7 @@ public class Calculator extends BaseMetricCalculator {
      * the stack.
      */
     public void now() {
-        push(Math.floor(new Date().getTime() / 1000));
+        push(Math.floor(new Date().getTime() / 1000l));
     }
 
     /**

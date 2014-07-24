@@ -46,7 +46,7 @@ public class Tags {
     /**
      * Maps a tag name to its values.
      */
-    private Map<String, String> tags = new HashMap<>();
+    private final Map<String, String> tags = new HashMap<>();
 
     /*
      * Constructor
