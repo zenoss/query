@@ -32,9 +32,7 @@
 package org.zenoss.app.metricservice;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.zenoss.app.metricservice.api.impl.OpenTSDBQuery;
 import org.zenoss.app.metricservice.api.impl.OpenTSDBSubQuery;
@@ -55,15 +53,6 @@ public class JacksonTest {
     }
 
     @Test
-    @Ignore
-    public void testSerialization() throws JsonProcessingException {
-        TestClass subject = makeTestClass();
-        ObjectWriter ow = Utils.getObjectMapper().writer();
-        String json = ow.writeValueAsString(subject);
-        say(String.format("JSON STRING:\"%s\"", json));
-    }
-
-    @Test
     public void testPerformancePostQuery() {
         PerformanceQuery victim = new PerformanceQuery();
         victim.setStart("1h-ago");
@@ -73,13 +62,6 @@ public class JacksonTest {
 
     @Test
     public void testPerformanceGetQuery() {
-                                   /*
-    public Response query(@QueryParam("id") Optional<String> id,
-                          @QueryParam("query") List<MetricSpecification> queries,
-                          @QueryParam("start") Optional<String> startTime,
-                          @QueryParam("end") Optional<String> endTime,
-                          @QueryParam("returnset") Optional<ReturnSet> returnset,
-                          @QueryParam("series") Optional<Boolean> series) {*/
         MetricSpecification spec = new MetricSpecification();
         spec.setName("MySpec");
         spec.setTags(makeTags("host", "morr-workstation"));
@@ -120,7 +102,7 @@ public class JacksonTest {
         try {
             json = ow.writeValueAsString(object);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
         }
         say(String.format("JSON STRING:\"%s\"", json));
     }

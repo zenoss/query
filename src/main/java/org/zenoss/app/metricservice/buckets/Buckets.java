@@ -34,6 +34,7 @@ package org.zenoss.app.metricservice.buckets;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zenoss.app.metricservice.api.impl.IHasShortcut;
 
 import java.io.PrintStream;
 import java.util.*;
@@ -46,30 +47,30 @@ import java.util.*;
  * 
  * @param <P>
  *            primary key type
- * @param <S>
- *            shortcut key type
  */
-public class Buckets<P, S> {
+public class Buckets<P extends IHasShortcut> {
 
     private final Logger log = LoggerFactory.getLogger(Bucket.class);
     /**
      * Default bucket size of 5 minutes
      */
-    public static final long DEFAULT_BUCKET_SIZE = 5 * 60; // 5 Minutes
+    public static final long DEFAULT_BUCKET_SIZE = 5l * 60; // 5 Minutes
+
+    /**
+     * Set of buckets indexed by time in seconds
+     */
+    private final Map<Long, Buckets<P>.Bucket> bucketList = new TreeMap<>();
 
     /**
      * Specifies the size of each bucket in seconds
      */
     private long secondsPerBucket = DEFAULT_BUCKET_SIZE;
 
+    private OccurrenceCounter<P> primaryKeyOccurrences = new OccurrenceCounter<>();
+
     public Map<Long, Bucket> getBucketList() {
         return bucketList;
     }
-
-    /**
-     * Set of buckets indexed by time in seconds
-     */
-    private Map<Long, Bucket> bucketList = new HashMap<>();
 
     /**
      * Each bucket maintains a summary of the values that fall within that
@@ -86,36 +87,25 @@ public class Buckets<P, S> {
          * Map from the primary key to the values within a bucket
          */
         @JsonProperty("values")
-        private Map<P, Value> values = new HashMap<>();
+        private final Map<P, Value> values = new HashMap<>();
 
         /**
          * Map from the shortcut key to the values within a bucket
          */
         @JsonProperty("valuesByName")
-        private Map<S, Value> valuesByName = new HashMap<>();
+        private Map<String, Value> valuesByName = new HashMap<>();
 
         /**
          * Add a value to a bucket
          * 
          * @param primaryKey
          *            primary key for the value
-         * @param shortcutKey
-         *            shortcut key for the value
          * @param value
          *            value to add
          */
-        public final void add(final P primaryKey, final S shortcutKey,
-                final double value) {
+        private final void add(final P primaryKey,final double value) {
 
-            // Fetch existing value, if it exists
-            Value holder = values.get(primaryKey);
-
-            // If value does not exists, create and add
-            if (holder == null) {
-                holder = new Value();
-                values.put(primaryKey, holder);
-                valuesByName.put(shortcutKey, holder);
-            }
+            Value holder = getOrCreateValue(primaryKey);
 
             // Add the value
             holder.add(value);
@@ -129,7 +119,27 @@ public class Buckets<P, S> {
          * @return the value associated with the primary key or null
          */
         public final Value getValue(final P key) {
-            return values.get(key);
+            return getOrCreateValue(key);
+        }
+
+        private final Value getOrCreateValue(final P primaryKey) {
+            if (null == primaryKey) {
+                throw new IllegalArgumentException("primary Key cannot be null.");
+            }
+            if (null == primaryKey.getShortcut()) {
+                throw new IllegalArgumentException("shortcut cannot be null.");
+            }
+
+            // Fetch existing value, if it exists
+            Value value = values.get(primaryKey);
+
+            // If value does not exists, create and add
+            if (value == null) {
+                value = new Value();
+                values.put(primaryKey, value);
+                valuesByName.put(primaryKey.getShortcut(), value);
+            }
+            return value;
         }
 
         /**
@@ -139,8 +149,27 @@ public class Buckets<P, S> {
          *            shortcut key
          * @return the value associated with the shortcut key or null
          */
-        public final Value getValueByShortcut(S shortcut) {
-            return valuesByName.get(shortcut);
+        public final Value getValueByShortcut(String shortcut) {
+            if (null == shortcut) {
+                throw new IllegalArgumentException("shortcut cannot be null.");
+            }
+            Value result = valuesByName.get(shortcut);
+            if (null == result) {
+                result = new Value();
+            }
+            return result;
+        }
+
+        public boolean hasValue(Object key) {
+            Value value = values.get(key);
+            return (value != null && value.getCount() > 0l);
+        }
+
+        private void addInterpolated(P primaryKey, double value) {
+            Value holder = getOrCreateValue(primaryKey);
+
+            // Add the value
+            holder.addInterpolated(value);
         }
     }
 
@@ -158,7 +187,7 @@ public class Buckets<P, S> {
      *            the number of seconds per each bucket
      */
     public Buckets(final long secondsPerBucket) {
-        if (secondsPerBucket > 0) {
+        if (secondsPerBucket > 0l) {
             this.secondsPerBucket = secondsPerBucket;
         } else {
             log.warn("secondsPerBucket must be positive. {} was specified. Defaulting to {}.", secondsPerBucket, this.secondsPerBucket);
@@ -170,18 +199,14 @@ public class Buckets<P, S> {
      * 
      * @param primaryKey
      *            primary key for the vlaue
-     * @param shortcutKey
-     *            shortcut key for the value
      * @param timestamp
      *            timestamp of the value (will be rounded based on secondsPerBucket
      *            size)
      * @param value
      *            value to add
      */
-    public final void add(final P primaryKey, final S shortcutKey,
-            final long timestamp, final double value) {
-        long ts = timestamp / secondsPerBucket;
-
+    public final void add(final P primaryKey, final long timestamp, final double value) {
+        long ts = getBucketTimestamp(timestamp);
         // Get existing or create new bucket for this timestamp
         Bucket b = bucketList.get(ts);
         if (b == null) {
@@ -190,7 +215,36 @@ public class Buckets<P, S> {
         }
 
         // Add the value
-        b.add(primaryKey, shortcutKey, value);
+        b.add(primaryKey, value);
+        addOccurrence(primaryKey, timestamp);
+    }
+
+    /**
+     * Add an value to the buckets. If the bucket already has an interpolated value, update it.
+     *
+     * @param primaryKey
+     *            primary key for the vlaue
+     * @param timestamp
+     *            timestamp of the value (will be rounded based on secondsPerBucket
+     *            size)
+     * @param value
+     *            value to add
+     */
+    public final void addInterpolated(final P primaryKey, final long timestamp, final double value) {
+        long ts = getBucketTimestamp(timestamp);
+
+        // Get existing or create new bucket for this timestamp
+        Bucket b = bucketList.get(ts);
+        if (b == null) {
+            b = new Bucket();
+            bucketList.put(ts, b);
+        }
+        // Add the value
+        b.addInterpolated(primaryKey, value);
+    }
+
+    private void addOccurrence(P primaryKey, long timestamp) {
+        primaryKeyOccurrences.logOccurrence(primaryKey, timestamp);
     }
 
     /**
@@ -199,8 +253,13 @@ public class Buckets<P, S> {
      * 
      * @return bucket of the given timestamp (that will be downsampled) or null
      */
-    public final Bucket getBucket(long timestamp) {
-        return bucketList.get(timestamp / secondsPerBucket);
+    public final Buckets<P>.Bucket getBucket(long timestamp) {
+        long bucketTimestamp = getBucketTimestamp(timestamp);
+        return bucketList.get(bucketTimestamp);
+    }
+
+    private long getBucketTimestamp(long timestamp) {
+        return (timestamp / secondsPerBucket) * secondsPerBucket;
     }
 
     /**
@@ -210,10 +269,13 @@ public class Buckets<P, S> {
      * 
      * @return sorted list of downsampled time values
      */
-    public final List<Long> getTimestamps() {
-        List<Long> result = new ArrayList<>(bucketList.keySet());
-        Collections.sort(result);
+    public final SortedSet<Long> getTimestamps() {
+        SortedSet<Long> result = new TreeSet<>(bucketList.keySet());
         return result;
+    }
+
+    public final Set<P> getPrimaryKeys() {
+        return primaryKeyOccurrences.getKeys();
     }
 
     /**
@@ -229,8 +291,7 @@ public class Buckets<P, S> {
      * Dumps the contents of the buckets to the given print stream. This can be
      * useful for debugging
      * 
-     * @param ps
-     *            printstream instance to use for the dump
+     * @param ps: printstream instance to use for the dump
      */
     public final void dump(PrintStream ps) {
         List<Long> keys = new ArrayList<>(bucketList.keySet());
@@ -245,6 +306,27 @@ public class Buckets<P, S> {
                         value.getSum(),
                         value.getCount());
             }
+        }
+    }
+
+    private class OccurrenceCounter<K> {
+        private final Map<K, Long> occurrenceMap = new HashMap<>();
+
+        public void logOccurrence(K key, long timestamp) {
+            increment(key);
+        }
+
+        private void increment(K key) {
+            Long count = occurrenceMap.get(key);
+            if (null == count) {
+                occurrenceMap.put(key,Long.valueOf(1));
+            } else {
+                occurrenceMap.put(key, count++);
+            }
+        }
+
+        public Set<K> getKeys() {
+            return Collections.unmodifiableSet(occurrenceMap.keySet());
         }
     }
 }

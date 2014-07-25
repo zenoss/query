@@ -39,6 +39,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.Response;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -46,7 +49,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class Utils {
+public final class Utils {
 
     private static final Logger log = LoggerFactory.getLogger(Utils.class);
 
@@ -78,9 +81,14 @@ public class Utils {
     public static final int SECONDS_PER_WEEK = SECONDS_PER_DAY * DAYS_PER_WEEK;
     public static final int SECONDS_PER_YEAR = SECONDS_PER_DAY * DAYS_PER_YEAR;
 
+    private Utils() {};
 
-    private static ObjectMapper mapper = null;
-
+    private static final ObjectMapper mapper;
+    static {
+        mapper = new ObjectMapper();
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
 
     public static Map<String, Object> makeError(String errorMessage, String errorCause, String errorPart) {
         Map<String, Object> error = new HashMap<>();
@@ -200,30 +208,6 @@ public class Utils {
         return 0;
     }
 
-    public static String parseAggregation(String v) {
-        String result = "";
-        int dashPosition = v.indexOf('-');
-        if (dashPosition > 0 && dashPosition < v.length()) {
-            result = v.substring(dashPosition + 1);
-        }
-        return result;
-    }
-
-    public static String createModifiedDownsampleRequest(String downsample, double downsampleMultiplier) {
-        if (null == downsample || downsample.isEmpty() || downsampleMultiplier <= 0.0) {
-            log.warn("Bad downsample or multiplier. Returning original downsample value.");
-            return downsample;
-        }
-        long duration = parseDuration(downsample);
-        String aggregation = parseAggregation(downsample);
-        long newDuration = (long)(duration / downsampleMultiplier);
-        if (newDuration <= 0) {
-            log.warn("Applying value {} of downsampleMultiplier to downsample value of {} would result in a request with resolution finer than 1 sec. returning 1 second.", downsampleMultiplier, downsample);
-            newDuration = 1;
-        }
-        return String.format("%ds-%s", newDuration, aggregation);
-    }
-
     public static  String jsonStringFromObject(Object object) {
         ObjectMapper mapper = getObjectMapper();
         ObjectWriter ow = mapper.writer();
@@ -237,11 +221,6 @@ public class Utils {
     }
 
     public static ObjectMapper getObjectMapper() {
-        if (null == mapper) {
-            mapper = new ObjectMapper();
-            mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        }
         return mapper;
     }
 }
