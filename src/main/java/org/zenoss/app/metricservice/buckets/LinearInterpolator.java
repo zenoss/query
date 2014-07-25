@@ -42,7 +42,7 @@ public class LinearInterpolator implements Interpolator {
 
     @Override
     public void interpolate(Buckets<IHasShortcut> buckets, Collection<IHasShortcut> keys) {
-
+        //TODO: Fix this comment.
         /* Make two passes.
          *  First pass: gather the following information:
          *  * list of series in buckets
@@ -50,20 +50,31 @@ public class LinearInterpolator implements Interpolator {
          *
          *  Second pass: use data gathered in first pass to calculate and fill in missing values
          */
+        /* Go through keys and create an accumulator for each.
+         * The accumulator will keep track of the current state of each series (have we seen data points, etc) and
+         * perform interpolation as new points are encountered.
+         */
+
         for (IHasShortcut key : keys) {
             accumulators.add(new SeriesInterpolatingAccumulator(buckets, key));
         }
 
+        //Go through the buckets (which should be in timestamp order) and look at each one
         Map<Long, Buckets<IHasShortcut>.Bucket> bucketList = buckets.getBucketList();
         for (Map.Entry<Long, Buckets<IHasShortcut>.Bucket> bucketEntry : bucketList.entrySet()) {
             Buckets<IHasShortcut>.Bucket bucket = bucketEntry.getValue();
             Long timestamp = bucketEntry.getKey();
+            // for each series we're interpolating, let the accumulator decide what needs to be done for this point
             for (SeriesInterpolatingAccumulator accumulator : accumulators) {
                 accumulator.accumulate(timestamp, bucket);
             }
         }
     }
 
+    /**
+     * This class keeps track of what we've seen for a particular series.
+     * The accumulate method is designed to be called on datapoints in order.
+     */
     static class SeriesInterpolatingAccumulator {
         private final IHasShortcut key;
         private final Buckets<IHasShortcut> buckets;
@@ -76,6 +87,16 @@ public class LinearInterpolator implements Interpolator {
             this.buckets = buckets;
         }
 
+        /**
+         *
+         * As each point is encountered, it tracks whether a point has been encountered yet for this series,
+         * and whether points have been encountered since that one that need interpolation. When a datapoint is encountered,
+         * any pending interpolation is done (if a point has previously been encountered for the series), and the
+         * 'last endountered' point is updated to the new one.
+         *
+         * @param timestamp  The timestamp associated with the bucket being passed in
+         * @param bucket The bucket that goes with the timestamp. It may or may not have a value for the series.
+         */
         public void accumulate(Long timestamp, Buckets<IHasShortcut>.Bucket bucket) {
             if (!bucket.hasValue(key)) {
                 // no value - if we haven't seen any values yet, keep going.

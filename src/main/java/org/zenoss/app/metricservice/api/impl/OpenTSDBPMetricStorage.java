@@ -199,7 +199,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
 
 
-    public static String parseAggregation(String v) {
+    private static String parseAggregation(String v) {
         String result = "";
         int dashPosition = v.indexOf('-');
         if (dashPosition > 0 && dashPosition < v.length()) {
@@ -208,7 +208,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         return result;
     }
 
-    public static String createModifiedDownsampleRequest(String downsample, double downsampleMultiplier) {
+    private static String createModifiedDownsampleRequest(String downsample, double downsampleMultiplier) {
         if (null == downsample || downsample.isEmpty() || downsampleMultiplier <= 0.0) {
             log.warn("Bad downsample or multiplier. Returning original downsample value.");
             return downsample;

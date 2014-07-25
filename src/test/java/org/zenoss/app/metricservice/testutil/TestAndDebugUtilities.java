@@ -36,8 +36,22 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 
+/**
+ * This is to store a routine that is useful for debugging - not currently in use in production,
+ * but is useful for troubleshooting.
+ */
 public class TestAndDebugUtilities {
     private static final Logger log = LoggerFactory.getLogger(TestAndDebugUtilities.class);
+
+    /**
+     * This method takes a buffered reader, logs the intformation that was in it, and returns a
+     * reader with the same content. It can be useful for peeking at the data stream (e.g. coming back from
+     * OpenTSDB) when debugging.
+     *
+     * @param reader The reader to display on the log
+     * @return A new reader that contains the contents of the original reader.
+     * @throws IOException
+     */
     private static BufferedReader logReaderInformation(BufferedReader reader) throws IOException {
         StringBuffer readerPeekBuffer = new StringBuffer(4096);
         long lineCount = 0l;
