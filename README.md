@@ -95,7 +95,12 @@ Resources
                                     series as a participant in a calculated expression (see
                                     "expression" below)
                     "id"          : a caller-defined tag for the series,
-                    "aggregator"  : "<aggregator>" valid values are "avg", "min", "max", and "sum",
+                    "aggregator"  : Aggregator to be used by OpenTSDB to combine values when downsampling.
+                                    valid values are "avg", "min", "max", and "sum".
+                                    If not specified, will default to "avg".
+                    "interpolator": The type of interpolator to be used to fill in missing data points for the series.
+                                    Valid values are: "linear", "none".
+                                    If not specified, defaults to "none"
                     "rate"        : true or false,
                     "rateOptions" : { // optional
                         "counter"        : true or false,

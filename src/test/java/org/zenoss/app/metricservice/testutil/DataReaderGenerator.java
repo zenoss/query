@@ -28,53 +28,40 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package org.zenoss.app.metricservice.testutil;
 
-package org.zenoss.app.metricservice.api.impl;
+import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryResult;
+import org.zenoss.app.metricservice.api.impl.Utils;
+import org.zenoss.app.metricservice.api.model.MetricSpecification;
 
-import com.google.common.base.Objects;
-
+import java.io.BufferedReader;
+import java.io.StringReader;
 import java.util.*;
 
-public class OpenTSDBQueryResult {
-    public List<String> aggregateTags;
+public class DataReaderGenerator {
+    private Collection<OpenTSDBQueryResult> results = new ArrayList<OpenTSDBQueryResult>();
 
-    public SortedMap<Long,String> dps;
-    public String metric;
-    public Map<String, String> tags;
-    public List<String> tsuids;
-
-    public String debugString() {
-        return Objects.toStringHelper(getClass())
-            .add("aggregateTags", aggregateTags)
-            .add("dps", dps)
-            .add("metric", metric)
-            .add("tags", tags)
-            .add("tsuids", tsuids)
-            .toString();
+    public BufferedReader makeReader() {
+        // generate reader that spits out JSON for an array of OpenTSDBQueryResult
+        String resultString = Utils.jsonStringFromObject(results);
+        StringReader sr = new StringReader(resultString);
+        return new BufferedReader(sr);
     }
 
-    public void addTags(Map<String, List<String>> tagsToAdd) {
-        if (null == tags) {
-            tags = new HashMap<>();
+    public void addSeries(MetricSpecification specification, SeriesGenerator dataGen, long start, long end, long step) {
+        results.add(makeQueryResult(specification, dataGen, start, end, step));
+    }
+
+    private OpenTSDBQueryResult makeQueryResult(MetricSpecification specification, SeriesGenerator dataGen, long start, long end, long step) {
+        OpenTSDBQueryResult result = new OpenTSDBQueryResult();
+        result.addTags(specification.getTags());
+        Map<Long, Double> generatedValues = dataGen.generateValues(start, end, step);
+        SortedMap<Long, String> dataPoints = new TreeMap<>();
+        for (Map.Entry<Long, Double> entry : generatedValues.entrySet()) {
+            dataPoints.put(entry.getKey(), entry.getValue().toString());
         }
-        for (Map.Entry<String, List<String>> entry : tagsToAdd.entrySet()) {
-            tags.put(entry.getKey(), entry.getValue().get(0));
-        }
+        result.setDataPoints(dataPoints);
+        result.metric = specification.getNameOrMetric();
+        return result;
     }
-
-    public void addDataPoint(long i, double pointValue) {
-        if (null == dps) {
-            dps = new TreeMap<>();
-        }
-        dps.put(i, Double.toString(pointValue));
-    }
-
-    public Map<Long, String> getDataPoints() {
-        return dps;
-    }
-
-    public void setDataPoints(SortedMap<Long, String> dps) {
-        this.dps = dps;
-    }
-
 }

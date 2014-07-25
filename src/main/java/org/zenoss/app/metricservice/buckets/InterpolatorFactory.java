@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2013, Zenoss and/or its affiliates. All rights reserved.
+package org.zenoss.app.metricservice.buckets;/*
+ * Copyright (c) 2014, Zenoss and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,46 +28,17 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.metricservice.api.model;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import org.zenoss.app.metricservice.api.model.InterpolatorType;
 
-@JsonInclude(Include.NON_NULL)
-
-public class Datapoint {
-    @JsonProperty(required=true)
-    private String aggregator = null;
-
-    @JsonProperty(required=true)
-    private String metric = null;
-
-    /**
-     * @return the aggregator
-     */
-    public final String getAggregator() {
-        return aggregator;
+public final class InterpolatorFactory {
+    private InterpolatorFactory() {
     }
 
-    /**
-     * @param aggregator the consolidation to set
-     */
-    public final void setAggregator(String aggregator) {
-        this.aggregator = aggregator;
-    }
-
-    /**
-     * @return the metric
-     */
-    public final String getMetric() {
-        return metric;
-    }
-
-    /**
-     * @param metric the metric to set
-     */
-    public final void setMetric(String metric) {
-        this.metric = metric;
+    public static Interpolator getInterpolator(InterpolatorType type) {
+        if (type == InterpolatorType.linear) {
+            return new LinearInterpolator();
+        }
+        return new NoOpInterpolator();
     }
 }

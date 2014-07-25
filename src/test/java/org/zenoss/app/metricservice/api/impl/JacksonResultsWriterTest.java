@@ -47,8 +47,6 @@ import java.util.Map;
 
 public class JacksonResultsWriterTest {
     private static final String TESTID = "TEST_ID";
-    //private static final long DATA_START_TIMESTAMP = 1078033800;
-    //private static final long DATA_END_TIMESTAMP = 1078121400;
     private static final long DATA_START_TIMESTAMP = 1078033800;
     private static final long DATA_END_TIMESTAMP = 1078034400;
     private static final long DATA_TIMESTAMP_STEP = 600;
@@ -56,7 +54,6 @@ public class JacksonResultsWriterTest {
     @Test
     public void testWriteResults() throws Exception {
         JacksonResultsWriter victim = new JacksonResultsWriter();
-        //JacksonWriter writer, List<MetricSpecification> queries, Buckets<MetricKey, String> buckets, String id, String sourceId, long startTs, String startTimeConfig, long endTs, String endTimeConfig, ReturnSet returnset, boolean series
         String[] queryStrings = new String[] {
             "avg:laLoadInt1{tag1=*,tag2=*}",
             "sum:laLoadInt5{tag1=*,tag2=*}" };
@@ -65,8 +62,7 @@ public class JacksonResultsWriterTest {
         long startTs = DATA_START_TIMESTAMP;
         long endTs = DATA_END_TIMESTAMP;
         long step = DATA_TIMESTAMP_STEP;
-        Buckets<MetricKey, String> buckets = makeTestBuckets(queries, new ConstantSeriesGenerator(10.0), startTs, endTs, step);
-//        Buckets<MetricKey, String> buckets = BucketTestUtilities.makeAndPopulateTestBuckets();
+        Buckets<IHasShortcut> buckets = makeTestBuckets(queries, new ConstantSeriesGenerator(10.0), startTs, endTs, step);
         BucketTestUtilities.dumpBucketsToStdout(buckets);
         String id = TESTID;
         String sourceId = "test_source_id";
@@ -80,15 +76,15 @@ public class JacksonResultsWriterTest {
         say(writer.toString());
     }
 
-    private Buckets<MetricKey, String> makeTestBuckets(List<MetricSpecification> queries, SeriesGenerator generator, long startTimestamp, long endTimestamp, long step) {
-        Buckets<MetricKey, String> result = new Buckets<>();
+    private Buckets<IHasShortcut> makeTestBuckets(List<MetricSpecification> queries, SeriesGenerator generator, long startTimestamp, long endTimestamp, long step) {
+        Buckets<IHasShortcut> result = new Buckets<>();
         for (MetricSpecification query : queries) {
             MetricKey key = MetricKey.fromValue(query);
             Map<Long, Double> dataPoints = generator.generateValues(startTimestamp, endTimestamp, step);
             int i = 0;
             for (Map.Entry<Long, Double> entry : dataPoints.entrySet()) {
                 i++;
-                result.add(key,key.getMetric(), entry.getKey(), entry.getValue());
+                result.add(key, entry.getKey(), entry.getValue());
             }
             say(String.format("Added %d values for metric %s to result.", i, key.getMetric()));
         }
