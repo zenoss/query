@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 /**
  * A comparable and matchable representation of metric tags
@@ -52,6 +53,15 @@ public class Tags {
      * Constructor
      */
     public Tags() {
+    }
+
+
+    //illegal characters
+    private static final Pattern INVALID_CHARS = Pattern.compile("[^\\w\\./_-]");
+
+    //convert INVALID_CHARS to '-' as applied by the metric-consumer
+    static final String sanitize(String input) {
+        return INVALID_CHARS.matcher(input).replaceAll("-");
     }
 
     /**
@@ -95,9 +105,9 @@ public class Tags {
                 } else {
                     pipe = true;
                 }
-                buf.append(value);
+                buf.append(sanitize(value));
             }
-            result.tags.put(entry.getKey(), buf.toString());
+            result.tags.put(sanitize(entry.getKey()), buf.toString());
         }
         return result;
     }

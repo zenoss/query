@@ -54,6 +54,7 @@ import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.regex.Pattern;
 
 
 @API
@@ -168,7 +169,8 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             if (null != tags) {
                 for (Map.Entry<String, List<String>> tagEntry : tags.entrySet()) {
                     for (String tagValue : tagEntry.getValue()) {
-                        result.addTag(tagEntry.getKey(), tagValue);
+                        //apply metric-consumer sanitization to tags in query
+                        result.addTag( Tags.sanitize(tagEntry.getKey()), Tags.sanitize(tagValue));
                     }
                 }
             }
