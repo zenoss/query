@@ -65,6 +65,26 @@ public class TagsTest {
         Assert.assertEquals("two different constructors", tags1, tags2);
     }
 
+
+    @Test
+    public void anotherFactoryTest() {
+        Tags tags1 = Tags.fromValue("tag-1=value-1|value-2 tag-2=value-3");
+
+        List<String> val1 = new ArrayList<>();
+        val1.add("value 1");
+        val1.add("value 2");
+
+        List<String> val2 = new ArrayList<>();
+        val2.add("value 3");
+
+        Map<String, List<String>> spec = new HashMap<>();
+        spec.put("tag 1", val1);
+        spec.put("tag 2", val2);
+        Tags tags2 = Tags.fromValue(spec);
+
+        Assert.assertEquals("two different constructors", tags1, tags2);
+    }
+
     @Test
     public void tagsIdentityEquals() {
         Tags tags = Tags.fromValue("tag1=value1 tag2=value2");
