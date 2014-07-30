@@ -783,7 +783,8 @@
                     max = Math.max(Math.abs(dp.value), max);
                     plot.values.push({
                         'x' : dp.timestamp * 1000,
-                        'y' : dp.value
+                        // ensure value is a number
+                        'y' : typeof dp.value !== "number" ? null : dp.value
                     });
                 }
                 plots.push(plot);
