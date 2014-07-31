@@ -33,7 +33,7 @@ package org.zenoss.app.metricservice.buckets;
 
 import org.junit.Test;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class ValueTest {
@@ -90,6 +90,63 @@ public class ValueTest {
     }
 
     @Test
+    public void uninitializedValueShouldReturnNaNOnGet() {
+        Value victim = new Value();
+        assertTrue("An Uninitialized Value should return NaN on getValue().", Double.isNaN(victim.getValue()));
+    }
+
+    @Test
+    public void uninitializedValueShouldReturnFalseForValueIsInterpolated() {
+        Value victim = new Value();
+        assertEquals("An Uninitialized Value should return false on valueIsInterpolated().", false, victim.valueIsInterpolated());
+    }
+
+    @Test
+    public void valueWithOnlyInterpolatedDataShouldReturnTrueForValueIsInterpolated() {
+        Value victim = new Value();
+        victim.addInterpolated(1.234);
+        assertEquals("A Value with only interpolated data should return true on valueIsInterpolated().", true, victim.valueIsInterpolated());
+    }
+
+    @Test
+    public void valueWithInterpolatedAndRealDataShouldReturnTrueForValueIsInterpolated() {
+        Value victim = new Value();
+        victim.addInterpolated(1.234);
+        victim.add(5.678);
+        assertEquals("A Value with interpolated and real data should return true on valueIsInterpolated().", false, victim.valueIsInterpolated());
+    }
+
+    @Test
+    public void valueWithInterpolatedAndRealDataShouldReturnRealDataOnGetValue() {
+        Double realValue = 5.678;
+        Double interpolatedValue = 1.234;
+        Value victim = new Value();
+        victim.addInterpolated(interpolatedValue);
+        victim.add(realValue);
+        assertEquals("A Value with interpolated and real data should return the real value on getValue().", realValue, victim.getValue(), EPSILON);
+    }
+
+    @Test
+    public void valueWithRealDataAddedThenRemovedShouldReturnInterpolatedDataOnGetValue() {
+        Double realValue = 5.678;
+        Double interpolatedValue = 1.234;
+        Value victim = new Value();
+        victim.addInterpolated(interpolatedValue);
+        victim.add(realValue);
+        victim.remove(realValue);
+        assertEquals("A Value with an interpolated data and real data added then removed should return the interpolated value on getValue().", interpolatedValue, victim.getValue(), EPSILON);
+    }
+
+    @Test
+    public void valueWithOnlyInterpolatedDataShouldReturnInterpolatedDataOnGetValue() {
+        Double realValue = 5.678;
+        Double interpolatedValue = 1.234;
+        Value victim = new Value();
+        victim.addInterpolated(interpolatedValue);
+        assertEquals("A Value with only interpolated data should return the interpolated value on getValue().", interpolatedValue, victim.getValue(), EPSILON);
+    }
+
+    @Test
     public void testRemove() throws Exception {
         Value victim = new Value();
         Double[] testValues = new Double[]{1.0, -1.0, 2.0, 2.1, 0.0, 53.0, -27.5};
@@ -119,5 +176,14 @@ public class ValueTest {
         assertEquals("After remove, value should equal original value.", originalValue, victim.getValue(), EPSILON);
         assertEquals("After remove, sum should equal original sum.", originalSum,victim.getSum(), EPSILON);
         assertTrue("After remove, count should equal original count.", originalCount == victim.getCount());
+    }
+
+    @Test
+    public void valueWithAddedThenRemovedShouldReturnNaN() {
+        double testValue = 1.2345;
+        Value victim = new Value();
+        victim.add(testValue);
+        victim.remove(testValue);
+        assertTrue("Adding then removing the same value should result in NaN.", Double.isNaN(victim.getValue()));
     }
 }

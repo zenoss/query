@@ -54,6 +54,7 @@ import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.regex.Pattern;
 
 
 @API
@@ -76,6 +77,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
      * .query.QueryAppConfiguration, java.lang.String, java.lang.String,
      * java.lang.String, java.lang.Boolean, java.lang.Boolean, java.util.List)
      */
+    @Override
     public BufferedReader getReader(MetricServiceAppConfiguration config,
                                     String id, String startTime, String endTime, ReturnSet returnset,
                                     Boolean series, String downsample, double downsampleMultiplier,
@@ -90,7 +92,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             query.end = endTime;
         }
 
-        String appliedDownsample = Utils.createModifiedDownsampleRequest(downsample, downsampleMultiplier);
+        String appliedDownsample = createModifiedDownsampleRequest(downsample, downsampleMultiplier);
         log.info("Specified Downsample = {}, Specified Multiplier = {}, Applied Downsample = {}.", downsample, downsampleMultiplier, appliedDownsample);
 
         for (MetricSpecification metricSpecification : queries) {
@@ -112,7 +114,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
         throwWebExceptionIfHttpResponseIsBad(response);
 
-        return new BufferedReader(new InputStreamReader((response.getEntity().getContent())));
+        return new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
     }
 
     private static void throwWebExceptionIfHttpResponseIsBad(HttpResponse response) throws WebApplicationException {
@@ -133,7 +135,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
     }
 
     private static String streamToString(InputStream stream) {
-        Scanner s = new Scanner(stream).useDelimiter("\\A");
+        Scanner s = new Scanner(stream, "UTF-8").useDelimiter("\\A");
         return s.hasNext() ? s.next() : "";
     }
 
@@ -167,7 +169,8 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             if (null != tags) {
                 for (Map.Entry<String, List<String>> tagEntry : tags.entrySet()) {
                     for (String tagValue : tagEntry.getValue()) {
-                        result.addTag(tagEntry.getKey(), tagValue);
+                        //apply metric-consumer sanitization to tags in query
+                        result.addTag( Tags.sanitize(tagEntry.getKey()), Tags.sanitize(tagValue));
                     }
                 }
             }
@@ -195,4 +198,31 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
     public String getSourceId() {
         return SOURCE_ID;
     }
+
+
+
+    private static String parseAggregation(String v) {
+        String result = "";
+        int dashPosition = v.indexOf('-');
+        if (dashPosition > 0 && dashPosition < v.length()) {
+            result = v.substring(dashPosition + 1);
+        }
+        return result;
+    }
+
+    private static String createModifiedDownsampleRequest(String downsample, double downsampleMultiplier) {
+        if (null == downsample || downsample.isEmpty() || downsampleMultiplier <= 0.0) {
+            log.warn("Bad downsample or multiplier. Returning original downsample value of {}.", downsample);
+            return downsample;
+        }
+        long duration = Utils.parseDuration(downsample);
+        String aggregation = parseAggregation(downsample);
+        long newDuration = (long)(duration / downsampleMultiplier);
+        if (newDuration <= 0) {
+            log.warn("Applying value {} of downsampleMultiplier to downsample value of {} would result in a request with resolution finer than 1 sec. returning 1 second.", downsampleMultiplier, downsample);
+            newDuration = 1;
+        }
+        return String.format("%ds-%s", newDuration, aggregation);
+    }
+
 }

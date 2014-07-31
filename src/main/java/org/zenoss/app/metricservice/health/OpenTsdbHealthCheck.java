@@ -53,7 +53,7 @@ public class OpenTsdbHealthCheck extends com.yammer.metrics.core.HealthCheck {
     @Override
     protected Result check() throws Exception {
         try {
-            URL url = new URL(config.getMetricServiceConfig().getOpenTsdbUrl() + "/version?json");
+            URL url = new URL(config.getMetricServiceConfig().getOpenTsdbUrl() + "/api/stats");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setConnectTimeout(config.getMetricServiceConfig().getConnectionTimeoutMs());
             connection.setReadTimeout(config.getMetricServiceConfig().getConnectionTimeoutMs());
@@ -62,7 +62,7 @@ public class OpenTsdbHealthCheck extends com.yammer.metrics.core.HealthCheck {
             }
 
             // Exception if unable to parse object from input stream
-            new ObjectMapper().reader(Map.class)
+            new ObjectMapper().reader(Map[].class)
                     .readValue(connection.getInputStream()).toString();
 
             return Result.healthy();

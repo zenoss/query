@@ -66,7 +66,6 @@ public class MetricService implements MetricServiceAPI {
     public static final String NOT_SPECIFIED = "not-specified";
     private static final Logger log = LoggerFactory.getLogger(MetricService.class);
     public final ObjectMapper objectMapper;
-    public ResultProcessor resultsProcessor = new DefaultResultProcessor();
     public JacksonResultsWriter jacksonResultsWriter = new JacksonResultsWriter();
     @Autowired
     MetricServiceAppConfiguration config;
@@ -172,7 +171,7 @@ public class MetricService implements MetricServiceAPI {
         /**
          * @param in
          */
-        public LastFilter(Reader in, long startTs, long endTs) {
+        private LastFilter(Reader in, long startTs, long endTs) {
             super(in);
             this.startTs = startTs;
             this.endTs = endTs;
@@ -241,11 +240,11 @@ public class MetricService implements MetricServiceAPI {
         private long start = -1;
         private long end = -1;
 
-        public MetricServiceWorker(String id,
-                                   String startTime, String endTime, ReturnSet returnset,
-                                   Boolean outputAsSeries, String downsample, double downsampleMultiplier,
-                                   Map<String, List<String>> tags,
-                                   List<MetricSpecification> queries) {
+        private MetricServiceWorker(String id,
+                                    String startTime, String endTime, ReturnSet returnset,
+                                    Boolean outputAsSeries, String downsample, double downsampleMultiplier,
+                                    Map<String, List<String>> tags,
+                                    List<MetricSpecification> queries) {
             if (queries == null) {
                 // This really should never happen as the query check should
                 // happen in our calling routine, but just in case.
@@ -374,7 +373,7 @@ public class MetricService implements MetricServiceAPI {
 
         private void replaceSeriesDataPointsWithLastInRangeDataPoint(OpenTSDBQueryResult series, long startTimeStamp, long endTimeStamp) {
             long currentPointTimeStamp;
-            Map<Long, String> dataPointSingleton = new HashMap<>(1);
+            SortedMap<Long, String> dataPointSingleton = new TreeMap<>();
             Map.Entry<Long, String> lastDataPoint = null;
             for (Map.Entry<Long, String> dataPoint : series.getDataPoints().entrySet()) {
                 currentPointTimeStamp = dataPoint.getKey();
@@ -394,9 +393,10 @@ public class MetricService implements MetricServiceAPI {
         private void writeResultsUsingJacksonWriter(OutputStream output, BufferedReader reader, long bucketSize)
             throws IOException, UnknownReferenceException, ClassNotFoundException {
             log.info("Using JacksonWriter to generate JSON results.");
-            try (JacksonWriter writer = new JacksonWriter(new OutputStreamWriter(output))) {
+            try (JacksonWriter writer = new JacksonWriter(new OutputStreamWriter(output, "UTF-8"))) {
                 log.debug("processing results");
-                Buckets<MetricKey, String> buckets = resultsProcessor.processResults(reader, queries, bucketSize);
+                ResultProcessor processor = new DefaultResultProcessor(reader, queries, bucketSize);
+                Buckets<IHasShortcut> buckets = processor.processResults();
                 log.debug("results processed.");
                 //log.info("calling jacksonResultsWriter. Buckets = {}", Utils.jsonStringFromObject(buckets));
                 jacksonResultsWriter.writeResults(writer, queries, buckets,
@@ -434,6 +434,7 @@ public class MetricService implements MetricServiceAPI {
             }
             for (MetricSpecification query : queries) {
                 query.validateWithErrorHandling(errors);
+                query.setTags(this.tags);
             }
         }
 

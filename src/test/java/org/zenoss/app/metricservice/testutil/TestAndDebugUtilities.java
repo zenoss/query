@@ -1,4 +1,4 @@
-/*
+package org.zenoss.app.metricservice.testutil;/*
  * Copyright (c) 2014, Zenoss and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,52 +29,46 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.zenoss.app.metricservice.api.impl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Objects;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
 
-import java.util.*;
+/**
+ * This is to store a routine that is useful for debugging - not currently in use in production,
+ * but is useful for troubleshooting.
+ */
+public class TestAndDebugUtilities {
+    private static final Logger log = LoggerFactory.getLogger(TestAndDebugUtilities.class);
 
-public class OpenTSDBQueryResult {
-    public List<String> aggregateTags;
-
-    public SortedMap<Long,String> dps;
-    public String metric;
-    public Map<String, String> tags;
-    public List<String> tsuids;
-
-    public String debugString() {
-        return Objects.toStringHelper(getClass())
-            .add("aggregateTags", aggregateTags)
-            .add("dps", dps)
-            .add("metric", metric)
-            .add("tags", tags)
-            .add("tsuids", tsuids)
-            .toString();
-    }
-
-    public void addTags(Map<String, List<String>> tagsToAdd) {
-        if (null == tags) {
-            tags = new HashMap<>();
+    /**
+     * This method takes a buffered reader, logs the information that was in it, and returns a
+     * reader with the same content. It can be useful for peeking at the data stream (e.g. coming back from
+     * OpenTSDB) when debugging.
+     *
+     * @param reader The reader to display on the log
+     * @return A new reader that contains the contents of the original reader.
+     * @throws IOException
+     */
+    private static BufferedReader logReaderInformation(BufferedReader reader) throws IOException {
+        StringBuffer readerPeekBuffer = new StringBuffer(4096);
+        long lineCount = 0l;
+        String line;
+        while (null != (line = reader.readLine())) {
+            lineCount++;
+            readerPeekBuffer.append(line);
+            readerPeekBuffer.append('\n');
         }
-        for (Map.Entry<String, List<String>> entry : tagsToAdd.entrySet()) {
-            tags.put(entry.getKey(), entry.getValue().get(0));
-        }
+
+        log.debug("LINES READ FROM READER: {}", lineCount);
+
+        String contents = readerPeekBuffer.toString();
+        reader = new BufferedReader(new StringReader(contents));
+        log.debug("Reader Content: {}", contents);
+        return reader;
     }
 
-    public void addDataPoint(long i, double pointValue) {
-        if (null == dps) {
-            dps = new TreeMap<>();
-        }
-        dps.put(i, Double.toString(pointValue));
-    }
-
-    public Map<Long, String> getDataPoints() {
-        return dps;
-    }
-
-    public void setDataPoints(SortedMap<Long, String> dps) {
-        this.dps = dps;
-    }
 
 }

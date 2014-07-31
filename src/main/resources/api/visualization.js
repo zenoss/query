@@ -1433,10 +1433,6 @@ var visualization,
                     request.returnset = config.returnset;
                 }
 
-                if (config.grouping !== undefined) {
-                    request.grouping = config.grouping;
-                }
-
                 if (config.datapoints !== undefined) {
                     request.metrics = [];
                     config.datapoints
@@ -1481,10 +1477,7 @@ var visualization,
                                             "Invalid data point specification in request, '%s'. No 'metric' or 'name' attribute specified, failing entire request.",
                                             JSON.stringify(dp, null, ' '));
                                 }
-
-                                if (dp.downsample !== undefined) {
-                                    m.downsample = dp.downsample;
-                                }
+                                
                                 if (dp.expression !== undefined) {
                                     m.expression = dp.expression;
                                 }
@@ -1527,17 +1520,7 @@ var visualization,
                  */
                 info = self.plotInfo[result.metric];
                 key = info.legend;
-                if (result.tags !== undefined) {
-                    key += '{';
-                    prefix = '';
-                    for (tag in result.tags) {
-                        if (result.tags.hasOwnProperty(tag)) {
-                            key += prefix + tag + '=' + result.tags[tag];
-                            prefix = ',';
-                        }
-                    }
-                    key += '};';
-                }
+                // TODO - use tags to make keys unique
                 plot = {
                     'key' : key,
                     'color' : info.color,
@@ -1549,7 +1532,8 @@ var visualization,
                     max = Math.max(Math.abs(dp.value), max);
                     plot.values.push({
                         'x' : dp.timestamp * 1000,
-                        'y' : dp.value
+                        // ensure value is a number
+                        'y' : typeof dp.value !== "number" ? null : dp.value
                     });
                 }
                 plots.push(plot);
