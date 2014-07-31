@@ -48,6 +48,7 @@ import org.zenoss.app.metricservice.calculators.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.*;
 
 /**
@@ -125,10 +126,17 @@ public class DefaultResultProcessor implements ResultProcessor,
 
         List<OpenTSDBQueryResult> allResults = new ArrayList<>();
 
+        BufferedReader localReader = reader;
+
+        if (log.isDebugEnabled()) {
+            localReader = logReaderInformation(localReader, "JSON Returned from OpenTSDB");
+        }
+
         ObjectMapper mapper = Utils.getObjectMapper();
 
-        OpenTSDBQueryResult[] queryResult = mapper.readValue(reader, OpenTSDBQueryResult[].class);
+        OpenTSDBQueryResult[] queryResult = mapper.readValue(localReader, OpenTSDBQueryResult[].class);
         allResults.addAll(Arrays.asList(queryResult));
+
 
         long dataPointTimeStamp = 0l;
         Tags curTags = null;
@@ -158,10 +166,10 @@ public class DefaultResultProcessor implements ResultProcessor,
 
     private void interpolateValues(Buckets<IHasShortcut> buckets) {
         for (InterpolatorType interpolatorType : interpolatorMap.keys()) {
-            log.debug("Interpolating for type: {}.", interpolatorType);
+            log.debug("Interpolating for type: [{}].", interpolatorType);
             Collection<IHasShortcut> foo = interpolatorMap.get(interpolatorType);
             for (IHasShortcut series : foo) {
-                log.debug("Series {} interpolated with {} interpolator.", series.getShortcut(), interpolatorType);
+                log.debug("Series [{}] interpolated with [{}] interpolator.", series.getShortcut(), interpolatorType);
             }
             Interpolator interpolator = InterpolatorFactory.getInterpolator(interpolatorType);
             interpolator.interpolate(buckets, interpolatorMap.get(interpolatorType));
@@ -236,5 +244,29 @@ public class DefaultResultProcessor implements ResultProcessor,
             return bucket.getValueByShortcut(name);
         }
     }
+    /**
+     * This method takes a buffered reader, logs the information that was in it, and returns a
+     * reader with the same content. It can be useful for peeking at the data stream (e.g. coming back from
+     * OpenTSDB) when debugging.
+     *
+     * @param reader The reader to display on the log
+     * @return A new reader that contains the contents of the original reader.
+     * @throws IOException
+     */
+    private static BufferedReader logReaderInformation(BufferedReader reader, String contentDescription) throws IOException {
+        StringBuffer readerPeekBuffer = new StringBuffer(4096);
+        long lineCount = 0l;
+        String line;
+        while (null != (line = reader.readLine())) {
+            lineCount++;
 
+            readerPeekBuffer.append(line);
+            readerPeekBuffer.append('\n');
+        }
+
+        String contents = readerPeekBuffer.toString();
+        reader = new BufferedReader(new StringReader(contents));
+        log.debug("{}: {}", contentDescription, contents);
+        return reader;
+    }
 }
