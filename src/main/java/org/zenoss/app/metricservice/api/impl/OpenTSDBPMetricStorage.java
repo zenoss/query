@@ -212,7 +212,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
     private static String createModifiedDownsampleRequest(String downsample, double downsampleMultiplier) {
         if (null == downsample || downsample.isEmpty() || downsampleMultiplier <= 0.0) {
-            log.warn("Bad downsample or multiplier. Returning original downsample value.");
+            log.warn("Bad downsample or multiplier. Returning original downsample value of {}.", downsample);
             return downsample;
         }
         long duration = Utils.parseDuration(downsample);

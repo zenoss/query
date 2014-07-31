@@ -44,7 +44,7 @@ public class TestAndDebugUtilities {
     private static final Logger log = LoggerFactory.getLogger(TestAndDebugUtilities.class);
 
     /**
-     * This method takes a buffered reader, logs the intformation that was in it, and returns a
+     * This method takes a buffered reader, logs the information that was in it, and returns a
      * reader with the same content. It can be useful for peeking at the data stream (e.g. coming back from
      * OpenTSDB) when debugging.
      *
