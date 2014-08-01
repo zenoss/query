@@ -568,8 +568,7 @@
                     'dataType' : 'json',
                     'contentType' : 'application/json',
                     'success' : function(data) {
-                        var results = self.__processResult(self.request,
-                                data);
+                        var results = self.__processResult(self.request, data);
                         self.plots = results[0];
                         self.__configAutoScale(results[1]);
 
@@ -758,10 +757,48 @@
          *          chart library.
          */
         __processResultAsSeries: function(request, data) {
-            var self = this, plots = [], max = 0, i, result, dpi, dp, info, key, plot, tag, prefix;
+            var plots = [],
+                max = 0;
 
-            for (i in data.results) {
-                result = data.results[i];
+            // ensure that enough data was returned (ie: you queried for
+            // a week, but only have a days worth of data). If not, pad
+            // out with null values
+            var drange = data.endTimeActual - data.startTimeActual;
+
+            data.results.forEach(function(series){
+
+                // if there are not at least 2 datapoints, don't
+                // bother with this series
+                if(!series.datapoints || !series.datapoints[1]){
+                    series.datapoints = [];
+
+                // otherwise, determine if there are the requested number
+                // of datapoints
+                } else {
+                    var interval = series.datapoints[1].timestamp - series.datapoints[0].timestamp,
+                        expectedNumPoints = Math.ceil(drange / interval),
+                        delta = expectedNumPoints - series.datapoints.length,
+                        // NOTE - errMargin might need a bit of tuning.
+                        errMargin = 1;
+                    
+                    // if missing datapoints, fill them in with null values
+                    if( delta > errMargin ){
+                        console.log("expected", expectedNumPoints, "got", series.datapoints.length, "delta:", delta, "errMargin:", errMargin);
+                        
+                        // NOTE: assuming that the missing points are due to
+                        // reaching the beginning of the available metric data,
+                        // so padded points go to the beginning of the series
+                        for(var i = 0; i < delta; i++){
+                            series.datapoints.unshift({
+                                timestamp: series.datapoints[0].timestamp - (interval * (i + 1)),
+                                value: null
+                            });
+                        }
+                    }
+                }
+
+                // create plots from each datapoint
+                var dp, info, key, plot;
 
                 /*
                  * The key for a series plot will be its distinguishing
@@ -769,7 +806,7 @@
                  * use any mapping from metric name to legend value that was part of
                  * the original request.
                  */
-                info = self.plotInfo[result.metric];
+                info = this.plotInfo[series.metric];
                 key = info.legend;
                 // TODO - use tags to make keys unique
                 plot = {
@@ -778,8 +815,8 @@
                     'fill' : info.fill,
                     'values' : []
                 };
-                for (dpi in result.datapoints) {
-                    dp = result.datapoints[dpi];
+                for (var dpi in series.datapoints) {
+                    dp = series.datapoints[dpi];
                     max = Math.max(Math.abs(dp.value), max);
                     plot.values.push({
                         'x' : dp.timestamp * 1000,
@@ -788,7 +825,8 @@
                     });
                 }
                 plots.push(plot);
-            }
+
+            }.bind(this));
 
             return [ plots, this.__calculateAutoScaleFactor(max) ];
         },
@@ -821,7 +859,7 @@
             plots = results[0];
 
             // add overlays
-            if (this.overlays.length && plots.length) {
+            if (this.overlays.length && plots.length && plots[0].values.length) {
                 for (i in this.overlays) {
                     overlay = this.overlays[i];
                     // get the date range
@@ -883,12 +921,14 @@
          *            the new data to display in the chart
          */
         __updateData: function(data) {
+
             if (!this.__havePlotData()) {
                 this.__showNoData();
             } else {
                 this.__showChart();
                 this.impl.update(this, data);
             }
+
             if (this.__updateFooter(data)) {
                 this.__resize();
             }
