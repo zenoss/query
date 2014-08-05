@@ -35,6 +35,14 @@
   border-color: #c1c1c1;
 }
 
+/* customize graph appearance */
+
+/* make graph points visible */
+.nvd3.nv-line .nvd3.nv-scatter .nv-groups .nv-point {
+  fill-opacity: .5 !important;
+  stroke-opacity: .5 !important;
+}
+
 /*****************************************************************************
  * Styles to handle graph footers
  */

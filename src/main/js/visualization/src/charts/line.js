@@ -30,10 +30,13 @@
 
             _chart.model().xAxis.tickFormat(function(ts) {
                 return chart.tickFormat(data.startTimeActual,
-                        data.endTimeActual, ts, chart.timezone);
+                    data.endTimeActual, ts, chart.timezone);
             });
-            chart.svg.datum(chart.plots).transition().duration(0).call(
-                    _chart.model());
+
+            chart.svg
+                .datum(chart.plots)
+                .transition().duration(0)
+                .call(_chart.model());
         },
 
         build : function(chart, data) {
@@ -43,7 +46,7 @@
 
             model.xAxis.tickFormat(function(ts) {
                 return chart.tickFormat(data.startTimeActual,
-                        data.endTimeActual, ts, chart.timezone);
+                    data.endTimeActual, ts, chart.timezone);
             });
             model.yAxis.tickFormat(function(value) {
                 return chart.formatValue(value);
@@ -68,9 +71,14 @@
                 });
             });
 
-            model.lines.isArea(function(d) {
-                return d.fill;
-            });
+            model.lines
+                .defined(function(d){
+                    return d.y !== null;
+                })
+                .isArea(function(d) {
+                    return d.fill;
+                });
+
             return _chart;
         },
 
