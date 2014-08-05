@@ -27,7 +27,6 @@
     
     var DEFAULT_NUMBER_FORMAT = "%6.2f";
 
-
     Chart = function(name, config) {
         this.name = name;
         this.config = config;
@@ -591,45 +590,14 @@
                         }
                     },
                     'error' : function(res) {
-                        /*
-                         * Many, many reasons that we might have gotten
-                         * here, with most of them we are not able to detect
-                         * why. If we have a readystate of 4 and an response
-                         * code in the 200s that likely means we were unable
-                         * to parse the JSON returned from the server. If
-                         * not that then who knows ....
-                         */
                         self.plots = undefined;
+
+                        self.__showNoData();
                         if (self.__updateFooter()) {
                             self.__resize();
                         }
 
-                        var err, detail;
-                        if (res.readyState === 4 &&
-                                Math.floor(res.status / 100) === 2) {
-                            detail = 'Severe: Unable to parse data returned from Zenoss metric service as JSON object. Please copy / paste the REQUEST and RESPONSE written to your browser\'s Java Console into an email to Zenoss Support';
-                            debug.__group('Severe error, please report');
-                            debug.__error('REQUEST : POST ' + visualization.urlPerformance + '  ' + JSON.stringify(self.request));
-                            debug.__error('RESPONSE: ' + res.responseText);
-                            debug.__groupEnd();
-                            self.__showError(detail);
-                        } else {
-                            try {
-                                err = JSON.parse(res.responseText);
-                                if (!err || !err.errorSoruce || !err.errorMessage) {
-                                    detail = 'An unexpected failure response was received from the server. The reported message is: ' +
-                                        res.responseText;
-                                } else {
-                                    detail = 'An unexpected failure response was received from the server. The reported message is: ' +
-                                        err.errorSource + ' : ' + err.errorMessage;
-                                }
-                            } catch (e) {
-                                detail = 'An unexpected failure response was received from the server. The reported message is: ' +
-                                    res.statusText + ' : ' + res.status;
-                            }
-                            debug.__error(detail);
-                            self.__showError(detail);
-                        }
+                        console.error(res.statusText, ":", res.responseText);
                     }
                 });
             } catch (x) {
@@ -759,56 +727,52 @@
         __processResultAsSeries: function(request, data) {
             var plots = [],
                 max = 0;
-
-            // ensure that enough data was returned (ie: you queried for
-            // a week, but only have a days worth of data). If not, pad
-            // out with null values
-            var drange = data.endTimeActual - data.startTimeActual;
+            
+            var start = data.startTimeActual,
+                end = data.endTimeActual,
+                drange = end - start,
+                // allowable deviation expected start/end points
+                drangeDeviation = drange * 0.2;
 
             data.results.forEach(function(series){
 
-                // if there are not at least 2 datapoints, don't
-                // bother with this series
-                if(!series.datapoints || !series.datapoints[1]){
-                    series.datapoints = [];
-
-                // otherwise, determine if there are the requested number
-                // of datapoints
-                } else {
-                    var interval = series.datapoints[1].timestamp - series.datapoints[0].timestamp,
-                        expectedNumPoints = Math.ceil(drange / interval),
-                        delta = expectedNumPoints - series.datapoints.length,
-                        // NOTE - errMargin might need a bit of tuning.
-                        errMargin = 1;
-                    
-                    // if missing datapoints, fill them in with null values
-                    if( delta > errMargin ){
-                        console.log("expected", expectedNumPoints, "got", series.datapoints.length, "delta:", delta, "errMargin:", errMargin);
-                        
-                        // NOTE: assuming that the missing points are due to
-                        // reaching the beginning of the available metric data,
-                        // so padded points go to the beginning of the series
-                        for(var i = 0; i < delta; i++){
-                            series.datapoints.unshift({
-                                timestamp: series.datapoints[0].timestamp - (interval * (i + 1)),
-                                value: null
-                            });
-                        }
-                    }
-                }
-
-                // create plots from each datapoint
                 var dp, info, key, plot;
 
-                /*
-                 * The key for a series plot will be its distinguishing
-                 * characteristics, which is the metric name and the tags. We will
-                 * use any mapping from metric name to legend value that was part of
-                 * the original request.
-                 */
+                // if series.datapoints is not defined, or the number
+                // of datapoints is less than 2, put empty start/end vals
+                // NOTE: you need at least 2 datapoints to draw a line
+                if(!series.datapoints || (series.datapoints && series.datapoints.length < 2)){
+                    series.datapoints = [{
+                        timestamp: start,
+                        value: null
+                    },{
+                        timestamp: end,
+                        value: null
+                    }];
+                }
+
+                // ensure the series starts at the expected time (or near it at least)
+                if(series.datapoints[0].timestamp !== start && series.datapoints[0].timestamp - start > drangeDeviation){
+                    series.datapoints.unshift({
+                        timestamp: start,
+                        value: null
+                    });
+                }
+                // ensure the series ends at the expected time (or near it at least)
+                if(series.datapoints[series.datapoints.length-1].timestamp !== end &&
+                    (end - series.datapoints[series.datapoints.length-1].timestamp) > drangeDeviation)
+                {
+                    series.datapoints.push({
+                        timestamp: end,
+                        value: null
+                    });
+                }
+
+
+                // create plots from each datapoint
                 info = this.plotInfo[series.metric];
                 key = info.legend;
-                // TODO - use tags to make keys unique
+                // TODO - use tags to make key unique
                 plot = {
                     'key' : key,
                     'color' : info.color,
