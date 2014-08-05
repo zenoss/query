@@ -34,12 +34,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
- * 
+ *
  */
 public class MetricSpecificationTest {
 
@@ -72,7 +71,7 @@ public class MetricSpecificationTest {
         // The to result will be different from the input as the toString
         // method always outputs the downsample and then the rate
         MetricSpecification mq = test("avg:rate:10s-ago:laLoadInt",
-                "avg:10s-ago:rate:laLoadInt");
+            "avg:10s-ago:rate:laLoadInt");
         Assert.assertEquals("avg", mq.getAggregator().toString());
         Assert.assertEquals(true, mq.getRate());
         Assert.assertEquals("10s-ago", mq.getDownsample());
@@ -84,7 +83,7 @@ public class MetricSpecificationTest {
         // The to result will be different from the input as the toString
         // method always outputs the downsample and then the rate
         MetricSpecification mq = test("sum:rate:10s-ago:laLoadInt",
-                "sum:10s-ago:rate:laLoadInt");
+            "sum:10s-ago:rate:laLoadInt");
         Assert.assertEquals("sum", mq.getAggregator().toString());
         Assert.assertEquals(true, mq.getRate());
         Assert.assertEquals("10s-ago", mq.getDownsample());
@@ -96,7 +95,7 @@ public class MetricSpecificationTest {
         // The to result will be different from the input as the toString
         // method always outputs the downsample and then the rate
         MetricSpecification mq = test("min:rate:10s-ago:laLoadInt",
-                "min:10s-ago:rate:laLoadInt");
+            "min:10s-ago:rate:laLoadInt");
         Assert.assertEquals("min", mq.getAggregator().toString());
         Assert.assertEquals(true, mq.getRate());
         Assert.assertEquals("10s-ago", mq.getDownsample());
@@ -108,7 +107,7 @@ public class MetricSpecificationTest {
         // The to result will be different from the input as the toString
         // method always outputs the downsample and then the rate
         MetricSpecification mq = test("max:rate:10s-ago:laLoadInt",
-                "max:10s-ago:rate:laLoadInt");
+            "max:10s-ago:rate:laLoadInt");
         Assert.assertEquals("max", mq.getAggregator().toString());
         Assert.assertEquals(true, mq.getRate());
         Assert.assertEquals("10s-ago", mq.getDownsample());
@@ -120,7 +119,7 @@ public class MetricSpecificationTest {
         // The to result will be different from the input as the toString
         // method always outputs the downsample and then the rate
         MetricSpecification mq = test("avg:10s-ago:laLoadInt",
-                "avg:10s-ago:laLoadInt");
+            "avg:10s-ago:laLoadInt");
         Assert.assertEquals("avg", mq.getAggregator().toString());
         Assert.assertEquals(false, mq.getRate());
         Assert.assertEquals("10s-ago", mq.getDownsample());
@@ -132,7 +131,7 @@ public class MetricSpecificationTest {
         // The to result will be different from the input as the toString
         // method always outputs the downsample and then the rate
         MetricSpecification mq = test("avg:rate:laLoadInt",
-                "avg:rate:laLoadInt");
+            "avg:rate:laLoadInt");
         Assert.assertEquals("avg", mq.getAggregator().toString());
         Assert.assertEquals(true, mq.getRate());
         Assert.assertNull(mq.getDownsample());
@@ -155,8 +154,8 @@ public class MetricSpecificationTest {
         // The to result will be different from the input as the toString
         // method always outputs the downsample and then the rate
         MetricSpecification mq = test(
-                "avg:rate:10s-ago:laLoadInt{tag1=value1,tag2=value2}",
-                "avg:10s-ago:rate:laLoadInt");
+            "avg:rate:10s-ago:laLoadInt{tag1=value1,tag2=value2}",
+            "avg:10s-ago:rate:laLoadInt");
         Assert.assertEquals("avg", mq.getAggregator().toString());
         Assert.assertEquals(true, mq.getRate());
         Assert.assertEquals("10s-ago", mq.getDownsample());
@@ -168,8 +167,8 @@ public class MetricSpecificationTest {
         // The to result will be different from the input as the toString
         // method always outputs the downsample and then the rate
         MetricSpecification mq = test(
-                "sum:rate:10s-ago:laLoadInt{tag1=value1,tag2=value2}",
-                "sum:10s-ago:rate:laLoadInt");
+            "sum:rate:10s-ago:laLoadInt{tag1=value1,tag2=value2}",
+            "sum:10s-ago:rate:laLoadInt");
         Assert.assertEquals("sum", mq.getAggregator().toString());
         Assert.assertEquals(true, mq.getRate());
         Assert.assertEquals("10s-ago", mq.getDownsample());
@@ -181,8 +180,8 @@ public class MetricSpecificationTest {
         // The to result will be different from the input as the toString
         // method always outputs the downsample and then the rate
         MetricSpecification mq = test(
-                "min:rate:10s-ago:laLoadInt{tag1=value1,tag2=value2}",
-                "min:10s-ago:rate:laLoadInt");
+            "min:rate:10s-ago:laLoadInt{tag1=value1,tag2=value2}",
+            "min:10s-ago:rate:laLoadInt");
         Assert.assertEquals("min", mq.getAggregator().toString());
         Assert.assertEquals(true, mq.getRate());
         Assert.assertEquals("10s-ago", mq.getDownsample());
@@ -194,8 +193,8 @@ public class MetricSpecificationTest {
         // The to result will be different from the input as the toString
         // method always outputs the downsample and then the rate
         MetricSpecification mq = test(
-                "max:rate:10s-ago:laLoadInt{tag1=value1,tag2=value2}",
-                "max:10s-ago:rate:laLoadInt");
+            "max:rate:10s-ago:laLoadInt{tag1=value1,tag2=value2}",
+            "max:10s-ago:rate:laLoadInt");
         Assert.assertEquals("max", mq.getAggregator().toString());
         Assert.assertEquals(true, mq.getRate());
         Assert.assertEquals("10s-ago", mq.getDownsample());
@@ -207,8 +206,8 @@ public class MetricSpecificationTest {
         // The to result will be different from the input as the toString
         // method always outputs the downsample and then the rate
         MetricSpecification mq = test(
-                "avg:10s-ago:laLoadInt{tag1=value1,tag2=value2}",
-                "avg:10s-ago:laLoadInt");
+            "avg:10s-ago:laLoadInt{tag1=value1,tag2=value2}",
+            "avg:10s-ago:laLoadInt");
         Assert.assertEquals("avg", mq.getAggregator().toString());
         Assert.assertEquals(false, mq.getRate());
         Assert.assertEquals("10s-ago", mq.getDownsample());
@@ -220,8 +219,8 @@ public class MetricSpecificationTest {
         // The to result will be different from the input as the toString
         // method always outputs the downsample and then the rate
         MetricSpecification mq = test(
-                "avg:rate:laLoadInt{tag1=value1,tag2=value2}",
-                "avg:rate:laLoadInt");
+            "avg:rate:laLoadInt{tag1=value1,tag2=value2}",
+            "avg:rate:laLoadInt");
         Assert.assertEquals("avg", mq.getAggregator().toString());
         Assert.assertEquals(true, mq.getRate());
         Assert.assertNull(mq.getDownsample());
@@ -233,7 +232,7 @@ public class MetricSpecificationTest {
         // The to result will be different from the input as the toString
         // method always outputs the downsample and then the rate
         MetricSpecification mq = test("laLoadInt{tag1=value1,tag2=value2}",
-                "avg:laLoadInt");
+            "avg:laLoadInt");
         Assert.assertEquals("avg", mq.getAggregator().toString());
         Assert.assertEquals(false, mq.getRate());
         Assert.assertNull(mq.getDownsample());
@@ -243,6 +242,76 @@ public class MetricSpecificationTest {
     @Test
     public void downsampleFirstTest() {
         test("avg:10s-avg:rate:laLoadInt{tag1=value1,tag2=value2}",
-                "avg:10s-avg:rate:laLoadInt");
+            "avg:10s-avg:rate:laLoadInt");
+    }
+
+    @Test
+    public void tagMergeTest() {
+        MetricSpecification testSubject = new MetricSpecification();
+        Map<String, List<String>> initialTags = new HashMap<>();
+        initialTags.put("key1",new ArrayList<>(Arrays.asList("k1v1","k1v2","k1v3")));
+        initialTags.put("key2",new ArrayList<>(Arrays.asList("k2v1","k2v2","k2v3")));
+        testSubject.setTags(initialTags);
+        Map<String, List<String>> additionalTags = new HashMap<>();
+        additionalTags.put("key2", new ArrayList<>(Arrays.asList("k2v3", "k2v4", "k2v5")));
+        additionalTags.put("key3", new ArrayList<>(Arrays.asList("k3v1", "k3v2")));
+        testSubject.mergeTags(additionalTags);
+        Map<String, List<String>> tsTags = testSubject.getTags();
+        List<String> k1Tags = tsTags.get("key1");
+        for (String value : Arrays.asList("k1v1","k1v2","k1v3")) {
+            Assert.assertTrue("Tags should contain value " + value + " for key 1", k1Tags.contains(value));
+        }
+        List<String> k2Tags = tsTags.get("key2");
+        for (String value : Arrays.asList("k2v1","k2v2","k2v3","k2v4","k2v5")) {
+            Assert.assertTrue("Tags should contain value " + value + " for key 2",k2Tags.contains(value));
+        }
+        List<String> k3Tags = tsTags.get("key3");
+        for (String value : Arrays.asList("k3v1","k3v2")) {
+            Assert.assertTrue("Tags should contain value " + value + " for key 3",k3Tags.contains(value));
+        }
+        List<String> k4Tags = tsTags.get("key4");
+        Assert.assertNull("there should be no entry for key4.", k4Tags);
+    }
+
+    @Test
+    public void tagMergeIntoNullTest() {
+        MetricSpecification testSubject = new MetricSpecification();
+        Map<String, List<String>> additionalTags = new HashMap<>();
+        additionalTags.put("key2", new ArrayList<>(Arrays.asList("k2v3", "k2v4", "k2v5")));
+        additionalTags.put("key3", new ArrayList<>(Arrays.asList("k3v1", "k3v2")));
+        testSubject.mergeTags(additionalTags);
+        Map<String, List<String>> tsTags = testSubject.getTags();
+        List<String> k2Tags = tsTags.get("key2");
+        for (String value : Arrays.asList("k2v3","k2v4","k2v5")) {
+            Assert.assertTrue("Tags should contain value " + value + " for key 2",k2Tags.contains(value));
+        }
+        List<String> k3Tags = tsTags.get("key3");
+        for (String value : Arrays.asList("k3v1","k3v2")) {
+            Assert.assertTrue("Tags should contain value " + value + " for key 3",k3Tags.contains(value));
+        }
+        List<String> k4Tags = tsTags.get("key4");
+        Assert.assertNull("there should be no entry for key4.", k4Tags);
+    }
+
+    @Test
+    public void tagInitializeTest() {
+        MetricSpecification testSubject = new MetricSpecification();
+        Map<String, List<String>> initialTags = new HashMap<>();
+        initialTags.put("key1",new ArrayList<>(Arrays.asList("k1v1","k1v2","k1v3")));
+        initialTags.put("key2",new ArrayList<>(Arrays.asList("k2v1","k2v2","k2v3")));
+        testSubject.setTags(initialTags);
+        Map<String, List<String>> tsTags = testSubject.getTags();
+        List<String> k1Tags = tsTags.get("key1");
+        for (String value : Arrays.asList("k1v1","k1v2","k1v3")) {
+            Assert.assertTrue("Tags should contain value " + value + " for key 1", k1Tags.contains(value));
+        }
+        List<String> k2Tags = tsTags.get("key2");
+        for (String value : Arrays.asList("k2v1","k2v2","k2v3")) {
+            Assert.assertTrue("Tags should contain value " + value + " for key 2",k2Tags.contains(value));
+        }
+        testSubject.setTags(null);
+        tsTags = testSubject.getTags();
+        Assert.assertNotNull("After setting tags to null, getTags() should return an empty collection (not NULL)");
+        Assert.assertTrue("After setting tags to null, getTags() should return an empty collection.", tsTags.isEmpty());
     }
 }
