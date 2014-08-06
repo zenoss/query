@@ -37,6 +37,8 @@
                 .datum(chart.plots)
                 .transition().duration(0)
                 .call(_chart.model());
+
+            this.styleThresholds(chart.div);
         },
 
         build : function(chart, data) {
@@ -66,10 +68,13 @@
             chart.svg.datum(chart.plots);
             nv.addGraph(function() {
                 chart.svg.transition().duration(0).call(model);
+                this.styleThresholds(chart.div);
+
                 nv.utils.windowResize(function() {
                     chart.svg.call(model);
-                });
-            });
+                    this.styleThresholds(chart.div);
+                }.bind(this));
+            }.bind(this));
 
             model.lines
                 .defined(function(d){
@@ -89,6 +94,16 @@
         },
 
         render : function() {
+        },
+
+        // look for series' that are actually thresholds
+        // and style them differently
+        styleThresholds: function(el){
+            $(el).find(".nv-series .nv-legend-text").each(function(i, legend){
+                if(~$(legend).text().indexOf("*")){
+                    legend.classList.add("threshold");
+                }
+            });
         }
     };
     $.extend(true, zenoss.visualization.chart, {

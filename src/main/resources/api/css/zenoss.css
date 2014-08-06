@@ -43,6 +43,11 @@
   stroke-opacity: .5 !important;
 }
 
+.nv-legend-text.threshold {
+  fill: #888;
+  font-style: italic;
+}
+
 /*****************************************************************************
  * Styles to handle graph footers
  */

@@ -1578,7 +1578,7 @@ var visualization,
                     // get the date range
                     firstMetric = plots[0];
                     plot = {
-                        'key' : overlay.legend,
+                        'key' : overlay.legend + "*",
                         'disabled' : true,
                         'values' : [],
                         'color' : overlay.color
