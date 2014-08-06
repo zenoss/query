@@ -236,7 +236,7 @@ public class MetricSpecification {
 
     /**
      * @param newTags
-     *            the tags to set
+     *            the tags to merge with the existing tags.
      */
     public final void mergeTags(Map<String, List<String>> newTags) {
         if (null == newTags) {

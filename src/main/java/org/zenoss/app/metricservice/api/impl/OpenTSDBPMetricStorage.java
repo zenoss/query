@@ -160,7 +160,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             log.error("{} Exception {} caught executing HTTP Post: {}",e.getClass().getName(), e, e.getMessage());
             throw e;
         }
-        log.info("Response from httpClient.execute was {}", response);
+        log.debug("Response from httpClient.execute was {}", response);
         return response;
     }
 
