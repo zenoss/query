@@ -44,10 +44,6 @@ import java.util.Map;
 
 import static org.springframework.util.StringUtils.arrayToDelimitedString;
 
-/**
- * @author David Bainbridge <dbainbridge@zenoss.com>
- *
- */
 @JsonInclude(Include.NON_NULL)
 public class MetricSpecification {
 
@@ -81,7 +77,7 @@ public class MetricSpecification {
     private String expression = null;
 
     @JsonProperty
-    private Map<String, List<String>> tags = new HashMap<String, List<String>>();
+    private Map<String, List<String>> tags = new HashMap<>();
 
     @JsonProperty
     private boolean emit = true;
@@ -235,6 +231,25 @@ public class MetricSpecification {
             initializeTags();
         } else {
             this.tags = tags;
+        }
+    }
+
+    /**
+     * @param newTags
+     *            the tags to merge with the existing tags.
+     */
+    public final void mergeTags(Map<String, List<String>> newTags) {
+        if (null == newTags) {
+            return;
+        }
+
+        for (Map.Entry<String, List<String>> tagEntry : newTags.entrySet()) {
+            if (tags.containsKey(tagEntry.getKey())) {
+                List<String> tagList = tags.get(tagEntry.getKey());
+                tagList.addAll(tagEntry.getValue());
+            } else {
+                tags.put(tagEntry.getKey(), tagEntry.getValue());
+            }
         }
     }
 

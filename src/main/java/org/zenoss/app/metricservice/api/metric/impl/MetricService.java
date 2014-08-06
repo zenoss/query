@@ -434,7 +434,7 @@ public class MetricService implements MetricServiceAPI {
             }
             for (MetricSpecification query : queries) {
                 query.validateWithErrorHandling(errors);
-                query.setTags(this.tags);
+                query.mergeTags(this.tags);
             }
         }
 
