@@ -30,10 +30,15 @@
 
             _chart.model().xAxis.tickFormat(function(ts) {
                 return chart.tickFormat(data.startTimeActual,
-                        data.endTimeActual, ts, chart.timezone);
+                    data.endTimeActual, ts, chart.timezone);
             });
-            chart.svg.datum(chart.plots).transition().duration(0).call(
-                    _chart.model());
+
+            chart.svg
+                .datum(chart.plots)
+                .transition().duration(0)
+                .call(_chart.model());
+
+            this.styleThresholds(chart.div);
         },
 
         build : function(chart, data) {
@@ -43,7 +48,7 @@
 
             model.xAxis.tickFormat(function(ts) {
                 return chart.tickFormat(data.startTimeActual,
-                        data.endTimeActual, ts, chart.timezone);
+                    data.endTimeActual, ts, chart.timezone);
             });
             model.yAxis.tickFormat(function(value) {
                 return chart.formatValue(value);
@@ -63,14 +68,22 @@
             chart.svg.datum(chart.plots);
             nv.addGraph(function() {
                 chart.svg.transition().duration(0).call(model);
+                this.styleThresholds(chart.div);
+
                 nv.utils.windowResize(function() {
                     chart.svg.call(model);
-                });
-            });
+                    this.styleThresholds(chart.div);
+                }.bind(this));
+            }.bind(this));
 
-            model.lines.isArea(function(d) {
-                return d.fill;
-            });
+            model.lines
+                .defined(function(d){
+                    return d.y !== null;
+                })
+                .isArea(function(d) {
+                    return d.fill;
+                });
+
             return _chart;
         },
 
@@ -81,6 +94,16 @@
         },
 
         render : function() {
+        },
+
+        // look for series' that are actually thresholds
+        // and style them differently
+        styleThresholds: function(el){
+            $(el).find(".nv-series .nv-legend-text").each(function(i, legend){
+                if(~$(legend).text().indexOf("*")){
+                    legend.classList.add("threshold");
+                }
+            });
         }
     };
     $.extend(true, zenoss.visualization.chart, {

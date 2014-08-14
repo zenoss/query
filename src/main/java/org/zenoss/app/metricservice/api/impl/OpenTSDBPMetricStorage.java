@@ -54,7 +54,6 @@ import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.regex.Pattern;
 
 
 @API
@@ -153,7 +152,16 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         StringEntity input = new StringEntity(jsonQueryString);
         input.setContentType("application/json");
         postRequest.setEntity(input);
-        return httpClient.execute(postRequest);
+        // Extra debug code to assist with diagnosing cause of ZEN-13307
+        HttpResponse response;
+        try {
+            response = httpClient.execute(postRequest);
+        } catch (IOException | RuntimeException e) {
+            log.error("{} Exception {} caught executing HTTP Post: {}",e.getClass().getName(), e, e.getMessage());
+            throw e;
+        }
+        log.debug("Response from httpClient.execute was {}", response);
+        return response;
     }
 
     private static OpenTSDBSubQuery openTSDBSubQueryFromMetricSpecification(MetricSpecification metricSpecification) {
