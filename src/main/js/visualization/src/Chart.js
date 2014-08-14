@@ -537,7 +537,7 @@
             // i.e. we don't expect that you can change the type of the graph but
             // you
             // should be able to change the date range.
-            this.config = utils.__merge(this.config, changeset);
+            this.config = utils.__merge(this.config, changeset, true);
 
             // A special check for the removal of items from the config. If the
             // value
