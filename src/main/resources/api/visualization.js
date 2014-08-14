@@ -55,9 +55,11 @@ var visualization,
          *            base the object to which values are to be merged into
          * @param {object}
          *            extend the object from which values are merged
+         * @param {bool}
+         *            tells merge to overwrite arrays instead of concat
          * @returns {object} the merged object
          */
-        __merge: function __merge(base, extend) {
+        __merge: function __merge(base, extend, overwriteArrays) {
             var m, k, v;
             if (debug.debug) {
                 debug.__groupCollapsed('Object Merge');
@@ -88,10 +90,16 @@ var visualization,
             for (k in extend) {
                 if (extend.hasOwnProperty(k)) {
                     v = extend[k];
-                    if (v.constructor === Number || v.constructor === String) {
+                    if(v === null || v === undefined){
+                        m[k] = v;
+                    } else if (v.constructor === Number || v.constructor === String) {
                         m[k] = v;
                     } else if (v instanceof Array) {
-                        m[k] = $.merge(m[k], v);
+                        if(overwriteArrays){
+                            m[k] = v;
+                        } else {
+                            m[k] = $.merge(m[k], v);
+                        }
                     } else if (v instanceof Object) {
                         if (m[k] === undefined) {
                             m[k] = $.extend({}, v);
@@ -1328,7 +1336,7 @@ var visualization,
             // i.e. we don't expect that you can change the type of the graph but
             // you
             // should be able to change the date range.
-            this.config = utils.__merge(this.config, changeset);
+            this.config = utils.__merge(this.config, changeset, true);
 
             // A special check for the removal of items from the config. If the
             // value
