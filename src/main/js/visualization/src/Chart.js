@@ -719,7 +719,6 @@
                                 if(expressionMetric){
                                     request.metrics.push(expressionMetric);
                                 }
-                                request.metrics.push(m);
                             });
 
                 }
