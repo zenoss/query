@@ -6,7 +6,7 @@
     <properties>
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
-        <zapp.version>0.0.15</zapp.version>
+        <zapp.version>0.0.16</zapp.version>
         <metric-consumer.version>0.0.6</metric-consumer.version>
         <jersey.version>1.15</jersey.version>
         <mockito.version>1.9.5</mockito.version>
@@ -20,7 +20,7 @@
 
     <groupId>org.zenoss</groupId>
     <artifactId>central-query</artifactId>
-    <version>0.0.9</version>
+    <version>0.0.10</version>
     <dependencies>
         <dependency>
             <groupId>org.zenoss.zapp</groupId>
