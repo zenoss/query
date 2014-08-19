@@ -640,9 +640,6 @@ var visualization,
 (function(){
     "use strict";
 
-    // dictionary of existing charts
-    var __charts = {};
-
     /**
      * @memberOf zenoss
      * @namespace
@@ -695,7 +692,7 @@ var visualization,
              *            changes to the chart
              */
             update : function(name, changes) {
-                var found = __charts[name];
+                var found = getChart(name);
                 if (found === undefined) {
                     debug.__warn('Attempt to modify a chart, "' + name +
                         '", that does not exist.');
@@ -740,19 +737,50 @@ var visualization,
 
                 if (!window.jQuery) {
                     dependency.__bootstrap(function() {
-                        __charts[name] = new Chart(name, config);
+                        cacheChart(new Chart(name, config));
                     });
                     return;
                 }
 
-                __charts[name] = new Chart(name, config);
+                cacheChart(new Chart(name, config));
             },
 
-            getChart: function(id){
-                return __charts[id];
-            }
+            // expose chart cache getter
+            getChart: getChart
         }
     };
+
+
+    // chart cache with getter/setters
+    var chartCache = {};
+
+    function cacheChart(chart){
+        var numCharts;
+
+        chartCache[chart.name] = chart;
+
+        // automatically remove this chart
+        // if the containing dom element
+        // is destroyed
+        chart.onDestroyed = function(e){
+            removeChart(chart.name);
+        };
+
+        // if there are many charts in here
+        // this could indicate a problem
+        numCharts = Object.keys(chartCache).length;
+        if(numCharts > 12){
+            console.warn("There are", numCharts, "cached charts. This can lead to performance issues.");
+        }
+    }
+
+    function removeChart(name){
+        delete chartCache[name];
+    }
+
+    function getChart(name){
+        return chartCache[name];
+    }
 
 })();
 /**
@@ -788,10 +816,15 @@ var visualization,
         this.name = name;
         this.config = config;
         this.yAxisLabel = config.yAxisLabel;
-        this.div = $('#' + this.name);
-        if (this.div[0] === undefined) {
-            throw new utils.Error('SelectorError',
-                    'unknown selector specified, "' + this.name + '"');
+
+        this.$div = $('#' + this.name);
+
+        // listen for the container div to be removed and 
+        // call cleanup method
+        this.$div.on("DOMNodeRemovedFromDocument", this.__onDestroyed.bind(this));
+
+        if (!this.$div.length) {
+            throw new utils.Error('SelectorError', 'unknown selector specified, "' + this.name + '"');
         }
 
         // Build up a map of metric name to legend label.
@@ -809,17 +842,17 @@ var visualization,
         this.timezone = config.timezone || jstz.determine().name();
         this.svgwrapper = document.createElement('div');
         $(this.svgwrapper).addClass('zenchart');
-        $(this.div).append($(this.svgwrapper));
+        this.$div.append($(this.svgwrapper));
         this.containerSelector = '#' + name + ' .zenchart';
 
         this.message = document.createElement('div');
         $(this.message).addClass('message');
         $(this.message).css('display', 'none');
-        $(this.div).append($(this.message));
+        this.$div.append($(this.message));
 
         this.footer = document.createElement('div');
         $(this.footer).addClass('zenfooter');
-        $(this.div).append($(this.footer));
+        this.$div.append($(this.footer));
 
         this.svg = d3.select(this.svgwrapper).append('svg');
         try {
@@ -860,6 +893,15 @@ var visualization,
      */
     Chart.prototype = {
         constructor: Chart,
+
+        __onDestroyed: function(e){
+            // check if the removed element is the chart container
+            if(this.$div[0] === e.target){
+                if(typeof this.onDestroyed === "function"){
+                    this.onDestroyed.call(this, e);
+                }
+            }
+        },
 
         __scaleSymbol: function(factor) {
             var ll, idx;
@@ -1021,7 +1063,7 @@ var visualization,
 
             fheight = this.__hasFooter() ? parseInt($(this.table).outerHeight(), 10)
                     : 0;
-            height = parseInt($(this.div).height(), 10) - fheight;
+            height = parseInt(this.$div.height(), 10) - fheight;
             span = $(this.message).find('span');
 
             $(this.svgwrapper).outerHeight(height);
@@ -1412,12 +1454,15 @@ var visualization,
                     request.metrics = [];
                     config.datapoints
                             .forEach(function(dp) {
-                                var m = {}, key;
+                                var m = {}, key, expressionMetric;
                                 if (dp.metric !== undefined) {
                                     m.metric = dp.metric;
 
                                     if (dp.rate !== undefined) {
                                         m.rate = dp.rate;
+                                    }
+                                    if (dp.rateOptions !== undefined && dp.rateOptions !== null) {
+                                        m.rateOptions = dp.rateOptions;
                                     }
                                     if (dp.aggregator !== undefined) {
                                         m.aggregator = dp.aggregator;
@@ -1449,18 +1494,30 @@ var visualization,
                                      * confused as to why partial data is returned.
                                      */
                                     throw sprintf(
-                                            "Invalid data point specification in request, '%s'. No 'metric' or 'name' attribute specified, failing entire request.",
-                                            JSON.stringify(dp, null, ' '));
+                                        "Invalid data point specification in request, '%s'. No 'metric' or 'name' attribute specified, failing entire request.",
+                                        JSON.stringify(dp, null, ' '));
                                 }
                                 
-                                if (dp.expression !== undefined) {
-                                    m.expression = dp.expression;
+                                if (dp.expression) {
+                                    expressionMetric = {
+                                        name: m.name,
+                                        // rewrite the expression to look for the
+                                        // renamed datapoint
+                                        expression: dp.expression.replace("rpn:", "rpn:"+ m.name + "-rpn,")
+                                    };
+
+                                    // original datapoint is now just a vehicle for the
+                                    // expression to evaluate against
+                                    m.emit = false;
+                                    m.name = m.name + "-rpn";
                                 }
-                                // emit is deprecated, so ignore
-                                // if (dp.emit !== undefined) {
-                                //     m.emit = dp.emit;
-                                // }
+
                                 request.metrics.push(m);
+
+                                // if an expressionMetric was created, add to request
+                                if(expressionMetric){
+                                    request.metrics.push(expressionMetric);
+                                }
                             });
 
                 }
@@ -1664,7 +1721,7 @@ var visualization,
          */
         __buildChart: function(data) {
             $(this.svgwrapper).outerHeight(
-                    $(this.div).height() - $(this.footer).outerHeight());
+                    this.$div.height() - $(this.footer).outerHeight());
             this.closure = this.impl.build(this, data);
             this.impl.render(this);
 
@@ -1745,12 +1802,12 @@ var visualization,
         },
 
         __hideMessage: function() {
-            this.div.find(".message").css('display', 'none');
+            this.$div.find(".message").css('display', 'none');
         },
 
         __showMessage: function(message) {
             // cache some commonly used selectors
-            var $message = this.div.find(".message"),
+            var $message = this.$div.find(".message"),
                 $messageSpan = $message.find("span");
 
             if (message) {
@@ -1762,17 +1819,17 @@ var visualization,
         },
 
         __hideChart: function() {
-            this.div.find('.zenchart').css('display', 'none');
+            this.$div.find('.zenchart').css('display', 'none');
 
             if (!this.showLegendOnNoData) {
-                this.div.find('.zenfooter').css('display', 'none');
+                this.$div.find('.zenfooter').css('display', 'none');
             }
         },
 
         __showChart: function() {
             this.__hideMessage();
-            this.div.find('.zenchart').css('display', 'block');
-            this.div.find('.zenfooter').css('display', 'block');
+            this.$div.find('.zenchart').css('display', 'block');
+            this.$div.find('.zenfooter').css('display', 'block');
         },
 
         /*

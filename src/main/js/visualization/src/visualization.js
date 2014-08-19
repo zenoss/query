@@ -5,9 +5,6 @@
 (function(){
     "use strict";
 
-    // dictionary of existing charts
-    var __charts = {};
-
     /**
      * @memberOf zenoss
      * @namespace
@@ -60,7 +57,7 @@
              *            changes to the chart
              */
             update : function(name, changes) {
-                var found = __charts[name];
+                var found = getChart(name);
                 if (found === undefined) {
                     debug.__warn('Attempt to modify a chart, "' + name +
                         '", that does not exist.');
@@ -105,18 +102,49 @@
 
                 if (!window.jQuery) {
                     dependency.__bootstrap(function() {
-                        __charts[name] = new Chart(name, config);
+                        cacheChart(new Chart(name, config));
                     });
                     return;
                 }
 
-                __charts[name] = new Chart(name, config);
+                cacheChart(new Chart(name, config));
             },
 
-            getChart: function(id){
-                return __charts[id];
-            }
+            // expose chart cache getter
+            getChart: getChart
         }
     };
+
+
+    // chart cache with getter/setters
+    var chartCache = {};
+
+    function cacheChart(chart){
+        var numCharts;
+
+        chartCache[chart.name] = chart;
+
+        // automatically remove this chart
+        // if the containing dom element
+        // is destroyed
+        chart.onDestroyed = function(e){
+            removeChart(chart.name);
+        };
+
+        // if there are many charts in here
+        // this could indicate a problem
+        numCharts = Object.keys(chartCache).length;
+        if(numCharts > 12){
+            console.warn("There are", numCharts, "cached charts. This can lead to performance issues.");
+        }
+    }
+
+    function removeChart(name){
+        delete chartCache[name];
+    }
+
+    function getChart(name){
+        return chartCache[name];
+    }
 
 })();
