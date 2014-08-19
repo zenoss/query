@@ -182,13 +182,8 @@
      * value of all series datapoints in that response
      */
     function calculateResultsMin(data){
-
-        var seriesCalc = function(a,b){
-            return a+b;
-        };
-
         return data.reduce(function(acc, series){
-            return seriesCalc(acc, series.datapoints.reduce(function(acc, dp){
+            return Math.min(acc, series.datapoints.reduce(function(acc, dp){
                 return Math.min(acc, +dp.value);
             }, 0));
         }, 0);
