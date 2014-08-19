@@ -33,15 +33,21 @@
             // going to walk the points and make sure they match
             __cull(chart);
 
-            var _chart = chart.closure;
+            var _chart = chart.closure,
+                model = _chart.model();
 
-            _chart.model().xAxis.tickFormat(function(ts) {
+            model.xAxis.tickFormat(function(ts) {
                 return chart.tickFormat(data.startTimeActual,
-                        data.endTimeActual, ts, chart.timezone);
+                    data.endTimeActual, ts, chart.timezone);
             });
 
+            // if a max or min y are set
+            if (chart.maxy !== undefined || chart.miny !== undefined) {
+                model.yDomain(calculateYDomain(chart.miny, chart.maxy, data));
+            }
+
             chart.svg.datum(chart.plots).transition().duration(0).call(
-                    _chart.model());
+                model);
         },
 
         resize : function(chart) {
@@ -74,9 +80,12 @@
             model.height($(chart.svgwrapper).height());
             model.width($(chart.svgwrapper).width() - 10);
             model.yAxis.axisLabel(chart.yAxisLabel);
-            if (chart.maxy !== undefined && chart.miny !== undefined) {
-                model.forceY([chart.miny, chart.maxy]);
+
+            // if a max or min y are set
+            if (chart.maxy !== undefined || chart.miny !== undefined) {
+                model.yDomain(calculateYDomain(chart.miny, chart.maxy, data));
             }
+
             // magic to make the yaxis label show up
             // see https://github.com/novus/nvd3/issues/17
             model.margin({left: 90});
@@ -139,7 +148,68 @@
         });
     }
 
+    /**
+     * Create y domain based on options and calculated data range
+     */
+    function calculateYDomain(miny, maxy, data){
+        // if max is not provided, calcuate max
+        if(maxy === undefined){
+            maxy = calculateResultsMax(data.results);
+        }
 
+        // if min is not provided, calculate min
+        if(miny === undefined){
+            miny = calculateResultsMin(data.results);
+        }
+
+        // if min and max are the same, add a bit to
+        // max to separate them
+        if(miny === maxy){
+            maxy += maxy * 0.1;
+        }
+
+        // if min and max are zero, force a
+        // 0,1 domain
+        if(miny + maxy === 0){
+            maxy = 1;
+        }
+
+        return [miny, maxy];
+    }
+
+    /**
+     * Accepts a query service api response and determines the minimum
+     * value of all series datapoints in that response
+     */
+    function calculateResultsMin(data){
+
+        var seriesCalc = function(a,b){
+            return a+b;
+        };
+
+        return data.reduce(function(acc, series){
+            return seriesCalc(acc, series.datapoints.reduce(function(acc, dp){
+                return Math.min(acc, +dp.value);
+            }, 0));
+        }, 0);
+    }
+
+    /**
+     * Accepts a query service api response and determines the maximum
+     * value of all series datapoints in that response
+     */
+    function calculateResultsMax(data){
+
+        var seriesCalc = function(a,b){
+            return a+b;
+        };
+
+        return data.reduce(function(acc, series){
+            return seriesCalc(acc, series.datapoints.reduce(function(acc, dp){
+                return Math.max(acc, +dp.value);
+            }, 0));
+        }, 0);
+    }
 
     $.extend(true, zenoss.visualization.chart, {
         area : area
