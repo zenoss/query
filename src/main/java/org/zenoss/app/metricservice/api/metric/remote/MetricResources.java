@@ -87,7 +87,7 @@ public class MetricResources {
     @Timed
     @Consumes(MediaType.APPLICATION_JSON)
     public Response query(PerformanceQuery query) {
-        log.info("Entered NewMetricResources.query with single param (POST).");
+        log.info("Thread {}: Entered NewMetricResources.query with single param (POST). REQUEST: {}", Thread.currentThread().getId(), Utils.jsonStringFromObject(query));
         if (query == null) {
             return Utils.getErrorResponse(null, Response.Status.BAD_REQUEST.getStatusCode(),
                     "Received an empty query request", "Empty Request");

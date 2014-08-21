@@ -134,7 +134,7 @@ public class MetricService implements MetricServiceAPI {
                           Optional<ReturnSet> returnset, Optional<Boolean> series, Optional<String> downsample,
                           double downsampleMultiplier, Optional<Map<String, List<String>>> tags,
                           List<MetricSpecification> metrics) {
-        log.info("entering MetricService.query()");
+        log.info("Thread {}: entering MetricService.query()", Thread.currentThread().getId());
         return makeCORS(Response.ok(
             new MetricServiceWorker(id.or(NOT_SPECIFIED),
                 start.or(config.getMetricServiceConfig().getDefaultStartTime()),
