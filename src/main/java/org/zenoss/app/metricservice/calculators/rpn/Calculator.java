@@ -743,7 +743,7 @@ public class Calculator extends BaseMetricCalculator {
                         try {
                             push(Double.valueOf(term));
                         } catch (NumberFormatException e) {
-                            log.info("Term {} did not parse as number, trying as reference.", term);
+                            log.debug("Term {} did not parse as number, trying as reference.", term);
                             pushReference(ref, closure);
                         }
                     }
