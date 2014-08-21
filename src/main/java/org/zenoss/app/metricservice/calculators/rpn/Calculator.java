@@ -740,7 +740,12 @@ public class Calculator extends BaseMetricCalculator {
                     break;
                 default:
                     if (Character.isDigit(term.charAt(0))) {
-                        push(Double.valueOf(term));
+                        try {
+                            push(Double.valueOf(term));
+                        } catch (NumberFormatException e) {
+                            log.debug("Term {} did not parse as number, trying as reference.", term);
+                            pushReference(ref, closure);
+                        }
                     }
                     if (Character.isLetter(term.charAt(0))) {
                         pushReference(ref, closure);
