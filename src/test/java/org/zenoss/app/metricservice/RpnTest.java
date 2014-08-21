@@ -373,4 +373,139 @@ public class RpnTest {
 
         Assert.assertEquals(6.0, calc.evaluate("ref1,ref2,*", data), 0.0);
     }
+
+    @Test
+    public void referenceBeginningWithHyphenShouldWork() throws ClassNotFoundException, UnknownReferenceException {
+        MetricCalculator calc = new MetricCalculatorFactory().newInstance("rpn");
+        calc.setReferenceProvider(new ReferenceProvider() {
+
+            @Override
+            public double lookup(String name, Closure closure)
+                throws UnknownReferenceException {
+                if (name.equals("- this is a test")) {
+                    return 2.0;
+                } else if (name.equals("ref2")) {
+                    return 3.0;
+                }
+                throw new UnknownReferenceException(name);
+            }
+        });
+
+        Assert.assertEquals(6.0, calc.evaluate("- this is a test,ref2,*"), 0.0);
+    }
+
+    @Test
+    public void referencesBeginningWithPlusShouldWork() throws ClassNotFoundException, UnknownReferenceException {
+        MetricCalculator calc = new MetricCalculatorFactory().newInstance("rpn");
+        calc.setReferenceProvider(new ReferenceProvider() {
+
+            @Override
+            public double lookup(String name, Closure closure)
+                throws UnknownReferenceException {
+                if (name.equals("+ this is a test")) {
+                    return 2.0;
+                }
+                throw new UnknownReferenceException(name);
+            }
+        });
+
+        Assert.assertEquals("A reference beginning with '+' should work.",6.0, calc.evaluate("+ this is a test,3.0,*"), 0.0);
+    }
+    @Test
+    public void numbersBeginningWithPlusShouldWork() throws ClassNotFoundException, UnknownReferenceException {
+        MetricCalculator calc = new MetricCalculatorFactory().newInstance("rpn");
+        calc.setReferenceProvider(new ReferenceProvider() {
+
+            @Override
+            public double lookup(String name, Closure closure)
+                throws UnknownReferenceException {
+                if (name.equals("+ this is a test")) {
+                    return 2.0;
+                }
+                throw new UnknownReferenceException(name);
+            }
+        });
+
+        Assert.assertEquals("A number beginning with '+' should work",6.0, calc.evaluate("2.0,+3.0,*"), 0.0);
+    }
+
+    @Test
+    public void referenceBeginningWithSlashShouldWork() throws ClassNotFoundException, UnknownReferenceException {
+        MetricCalculator calc = new MetricCalculatorFactory().newInstance("rpn");
+        calc.setReferenceProvider(new ReferenceProvider() {
+
+            @Override
+            public double lookup(String name, Closure closure)
+                throws UnknownReferenceException {
+                if (name.equals("* this is a test")) {
+                    return 2.0;
+                } else if (name.equals("ref2")) {
+                    return 3.0;
+                }
+                throw new UnknownReferenceException(name);
+            }
+        });
+
+        Assert.assertEquals("A reference beginning with '*' should work",6.0, calc.evaluate("* this is a test,ref2,*"), 0.0);
+    }
+
+    @Test
+    public void referenceBeginningWithAsteriskShouldWork() throws ClassNotFoundException, UnknownReferenceException {
+        MetricCalculator calc = new MetricCalculatorFactory().newInstance("rpn");
+        calc.setReferenceProvider(new ReferenceProvider() {
+
+            @Override
+            public double lookup(String name, Closure closure)
+                throws UnknownReferenceException {
+                if (name.equals("/ this is a test")) {
+                    return 2.0;
+                } else if (name.equals("ref2")) {
+                    return 3.0;
+                }
+                throw new UnknownReferenceException(name);
+            }
+        });
+
+        Assert.assertEquals("A reference beginning with '/' should work",6.0, calc.evaluate("/ this is a test,ref2,*"), 0.0);
+    }
+
+    @Test
+    public void referenceBeginningWithPercentShouldWork() throws ClassNotFoundException, UnknownReferenceException {
+        MetricCalculator calc = new MetricCalculatorFactory().newInstance("rpn");
+        calc.setReferenceProvider(new ReferenceProvider() {
+
+            @Override
+            public double lookup(String name, Closure closure)
+                throws UnknownReferenceException {
+                if (name.equals("% this is a test")) {
+                    return 2.0;
+                } else if (name.equals("ref2")) {
+                    return 3.0;
+                }
+                throw new UnknownReferenceException(name);
+            }
+        });
+
+        Assert.assertEquals("A reference beginning with '%' should work",6.0, calc.evaluate("% this is a test,ref2,*"), 0.0);
+    }
+    @Test
+    public void referenceBeginningWithDigitShouldWork() throws ClassNotFoundException, UnknownReferenceException {
+        MetricCalculator calc = new MetricCalculatorFactory().newInstance("rpn");
+        calc.setReferenceProvider(new ReferenceProvider() {
+
+            @Override
+            public double lookup(String name, Closure closure)
+                throws UnknownReferenceException {
+                if (name.equals("53 this is a test")) {
+                    return 2.0;
+                } else if (name.equals("ref2")) {
+                    return 3.0;
+                }
+                throw new UnknownReferenceException(name);
+            }
+        });
+
+        Assert.assertEquals("A reference beginning with a digit should work",6.0, calc.evaluate("53 this is a test,ref2,*"), 0.0);
+    }
+
 }
