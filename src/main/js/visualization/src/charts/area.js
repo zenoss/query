@@ -26,13 +26,6 @@
         },
 
         update : function(chart, data) {
-            // OK. Area charts really want data points to match up on keys,
-            // which
-            // makes sense as this is how they stack things. To make this work
-            // we
-            // going to walk the points and make sure they match
-            __cull(chart);
-
             var _chart = chart.closure,
                 model = _chart.model();
 
@@ -57,13 +50,6 @@
         },
 
         build : function(chart, data) {
-            // OK. Area charts really want data points to match up on keys,
-            // which
-            // makes sense as this is how they stack things. To make this work
-            // we
-            // going to walk the points and make sure they match
-            __cull(chart);
-
             // create new area Chart
             var _chart = new Chart();
             var model = nv.models.stackedAreaChart();
@@ -106,50 +92,6 @@
 
         }
     };
-
-
-
-     /**
-     * Culls the plots in a chart so that only data points with a common
-     * time stamp remain.
-     *
-     * @param the
-     *            chart that contains the plots to cull
-     * @access private
-     */
-    function __cull(chart) {
-
-        var i, keys = [];
-        /*
-         * If there is only one plot in the chart we are done, there is
-         * nothing to be done.
-         */
-        if (chart.plots.length < 2) {
-            return;
-        }
-
-        chart.plots.forEach(function(plot) {
-            plot.values.forEach(function(v) {
-                if (keys[v.x] === undefined) {
-                    keys[v.x] = 1;
-                } else {
-                    keys[v.x] += 1;
-                }
-            });
-        });
-
-        // At this point, any entry in the keys array with a count of
-        // chart.plots.length is a key in every plot and we can use, so
-        // now
-        // we walk through the plots again removing any invalid key
-        chart.plots.forEach(function(plot) {
-            for (i = plot.values.length - 1; i >= 0; i -= 1) {
-                if (keys[plot.values[i].x] !== chart.plots.length) {
-                    plot.values.splice(i, 1);
-                }
-            }
-        });
-    }
 
     /**
      * Create y domain based on options and calculated data range
