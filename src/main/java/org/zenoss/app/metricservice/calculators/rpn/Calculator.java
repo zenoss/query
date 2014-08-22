@@ -578,23 +578,49 @@ public class Calculator extends BaseMetricCalculator {
             }
             switch (term.charAt(0)) {
                 case '+':
-                    add();
+                    if (term.length() == 1) {
+                        add();
+                    } else {
+                        try {
+                            push(Double.valueOf(term));
+                        } catch (NumberFormatException e) {
+                            log.debug("Term {} did not parse as number, treating as reference.", term);
+                            pushReference(ref, closure);
+                        }
+                    }
                     break;
                 case '-':
                     if (term.length() == 1) {
                         subtract();
                     } else {
-                        push(Double.valueOf(term));
+                        try {
+                            push(Double.valueOf(term));
+                        } catch (NumberFormatException e) {
+                            log.debug("Term {} did not parse as number, treating as reference.", term);
+                            pushReference(ref, closure);
+                        }
                     }
                     break;
                 case '/':
-                    divide();
+                    if (term.length() == 1) {
+                        divide();
+                    } else {
+                        pushReference(ref, closure);
+                    }
                     break;
                 case '*':
-                    multiply();
+                    if (term.length() == 1) {
+                        multiply();
+                    } else {
+                        pushReference(ref, closure);
+                    }
                     break;
                 case '%':
-                    modulo();
+                    if (term.length() == 1) {
+                        modulo();
+                    }   else {
+                        pushReference(ref, closure);
+                    }
                     break;
                 case 'a':
                     if ("avg".equals(term)) {
@@ -740,7 +766,12 @@ public class Calculator extends BaseMetricCalculator {
                     break;
                 default:
                     if (Character.isDigit(term.charAt(0))) {
-                        push(Double.valueOf(term));
+                        try {
+                            push(Double.valueOf(term));
+                        } catch (NumberFormatException e) {
+                            log.debug("Term {} did not parse as number, treating as reference.", term);
+                            pushReference(ref, closure);
+                        }
                     }
                     if (Character.isLetter(term.charAt(0))) {
                         pushReference(ref, closure);

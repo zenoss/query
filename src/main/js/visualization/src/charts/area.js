@@ -69,6 +69,11 @@
             var model = nv.models.stackedAreaChart();
             _chart.model(model);
 
+            // disable advanced area controls
+            model.controlsData([]);
+
+            model.useInteractiveGuideline(true);
+
             model.xAxis.tickFormat(function(ts) {
                 return chart.tickFormat(data.startTimeActual,
                         data.endTimeActual, ts, chart.timezone);

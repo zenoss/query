@@ -190,9 +190,15 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         OpenTSDBRateOption result = null;
         if (null != rateOptions) {
             result = new OpenTSDBRateOption();
-            result.counter = rateOptions.getCounter();
-            result.counterMax = rateOptions.getCounterMax();
-            result.resetValue = rateOptions.getResetThreshold();
+            if (null != rateOptions.getCounter()) {
+                result.counter = rateOptions.getCounter();
+            }
+            if (null != rateOptions.getCounterMax()) {
+                result.counterMax = rateOptions.getCounterMax();
+            }
+            if (null != rateOptions.getResetThreshold()) {
+                result.resetValue = rateOptions.getResetThreshold();
+            }
         }
         return result;
     }
