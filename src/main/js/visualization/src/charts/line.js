@@ -46,6 +46,8 @@
             var model = nv.models.lineChart();
             _chart.model(model);
 
+            model.useInteractiveGuideline(true);
+
             model.xAxis.tickFormat(function(ts) {
                 return chart.tickFormat(data.startTimeActual,
                     data.endTimeActual, ts, chart.timezone);
