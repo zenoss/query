@@ -72,6 +72,8 @@
             // disable advanced area controls
             model.controlsData([]);
 
+            model.useInteractiveGuideline(true);
+
             model.xAxis.tickFormat(function(ts) {
                 return chart.tickFormat(data.startTimeActual,
                         data.endTimeActual, ts, chart.timezone);
