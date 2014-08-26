@@ -1552,10 +1552,8 @@ var visualization,
 
                 var dp, info, key, plot;
 
-                // if series.datapoints is not defined, or the number
-                // of datapoints is less than 2, put empty start/end vals
-                // NOTE: you need at least 2 datapoints to draw a line
-                if(!series.datapoints || (series.datapoints && series.datapoints.length < 2)){
+                // if series.datapoints is not defined, or there are no points
+                if(!series.datapoints || (series.datapoints && !series.datapoints.length)){
                     series.datapoints = [{
                         timestamp: start,
                         value: null
