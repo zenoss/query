@@ -640,6 +640,10 @@ var visualization,
 (function(){
     "use strict";
 
+    // indicates if the base dependencies (stuff like
+    // jquery, d3, etc) have been loaded
+    var depsLoaded = false;
+
     /**
      * @memberOf zenoss
      * @namespace
@@ -735,8 +739,9 @@ var visualization,
              */
             create : function(name, config) {
 
-                if (!window.jQuery) {
+                if (!depsLoaded) {
                     dependency.__bootstrap(function() {
+                        depsLoaded = true;
                         cacheChart(new Chart(name, config));
                     });
                     return;
