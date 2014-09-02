@@ -273,12 +273,56 @@
      *            [fail] called if the core dependencies are not loaded
      */
     function __bootstrap(success, fail) {
-        var sources = [ 'jquery.min.js', 'd3.v3.min.js', 'jstz-1.0.4.min.js',
-                    'css/zenoss.css', 'sprintf.min.js' ];
-        // if moment isn't already loaded load it now, hopefully the versions will be compatible
-        if (!window.moment) {
-            sources = sources.concat(['moment.min.js', 'moment-timezone.js', 'moment-timezone-data.js']);
-        }
+        // dependencies that must be met for visualization.js
+        // to work properly
+        var depChecks = [
+            {
+                source: "jquery.min.js",
+                check: function(){
+                    return !!window.jquery;
+                }
+            },{
+                source: "d3.v3.min.js",
+                check: function(){
+                    // TODO - check window.d3.version
+                    return !!window.d3;
+                }
+            },{
+                source: "moment.min.js",
+                check: function(){
+                    return !!window.moment;
+                }
+            },{
+                source: "moment-timezone.js",
+                check: function(){
+                    return !!window.moment.tz;
+                }
+            },{
+                source: "moment-timezone-data.js",
+                check: function(){
+                    return !!window.moment.tz;
+                }
+            },{
+                source: "sprintf.min.js",
+                check: function(){
+                    return !!window.sprintf;
+                }
+            },{
+                source: "css/zenoss.css",
+                check: function(){
+                    return false;
+                }
+            }
+        ];
+        var sources = [];
+
+        // check if a dependency should be loaded or not
+        depChecks.forEach(function(depCheck){
+            if(!depCheck.check()){
+                sources.push(depCheck.source);
+            }
+        });
+        
         __loadDependencies({
             'defined' : 'd3',
             'source' : sources
