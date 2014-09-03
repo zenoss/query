@@ -531,7 +531,7 @@ var visualization,
             {
                 source: "jquery.min.js",
                 check: function(){
-                    return !!window.jquery;
+                    return !!window.jQuery;
                 }
             },{
                 source: "d3.v3.min.js",
