@@ -307,11 +307,6 @@
                 check: function(){
                     return !!window.sprintf;
                 }
-            },{
-                source: "css/zenoss.css",
-                check: function(){
-                    return false;
-                }
             }
         ];
         var sources = [];
