@@ -25,7 +25,7 @@
      *            to specify the entire chart definition.
      */
     
-    var DEFAULT_NUMBER_FORMAT = "%6.2f";
+    var DEFAULT_NUMBER_FORMAT = "%4.2f";
 
     Chart = function(name, config) {
         this.name = name;
@@ -137,29 +137,35 @@
          * @returns number the calculated scale factor
          */
         __calculateAutoScaleFactor: function(max) {
-            var factor = 0, ceiling, upper, lower, unit;
+            max = Math.abs(max);
+
+            var factor = 0,
+                ceiling = 3,
+                unit = 1000,
+                upper, lower;
+
             if (this.config.autoscale) {
-                ceiling = this.config.autoscale.ceiling || 5;
-                unit = parseInt(this.config.autoscale.factor || 1000, 10);
+                ceiling = +this.config.autoscale.ceiling;
+                unit = +this.config.autoscale.factor;
+            }
 
-                upper = Math.pow(10, ceiling);
-                lower = upper / 10;
+            upper = Math.pow(10, ceiling);
+            lower = 10 / upper;
 
-                // Make sure that max value is greater than the lower boundary
-                while (max !== 0 && max < lower) {
-                    max *= unit;
-                    factor -= 1;
-                }
+            // Make sure that max value is greater than the lower boundary
+            while (max !== 0 && max < lower) {
+                max *= unit;
+                factor -= 1;
+            }
 
-                /*
-                 * And then make sure that max is lower than the upper boundary, it
-                 * is favored that number be less than the upper boundary than
-                 * higher than the lower.
-                 */
-                while (max !== 0 && max > upper) {
-                    max /= unit;
-                    factor += 1;
-                }
+            /*
+             * And then make sure that max is lower than the upper boundary, it
+             * is favored that number be less than the upper boundary than
+             * higher than the lower.
+             */
+            while (max !== 0 && max > upper) {
+                max /= unit;
+                factor += 1;
             }
             return factor;
         },
@@ -176,10 +182,12 @@
             if (this.config.autoscale && this.config.autoscale.factor) {
                 scaleUnit = this.config.autoscale.factor;
             }
-            this.scale = {};
-            this.scale.factor = factor;
-            this.scale.symbol = this.__scaleSymbol(factor);
-            this.scale.term = Math.pow(scaleUnit, factor);
+
+            return {
+                factor: factor,
+                symbol: this.__scaleSymbol(factor),
+                term: Math.pow(scaleUnit, factor)
+            };
         },
 
         /**
@@ -193,7 +201,11 @@
          *            The format string for example "%2f";
          */
         formatValue: function(value) {
-            var format = this.format, scaled, rval;
+            var scale,
+                format = this.format,
+                // TODO - make this configurable
+                maxWidth = 4,
+                scaled, rval;
 
             /*
              * If we were given a undefined value, Infinity, of NaN (all things that
@@ -202,25 +214,43 @@
             if (!$.isNumeric(value)) {
                 return value;
             }
+
+            scale = this.__configAutoScale(this.__calculateAutoScaleFactor(value));
+
             try {
-                scaled = value / this.scale.term;
+                scaled = value / scale.term;
                 rval = sprintf(format, scaled);
+
                 if ($.isNumeric(rval)) {
-                    return rval + this.scale.symbol;
+                    // NOTE - rval is now a string
+                    rval = "" + rval;
+
+                    // reduce string to maxWidth
+                    while(rval.length > maxWidth){
+                        rval = rval.substr(0, rval.length-1);
+                    }
+
+                    // if the last char is a '.', remove it
+                    if(rval.substr(-1) === "."){
+                        rval = rval.substr(0, rval.length-1);
+                    }
+
+                    return rval + scale.symbol;
                 }
+
                 // if the result is a NaN just return the original value
                 return rval;
+
             } catch (x) {
                 // override the number format for this chart
                 // since this method could be called several times to render a
                 // chart.
-                debug.__warn('Invalid format string  ' + format +
-                    ' using the default format.');
-                scaled = value / this.scale.term;
+                debug.__warn('Invalid format string  ' + format + ' using the default format.');
+                scaled = value / scale.term;
                 try {
-                    return sprintf(this.format, scaled) + this.scale.symbol;
+                    return sprintf(this.format, scaled) + scale.symbol;
                 } catch (x1) {
-                    return scaled + this.scale.symbol;
+                    return scaled + scale.symbol;
                 }
             }
         },
@@ -581,9 +611,7 @@
                     'dataType' : 'json',
                     'contentType' : 'application/json',
                     'success' : function(data) {
-                        var results = self.__processResult(self.request, data);
-                        self.plots = results[0];
-                        self.__configAutoScale(results[1]);
+                        self.plots = self.__processResult(self.request, data);
 
                         /*
                          * If the chart has not been created yet, then
@@ -754,10 +782,9 @@
          *          chart library.
          */
         __processResultAsSeries: function(request, data) {
-            var plots = [],
-                max = 0;
             
-            var start = data.startTimeActual,
+            var plots = [],
+                start = data.startTimeActual,
                 end = data.endTimeActual,
                 drange = end - start,
                 // allowable deviation expected start/end points
@@ -806,20 +833,20 @@
                     'fill' : info.fill,
                     'values' : []
                 };
-                for (var dpi in series.datapoints) {
-                    dp = series.datapoints[dpi];
-                    max = Math.max(Math.abs(dp.value), max);
+
+                series.datapoints.forEach(function(datapoint){
                     plot.values.push({
-                        'x' : dp.timestamp * 1000,
+                        x : datapoint.timestamp * 1000,
                         // ensure value is a number
-                        'y' : typeof dp.value !== "number" ? null : dp.value
+                        y : typeof datapoint.value !== "number" ? null : datapoint.value
                     });
-                }
+                });
+
                 plots.push(plot);
 
             }.bind(this));
 
-            return [ plots, this.__calculateAutoScaleFactor(max) ];
+            return plots;
         },
 
         /**
@@ -836,18 +863,9 @@
          *          chart library.
          */
         __processResult: function(request, data) {
-            var results, plots, i, overlay, minDate, maxDate, plot, k, firstMetric;
+            var plots, i, overlay, minDate, maxDate, plot, k, firstMetric;
 
-            // NOTE: series is deprecated
-            // if (data.series) {
-            //     results = this.__processResultAsSeries(request, data);
-            //     plots = results[0];
-            // } else {
-            //     results = this.__processResultAsDefault(request, data);
-            //     plots = results[0];
-            // }
-            results = this.__processResultAsSeries(request, data);
-            plots = results[0];
+            plots = this.__processResultAsSeries(request, data);
 
             // add overlays
             if (this.overlays.length && plots.length && plots[0].values.length) {
@@ -879,7 +897,8 @@
                     plots.push(plot);
                 }
             }
-            return results;
+
+            return plots;
         },
 
         /**
