@@ -832,6 +832,8 @@ var visualization,
  * main chart object
  */
 (function(){
+    "use strict";
+
     /**
      * This class should not be instantiated directly unless the caller
      * really understand what is going on behind the scenes as there is
@@ -855,50 +857,50 @@ var visualization,
      */
 
     var DEFAULT_NUMBER_FORMAT = "%4.2f";
+    
+    // data for formatting time ranges
+    var TIME_DATA = [
+        {
+            name: "minute",
+            value: 60000,
+            ticks: 4,
+            // max number of units before we should go up a level
+            breakpoint: 90,
+            format: function(tz, d){ return moment.utc(d).tz(tz).format("HH:mm:ss"); }
+        },{
+            name: "hour",
+            value: 3.6e+6,
+            ticks: 4,
+            breakpoint: 20,
+            format: function(tz, d){ return moment.utc(d).tz(tz).format("HH:mm:ss"); }
+        },{
+            name: "day",
+            value: 8.64e+7,
+            ticks: 3,
+            breakpoint: 7,
+            format: function(tz, d){ return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss"); }
+        },{
+            name: "week",
+            value: 6.048e+8,
+            ticks: 3,
+            breakpoint: 4,
+            format: function(tz, d){ return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss"); }
+        },{
+            name: "month",
+            value: 2.63e+9,
+            ticks: 3,
+            breakpoint: 13,
+            format: function(tz, d){ return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss"); }
+        },{
+            name: "year",
+            value: 3.156e+10,
+            ticks: 3,
+            breakpoint: 1000,
+            format: function(tz, d){ return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss"); }
+        }
+    ];
 
-	// data for formatting time ranges
-	var TIME_DATA = [
-		{
-			name: "minute",
-			value: 60000,
-			ticks: 4,
-			// max number of units before we should go up a level
-			breakpoint: 90,
-			format: function(tz, d){ return moment.utc(d).tz(tz).format("HH:mm:ss"); }
-		},{
-			name: "hour",
-			value: 3.6e+6,
-			ticks: 4,
-			breakpoint: 20,
-			format: function(tz, d){ return moment.utc(d).tz(tz).format("HH:mm:ss"); }
-		},{
-			name: "day",
-			value: 8.64e+7,
-			ticks: 3,
-			breakpoint: 7,
-			format: function(tz, d){ return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss"); }
-		},{
-			name: "week",
-			value: 6.048e+8,
-			ticks: 3,
-			breakpoint: 4,
-			format: function(tz, d){ return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss"); }
-		},{
-			name: "month",
-			value: 2.63e+9,
-			ticks: 3,
-			breakpoint: 13,
-			format: function(tz, d){ return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss"); }
-		},{
-			name: "year",
-			value: 3.156e+10,
-			ticks: 3,
-			breakpoint: 1000,
-			format: function(tz, d){ return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss"); }
-		}
-	];
-
-	Chart = function(name, config) {
+    Chart = function(name, config) {
         this.name = name;
         this.config = config;
         this.yAxisLabel = config.yAxisLabel;
@@ -1988,24 +1990,24 @@ var visualization,
          */
         dateFormat: "MM/DD/YY HH:mm:ss",
 
-		// uses TIME_DATA to determine which time range we care about
-		// and format labels representative of that time range
-		updateXLabels: function(start, end, axis){
-			var dateRange = end - start,
-				done, timeFormat;
+        // uses TIME_DATA to determine which time range we care about
+        // and format labels representative of that time range
+        updateXLabels: function(start, end, axis){
+            var dateRange = end - start,
+                done, timeFormat;
 
-			// figure out which unit we care about
-			TIME_DATA.forEach(function(timeFormatObj){
-				if(!done && dateRange <= timeFormatObj.value * timeFormatObj.breakpoint){
-					timeFormat = timeFormatObj;
-					done = true;
-				}
-			});
+            // figure out which unit we care about
+            TIME_DATA.forEach(function(timeFormatObj){
+                if(!done && dateRange <= timeFormatObj.value * timeFormatObj.breakpoint){
+                    timeFormat = timeFormatObj;
+                    done = true;
+                }
+            });
 
-			// set number of ticks based on unit
-			axis.ticks(timeFormat.ticks)
-				.tickFormat(timeFormat.format.bind(null, this.timezone));
-		}
+            // set number of ticks based on unit
+            axis.ticks(timeFormat.ticks)
+                .tickFormat(timeFormat.format.bind(null, this.timezone));
+        }
     };
 
 })();

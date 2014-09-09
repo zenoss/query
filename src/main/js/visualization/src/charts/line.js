@@ -27,7 +27,7 @@
         update : function(chart, data) {
             var _chart = chart.closure;
 
-			chart.updateXLabels(data.startTimeActual * 1000, data.endTimeActual * 1000, _chart.model().xAxis);
+            chart.updateXLabels(data.startTimeActual * 1000, data.endTimeActual * 1000, _chart.model().xAxis);
 
             chart.svg
                 .datum(chart.plots)
@@ -45,7 +45,7 @@
 
             model.useInteractiveGuideline(true);
 
-			chart.updateXLabels(data.startTimeActual * 1000, data.endTimeActual * 1000, _chart.model().xAxis);
+            chart.updateXLabels(data.startTimeActual * 1000, data.endTimeActual * 1000, _chart.model().xAxis);
 
             model.yAxis.tickFormat(function(value) {
                 return chart.formatValue(value);
@@ -107,7 +107,7 @@
         }
     };
 
-	$.extend(true, zenoss.visualization.chart, {
+    $.extend(true, zenoss.visualization.chart, {
         line : line
     });
 
