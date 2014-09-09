@@ -11,7 +11,10 @@ var paths = {
 gulp.task("default", ["build", "copyCharts"]);
 
 gulp.task("copyCharts", function(){
-	return gulp.src([paths.src + "charts/*",])
+	return gulp.src([
+			paths.src + "charts/line.js",
+			paths.src + "charts/area.js"
+		])
 		.pipe(gulp.dest(paths.deploy + "charts/"));
 });
 

@@ -853,17 +853,59 @@ var visualization,
      *            is specified this configuration parameter can be used
      *            to specify the entire chart definition.
      */
-    
+
     var DEFAULT_NUMBER_FORMAT = "%4.2f";
 
-    Chart = function(name, config) {
+	// data for formatting time ranges
+	var TIME_DATA = [
+		{
+			name: "minute",
+			value: 60000,
+			ticks: 4,
+			// max number of units before we should go up a level
+			breakpoint: 90,
+			format: function(tz, d){ return moment.utc(d).tz(tz).format("HH:mm:ss"); }
+		},{
+			name: "hour",
+			value: 3.6e+6,
+			ticks: 4,
+			breakpoint: 20,
+			format: function(tz, d){ return moment.utc(d).tz(tz).format("HH:mm:ss"); }
+		},{
+			name: "day",
+			value: 8.64e+7,
+			ticks: 3,
+			breakpoint: 7,
+			format: function(tz, d){ return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss"); }
+		},{
+			name: "week",
+			value: 6.048e+8,
+			ticks: 3,
+			breakpoint: 4,
+			format: function(tz, d){ return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss"); }
+		},{
+			name: "month",
+			value: 2.63e+9,
+			ticks: 3,
+			breakpoint: 13,
+			format: function(tz, d){ return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss"); }
+		},{
+			name: "year",
+			value: 3.156e+10,
+			ticks: 3,
+			breakpoint: 1000,
+			format: function(tz, d){ return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss"); }
+		}
+	];
+
+	Chart = function(name, config) {
         this.name = name;
         this.config = config;
         this.yAxisLabel = config.yAxisLabel;
 
         this.$div = $('#' + this.name);
 
-        // listen for the container div to be removed and 
+        // listen for the container div to be removed and
         // call cleanup method
         this.$div.on("DOMNodeRemovedFromDocument", this.__onDestroyed.bind(this));
 
@@ -900,7 +942,6 @@ var visualization,
 
         this.svg = d3.select(this.svgwrapper).append('svg');
         try {
-            
             this.request = this.__buildDataRequest(this.config);
 
             if (debug.debug) {
@@ -1569,7 +1610,7 @@ var visualization,
                                         "Invalid data point specification in request, '%s'. No 'metric' or 'name' attribute specified, failing entire request.",
                                         JSON.stringify(dp, null, ' '));
                                 }
-                                
+
                                 if (dp.expression) {
                                     expressionMetric = {
                                         name: m.name,
@@ -1611,7 +1652,7 @@ var visualization,
          *          chart library.
          */
         __processResultAsSeries: function(request, data) {
-            
+
             var plots = [],
                 start = data.startTimeActual,
                 end = data.endTimeActual,
@@ -1939,63 +1980,36 @@ var visualization,
         showLegendOnNoData: true,
 
         /**
-         * Used to generate the date/time to be displayed on a tick mark.
-         * This takes into account the range of times being displayed so
-         * that common data can be removed.
-         *
-         * @param {Date}
-         *            start the start date of the time range being
-         *            considered
-         * @param {Date}
-         *            end the end of the time range being considerd
-         * @param {timestamp}
-         *            ts the timestamp to be formated in ms since epoch
-         * @returns string representation of the timestamp
-         * @access public
-         */
-        tickFormat: function(start, end, ts, timezone) {
-            var _start, _end, ts_seconds;
-
-            /*
-             * Convert the strings to date instances, with the understanding
-             * that that data strings may be the one passed back from the
-             * metric service that have '-' instead of spaces
-             */
-            if ($.isNumeric(start)) {
-                _start = new Date(start * 1000);
-            } else {
-                _start = start;
-            }
-
-            if ($.isNumeric(end)) {
-                _end = new Date(end * 1000);
-            } else {
-                _end = end;
-            }
-
-            // if the range is less than a day, show only hours
-            if (_start.getDate() === _end.getDate()) {
-                return moment.utc(ts).tz(timezone).format("HH:mm:ss");
-
-            // else show the full date
-            } else {
-                return moment.utc(ts).tz(timezone).format(this.dateFormat);
-            }
-            
-        },
-
-        /**
          * Used for formatting the date in the legend of the chart.
          * It must be a valid moment.js date format.
          * http://momentjs.com/docs/#/parsing/string-format/
          * @access public
-         * @default "MM/DD/YY hh:mm:ss a"
+         * @default "MM/DD/YY HH:mm:ss a"
          */
-        dateFormat: "MM/DD/YY HH:mm:ss"
+        dateFormat: "MM/DD/YY HH:mm:ss",
 
+		// uses TIME_DATA to determine which time range we care about
+		// and format labels representative of that time range
+		updateXLabels: function(start, end, axis){
+			var dateRange = end - start,
+				done, timeFormat;
+
+			// figure out which unit we care about
+			TIME_DATA.forEach(function(timeFormatObj){
+				if(!done && dateRange <= timeFormatObj.value * timeFormatObj.breakpoint){
+					timeFormat = timeFormatObj;
+					done = true;
+				}
+			});
+
+			// set number of ticks based on unit
+			axis.ticks(timeFormat.ticks)
+				.tickFormat(timeFormat.format.bind(null, this.timezone));
+		}
     };
 
 })();
+
 
 window.zenoss = {
 	visualization: visualization,
