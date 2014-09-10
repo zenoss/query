@@ -36,10 +36,7 @@
             var _chart = chart.closure,
                 model = _chart.model();
 
-            model.xAxis.tickFormat(function(ts) {
-                return chart.tickFormat(data.startTimeActual,
-                    data.endTimeActual, ts, chart.timezone);
-            });
+            chart.updateXLabels(data.startTimeActual * 1000, data.endTimeActual * 1000, _chart.model().xAxis);
 
             // if a max or min y are set
             if (chart.maxy !== undefined || chart.miny !== undefined) {
@@ -74,10 +71,8 @@
 
             model.useInteractiveGuideline(true);
 
-            model.xAxis.tickFormat(function(ts) {
-                return chart.tickFormat(data.startTimeActual,
-                        data.endTimeActual, ts, chart.timezone);
-            });
+            chart.updateXLabels(data.startTimeActual * 1000, data.endTimeActual * 1000, _chart.model().xAxis);
+
             model.yAxis.tickFormat(function(value){
                 return chart.formatValue(value);
             });
@@ -210,6 +205,7 @@
             }, 0));
         }, 0);
     }
+
 
     $.extend(true, zenoss.visualization.chart, {
         area : area

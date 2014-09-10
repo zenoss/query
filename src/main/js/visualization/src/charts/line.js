@@ -1,6 +1,5 @@
 (function() {
     "use strict";
-
     function Chart() {
         var _model = null;
 
@@ -28,10 +27,7 @@
         update : function(chart, data) {
             var _chart = chart.closure;
 
-            _chart.model().xAxis.tickFormat(function(ts) {
-                return chart.tickFormat(data.startTimeActual,
-                    data.endTimeActual, ts, chart.timezone);
-            });
+            chart.updateXLabels(data.startTimeActual * 1000, data.endTimeActual * 1000, _chart.model().xAxis);
 
             chart.svg
                 .datum(chart.plots)
@@ -44,14 +40,13 @@
         build : function(chart, data) {
             var _chart = new Chart();
             var model = nv.models.lineChart();
+
             _chart.model(model);
 
             model.useInteractiveGuideline(true);
 
-            model.xAxis.tickFormat(function(ts) {
-                return chart.tickFormat(data.startTimeActual,
-                    data.endTimeActual, ts, chart.timezone);
-            });
+            chart.updateXLabels(data.startTimeActual * 1000, data.endTimeActual * 1000, _chart.model().xAxis);
+
             model.yAxis.tickFormat(function(value) {
                 return chart.formatValue(value);
             });
@@ -111,7 +106,9 @@
             });
         }
     };
+
     $.extend(true, zenoss.visualization.chart, {
         line : line
     });
+
 }());
