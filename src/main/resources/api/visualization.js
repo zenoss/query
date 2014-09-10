@@ -968,16 +968,6 @@ var visualization,
         }
     };
 
-    /**
-     * Returns the appropriate scale symbol given a scaling factor
-     *
-     * @access private
-     * @param {number}
-     *            scale factor, which is the the value which is multiplied by
-     *            the scale unit and then applied to a value to get the
-     *            displayed value.
-     * @returns character the symbol associated widh the given scale factor
-     */
     Chart.prototype = {
         constructor: Chart,
 
@@ -988,78 +978,6 @@ var visualization,
                     this.onDestroyed.call(this, e);
                 }
             }
-        },
-
-        __scaleSymbol: function(factor) {
-            var ll, idx;
-            ll = this.__scaleSymbols.length;
-            idx = factor + ((ll - 1) / 2);
-            if (idx < 0 || idx >= ll) {
-                return 'UKN';
-            }
-            return this.__scaleSymbols[idx];
-        },
-
-        /**
-         * Calculates a scale factor given the maximum value in the chart.
-         *
-         * @access private
-         * @param {number}
-         *            maximum value in the chart data
-         * @returns number the calculated scale factor
-         */
-        __calculateAutoScaleFactor: function(max) {
-            max = Math.abs(max);
-
-            var factor = 0,
-                ceiling = 3,
-                unit = 1000,
-                upper, lower;
-
-            if (this.config.autoscale) {
-                ceiling = +this.config.autoscale.ceiling;
-                unit = +this.config.autoscale.factor;
-            }
-
-            upper = Math.pow(10, ceiling);
-            lower = 10 / upper;
-
-            // Make sure that max value is greater than the lower boundary
-            while (max !== 0 && max < lower) {
-                max *= unit;
-                factor -= 1;
-            }
-
-            /*
-             * And then make sure that max is lower than the upper boundary, it
-             * is favored that number be less than the upper boundary than
-             * higher than the lower.
-             */
-            while (max !== 0 && max > upper) {
-                max /= unit;
-                factor += 1;
-            }
-            return factor;
-        },
-
-        /**
-         * Set the auto scale information on the chart
-         *
-         * @access private
-         * @param {number}
-         *            auto scaling factor
-         */
-        __configAutoScale: function(factor) {
-            var scaleUnit = 1000;
-            if (this.config.autoscale && this.config.autoscale.factor) {
-                scaleUnit = this.config.autoscale.factor;
-            }
-
-            return {
-                factor: factor,
-                symbol: this.__scaleSymbol(factor),
-                term: Math.pow(scaleUnit, factor)
-            };
         },
 
         /**
@@ -1073,12 +991,6 @@ var visualization,
          *            The format string for example "%2f";
          */
         formatValue: function(value) {
-            var scale,
-                format = this.format,
-                // TODO - make this configurable
-                maxWidth = 4,
-                scaled, rval;
-
             /*
              * If we were given a undefined value, Infinity, of NaN (all things that
              * can't be formatted, then just return the value.
@@ -1086,45 +998,11 @@ var visualization,
             if (!$.isNumeric(value)) {
                 return value;
             }
-
-            scale = this.__configAutoScale(this.__calculateAutoScaleFactor(value));
-
-            try {
-                scaled = value / scale.term;
-                rval = sprintf(format, scaled);
-
-                if ($.isNumeric(rval)) {
-                    // NOTE - rval is now a string
-                    rval = "" + rval;
-
-                    // reduce string to maxWidth
-                    while(rval.length > maxWidth){
-                        rval = rval.substr(0, rval.length-1);
-                    }
-
-                    // if the last char is a '.', remove it
-                    if(rval.substr(-1) === "."){
-                        rval = rval.substr(0, rval.length-1);
-                    }
-
-                    return rval + scale.symbol;
-                }
-
-                // if the result is a NaN just return the original value
-                return rval;
-
-            } catch (x) {
-                // override the number format for this chart
-                // since this method could be called several times to render a
-                // chart.
-                debug.__warn('Invalid format string  ' + format + ' using the default format.');
-                scaled = value / scale.term;
-                try {
-                    return sprintf(this.format, scaled) + scale.symbol;
-                } catch (x1) {
-                    return scaled + scale.symbol;
-                }
-            }
+            // TODO - use format
+            // TODO - set scale and stuff?
+            // TODO - store format for all future requests
+            //  against this graph until it is refreshed?
+            return toEng(value);
         },
 
         /**
@@ -1936,29 +1814,6 @@ var visualization,
             this.$div.find('.zenfooter').css('display', 'block');
         },
 
-        /*
-         * Symbols used during autoscaling
-         */
-        __scaleSymbols: [
-            'y', // 10e-24 Yecto
-            'z', // 10^-21 Zepto
-            'a', // 10^-18 Atto
-            'f', // 10^-15 Femto
-            'p', // 10^-12 Pico
-            'n', // 10^-9 Nano
-            'u', // 10^-6 Micro
-            'm', // 10^-3 Milli
-            ' ', // Base
-            'k', // 10^3 Kilo
-            'M', // 10^6 Mega
-            'G', // 10^9 Giga
-            'T', // 10^12 Tera
-            'P', // 10^15 Peta
-            'E', // 10^18 Exa
-            'Z', // 10^21 Zetta
-            'Y' // 10^24 Yotta
-        ],
-
         /**
          * Used to format dates for the output display in the footer of a
          * chart.
@@ -2009,6 +1864,43 @@ var visualization,
                 .tickFormat(timeFormat.format.bind(null, this.timezone));
         }
     };
+
+    var SYMBOLS = {
+        "-24": "y",
+        "-21:": "z",
+        "-18": "a",
+        "-15": "f",
+        "-12": "p",
+        "-9": "n",
+        "-6": "u",
+        "-3": "m",
+        "0": "",
+        "3": "k",
+        "6": "M",
+        "9": "G",
+        "12": "T",
+        "15": "P",
+        "18": "E",
+        "21": "Z",
+        "24": "Y"
+    };
+
+    function toEng(val){
+        var v = val.toExponential().split("e"),
+            coefficient = +v[0],
+            exponent = +v[1];
+        
+        // exponent is not divisible by 3, we got work to do
+        while(exponent % 3){
+            coefficient *= 10;
+            exponent--;
+        }
+        
+        // number should not exceed 3 digits
+        coefficient = coefficient.toPrecision(3);
+        
+        return coefficient + SYMBOLS[exponent];
+    }
 
 })();
 
