@@ -466,18 +466,15 @@
 
             if (!this.__footerRangeOnly()) {
 
+
                 // One row for the stats table header
                 tr = document.createElement('tr');
-                [ '', 'Metric', 'Ending', 'Minimum', 'Maximum', 'Average' ]
-                        .forEach(function(s) {
-                            th = document.createElement('th');
-                            $(th).addClass('footer_header');
-                            $(th).html(s);
-                            if (s.length === 0) {
-                                $(th).addClass('zenfooter_box_column');
-                            }
-                            $(tr).append($(th));
-                        });
+                tr.innerHTML = '<th class="footer_header zenfooter_box_column"></th>'+
+                    '<th class="footer_header zenfooter_data_text">Metric</th>'+
+                    '<th class="footer_header zenfooter_data_number">Last</th>'+
+                    '<th class="footer_header zenfooter_data_number">Min</th>'+
+                    '<th class="footer_header zenfooter_data_number">Max</th>'+
+                    '<th class="footer_header zenfooter_data_number">Avg</th>';
                 $(this.table).append($(tr));
             }
 
