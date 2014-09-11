@@ -171,7 +171,7 @@
                 return value;
             }
 
-            return toEng(value, this.preferredYUnit);
+            return toEng(value, this.preferredYUnit, this.format);
         },
 
         /**
@@ -1128,7 +1128,7 @@
         "24": "Y"
     };
 
-    function toEng(val, preferredUnit){
+    function toEng(val, preferredUnit, format){
         var v = val.toExponential().split("e"),
             coefficient = +v[0],
             exponent = +v[1];
@@ -1145,22 +1145,8 @@
             exponent--;
         }
         
-        // number should not exceed 3 digits
-        //coefficient = coefficient.toPrecision(3);
-        coefficient = sprintf(DEFAULT_NUMBER_FORMAT, coefficient);
+        coefficient = sprintf(format, coefficient);
         
         return coefficient + SYMBOLS[exponent];
-    }
-
-    function determineEngUnit(val){
-        var v = val.toExponential().split("e"),
-            exponent = +v[1];
-        
-        // exponent is not divisible by 3, we got work to do
-        while(exponent % 3){
-            exponent--;
-        }
-
-        return exponent;
     }
 })();
