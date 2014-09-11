@@ -999,10 +999,7 @@ var visualization,
             if (!$.isNumeric(value)) {
                 return value;
             }
-            // TODO - use format
-            // TODO - set scale and stuff?
-            // TODO - store format for all future requests
-            //  against this graph until it is refreshed?
+
             return toEng(value, this.preferredYUnit);
         },
 
