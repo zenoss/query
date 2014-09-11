@@ -1072,6 +1072,8 @@
         calculateResultsMin: function(data){
             return data.reduce(function(acc, series){
                 return Math.min(acc, series.datapoints.reduce(function(acc, dp){
+                    // if the value is the string "NaN", ignore this dp
+                    if(dp.value === "NaN") return acc;
                     return Math.min(acc, +dp.value);
                 }, 0));
             }, 0);
