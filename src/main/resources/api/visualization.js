@@ -894,6 +894,7 @@ var visualization,
         },{
             name: "year",
             value: 3.156e+10,
+
             ticks: 3,
             breakpoint: 1000,
             format: function(tz, d){ return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss"); }
@@ -1002,7 +1003,7 @@ var visualization,
             // TODO - set scale and stuff?
             // TODO - store format for all future requests
             //  against this graph until it is refreshed?
-            return toEng(value);
+            return toEng(value, this.preferredYUnit);
         },
 
         /**
@@ -1362,6 +1363,9 @@ var visualization,
                     'contentType' : 'application/json',
                     'success' : function(data) {
                         self.plots = self.__processResult(self.request, data);
+                        
+                        // setPreffered y unit (k, G, M, etc)
+                        self.setPreferredYUnit(data.results); 
 
                         /*
                          * If the chart has not been created yet, then
@@ -1862,8 +1866,79 @@ var visualization,
             // set number of ticks based on unit
             axis.ticks(timeFormat.ticks)
                 .tickFormat(timeFormat.format.bind(null, this.timezone));
+        },
+
+        /**
+         * Create y domain based on options and calculated data range
+         */
+        calculateYDomain: function(miny, maxy, data){
+            // if max is not provided, calcuate max
+            if(maxy === undefined){
+                maxy = calculateResultsMax(data.results);
+            }
+
+            // if min is not provided, calculate min
+            if(miny === undefined){
+                miny = calculateResultsMin(data.results);
+            }
+
+            // if min and max are the same, add a bit to
+            // max to separate them
+            if(miny === maxy){
+                maxy += maxy * 0.1;
+            }
+
+            // if min and max are zero, force a
+            // 0,1 domain
+            if(miny + maxy === 0){
+                maxy = 1;
+            }
+
+            return [miny, maxy];
+        },
+
+        /**
+         * Accepts a query service api response and determines the minimum
+         * value of all series datapoints in that response
+         */
+        calculateResultsMin: function(data){
+            return data.reduce(function(acc, series){
+                return Math.min(acc, series.datapoints.reduce(function(acc, dp){
+                    return Math.min(acc, +dp.value);
+                }, 0));
+            }, 0);
+        },
+
+        /**
+         * Accepts a query service api response and determines the maximum
+         * value of all series datapoints in that response
+         */
+        calculateResultsMax: function(data){
+
+            var seriesCalc = function(a,b){
+                return a+b;
+            };
+
+            return data.reduce(function(acc, series){
+                return seriesCalc(acc, series.datapoints.reduce(function(acc, dp){
+                    // if the value is the string "NaN", ignore this dp
+                    if(dp.value === "NaN") return acc;
+                    return Math.max(acc, +dp.value);
+                }, 0));
+            }, 0);
+        },
+
+        setPreferredYUnit: function(data){
+            var max = this.calculateResultsMax(data),
+                exponent = +max.toExponential().split("e")[1];
+
+            while(exponent % 3){
+                exponent--;
+            }
+
+            this.preferredYUnit = exponent;
         }
-    };
+   };
 
     var SYMBOLS = {
         "-24": "y",
@@ -1885,11 +1960,17 @@ var visualization,
         "24": "Y"
     };
 
-    function toEng(val){
+    function toEng(val, preferredUnit){
         var v = val.toExponential().split("e"),
             coefficient = +v[0],
             exponent = +v[1];
         
+        // if preferredUnit is provided, target that value
+        if(preferredUnit !== undefined){
+            coefficient *= Math.pow(10, exponent - preferredUnit);
+            exponent = preferredUnit;
+        }
+
         // exponent is not divisible by 3, we got work to do
         while(exponent % 3){
             coefficient *= 10;
@@ -1897,11 +1978,23 @@ var visualization,
         }
         
         // number should not exceed 3 digits
-        coefficient = coefficient.toPrecision(3);
+        //coefficient = coefficient.toPrecision(3);
+        coefficient = sprintf(DEFAULT_NUMBER_FORMAT, coefficient);
         
         return coefficient + SYMBOLS[exponent];
     }
 
+    function determineEngUnit(val){
+        var v = val.toExponential().split("e"),
+            exponent = +v[1];
+        
+        // exponent is not divisible by 3, we got work to do
+        while(exponent % 3){
+            exponent--;
+        }
+
+        return exponent;
+    }
 })();
 
 
