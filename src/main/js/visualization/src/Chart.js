@@ -28,7 +28,7 @@
      */
 
     var DEFAULT_NUMBER_FORMAT = "%4.2f";
-    
+
     // data for formatting time ranges
     var TIME_DATA = [
         {
@@ -528,9 +528,9 @@
                     'contentType' : 'application/json',
                     'success' : function(data) {
                         self.plots = self.__processResult(self.request, data);
-                        
+
                         // setPreffered y unit (k, G, M, etc)
-                        self.setPreferredYUnit(data.results); 
+                        self.setPreferredYUnit(data.results);
 
                         /*
                          * If the chart has not been created yet, then
@@ -637,6 +637,10 @@
                                                 m.tags[key] = dp.tags[key];
                                             }
                                         }
+                                    }
+
+                                    if (dp.emit === false) {
+                                        m.emit = false;
                                     }
 
                                     if (dp.name === undefined) {
@@ -1131,7 +1135,7 @@
         var v = val.toExponential().split("e"),
             coefficient = +v[0],
             exponent = +v[1];
-        
+
         // if preferredUnit is provided, target that value
         if(preferredUnit !== undefined){
             coefficient *= Math.pow(10, exponent - preferredUnit);
@@ -1143,9 +1147,9 @@
             coefficient *= 10;
             exponent--;
         }
-        
+
         coefficient = sprintf(format, coefficient);
-        
+
         return coefficient + SYMBOLS[exponent];
     }
 })();
