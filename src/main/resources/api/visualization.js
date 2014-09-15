@@ -525,12 +525,51 @@ var visualization,
      *            [fail] called if the core dependencies are not loaded
      */
     function __bootstrap(success, fail) {
-        var sources = [ 'jquery.min.js', 'd3.v3.min.js', 'jstz-1.0.4.min.js',
-                    'css/zenoss.css', 'sprintf.min.js' ];
-        // if moment isn't already loaded load it now, hopefully the versions will be compatible
-        if (!window.moment) {
-            sources = sources.concat(['moment.min.js', 'moment-timezone.js', 'moment-timezone-data.js']);
-        }
+        // dependencies that must be met for visualization.js
+        // to work properly
+        var depChecks = [
+            {
+                source: "jquery.min.js",
+                check: function(){
+                    return !!window.jQuery;
+                }
+            },{
+                source: "d3.v3.min.js",
+                check: function(){
+                    // TODO - check window.d3.version
+                    return !!window.d3;
+                }
+            },{
+                source: "moment.min.js",
+                check: function(){
+                    return !!window.moment;
+                }
+            },{
+                source: "moment-timezone.js",
+                check: function(){
+                    return !!window.moment.tz;
+                }
+            },{
+                source: "moment-timezone-data.js",
+                check: function(){
+                    return !!window.moment.tz;
+                }
+            },{
+                source: "sprintf.min.js",
+                check: function(){
+                    return !!window.sprintf;
+                }
+            }
+        ];
+        var sources = [];
+
+        // check if a dependency should be loaded or not
+        depChecks.forEach(function(depCheck){
+            if(!depCheck.check()){
+                sources.push(depCheck.source);
+            }
+        });
+        
         __loadDependencies({
             'defined' : 'd3',
             'source' : sources
@@ -640,8 +679,9 @@ var visualization,
 (function(){
     "use strict";
 
-    // dictionary of existing charts
-    var __charts = {};
+    // indicates if the base dependencies (stuff like
+    // jquery, d3, etc) have been loaded
+    var depsLoaded = false;
 
     /**
      * @memberOf zenoss
@@ -695,7 +735,7 @@ var visualization,
              *            changes to the chart
              */
             update : function(name, changes) {
-                var found = __charts[name];
+                var found = getChart(name);
                 if (found === undefined) {
                     debug.__warn('Attempt to modify a chart, "' + name +
                         '", that does not exist.');
@@ -738,21 +778,53 @@ var visualization,
              */
             create : function(name, config) {
 
-                if (!window.jQuery) {
+                if (!depsLoaded) {
                     dependency.__bootstrap(function() {
-                        __charts[name] = new Chart(name, config);
+                        depsLoaded = true;
+                        cacheChart(new Chart(name, config));
                     });
                     return;
                 }
 
-                __charts[name] = new Chart(name, config);
+                cacheChart(new Chart(name, config));
             },
 
-            getChart: function(id){
-                return __charts[id];
-            }
+            // expose chart cache getter
+            getChart: getChart
         }
     };
+
+
+    // chart cache with getter/setters
+    var chartCache = {};
+
+    function cacheChart(chart){
+        var numCharts;
+
+        chartCache[chart.name] = chart;
+
+        // automatically remove this chart
+        // if the containing dom element
+        // is destroyed
+        chart.onDestroyed = function(e){
+            removeChart(chart.name);
+        };
+
+        // if there are many charts in here
+        // this could indicate a problem
+        numCharts = Object.keys(chartCache).length;
+        if(numCharts > 12){
+            console.warn("There are", numCharts, "cached charts. This can lead to performance issues.");
+        }
+    }
+
+    function removeChart(name){
+        delete chartCache[name];
+    }
+
+    function getChart(name){
+        return chartCache[name];
+    }
 
 })();
 /**
@@ -760,6 +832,8 @@ var visualization,
  * main chart object
  */
 (function(){
+    "use strict";
+
     /**
      * This class should not be instantiated directly unless the caller
      * really understand what is going on behind the scenes as there is
@@ -781,17 +855,65 @@ var visualization,
      *            is specified this configuration parameter can be used
      *            to specify the entire chart definition.
      */
-    
-    var DEFAULT_NUMBER_FORMAT = "%6.2f";
+
+    var DEFAULT_NUMBER_FORMAT = "%4.2f";
+
+    // data for formatting time ranges
+    var TIME_DATA = [
+        {
+            name: "minute",
+            value: 60000,
+            ticks: 4,
+            // max number of units before we should go up a level
+            breakpoint: 90,
+            format: function(tz, d){ return moment.utc(d).tz(tz).format("HH:mm:ss"); }
+        },{
+            name: "hour",
+            value: 3.6e+6,
+            ticks: 4,
+            breakpoint: 20,
+            format: function(tz, d){ return moment.utc(d).tz(tz).format("HH:mm:ss"); }
+        },{
+            name: "day",
+            value: 8.64e+7,
+            ticks: 3,
+            breakpoint: 7,
+            format: function(tz, d){ return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss"); }
+        },{
+            name: "week",
+            value: 6.048e+8,
+            ticks: 3,
+            breakpoint: 4,
+            format: function(tz, d){ return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss"); }
+        },{
+            name: "month",
+            value: 2.63e+9,
+            ticks: 3,
+            breakpoint: 13,
+            format: function(tz, d){ return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss"); }
+        },{
+            name: "year",
+            value: 3.156e+10,
+
+            ticks: 3,
+            breakpoint: 1000,
+            format: function(tz, d){ return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss"); }
+        }
+    ];
 
     Chart = function(name, config) {
         this.name = name;
         this.config = config;
         this.yAxisLabel = config.yAxisLabel;
-        this.div = $('#' + this.name);
-        if (this.div[0] === undefined) {
-            throw new utils.Error('SelectorError',
-                    'unknown selector specified, "' + this.name + '"');
+
+        this.$div = $('#' + this.name);
+
+        // listen for the container div to be removed and
+        // call cleanup method
+        this.$div.on("DOMNodeRemovedFromDocument", this.__onDestroyed.bind(this));
+
+        if (!this.$div.length) {
+            throw new utils.Error('SelectorError', 'unknown selector specified, "' + this.name + '"');
         }
 
         // Build up a map of metric name to legend label.
@@ -809,21 +931,20 @@ var visualization,
         this.timezone = config.timezone || jstz.determine().name();
         this.svgwrapper = document.createElement('div');
         $(this.svgwrapper).addClass('zenchart');
-        $(this.div).append($(this.svgwrapper));
+        this.$div.append($(this.svgwrapper));
         this.containerSelector = '#' + name + ' .zenchart';
 
         this.message = document.createElement('div');
         $(this.message).addClass('message');
         $(this.message).css('display', 'none');
-        $(this.div).append($(this.message));
+        this.$div.append($(this.message));
 
         this.footer = document.createElement('div');
         $(this.footer).addClass('zenfooter');
-        $(this.div).append($(this.footer));
+        this.$div.append($(this.footer));
 
         this.svg = d3.select(this.svgwrapper).append('svg');
         try {
-            
             this.request = this.__buildDataRequest(this.config);
 
             if (debug.debug) {
@@ -848,81 +969,16 @@ var visualization,
         }
     };
 
-    /**
-     * Returns the appropriate scale symbol given a scaling factor
-     *
-     * @access private
-     * @param {number}
-     *            scale factor, which is the the value which is multiplied by
-     *            the scale unit and then applied to a value to get the
-     *            displayed value.
-     * @returns character the symbol associated widh the given scale factor
-     */
     Chart.prototype = {
         constructor: Chart,
 
-        __scaleSymbol: function(factor) {
-            var ll, idx;
-            ll = this.__scaleSymbols.length;
-            idx = factor + ((ll - 1) / 2);
-            if (idx < 0 || idx >= ll) {
-                return 'UKN';
-            }
-            return this.__scaleSymbols[idx];
-        },
-
-        /**
-         * Calculates a scale factor given the maximum value in the chart.
-         *
-         * @access private
-         * @param {number}
-         *            maximum value in the chart data
-         * @returns number the calculated scale factor
-         */
-        __calculateAutoScaleFactor: function(max) {
-            var factor = 0, ceiling, upper, lower, unit;
-            if (this.config.autoscale) {
-                ceiling = this.config.autoscale.ceiling || 5;
-                unit = parseInt(this.config.autoscale.factor || 1000, 10);
-
-                upper = Math.pow(10, ceiling);
-                lower = upper / 10;
-
-                // Make sure that max value is greater than the lower boundary
-                while (max !== 0 && max < lower) {
-                    max *= unit;
-                    factor -= 1;
-                }
-
-                /*
-                 * And then make sure that max is lower than the upper boundary, it
-                 * is favored that number be less than the upper boundary than
-                 * higher than the lower.
-                 */
-                while (max !== 0 && max > upper) {
-                    max /= unit;
-                    factor += 1;
+        __onDestroyed: function(e){
+            // check if the removed element is the chart container
+            if(this.$div[0] === e.target){
+                if(typeof this.onDestroyed === "function"){
+                    this.onDestroyed.call(this, e);
                 }
             }
-            return factor;
-        },
-
-        /**
-         * Set the auto scale information on the chart
-         *
-         * @access private
-         * @param {number}
-         *            auto scaling factor
-         */
-        __configAutoScale: function(factor) {
-            var scaleUnit = 1000;
-            if (this.config.autoscale && this.config.autoscale.factor) {
-                scaleUnit = this.config.autoscale.factor;
-            }
-            this.scale = {};
-            this.scale.factor = factor;
-            this.scale.symbol = this.__scaleSymbol(factor);
-            this.scale.term = Math.pow(scaleUnit, factor);
         },
 
         /**
@@ -936,8 +992,6 @@ var visualization,
          *            The format string for example "%2f";
          */
         formatValue: function(value) {
-            var format = this.format, scaled, rval;
-
             /*
              * If we were given a undefined value, Infinity, of NaN (all things that
              * can't be formatted, then just return the value.
@@ -945,27 +999,8 @@ var visualization,
             if (!$.isNumeric(value)) {
                 return value;
             }
-            try {
-                scaled = value / this.scale.term;
-                rval = sprintf(format, scaled);
-                if ($.isNumeric(rval)) {
-                    return rval + this.scale.symbol;
-                }
-                // if the result is a NaN just return the original value
-                return rval;
-            } catch (x) {
-                // override the number format for this chart
-                // since this method could be called several times to render a
-                // chart.
-                debug.__warn('Invalid format string  ' + format +
-                    ' using the default format.');
-                scaled = value / this.scale.term;
-                try {
-                    return sprintf(this.format, scaled) + this.scale.symbol;
-                } catch (x1) {
-                    return scaled + this.scale.symbol;
-                }
-            }
+
+            return toEng(value, this.preferredYUnit, this.format);
         },
 
         /**
@@ -1021,7 +1056,7 @@ var visualization,
 
             fheight = this.__hasFooter() ? parseInt($(this.table).outerHeight(), 10)
                     : 0;
-            height = parseInt($(this.div).height(), 10) - fheight;
+            height = parseInt(this.$div.height(), 10) - fheight;
             span = $(this.message).find('span');
 
             $(this.svgwrapper).outerHeight(height);
@@ -1260,18 +1295,15 @@ var visualization,
 
             if (!this.__footerRangeOnly()) {
 
+
                 // One row for the stats table header
                 tr = document.createElement('tr');
-                [ '', 'Metric', 'Ending', 'Minimum', 'Maximum', 'Average' ]
-                        .forEach(function(s) {
-                            th = document.createElement('th');
-                            $(th).addClass('footer_header');
-                            $(th).html(s);
-                            if (s.length === 0) {
-                                $(th).addClass('zenfooter_box_column');
-                            }
-                            $(tr).append($(th));
-                        });
+                tr.innerHTML = '<th class="footer_header zenfooter_box_column"></th>'+
+                    '<th class="footer_header zenfooter_data_text">Metric</th>'+
+                    '<th class="footer_header zenfooter_data_number">Last</th>'+
+                    '<th class="footer_header zenfooter_data_number">Min</th>'+
+                    '<th class="footer_header zenfooter_data_number">Max</th>'+
+                    '<th class="footer_header zenfooter_data_number">Avg</th>';
                 $(this.table).append($(tr));
             }
 
@@ -1324,9 +1356,10 @@ var visualization,
                     'dataType' : 'json',
                     'contentType' : 'application/json',
                     'success' : function(data) {
-                        var results = self.__processResult(self.request, data);
-                        self.plots = results[0];
-                        self.__configAutoScale(results[1]);
+                        self.plots = self.__processResult(self.request, data);
+
+                        // setPreffered y unit (k, G, M, etc)
+                        self.setPreferredYUnit(data.results);
 
                         /*
                          * If the chart has not been created yet, then
@@ -1435,6 +1468,10 @@ var visualization,
                                         }
                                     }
 
+                                    if (dp.emit === false) {
+                                        m.emit = false;
+                                    }
+
                                     if (dp.name === undefined) {
                                         m.name = dp.metric;
                                     } else {
@@ -1455,7 +1492,7 @@ var visualization,
                                         "Invalid data point specification in request, '%s'. No 'metric' or 'name' attribute specified, failing entire request.",
                                         JSON.stringify(dp, null, ' '));
                                 }
-                                
+
                                 if (dp.expression) {
                                     expressionMetric = {
                                         name: m.name,
@@ -1497,10 +1534,9 @@ var visualization,
          *          chart library.
          */
         __processResultAsSeries: function(request, data) {
+
             var plots = [],
-                max = 0;
-            
-            var start = data.startTimeActual,
+                start = data.startTimeActual,
                 end = data.endTimeActual,
                 drange = end - start,
                 // allowable deviation expected start/end points
@@ -1510,10 +1546,8 @@ var visualization,
 
                 var dp, info, key, plot;
 
-                // if series.datapoints is not defined, or the number
-                // of datapoints is less than 2, put empty start/end vals
-                // NOTE: you need at least 2 datapoints to draw a line
-                if(!series.datapoints || (series.datapoints && series.datapoints.length < 2)){
+                // if series.datapoints is not defined, or there are no points
+                if(!series.datapoints || (series.datapoints && !series.datapoints.length)){
                     series.datapoints = [{
                         timestamp: start,
                         value: null
@@ -1551,20 +1585,20 @@ var visualization,
                     'fill' : info.fill,
                     'values' : []
                 };
-                for (var dpi in series.datapoints) {
-                    dp = series.datapoints[dpi];
-                    max = Math.max(Math.abs(dp.value), max);
+
+                series.datapoints.forEach(function(datapoint){
                     plot.values.push({
-                        'x' : dp.timestamp * 1000,
+                        x : datapoint.timestamp * 1000,
                         // ensure value is a number
-                        'y' : typeof dp.value !== "number" ? null : dp.value
+                        y : typeof datapoint.value !== "number" ? null : datapoint.value
                     });
-                }
+                });
+
                 plots.push(plot);
 
             }.bind(this));
 
-            return [ plots, this.__calculateAutoScaleFactor(max) ];
+            return plots;
         },
 
         /**
@@ -1581,18 +1615,9 @@ var visualization,
          *          chart library.
          */
         __processResult: function(request, data) {
-            var results, plots, i, overlay, minDate, maxDate, plot, k, firstMetric;
+            var plots, i, overlay, minDate, maxDate, plot, k, firstMetric;
 
-            // NOTE: series is deprecated
-            // if (data.series) {
-            //     results = this.__processResultAsSeries(request, data);
-            //     plots = results[0];
-            // } else {
-            //     results = this.__processResultAsDefault(request, data);
-            //     plots = results[0];
-            // }
-            results = this.__processResultAsSeries(request, data);
-            plots = results[0];
+            plots = this.__processResultAsSeries(request, data);
 
             // add overlays
             if (this.overlays.length && plots.length && plots[0].values.length) {
@@ -1624,7 +1649,8 @@ var visualization,
                     plots.push(plot);
                 }
             }
-            return results;
+
+            return plots;
         },
 
         /**
@@ -1679,7 +1705,7 @@ var visualization,
          */
         __buildChart: function(data) {
             $(this.svgwrapper).outerHeight(
-                    $(this.div).height() - $(this.footer).outerHeight());
+                    this.$div.height() - $(this.footer).outerHeight());
             this.closure = this.impl.build(this, data);
             this.impl.render(this);
 
@@ -1760,12 +1786,12 @@ var visualization,
         },
 
         __hideMessage: function() {
-            this.div.find(".message").css('display', 'none');
+            this.$div.find(".message").css('display', 'none');
         },
 
         __showMessage: function(message) {
             // cache some commonly used selectors
-            var $message = this.div.find(".message"),
+            var $message = this.$div.find(".message"),
                 $messageSpan = $message.find("span");
 
             if (message) {
@@ -1777,41 +1803,18 @@ var visualization,
         },
 
         __hideChart: function() {
-            this.div.find('.zenchart').css('display', 'none');
+            this.$div.find('.zenchart').css('display', 'none');
 
             if (!this.showLegendOnNoData) {
-                this.div.find('.zenfooter').css('display', 'none');
+                this.$div.find('.zenfooter').css('display', 'none');
             }
         },
 
         __showChart: function() {
             this.__hideMessage();
-            this.div.find('.zenchart').css('display', 'block');
-            this.div.find('.zenfooter').css('display', 'block');
+            this.$div.find('.zenchart').css('display', 'block');
+            this.$div.find('.zenfooter').css('display', 'block');
         },
-
-        /*
-         * Symbols used during autoscaling
-         */
-        __scaleSymbols: [
-            'y', // 10e-24 Yecto
-            'z', // 10^-21 Zepto
-            'a', // 10^-18 Atto
-            'f', // 10^-15 Femto
-            'p', // 10^-12 Pico
-            'n', // 10^-9 Nano
-            'u', // 10^-6 Micro
-            'm', // 10^-3 Milli
-            ' ', // Base
-            'k', // 10^3 Kilo
-            'M', // 10^6 Mega
-            'G', // 10^9 Giga
-            'T', // 10^12 Tera
-            'P', // 10^15 Peta
-            'E', // 10^18 Exa
-            'Z', // 10^21 Zetta
-            'Y' // 10^24 Yotta
-        ],
 
         /**
          * Used to format dates for the output display in the footer of a
@@ -1836,63 +1839,150 @@ var visualization,
         showLegendOnNoData: true,
 
         /**
-         * Used to generate the date/time to be displayed on a tick mark.
-         * This takes into account the range of times being displayed so
-         * that common data can be removed.
-         *
-         * @param {Date}
-         *            start the start date of the time range being
-         *            considered
-         * @param {Date}
-         *            end the end of the time range being considerd
-         * @param {timestamp}
-         *            ts the timestamp to be formated in ms since epoch
-         * @returns string representation of the timestamp
-         * @access public
-         */
-        tickFormat: function(start, end, ts, timezone) {
-            var _start, _end, ts_seconds;
-
-            /*
-             * Convert the strings to date instances, with the understanding
-             * that that data strings may be the one passed back from the
-             * metric service that have '-' instead of spaces
-             */
-            if ($.isNumeric(start)) {
-                _start = new Date(start * 1000);
-            } else {
-                _start = start;
-            }
-
-            if ($.isNumeric(end)) {
-                _end = new Date(end * 1000);
-            } else {
-                _end = end;
-            }
-
-            // if the range is less than a day, show only hours
-            if (_start.getDate() === _end.getDate()) {
-                return moment.utc(ts).tz(timezone).format("HH:mm:ss");
-
-            // else show the full date
-            } else {
-                return moment.utc(ts).tz(timezone).format(this.dateFormat);
-            }
-            
-        },
-
-        /**
          * Used for formatting the date in the legend of the chart.
          * It must be a valid moment.js date format.
          * http://momentjs.com/docs/#/parsing/string-format/
          * @access public
-         * @default "MM/DD/YY hh:mm:ss a"
+         * @default "MM/DD/YY HH:mm:ss a"
          */
-        dateFormat: "MM/DD/YY HH:mm:ss"
+        dateFormat: "MM/DD/YY HH:mm:ss",
 
+        // uses TIME_DATA to determine which time range we care about
+        // and format labels representative of that time range
+        updateXLabels: function(start, end, axis){
+            var dateRange = end - start,
+                done, timeFormat;
+
+            // figure out which unit we care about
+            TIME_DATA.forEach(function(timeFormatObj){
+                if(!done && dateRange <= timeFormatObj.value * timeFormatObj.breakpoint){
+                    timeFormat = timeFormatObj;
+                    done = true;
+                }
+            });
+
+            // set number of ticks based on unit
+            axis.ticks(timeFormat.ticks)
+                .tickFormat(timeFormat.format.bind(null, this.timezone));
+        },
+
+        /**
+         * Create y domain based on options and calculated data range
+         */
+        calculateYDomain: function(miny, maxy, data){
+            // if max is not provided, calcuate max
+            if(maxy === undefined){
+                maxy = calculateResultsMax(data.results);
+            }
+
+            // if min is not provided, calculate min
+            if(miny === undefined){
+                miny = calculateResultsMin(data.results);
+            }
+
+            // if min and max are the same, add a bit to
+            // max to separate them
+            if(miny === maxy){
+                maxy += maxy * 0.1;
+            }
+
+            // if min and max are zero, force a
+            // 0,1 domain
+            if(miny + maxy === 0){
+                maxy = 1;
+            }
+
+            return [miny, maxy];
+        },
+
+        /**
+         * Accepts a query service api response and determines the minimum
+         * value of all series datapoints in that response
+         */
+        calculateResultsMin: function(data){
+            return data.reduce(function(acc, series){
+                return Math.min(acc, series.datapoints.reduce(function(acc, dp){
+                    // if the value is the string "NaN", ignore this dp
+                    if(dp.value === "NaN") return acc;
+                    return Math.min(acc, +dp.value);
+                }, 0));
+            }, 0);
+        },
+
+        /**
+         * Accepts a query service api response and determines the maximum
+         * value of all series datapoints in that response
+         */
+        calculateResultsMax: function(data){
+
+            var seriesCalc = function(a,b){
+                return a+b;
+            };
+
+            return data.reduce(function(acc, series){
+                return seriesCalc(acc, series.datapoints.reduce(function(acc, dp){
+                    // if the value is the string "NaN", ignore this dp
+                    if(dp.value === "NaN") return acc;
+                    return Math.max(acc, +dp.value);
+                }, 0));
+            }, 0);
+        },
+
+        setPreferredYUnit: function(data){
+            var max = this.calculateResultsMax(data),
+                exponent = +max.toExponential().split("e")[1];
+
+            while(exponent % 3){
+                exponent--;
+            }
+
+            this.preferredYUnit = exponent;
+        }
+   };
+
+    var SYMBOLS = {
+        "-24": "y",
+        "-21:": "z",
+        "-18": "a",
+        "-15": "f",
+        "-12": "p",
+        "-9": "n",
+        "-6": "u",
+        "-3": "m",
+        "0": "",
+        "3": "k",
+        "6": "M",
+        "9": "G",
+        "12": "T",
+        "15": "P",
+        "18": "E",
+        "21": "Z",
+        "24": "Y"
     };
 
+    function toEng(val, preferredUnit, format){
+        var v = val.toExponential().split("e"),
+            coefficient = +v[0],
+            exponent = +v[1];
+
+        // if preferredUnit is provided, target that value
+        if(preferredUnit !== undefined){
+            coefficient *= Math.pow(10, exponent - preferredUnit);
+            exponent = preferredUnit;
+        }
+
+        // exponent is not divisible by 3, we got work to do
+        while(exponent % 3){
+            coefficient *= 10;
+            exponent--;
+        }
+
+        coefficient = sprintf(format, coefficient);
+
+        return coefficient + SYMBOLS[exponent];
+    }
 })();
+
 
 window.zenoss = {
 	visualization: visualization,
