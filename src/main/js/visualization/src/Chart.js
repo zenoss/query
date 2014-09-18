@@ -529,9 +529,6 @@
                     'success' : function(data) {
                         self.plots = self.__processResult(self.request, data);
 
-                        // setPreffered y unit (k, G, M, etc)
-                        self.setPreferredYUnit(data.results);
-
                         /*
                          * If the chart has not been created yet, then
                          * create it, else just update the data.
@@ -549,6 +546,10 @@
                         if (self.__updateFooter(data)) {
                             self.__resize();
                         }
+
+                        // setPreffered y unit (k, G, M, etc)
+                        self.setPreferredYUnit(data.results);
+
                     },
                     'error' : function(res) {
                         self.plots = undefined;
@@ -1043,12 +1044,12 @@
         calculateYDomain: function(miny, maxy, data){
             // if max is not provided, calcuate max
             if(maxy === undefined){
-                maxy = calculateResultsMax(data.results);
+                maxy = this.calculateResultsMax(data.results);
             }
 
             // if min is not provided, calculate min
             if(miny === undefined){
-                miny = calculateResultsMin(data.results);
+                miny = this.calculateResultsMin(data.results);
             }
 
             // if min and max are the same, add a bit to

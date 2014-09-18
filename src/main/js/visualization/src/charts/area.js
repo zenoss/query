@@ -40,7 +40,7 @@
 
             // if a max or min y are set
             if (chart.maxy !== undefined || chart.miny !== undefined) {
-                model.yDomain(calculateYDomain(chart.miny, chart.maxy, data));
+                model.yDomain(chart.calculateYDomain(chart.miny, chart.maxy, data));
             }
 
             chart.svg.datum(chart.plots).transition().duration(0).call(
@@ -69,6 +69,11 @@
             // disable advanced area controls
             model.controlsData([]);
 
+
+            // override calculateResultsMax
+            // with a stacked area specific method
+            chart.calculateResultsMax = calculateResultsMax;
+
             model.useInteractiveGuideline(true);
 
             chart.updateXLabels(data.startTimeActual * 1000, data.endTimeActual * 1000, _chart.model().xAxis);
@@ -83,7 +88,7 @@
 
             // if a max or min y are set
             if (chart.maxy !== undefined || chart.miny !== undefined) {
-                model.yDomain(calculateYDomain(chart.miny, chart.maxy, data));
+                model.yDomain(chart.calculateYDomain(chart.miny, chart.maxy, data));
             }
 
             // magic to make the yaxis label show up
@@ -149,61 +154,29 @@
     }
 
     /**
-     * Create y domain based on options and calculated data range
-     */
-    function calculateYDomain(miny, maxy, data){
-        // if max is not provided, calcuate max
-        if(maxy === undefined){
-            maxy = calculateResultsMax(data.results);
-        }
-
-        // if min is not provided, calculate min
-        if(miny === undefined){
-            miny = calculateResultsMin(data.results);
-        }
-
-        // if min and max are the same, add a bit to
-        // max to separate them
-        if(miny === maxy){
-            maxy += maxy * 0.1;
-        }
-
-        // if min and max are zero, force a
-        // 0,1 domain
-        if(miny + maxy === 0){
-            maxy = 1;
-        }
-
-        return [miny, maxy];
-    }
-
-    /**
-     * Accepts a query service api response and determines the minimum
-     * value of all series datapoints in that response
-     */
-    function calculateResultsMin(data){
-        return data.reduce(function(acc, series){
-            return Math.min(acc, series.datapoints.reduce(function(acc, dp){
-                return Math.min(acc, +dp.value);
-            }, 0));
-        }, 0);
-    }
-
-    /**
      * Accepts a query service api response and determines the maximum
      * value of all series datapoints in that response
      */
     function calculateResultsMax(data){
+        var timeMap = {},
+            max = 0;
 
-        var seriesCalc = function(a,b){
-            return a+b;
+        var accumulate = function(acc, val){
+            return acc + val;
         };
 
-        return data.reduce(function(acc, series){
-            return seriesCalc(acc, series.datapoints.reduce(function(acc, dp){
-                return Math.max(acc, +dp.value);
-            }, 0));
-        }, 0);
+        data.forEach(function(series){
+            series.datapoints.forEach(function(dp){
+                timeMap[dp.timestamp] = timeMap[dp.timestamp] || [];
+                timeMap[dp.timestamp].push(dp.value || 0);
+            });
+        });
+
+        for(var i in timeMap){
+            max = Math.max(timeMap[i].reduce(accumulate), max);
+        }
+
+        return max;
     }
 
 
