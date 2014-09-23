@@ -916,6 +916,9 @@ var visualization,
             throw new utils.Error('SelectorError', 'unknown selector specified, "' + this.name + '"');
         }
 
+        // base should be something like 1000 or 1024
+        this.base = config.base || 1000;
+
         // Build up a map of metric name to legend label.
         this.__buildPlotInfo();
 
@@ -1000,7 +1003,7 @@ var visualization,
                 return value;
             }
 
-            return toEng(value, this.preferredYUnit, this.format);
+            return toEng(value, this.preferredYUnit, this.format, this.base);
         },
 
         /**
@@ -1961,20 +1964,23 @@ var visualization,
         "24": "Y"
     };
 
-    function toEng(val, preferredUnit, format){
+    function toEng(val, preferredUnit, format, base){
+        // base will be something like 1024
+        base = base * 0.01 || 10;
+        
         var v = val.toExponential().split("e"),
             coefficient = +v[0],
             exponent = +v[1];
 
         // if preferredUnit is provided, target that value
         if(preferredUnit !== undefined){
-            coefficient *= Math.pow(10, exponent - preferredUnit);
+            coefficient *= Math.pow(base, exponent - preferredUnit);
             exponent = preferredUnit;
         }
 
         // exponent is not divisible by 3, we got work to do
         while(exponent % 3){
-            coefficient *= 10;
+            coefficient *= base;
             exponent--;
         }
 
