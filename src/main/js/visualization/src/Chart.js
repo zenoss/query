@@ -87,6 +87,9 @@
             throw new utils.Error('SelectorError', 'unknown selector specified, "' + this.name + '"');
         }
 
+        // base should be something like 1000 or 1024
+        this.base = config.base || 1000;
+
         // Build up a map of metric name to legend label.
         this.__buildPlotInfo();
 
@@ -171,7 +174,7 @@
                 return value;
             }
 
-            return toEng(value, this.preferredYUnit, this.format);
+            return toEng(value, this.preferredYUnit, this.format, this.base);
         },
 
         /**
@@ -1130,25 +1133,34 @@
         "24": "Y"
     };
 
-    function toEng(val, preferredUnit, format){
+    function toEng(val, preferredUnit, format, base){
         var v = val.toExponential().split("e"),
             coefficient = +v[0],
-            exponent = +v[1];
+            exponent = +v[1],
+            // engineering notation rolls over every 1000 units,
+            // and each step towards that is a power of 10, but
+            // we may want to roll over on other values, so factor
+            // in the provided base value (eg: 1024 for bytes)
+            multi = (1000 / base) * 10,
+            result = val;
 
         // if preferredUnit is provided, target that value
         if(preferredUnit !== undefined){
-            coefficient *= Math.pow(10, exponent - preferredUnit);
+            coefficient *= Math.pow(multi, exponent - preferredUnit);
             exponent = preferredUnit;
         }
 
         // exponent is not divisible by 3, we got work to do
         while(exponent % 3){
-            coefficient *= 10;
+            coefficient *= multi;
             exponent--;
         }
 
-        coefficient = sprintf(format, coefficient);
+        // divide result by base
+        for(var i = 0; i < exponent; i += 3){
+           result /= base; 
+        }
 
-        return coefficient + SYMBOLS[exponent];
+        return sprintf(format, result) + SYMBOLS[exponent];
     }
 })();
