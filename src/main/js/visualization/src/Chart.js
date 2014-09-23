@@ -558,8 +558,6 @@
                         if (self.__updateFooter()) {
                             self.__resize();
                         }
-
-                        console.error(res.statusText, ":", res.responseText);
                     }
                 });
             } catch (x) {
