@@ -292,7 +292,12 @@ public class MetricService implements MetricServiceAPI {
                     reader = translateOpenTsdbInputToLastInput(reader, start, end); //new LastFilter(reader, start, end);
                 }
             } catch (WebApplicationException wae) {
-                log.error(String.format("Caught web exception (%s). Rethrowing.", wae.getMessage()));
+                // Log 404 messages at lower level.
+                if (Response.Status.NOT_FOUND.getStatusCode() == getStatusFromWebApplicationException(wae)) {
+                    log.debug("Caught web exception ({}). Status: 404 (Not found). Rethrowing.", wae.getMessage());
+                } else {
+                    log.error(String.format("Caught web exception ({}). Rethrowing.", wae.getMessage()));
+                }
                 throw wae;
             } catch (IOException e) {
                 log.error("Failed to connect to metric data source: {} : {}", e.getClass().getName(), e.getMessage(), e);
@@ -336,6 +341,16 @@ public class MetricService implements MetricServiceAPI {
                     reader.close();
                 }
             }
+        }
+
+        private int getStatusFromWebApplicationException(WebApplicationException wae) {
+            // Response.getStatus uses -1 for 'not set'. We will, too.
+            int result = -1;
+            Response response = wae.getResponse();
+            if (null != response) {
+                result = response.getStatus();
+            }
+            return result;
         }
 
         /**

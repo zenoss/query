@@ -30,6 +30,7 @@
  */
 package org.zenoss.app.metricservice.api.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -51,6 +52,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -120,16 +122,35 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         int statusCode = response.getStatusLine().getStatusCode();
 
         if (isNotOk(statusCode)) {
-            String content = "";
+            String content = "Unable to read content from OpenTSDB.";
             try {
                 content = streamToString(response.getEntity().getContent());
             } catch (IOException e) {
-                content = "Unable to read content from openTSDB.";
+                log.info("Caught exception reading content from OpenTSDB: {}", e.getMessage());
             }
-            throw new WebApplicationException(
-                Response.status(statusCode)
-                    .entity("Operation failed: " + response.getStatusLine().toString() + "Response from OpenTSDB: " + content)
+            WebApplicationException wae;
+            // ZEN-14436: Throw 404 if no data (metric not found)
+            if (content.contains("net.opentsdb.uid.NoSuchUniqueName")) {
+                String openTSDBMessage = content;
+                try {
+                    TypeReference<HashMap<String,HashMap<String,String>>> typeRef = new TypeReference<HashMap<String,HashMap<String,String>>>() {};
+                    Map<String, Map<String,String>> tsdbError = Utils.getObjectMapper().readValue(content, typeRef);
+                    Map<String, String> errorContent = tsdbError.get("error");
+                    if (null != errorContent) {
+                        openTSDBMessage = errorContent.get("message");
+                    }
+                } catch (IOException e) {
+                    log.info("Unable to parse OpenTSDB content as JSON (exception: {}). Returning entire string in message.", e.getMessage());
+                }
+                wae = new WebApplicationException(Response.status(Response.Status.NOT_FOUND).entity(openTSDBMessage)
                     .build());
+            } else {
+                wae = new WebApplicationException(
+                    Response.status(statusCode)
+                        .entity("Operation failed. OpenTSDB Response: Status: [" + response.getStatusLine().toString() + "] Content: [" + content + "]")
+                        .build());
+            }
+            throw wae;
         }
     }
 
@@ -212,8 +233,6 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
     public String getSourceId() {
         return SOURCE_ID;
     }
-
-
 
     private static String parseAggregation(String v) {
         String result = "";
