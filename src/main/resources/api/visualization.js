@@ -1970,7 +1970,8 @@ var visualization,
             // and each step towards that is a power of 10, but
             // we may want to roll over on other values, so factor
             // in the provided base value (eg: 1024 for bytes)
-            multi = (1000 / base) * 10;
+            multi = (1000 / base) * 10,
+            result = val;
 
         // if preferredUnit is provided, target that value
         if(preferredUnit !== undefined){
@@ -1984,7 +1985,12 @@ var visualization,
             exponent--;
         }
 
-        return sprintf(format, coefficient) + SYMBOLS[exponent];
+        // divide result by base
+        for(var i = 0; i < exponent; i += 3){
+           result /= base; 
+        }
+
+        return sprintf(format, result) + SYMBOLS[exponent];
     }
 })();
 
