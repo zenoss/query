@@ -43,8 +43,12 @@
                 model.yDomain(chart.calculateYDomain(chart.miny, chart.maxy, data));
             }
 
-            chart.svg.datum(chart.plots).transition().duration(0).call(
-                model);
+            chart.svg.datum(chart.plots)
+                .transition()
+                .duration(0)
+                .call(model);
+            
+            this.styleThresholds(chart.div);
         },
 
         resize : function(chart) {
@@ -68,7 +72,6 @@
 
             // disable advanced area controls
             model.controlsData([]);
-
 
             // override calculateResultsMax
             // with a stacked area specific method
@@ -106,6 +109,16 @@
         },
         render : function() {
 
+        },
+        
+        // look for series' that are actually thresholds
+        // and style them differently
+        styleThresholds: function(el){
+            $(el).find(".nv-series .nv-legend-text").each(function(i, legend){
+                if(~$(legend).text().indexOf("*")){
+                    legend.classList.add("threshold");
+                }
+            });
         }
     };
 
