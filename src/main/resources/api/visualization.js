@@ -1868,6 +1868,40 @@ var visualization,
                 .tickFormat(timeFormat.format.bind(null, this.timezone));
         },
 
+        dedupeYLabels: function(model){
+            var prevY;
+
+            return function(value, index) {
+                var yDomain = model.yDomain() || [0,1],
+                    formatted = this.formatValue(value),
+                    // min and max labels do not have an index set
+                    // where regular labels do
+                    isMinMax = index === undefined ? true : false;
+
+                // if prevY hasn't been set yet, this is
+                // the first time this has been run, so
+                // set it.
+                if(prevY === undefined){
+                    prevY = this.formatValue(yDomain[0]);
+                }
+
+                // if this is not the min/max tick, and matches the previous
+                // tick value, the min tick value or the max tick value, 
+                // do not return a tick value (I'm sure that's crystal
+                // clear now)
+                if(!isMinMax && (formatted === prevY ||
+                   formatted === this.formatValue(yDomain[0]) ||
+                   formatted === this.formatValue(yDomain[1])) ){
+                    return undefined;
+
+                // if prevY is a unique value, return it
+                } else {
+                    prevY = formatted;
+                    return formatted;
+                }
+            }.bind(this);
+        },
+
         /**
          * Create y domain based on options and calculated data range
          */
