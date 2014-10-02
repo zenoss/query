@@ -81,9 +81,8 @@
 
             chart.updateXLabels(data.startTimeActual * 1000, data.endTimeActual * 1000, _chart.model().xAxis);
 
-            model.yAxis.tickFormat(function(value){
-                return chart.formatValue(value);
-            });
+            // ensure that there are no duplicate ticks on the y axis
+            model.yAxis.tickFormat(chart.dedupeYLabels(model));
             model.clipEdge(true);
             model.height($(chart.svgwrapper).height());
             model.width($(chart.svgwrapper).width() - 10);
