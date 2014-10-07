@@ -87,6 +87,9 @@
             throw new utils.Error('SelectorError', 'unknown selector specified, "' + this.name + '"');
         }
 
+        // base should be something like 1000 or 1024
+        this.base = config.base || 1000;
+
         // Build up a map of metric name to legend label.
         this.__buildPlotInfo();
 
@@ -171,7 +174,7 @@
                 return value;
             }
 
-            return toEng(value, this.preferredYUnit, this.format);
+            return toEng(value, this.preferredYUnit, this.format, this.base);
         },
 
         /**
@@ -529,9 +532,6 @@
                     'success' : function(data) {
                         self.plots = self.__processResult(self.request, data);
 
-                        // setPreffered y unit (k, G, M, etc)
-                        self.setPreferredYUnit(data.results);
-
                         /*
                          * If the chart has not been created yet, then
                          * create it, else just update the data.
@@ -549,6 +549,10 @@
                         if (self.__updateFooter(data)) {
                             self.__resize();
                         }
+
+                        // setPreffered y unit (k, G, M, etc)
+                        self.setPreferredYUnit(data.results);
+
                     },
                     'error' : function(res) {
                         self.plots = undefined;
@@ -557,8 +561,6 @@
                         if (self.__updateFooter()) {
                             self.__resize();
                         }
-
-                        console.error(res.statusText, ":", res.responseText);
                     }
                 });
             } catch (x) {
@@ -1037,18 +1039,52 @@
                 .tickFormat(timeFormat.format.bind(null, this.timezone));
         },
 
+        dedupeYLabels: function(model){
+            var prevY;
+
+            return function(value, index) {
+                var yDomain = model.yDomain() || [0,1],
+                    formatted = this.formatValue(value),
+                    // min and max labels do not have an index set
+                    // where regular labels do
+                    isMinMax = index === undefined ? true : false;
+
+                // if prevY hasn't been set yet, this is
+                // the first time this has been run, so
+                // set it.
+                if(prevY === undefined){
+                    prevY = this.formatValue(yDomain[0]);
+                }
+
+                // if this is not the min/max tick, and matches the previous
+                // tick value, the min tick value or the max tick value, 
+                // do not return a tick value (I'm sure that's crystal
+                // clear now)
+                if(!isMinMax && (formatted === prevY ||
+                   formatted === this.formatValue(yDomain[0]) ||
+                   formatted === this.formatValue(yDomain[1])) ){
+                    return undefined;
+
+                // if prevY is a unique value, return it
+                } else {
+                    prevY = formatted;
+                    return formatted;
+                }
+            }.bind(this);
+        },
+
         /**
          * Create y domain based on options and calculated data range
          */
         calculateYDomain: function(miny, maxy, data){
             // if max is not provided, calcuate max
             if(maxy === undefined){
-                maxy = calculateResultsMax(data.results);
+                maxy = this.calculateResultsMax(data.results);
             }
 
             // if min is not provided, calculate min
             if(miny === undefined){
-                miny = calculateResultsMin(data.results);
+                miny = this.calculateResultsMin(data.results);
             }
 
             // if min and max are the same, add a bit to
@@ -1131,25 +1167,34 @@
         "24": "Y"
     };
 
-    function toEng(val, preferredUnit, format){
+    function toEng(val, preferredUnit, format, base){
         var v = val.toExponential().split("e"),
             coefficient = +v[0],
-            exponent = +v[1];
+            exponent = +v[1],
+            // engineering notation rolls over every 1000 units,
+            // and each step towards that is a power of 10, but
+            // we may want to roll over on other values, so factor
+            // in the provided base value (eg: 1024 for bytes)
+            multi = (1000 / base) * 10,
+            result = val;
 
         // if preferredUnit is provided, target that value
         if(preferredUnit !== undefined){
-            coefficient *= Math.pow(10, exponent - preferredUnit);
+            coefficient *= Math.pow(multi, exponent - preferredUnit);
             exponent = preferredUnit;
         }
 
         // exponent is not divisible by 3, we got work to do
         while(exponent % 3){
-            coefficient *= 10;
+            coefficient *= multi;
             exponent--;
         }
 
-        coefficient = sprintf(format, coefficient);
+        // divide result by base
+        for(var i = 0; i < exponent; i += 3){
+           result /= base; 
+        }
 
-        return coefficient + SYMBOLS[exponent];
+        return sprintf(format, result) + SYMBOLS[exponent];
     }
 })();

@@ -1,5 +1,6 @@
 (function() {
     "use strict";
+
     function Chart() {
         var _model = null;
 
@@ -29,6 +30,11 @@
 
             chart.updateXLabels(data.startTimeActual * 1000, data.endTimeActual * 1000, _chart.model().xAxis);
 
+            // if a max or min y are set
+            if (chart.maxy !== undefined || chart.miny !== undefined) {
+                _chart.model().yDomain(chart.calculateYDomain(chart.miny, chart.maxy, data));
+            }
+
             chart.svg
                 .datum(chart.plots)
                 .transition().duration(0)
@@ -47,14 +53,15 @@
 
             chart.updateXLabels(data.startTimeActual * 1000, data.endTimeActual * 1000, _chart.model().xAxis);
 
-            model.yAxis.tickFormat(function(value) {
-                return chart.formatValue(value);
-            });
+            // ensure that there are no duplicate ticks on the y axis
+            model.yAxis.tickFormat(chart.dedupeYLabels(model));
             model.yAxis.axisLabel(chart.yAxisLabel);
 
-            if (chart.maxy !== undefined && chart.miny !== undefined) {
-                model.forceY([ chart.miny, chart.maxy ]);
+            // if a max or min y are set
+            if (chart.maxy !== undefined || chart.miny !== undefined) {
+                model.yDomain(chart.calculateYDomain(chart.miny, chart.maxy, data));
             }
+            
             // magic to make the yaxis label show up
             // see https://github.com/novus/nvd3/issues/17
             model.margin({
@@ -76,6 +83,7 @@
                 }.bind(this));
             }.bind(this));
 
+            // don't draw null point lines and areas
             model.lines
                 .defined(function(d){
                     return d.y !== null;
