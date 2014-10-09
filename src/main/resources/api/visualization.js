@@ -1134,7 +1134,7 @@ var visualization,
          */
         __updateFooter: function(data) {
             var sta, eta, plot, dp, vals, cur, min, max, avg, cols, init, label, ll, i, v, vIdx, k, rows, row, box, color, resize = false,
-                timezone = this.timezone, config = this.config;
+                timezone = this.timezone;
             if (!this.table) {
                 return false;
             }
@@ -1180,13 +1180,15 @@ var visualization,
                         if (this.impl) {
                             color = this.impl.color(this, this.closure, i);
                         } else {
-                            color = {}; // unable to determine color
+                            // unable to determine color
+                            color = {
+                                color: "white",
+                                opacity: 1
+                            };
                         }
 
                         if (dp.color) {
                             color.color = dp.color;
-                        } else {
-                            color.color = "white";
                         }
                         box = $(cols[0]).find('div.zenfooter_box');
                         box.css('background-color', color.color);
@@ -1394,7 +1396,6 @@ var visualization,
                             // the table
                             if (!self.table) {
                                 self.__buildFooter(self.config);
-                                self.__resize();
                             } else {
                                 if (self.__updateFooter()) {
                                     self.__resize();

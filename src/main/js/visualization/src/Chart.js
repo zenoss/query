@@ -351,13 +351,15 @@
                         if (this.impl) {
                             color = this.impl.color(this, this.closure, i);
                         } else {
-                            color = {}; // unable to determine color
+                            // unable to determine color
+                            color = {
+                                color: "white",
+                                opacity: 1
+                            };
                         }
 
                         if (dp.color) {
                             color.color = dp.color;
-                        } else {
-                            color.color = "white";
                         }
                         box = $(cols[0]).find('div.zenfooter_box');
                         box.css('background-color', color.color);
