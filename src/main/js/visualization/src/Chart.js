@@ -305,7 +305,7 @@
          */
         __updateFooter: function(data) {
             var sta, eta, plot, dp, vals, cur, min, max, avg, cols, init, label, ll, i, v, vIdx, k, rows, row, box, color, resize = false,
-                timezone = this.timezone, config = this.config;
+                timezone = this.timezone;
             if (!this.table) {
                 return false;
             }
