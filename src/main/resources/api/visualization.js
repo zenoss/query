@@ -1143,8 +1143,7 @@ var visualization,
                 sta = this.dateFormatter(data.startTimeActual, timezone );
                 eta = this.dateFormatter(data.endTimeActual, timezone);
             } else {
-                sta = eta = 'N/A';
-
+                sta = eta = "N/A";
             }
             $($(rows[0]).find('td')).html(
                     sta + ' to ' + eta + ' (' + timezone + ')');
@@ -1181,7 +1180,11 @@ var visualization,
                         if (this.impl) {
                             color = this.impl.color(this, this.closure, i);
                         } else {
-                            color = 'white'; // unable to determine color
+                            // unable to determine color
+                            color = {
+                                color: "white",
+                                opacity: 1
+                            };
                         }
 
                         if (dp.color) {
@@ -1387,8 +1390,17 @@ var visualization,
                         self.plots = undefined;
 
                         self.__showNoData();
-                        if (self.__updateFooter()) {
-                            self.__resize();
+                        // upon errors still show the footer
+                        if (self.showLegendOnNoData && self.__hasFooter()) {
+                            // if this is the first request that errored we will need to build
+                            // the table
+                            if (!self.table) {
+                                self.__buildFooter(self.config);
+                            } else {
+                                if (self.__updateFooter()) {
+                                    self.__resize();
+                                }
+                            }
                         }
                     }
                 });
@@ -1886,7 +1898,7 @@ var visualization,
                 }
 
                 // if this is not the min/max tick, and matches the previous
-                // tick value, the min tick value or the max tick value, 
+                // tick value, the min tick value or the max tick value,
                 // do not return a tick value (I'm sure that's crystal
                 // clear now)
                 if(!isMinMax && (formatted === prevY ||
@@ -2021,7 +2033,7 @@ var visualization,
 
         // divide result by base
         for(var i = 0; i < exponent; i += 3){
-           result /= base; 
+           result /= base;
         }
 
         return sprintf(format, result) + SYMBOLS[exponent];
