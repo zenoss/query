@@ -385,6 +385,10 @@
                             init = false;
                             for (vIdx in plot.values) {
                                 v = plot.values[vIdx];
+                                // don't attempt to calculate nulls
+                                if (v.y === null) {
+                                    continue;
+                                }
                                 if (!init) {
                                     vals[min] = v.y;
                                     vals[max] = v.y;
