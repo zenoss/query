@@ -312,8 +312,8 @@ public class MetricService implements MetricServiceAPI {
             long currentPointTimeStamp;
             SortedMap<Long, Double> dataPointSingleton = new TreeMap<>();
             Map.Entry<Long, Double> lastDataPoint = null;
-              for (Map.Entry<Long, Double> dataPoint : series.getDataPoints().entrySet()) {
-                    currentPointTimeStamp = dataPoint.getKey();
+            for (Map.Entry<Long, Double> dataPoint : series.getDataPoints().entrySet()) {
+                currentPointTimeStamp = dataPoint.getKey();
                 if (currentPointTimeStamp < startTimeStamp || currentPointTimeStamp > endTimeStamp) {
                     continue;
                 }
