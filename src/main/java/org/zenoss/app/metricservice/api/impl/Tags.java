@@ -114,7 +114,9 @@ public class Tags {
 
     public static Tags fromOpenTsdbTags(Map<String,String> tags) {
         Tags result = new Tags();
-        result.tags.putAll(tags);
+        if (null != tags) {
+            result.tags.putAll(tags);
+        }
         return result;
     }
 

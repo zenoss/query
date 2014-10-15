@@ -2,16 +2,20 @@ authEnabled: false
 logging:
   level: INFO
   loggers:
-    "org.zenoss": DEBUG
-metrics: 
+    "org.zenoss": INFO
+metrics:
   defaultReturnSet: EXACT
   defaultStartTime: 1h-ago
   defaultEndTime: now
   defaultSeries: true
   openTsdbUrl: http://127.0.0.1:4242
   defaultTsdTimeZone: UTC
-  connectionTimeoutMs: 20000
+  connectionTimeoutMs: 30000
   sendRateOptions: false
+  maxTotalPoolConnections: 20
+  maxPoolConnectionsPerRoute: 10
+  executorThreadPoolSize: 10
+
 proxyConfiguration:
   hostname: 127.0.0.1
   port: 8080

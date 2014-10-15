@@ -35,6 +35,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenoss.app.metricservice.api.impl.IHasShortcut;
+import org.zenoss.app.metricservice.api.impl.QueryStatus;
 
 import java.io.PrintStream;
 import java.util.*;
@@ -66,10 +67,21 @@ public class Buckets<P extends IHasShortcut> {
      */
     private long secondsPerBucket = DEFAULT_BUCKET_SIZE;
 
-    private OccurrenceCounter<P> primaryKeyOccurrences = new OccurrenceCounter<>();
+    private Map<String, QueryStatus> queryStatuses = new HashMap<>();
 
     public Map<Long, Bucket> getBucketList() {
         return bucketList;
+    }
+
+    public void addQueryStatus(P key, QueryStatus status) {
+        log.debug(String.format("Adding QueryStatus: [%s, (hashcode:%d), \"%s\"]", key.getShortcut(), key.hashCode(), status.getMessage()));
+        queryStatuses.put(key.getShortcut(), status);
+    }
+
+    public QueryStatus getQueryStatus(P key) {
+        QueryStatus result = queryStatuses.get(key.getShortcut());
+        log.debug(String.format("Getting QueryStatus(%s, (hashcode:%d)): returning \"%s\".", key.getShortcut(), key.hashCode(), null == result ? "NULL" : result.getMessage()));
+        return result;
     }
 
     /**
@@ -160,7 +172,7 @@ public class Buckets<P extends IHasShortcut> {
             return result;
         }
 
-        public boolean hasValue(Object key) {
+        public boolean hasValue(P key) {
             Value value = values.get(key);
             return (value != null && value.getCount() > 0l);
         }
@@ -216,7 +228,6 @@ public class Buckets<P extends IHasShortcut> {
 
         // Add the value
         b.add(primaryKey, value);
-        addOccurrence(primaryKey, timestamp);
     }
 
     /**
@@ -241,10 +252,6 @@ public class Buckets<P extends IHasShortcut> {
         }
         // Add the value
         b.addInterpolated(primaryKey, value);
-    }
-
-    private void addOccurrence(P primaryKey, long timestamp) {
-        primaryKeyOccurrences.logOccurrence(primaryKey, timestamp);
     }
 
     /**
@@ -272,10 +279,6 @@ public class Buckets<P extends IHasShortcut> {
     public final SortedSet<Long> getTimestamps() {
         SortedSet<Long> result = new TreeSet<>(bucketList.keySet());
         return result;
-    }
-
-    public final Set<P> getPrimaryKeys() {
-        return primaryKeyOccurrences.getKeys();
     }
 
     /**
@@ -306,27 +309,6 @@ public class Buckets<P extends IHasShortcut> {
                         value.getSum(),
                         value.getCount());
             }
-        }
-    }
-
-    private final class OccurrenceCounter<K> {
-        private final Map<K, Long> occurrenceMap = new HashMap<>();
-
-        public void logOccurrence(K key, long timestamp) {
-            increment(key);
-        }
-
-        private void increment(K key) {
-            Long count = occurrenceMap.get(key);
-            if (null == count) {
-                occurrenceMap.put(key,Long.valueOf(1));
-            } else {
-                occurrenceMap.put(key, count++);
-            }
-        }
-
-        public Set<K> getKeys() {
-            return Collections.unmodifiableSet(occurrenceMap.keySet());
         }
     }
 }

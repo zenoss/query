@@ -47,6 +47,11 @@ public class MetricServiceConfigTest {
     private static final boolean SERIES = false;
     private static final String TSDB_TZ = "UTC";
     private static final String TSDB_URL = "http://localhost:4242";
+    private static final int CONN_TIMEOUT_MS = 1000;
+    private static final int EXEC_THREAD_POOL_SIZE = 37;
+    private static final int MAX_POOL_CONNECTIONS_PER_ROUTE = 20;
+    private static final int MAX_TOTAL_POOL_CONNECTIONS = 234;
+    private static final Boolean SEND_RATE_OPTIONS = true;
 
     @Test
     public void testPerformanceMetricQueryConfig() {
@@ -57,11 +62,29 @@ public class MetricServiceConfigTest {
         config.setDefaultSeries(SERIES);
         config.setDefaultTsdTimeZone(TSDB_TZ);
         config.setOpenTsdbUrl(TSDB_URL);
+        config.setConnectionTimeoutMs(CONN_TIMEOUT_MS);
+        config.setExecutorThreadPoolSize(EXEC_THREAD_POOL_SIZE);
+        config.setMaxPoolConnectionsPerRoute(MAX_POOL_CONNECTIONS_PER_ROUTE);
+        config.setMaxTotalPoolConnections(MAX_TOTAL_POOL_CONNECTIONS);
+        config.setSendRateOptions(SEND_RATE_OPTIONS);
+
         Assert.assertEquals(START_TIME, config.getDefaultStartTime());
         Assert.assertEquals(END_TIME, config.getDefaultEndTime());
         Assert.assertEquals(RETURN_SET, config.getDefaultReturnSet());
         Assert.assertEquals(SERIES, config.getDefaultSeries());
         Assert.assertEquals(TSDB_TZ, config.getDefaultTsdTimeZone());
+        Assert.assertEquals(TSDB_URL, config.getOpenTsdbUrl());
+        Assert.assertEquals(CONN_TIMEOUT_MS, config.getConnectionTimeoutMs());
+        Assert.assertEquals(EXEC_THREAD_POOL_SIZE, config.getExecutorThreadPoolSize());
+        Assert.assertEquals(MAX_POOL_CONNECTIONS_PER_ROUTE, config.getMaxPoolConnectionsPerRoute());
+        Assert.assertEquals(MAX_TOTAL_POOL_CONNECTIONS, config.getMaxTotalPoolConnections());
+        Assert.assertEquals(SEND_RATE_OPTIONS, config.getSendRateOptions());
+    }
+
+    @Test
+    public void testPerformanceMetricQueryConfigStripsTrailingSlashFromURL() {
+        MetricServiceConfig config = new MetricServiceConfig();
+        config.setOpenTsdbUrl(TSDB_URL + '/');
         Assert.assertEquals(TSDB_URL, config.getOpenTsdbUrl());
     }
 }

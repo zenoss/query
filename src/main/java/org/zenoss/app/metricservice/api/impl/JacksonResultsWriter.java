@@ -92,7 +92,7 @@ public class JacksonResultsWriter {
             return results;
         }
         for (MetricSpecification query : queries) {
-            if (false == query.getEmit()) {
+            if (!query.getEmit()) {
                 log.info("emit is false for metric {} - skipping.", query.getNameOrMetric());
                 continue;
             }
@@ -109,7 +109,18 @@ public class JacksonResultsWriter {
         qr.setTags(query.getTags());
         qr.setDatapoints(makeDataPoints(buckets, startTs, endTs, returnset, query.getNameOrMetric()));
         qr.setId(query.getId());
+        qr.setQueryStatus(getQueryStatus(query, buckets));
+
         return qr;
+    }
+
+    private QueryStatus getQueryStatus(MetricSpecification query, Buckets<IHasShortcut> buckets) {
+        MetricKey key = MetricKey.fromValue(query);
+        QueryStatus result = buckets.getQueryStatus(key);
+        if (null == result) {
+            result = new QueryStatus(QueryStatus.QueryStatusEnum.UNKNOWN, String.format("Query status lookup failed for query %s", query.toString()));
+        }
+        return result;
     }
 
     private List<QueryResultDataPoint> makeDataPoints(Buckets<IHasShortcut> buckets, long startTs, long endTs,

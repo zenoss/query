@@ -1,4 +1,4 @@
-/*
+package org.zenoss.app.metricservice.api.impl;/*
  * Copyright (c) 2014, Zenoss and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,38 +28,33 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.metricservice.testutil;
 
-import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryResult;
-import org.zenoss.app.metricservice.api.impl.Utils;
-import org.zenoss.app.metricservice.api.model.MetricSpecification;
+import org.junit.Test;
 
-import java.io.BufferedReader;
-import java.io.StringReader;
-import java.util.*;
+import static org.junit.Assert.assertTrue;
 
-public class DataReaderGenerator {
-    private Collection<OpenTSDBQueryResult> results = new ArrayList<OpenTSDBQueryResult>();
+public class OpenTSDBQueryResultTest {
+    private static final double TEST_POINT_VALUE = 1.2345;
+    private static final long TEST_I = 47123l;
 
-    public BufferedReader makeReader() {
-        // generate reader that spits out JSON for an array of OpenTSDBQueryResult
-        String resultString = Utils.jsonStringFromObject(results);
-        StringReader sr = new StringReader(resultString);
-        return new BufferedReader(sr);
+    @Test
+    public void testDataPointsMapIsNotNullOnGet() {
+        OpenTSDBQueryResult subject = new OpenTSDBQueryResult();
+        assertTrue("DataPoints list is non-null on initialization", null != subject.getDataPoints());
     }
 
-    public void addSeries(MetricSpecification specification, SeriesGenerator dataGen, long start, long end, long step) {
-        results.add(makeQueryResult(specification, dataGen, start, end, step));
+    @Test
+    public void testDataPointsMapIsNotNullOnGetAfterSettingToNull() {
+        OpenTSDBQueryResult subject = new OpenTSDBQueryResult();
+        subject.setDataPoints(null);
+        assertTrue("DataPoints list is non-null after setting null", null != subject.getDataPoints());
     }
 
-    private OpenTSDBQueryResult makeQueryResult(MetricSpecification specification, SeriesGenerator dataGen, long start, long end, long step) {
-        OpenTSDBQueryResult result = new OpenTSDBQueryResult();
-        result.addTags(specification.getTags());
-        Map<Long, Double> generatedValues = dataGen.generateValues(start, end, step);
-        SortedMap<Long, Double> dataPoints = new TreeMap<>();
-        dataPoints.putAll(generatedValues);
-        result.setDataPoints(dataPoints);
-        result.metric = specification.getNameOrMetric();
-        return result;
+    @Test
+    public void testAddWorksAfterSettingDataPointsToNull() {
+        OpenTSDBQueryResult subject = new OpenTSDBQueryResult();
+        subject.setDataPoints(null);
+        subject.addDataPoint(TEST_I, TEST_POINT_VALUE);
+        assertTrue("DataPoints list is populated properly after setting null", subject.getDataPoints().containsKey(TEST_I));
     }
 }

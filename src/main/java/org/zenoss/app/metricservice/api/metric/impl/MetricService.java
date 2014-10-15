@@ -47,7 +47,6 @@ import org.zenoss.app.metricservice.api.impl.*;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.app.metricservice.buckets.Buckets;
-import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
@@ -134,7 +133,7 @@ public class MetricService implements MetricServiceAPI {
                           Optional<ReturnSet> returnset, Optional<Boolean> series, Optional<String> downsample,
                           double downsampleMultiplier, Optional<Map<String, List<String>>> tags,
                           List<MetricSpecification> metrics) {
-        log.info("Thread {}: entering MetricService.query()", Thread.currentThread().getId());
+        log.debug("Thread {}: entering MetricService.query()", Thread.currentThread().getId());
         return makeCORS(Response.ok(
             new MetricServiceWorker(id.or(NOT_SPECIFIED),
                 start.or(config.getMetricServiceConfig().getDefaultStartTime()),
@@ -148,83 +147,12 @@ public class MetricService implements MetricServiceAPI {
 
     @Override
     public Response options(String request) {
-        log.info("entering MetricService.options()");
         corsHeaders = request;
         return makeCORS(Response.ok(), request);
     }
 
     private Response makeCORS(Response.ResponseBuilder responseBuilder) {
         return makeCORS(responseBuilder, corsHeaders);
-    }
-
-    /**
-     * Used as a buffer filter class when return the "last" values for a query.
-     * This essentially only return the next line from the underlying reader
-     * when the timestamp delta goes negative (indicating that the tags have
-     * changes in a query) this would mean the last value in a given series and
-     * the value is returned as the next line in the file.
-     */
-    private static class LastFilter extends BufferedReader {
-        private final long startTs;
-        private final long endTs;
-
-        /**
-         * @param in
-         */
-        private LastFilter(Reader in, long startTs, long endTs) {
-            super(in);
-            this.startTs = startTs;
-            this.endTs = endTs;
-            log.info("LastFilter constructed.");
-        }
-
-        /*
-         * (non-Javadoc)
-         *
-         * @see java.io.BufferedReader#readLine()
-         */
-        @Override
-        public String readLine() throws IOException {
-            log.info("readLine() entry.");
-            // Read from the input stream until we see the timestamp
-            // go backward and then return the previous value
-            String line;
-
-            StringBuilder jsonString = new StringBuilder();
-            while ((line = super.readLine()) != null) {
-                log.debug("line = {}", line);
-                jsonString.append(line);
-            }
-            ObjectMapper mapper = Utils.getObjectMapper();
-            SeriesQueryResult originalResult;
-            originalResult = mapper.readValue(jsonString.toString(), SeriesQueryResult.class);
-            for (QueryResult series : originalResult.getResults()) {
-                replaceSeriesDataPointsWithLastInRangeDataPoint(series);
-            }
-            // write results (JSON serialization)
-            String resultJson = Utils.jsonStringFromObject(originalResult);
-            log.debug("Resulting JSON: {}", resultJson);
-            return resultJson;
-        }
-
-        private void replaceSeriesDataPointsWithLastInRangeDataPoint(QueryResult series) {
-            long ts;
-            List<QueryResultDataPoint> dataPointSingleton = new ArrayList<>(1);
-            QueryResultDataPoint lastDataPoint = null;
-            for (QueryResultDataPoint dataPoint : series.getDatapoints()) {
-                ts = dataPoint.getTimestamp();
-                if (ts < startTs || ts > endTs) {
-                    continue;
-                }
-                if (null == lastDataPoint || ts > lastDataPoint.getTimestamp()) {
-                    lastDataPoint = dataPoint;
-                }
-            }
-            if (null != lastDataPoint) {
-                dataPointSingleton.add(lastDataPoint);
-            }
-            series.setDatapoints(dataPointSingleton);
-        }
     }
 
     private class MetricServiceWorker implements StreamingOutput {
@@ -276,7 +204,7 @@ public class MetricService implements MetricServiceAPI {
 
             String convertedStartTime = Long.toString(start);
             String convertedEndTime = Long.toString(end);
-            log.info("write() entry.");
+            log.debug("write() entry.");
             BufferedReader reader = null;
             try {
                 // The getReader call queries the datastore (e.g. openTSDB) and returns a reader for streaming the results.
@@ -296,7 +224,7 @@ public class MetricService implements MetricServiceAPI {
                 if (Response.Status.NOT_FOUND.getStatusCode() == getStatusFromWebApplicationException(wae)) {
                     log.debug("Caught web exception ({}). Status: 404 (Not found). Rethrowing.", wae.getMessage());
                 } else {
-                    log.error(String.format("Caught web exception ({}). Rethrowing.", wae.getMessage()));
+                    log.error("Caught web exception ({}). Rethrowing.", wae.getMessage());
                 }
                 throw wae;
             } catch (IOException e) {
@@ -330,12 +258,6 @@ public class MetricService implements MetricServiceAPI {
                         Response.Status.NOT_FOUND.getStatusCode(),
                         String.format("Unable to write results: %s", e.getMessage()),
                         e.getMessage()));
-            } catch (UnknownReferenceException e) {
-                throw new WebApplicationException(
-                    Utils.getErrorResponse(id,
-                        Response.Status.BAD_REQUEST.getStatusCode(),
-                        String.format("Unable to write results: %s", e.getMessage()),
-                        e.getMessage()));
             } finally {
                 if (reader != null) {
                     reader.close();
@@ -354,7 +276,7 @@ public class MetricService implements MetricServiceAPI {
         }
 
         /**
-         * translateOpenTsdbInputtoLastInput:
+         * translateOpenTsdbInputToLastInput:
          *
          * Handler for 'last' specification - reads through datapoints in series, remembering and returning the datapoint
          * with the greatest timestamp betweeen start and end.
@@ -388,10 +310,10 @@ public class MetricService implements MetricServiceAPI {
 
         private void replaceSeriesDataPointsWithLastInRangeDataPoint(OpenTSDBQueryResult series, long startTimeStamp, long endTimeStamp) {
             long currentPointTimeStamp;
-            SortedMap<Long, String> dataPointSingleton = new TreeMap<>();
-            Map.Entry<Long, String> lastDataPoint = null;
-            for (Map.Entry<Long, String> dataPoint : series.getDataPoints().entrySet()) {
-                currentPointTimeStamp = dataPoint.getKey();
+            SortedMap<Long, Double> dataPointSingleton = new TreeMap<>();
+            Map.Entry<Long, Double> lastDataPoint = null;
+              for (Map.Entry<Long, Double> dataPoint : series.getDataPoints().entrySet()) {
+                    currentPointTimeStamp = dataPoint.getKey();
                 if (currentPointTimeStamp < startTimeStamp || currentPointTimeStamp > endTimeStamp) {
                     continue;
                 }
@@ -406,17 +328,16 @@ public class MetricService implements MetricServiceAPI {
         }
 
         private void writeResultsUsingJacksonWriter(OutputStream output, BufferedReader reader, long bucketSize)
-            throws IOException, UnknownReferenceException, ClassNotFoundException {
-            log.info("Using JacksonWriter to generate JSON results.");
+            throws IOException, ClassNotFoundException {
+            log.debug("Using JacksonWriter to generate JSON results.");
             try (JacksonWriter writer = new JacksonWriter(new OutputStreamWriter(output, "UTF-8"))) {
                 log.debug("processing results");
                 ResultProcessor processor = new DefaultResultProcessor(reader, queries, bucketSize);
                 Buckets<IHasShortcut> buckets = processor.processResults();
                 log.debug("results processed.");
-                //log.info("calling jacksonResultsWriter. Buckets = {}", Utils.jsonStringFromObject(buckets));
                 jacksonResultsWriter.writeResults(writer, queries, buckets,
                     id, api.getSourceId(), start, startTime, end, endTime, returnset, outputAsSeries);
-                log.info("back from jacksonResultsWriter");
+                log.debug("back from jacksonResultsWriter");
             }
         }
 

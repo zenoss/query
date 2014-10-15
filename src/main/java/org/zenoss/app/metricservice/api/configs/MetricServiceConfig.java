@@ -62,7 +62,42 @@ public class MetricServiceConfig {
     @JsonProperty
     private Boolean sendRateOptions = Boolean.FALSE;
 
+    @JsonProperty
+    private int maxTotalPoolConnections = 50;
+
+    @JsonProperty
+    private int maxPoolConnectionsPerRoute= 20;
+
+    @JsonProperty
+    private int executorThreadPoolSize = 20;
+
+
+    public int getMaxTotalPoolConnections() {
+        return maxTotalPoolConnections;
+    }
+
+    public void setMaxTotalPoolConnections(int maxTotalPoolConnections) {
+        this.maxTotalPoolConnections = maxTotalPoolConnections;
+    }
+
+    public int getMaxPoolConnectionsPerRoute() {
+        return maxPoolConnectionsPerRoute;
+    }
+
+    public void setMaxPoolConnectionsPerRoute(int maxPoolConnectionsPerRoute) {
+        this.maxPoolConnectionsPerRoute = maxPoolConnectionsPerRoute;
+    }
+
+    public int getExecutorThreadPoolSize() {
+        return executorThreadPoolSize;
+    }
+
+    public void setExecutorThreadPoolSize(int executorThreadPoolSize) {
+        this.executorThreadPoolSize = executorThreadPoolSize;
+    }
+
     /**
+
      * @return the defaultReturnSet
      */
     public final ReturnSet getDefaultReturnSet() {

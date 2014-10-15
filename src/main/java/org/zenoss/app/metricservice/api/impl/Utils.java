@@ -39,9 +39,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.Response;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.StringReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -81,7 +78,7 @@ public final class Utils {
     public static final int SECONDS_PER_WEEK = SECONDS_PER_DAY * DAYS_PER_WEEK;
     public static final int SECONDS_PER_YEAR = SECONDS_PER_DAY * DAYS_PER_YEAR;
 
-    private Utils() {};
+    private Utils() {}
 
     private static final ObjectMapper mapper;
     static {
@@ -215,7 +212,7 @@ public final class Utils {
         try {
             json = ow.writeValueAsString(object);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            log.warn("Error converting object to JSON string: {}", e.getMessage());
         }
         return json;
     }
