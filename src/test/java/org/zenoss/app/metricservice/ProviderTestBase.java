@@ -326,8 +326,7 @@ public abstract class ProviderTestBase extends ResourceTest {
     protected void testErrorQuery(Optional<String> id, Optional<String> start,
                                   Optional<String> end, Optional<ReturnSet> returnset,
                                   Optional<Boolean> series, Optional<String> downsample,
-                                  Optional<Map<String, List<String>>> globalTags, String[] queries, int expectedResponseCode)
-        throws Exception {
+                                  Optional<Map<String, List<String>>> globalTags, String[] queries, int expectedResponseCode) {
 
         // Build up the URI query
         char prefix = '?';

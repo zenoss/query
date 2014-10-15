@@ -31,8 +31,26 @@
 
 package org.zenoss.app.metricservice.api.impl;
 
+import org.zenoss.app.metricservice.api.model.RateOptions;
+
 public class OpenTSDBRateOption {
     public boolean counter = true;
     public long counterMax = 65535;
     public long resetValue = 0;
+
+    public OpenTSDBRateOption() {}
+
+    public OpenTSDBRateOption(RateOptions rateOptions) {
+        if (null != rateOptions) {
+            if (null != rateOptions.getCounter()) {
+                counter = rateOptions.getCounter();
+            }
+            if (null != rateOptions.getCounterMax()) {
+                counterMax = rateOptions.getCounterMax();
+            }
+            if (null != rateOptions.getResetThreshold()) {
+                resetValue = rateOptions.getResetThreshold();
+            }
+        }
+    }
 }

@@ -1,4 +1,4 @@
-/*
+package org.zenoss.app.metricservice.api.impl;/*
  * Copyright (c) 2014, Zenoss and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,38 +28,43 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.metricservice.testutil;
 
-import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryResult;
-import org.zenoss.app.metricservice.api.impl.Utils;
-import org.zenoss.app.metricservice.api.model.MetricSpecification;
+public class QueryStatus {
 
-import java.io.BufferedReader;
-import java.io.StringReader;
-import java.util.*;
-
-public class DataReaderGenerator {
-    private Collection<OpenTSDBQueryResult> results = new ArrayList<OpenTSDBQueryResult>();
-
-    public BufferedReader makeReader() {
-        // generate reader that spits out JSON for an array of OpenTSDBQueryResult
-        String resultString = Utils.jsonStringFromObject(results);
-        StringReader sr = new StringReader(resultString);
-        return new BufferedReader(sr);
+    public enum QueryStatusEnum {
+        UNKNOWN,
+        SUCCESS,
+        ERROR,
+        WARNING
     }
 
-    public void addSeries(MetricSpecification specification, SeriesGenerator dataGen, long start, long end, long step) {
-        results.add(makeQueryResult(specification, dataGen, start, end, step));
+    private String message;
+    private QueryStatusEnum status;
+
+
+    public QueryStatus() {
+        message = "";
+        status = QueryStatusEnum.UNKNOWN;
     }
 
-    private OpenTSDBQueryResult makeQueryResult(MetricSpecification specification, SeriesGenerator dataGen, long start, long end, long step) {
-        OpenTSDBQueryResult result = new OpenTSDBQueryResult();
-        result.addTags(specification.getTags());
-        Map<Long, Double> generatedValues = dataGen.generateValues(start, end, step);
-        SortedMap<Long, Double> dataPoints = new TreeMap<>();
-        dataPoints.putAll(generatedValues);
-        result.setDataPoints(dataPoints);
-        result.metric = specification.getNameOrMetric();
-        return result;
+    public QueryStatus(QueryStatusEnum status, String message) {
+        this.status = status;
+        this.message = message;
+    }
+
+    public QueryStatusEnum getStatus() {
+        return status;
+    }
+
+    public void setStatus(QueryStatusEnum status) {
+        this.status = status;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }
