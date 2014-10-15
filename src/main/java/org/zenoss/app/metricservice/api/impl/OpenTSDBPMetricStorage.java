@@ -236,7 +236,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         PoolingClientConnectionManager cm = new PoolingClientConnectionManager();
         int maxTotalPoolConnections = passedConfig.getMetricServiceConfig().getMaxTotalPoolConnections();
         int maxPoolConnectionsPerRoute = passedConfig.getMetricServiceConfig().getMaxPoolConnectionsPerRoute();
-        log.info("Setting up pool with {} total connections and {} max connections per route.", maxTotalPoolConnections, maxPoolConnectionsPerRoute);
+        log.debug("Setting up pool with {} total connections and {} max connections per route.", maxTotalPoolConnections, maxPoolConnectionsPerRoute);
         cm.setMaxTotal(maxTotalPoolConnections);
         cm.setDefaultMaxPerRoute(maxPoolConnectionsPerRoute);
         return new DefaultHttpClient(cm);

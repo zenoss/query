@@ -118,7 +118,7 @@ public class JacksonResultsWriter {
         MetricKey key = MetricKey.fromValue(query);
         QueryStatus result = buckets.getQueryStatus(key);
         if (null == result) {
-            result = new QueryStatus(QueryStatus.QueryStatusEnum.UNKNOWN, String.format("Query status lookup failed for query %s", query.toString()));
+            result = new QueryStatus(QueryStatus.QueryStatusEnum.UNKNOWN, String.format("Unknown query status for query %s", query.toString()));
         }
         return result;
     }
