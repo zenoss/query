@@ -59,6 +59,8 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
     private static final String SOURCE_ID = "OpenTSDB";
 
+    protected static final String SPACE_REPLACEMENT = "//-";
+
     /*
      * (non-Javadoc)
      *
@@ -95,6 +97,9 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         }
 
         Collection<OpenTSDBQueryResult> responses = runQueries(query.asSeparateQueries(), config);
+        for (OpenTSDBQueryResult result : responses) {
+            result.metric = result.metric.replace(SPACE_REPLACEMENT, " ");
+        }
         InputStream responseStream = aggregateResponses(responses);
 
         return new BufferedReader(new InputStreamReader(responseStream, "UTF-8"));
@@ -118,7 +123,13 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             result = new OpenTSDBSubQuery();
             result.aggregator = metricSpecification.getAggregator();
             result.downsample = metricSpecification.getDownsample();
-            result.metric = metricSpecification.getMetric();
+
+            // escape the name of the metric since OpenTSDB doesn't like spaces
+            String metricName = metricSpecification.getMetric();
+            metricName = metricName.replace(" ", SPACE_REPLACEMENT);
+            result.metric = metricName;
+
+
             result.rate = metricSpecification.getRate();
             result.rateOptions = new OpenTSDBRateOption(metricSpecification.getRateOptions());
             Map<String, List<String>> tags = metricSpecification.getTags();
@@ -242,4 +253,3 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         return new DefaultHttpClient(cm);
     }
 }
-
