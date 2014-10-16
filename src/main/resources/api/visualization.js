@@ -2048,7 +2048,6 @@ var visualization,
             // if sprintf is passed a format it doesn't understand an exception is thrown
             return sprintf(format, result) + SYMBOLS[exponent];
         } catch(err) {
-            // default to two decimal places
             return sprintf(DEFAULT_NUMBER_FORMAT, result) + SYMBOLS[exponent];
         }
     }
