@@ -1220,7 +1220,7 @@
             return sprintf(format, result) + SYMBOLS[exponent];
         } catch(err) {
             // default to two decimal places
-            return  result.toFixed(2)..toString() + SYMBOLS[exponent];
+            return sprintf(DEFAULT_NUMBER_FORMAT, result) + SYMBOLS[exponent];
         }
     }
 })();
