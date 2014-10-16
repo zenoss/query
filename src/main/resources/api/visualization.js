@@ -1204,7 +1204,7 @@ var visualization,
                         // we purposefully put two null points so that the graph still renders
                         if (!plot || (plot.values.length == 2 && plot.values[0].y === null && plot.values[1].y === null )) {
                             // communicate to the user that this plot has no v
-                            $(cols[1]).html(label + " (<i>No Data Available</i>)");
+                            $(cols[1]).html(label + " (<em>No Data Available</em>)");
                             for (v = 2; v < 6; v += 1) {
                                 $(cols[v]).html('N/A');
                             }
