@@ -370,19 +370,23 @@
                         if ((k = label.indexOf('{')) > -1) {
                             label = label.substring(0, k) + '{*}';
                         }
-                        $(cols[1]).html(label);
 
-                        if (!plot) {
+                        $(cols[1]).html(label);
+                        // we purposefully put two null points so that the graph still renders
+                        if (!plot || (plot.values.length == 2 && plot.values[0].y === null && plot.values[1].y === null )) {
+                            // communicate to the user that this plot has no v
+                            $(cols[1]).html(label + " (<em>No Data Available</em>)");
                             for (v = 2; v < 6; v += 1) {
                                 $(cols[v]).html('N/A');
                             }
                         } else {
-                            vals = [ 0, -1, -1, 0 ];
+                            vals = [ 0, 0, 0, 0 ];
                             cur = 0;
                             min = 1;
                             max = 2;
                             avg = 3;
                             init = false;
+
                             for (vIdx in plot.values) {
                                 v = plot.values[vIdx];
                                 // don't attempt to calculate nulls
