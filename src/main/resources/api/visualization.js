@@ -2045,7 +2045,7 @@ var visualization,
         }
 
         try{
-            // if sprint is passed a format it doesn't understand an exception is thrown
+            // if sprintf is passed a format it doesn't understand an exception is thrown
             return sprintf(format, result) + SYMBOLS[exponent];
         } catch(err) {
             return  result.toString() + SYMBOLS[exponent];
