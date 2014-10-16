@@ -1215,6 +1215,11 @@
            result /= base;
         }
 
-        return sprintf(format, result) + SYMBOLS[exponent];
+        try{
+            // if sprintf is passed a format it doesn't understand an exception is thrown
+            return sprintf(format, result) + SYMBOLS[exponent];
+        } catch(err) {
+            return sprintf(DEFAULT_NUMBER_FORMAT, result) + SYMBOLS[exponent];
+        }
     }
 })();
