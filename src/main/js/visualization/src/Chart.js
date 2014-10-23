@@ -543,6 +543,9 @@
                     'success' : function(data) {
                         self.plots = self.__processResult(self.request, data);
 
+                        // setPreffered y unit (k, G, M, etc)
+                        self.setPreferredYUnit(data.results);
+
                         /*
                          * If the chart has not been created yet, then
                          * create it, else just update the data.
@@ -560,12 +563,8 @@
                         if (self.__updateFooter(data)) {
                             self.__resize();
                         }
-
-                        // setPreffered y unit (k, G, M, etc)
-                        self.setPreferredYUnit(data.results);
-
                     },
-                    'error' : function(res) {
+                    'error' : function() {
                         self.plots = undefined;
 
                         self.__showNoData();
@@ -1124,16 +1123,22 @@
 
         /**
          * Accepts a query service api response and determines the minimum
-         * value of all series datapoints in that response
+         * value of all series datapoints in that response.
+         * if nonZero is set to true, this will return the smallest non-zero
+         * value
          */
-        calculateResultsMin: function(data){
+        calculateResultsMin: function(data, nonZero){
+            // if nonZero, set things up to start from Infinity
+            var minStartValue = nonZero ?  Infinity : 0;
+
             return data.reduce(function(acc, series){
                 return Math.min(acc, series.datapoints.reduce(function(acc, dp){
                     // if the value is the string "NaN", ignore this dp
                     if(dp.value === "NaN") return acc;
+                    if(nonZero && dp.value === 0) return acc;
                     return Math.min(acc, +dp.value);
-                }, 0));
-            }, 0);
+                }, minStartValue));
+            }, minStartValue);
         },
 
         /**
@@ -1156,70 +1161,66 @@
         },
 
         setPreferredYUnit: function(data){
-            var max = this.calculateResultsMax(data),
-                exponent = +max.toExponential().split("e")[1];
+            var val = this.calculateResultsMax(data),
+                x, unitIndex;
 
-            while(exponent % 3){
-                exponent--;
+            // if val is less than one, use the smallest value
+            // to ensure enough precision after decimal point
+            if(val < 1){
+                val = this.calculateResultsMin(data, true);
             }
 
-            this.preferredYUnit = exponent;
+            if(val === 0){
+                unitIndex = 0;
+            } else {
+                x = Math.log(Math.abs(val)) / Math.log(this.base);
+                unitIndex = Math.floor(x);
+            }
+
+            this.preferredYUnit = unitIndex;
         }
-   };
+    };
 
     var SYMBOLS = {
-        "-24": "y",
-        "-21:": "z",
-        "-18": "a",
-        "-15": "f",
-        "-12": "p",
-        "-9": "n",
-        "-6": "u",
-        "-3": "m",
+        "-8": "y",
+        "-7:": "z",
+        "-6": "a",
+        "-5": "f",
+        "-4": "p",
+        "-3": "n",
+        "-2": "μ",
+        "-1": "m",
         "0": "",
-        "3": "k",
-        "6": "M",
-        "9": "G",
-        "12": "T",
-        "15": "P",
-        "18": "E",
-        "21": "Z",
-        "24": "Y"
+        "1": "k",
+        "2": "M",
+        "3": "G",
+        "4": "T",
+        "5": "P",
+        "6": "E",
+        "7": "Z",
+        "8": "Y"
     };
 
     function toEng(val, preferredUnit, format, base){
-        var v = val.toExponential().split("e"),
-            coefficient = +v[0],
-            exponent = +v[1],
-            // engineering notation rolls over every 1000 units,
-            // and each step towards that is a power of 10, but
-            // we may want to roll over on other values, so factor
-            // in the provided base value (eg: 1024 for bytes)
-            multi = (1000 / base) * 10,
-            result = val;
+        var result,
+            unit;
 
         // if preferredUnit is provided, target that value
         if(preferredUnit !== undefined){
-            coefficient *= Math.pow(multi, exponent - preferredUnit);
-            exponent = preferredUnit;
+            unit = preferredUnit;
+        } else if(val === 0){
+            unit = 0;
+        } else {
+            unit = Math.floor(Math.log(Math.abs(val)) / Math.log(base));
         }
 
-        // exponent is not divisible by 3, we got work to do
-        while(exponent % 3){
-            coefficient *= multi;
-            exponent--;
-        }
-
-        // divide result by base
-        for(var i = 0; i < exponent; i += 3){
-           result /= base;
-        }
+        result = val / Math.pow(base, unit);
 
         try{
             // if sprintf is passed a format it doesn't understand an exception is thrown
-            return sprintf(format, result) + SYMBOLS[exponent];
+            return sprintf(format, result) + SYMBOLS[unit];
         } catch(err) {
-            return sprintf(DEFAULT_NUMBER_FORMAT, result) + SYMBOLS[exponent];
+            return sprintf(DEFAULT_NUMBER_FORMAT, result) + SYMBOLS[unit];
         }
     }
 })();
