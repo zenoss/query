@@ -1129,9 +1129,10 @@
          */
         calculateResultsMin: function(data, nonZero){
             // if nonZero, set things up to start from Infinity
-            var minStartValue = nonZero ?  Infinity : 0;
+            var minStartValue = nonZero ?  Infinity : 0,
+                result;
 
-            return data.reduce(function(acc, series){
+            result = data.reduce(function(acc, series){
                 return Math.min(acc, series.datapoints.reduce(function(acc, dp){
                     // if the value is the string "NaN", ignore this dp
                     if(dp.value === "NaN") return acc;
@@ -1139,6 +1140,14 @@
                     return Math.min(acc, +dp.value);
                 }, minStartValue));
             }, minStartValue);
+
+            // if the result is Infinity, then all the values
+            // were zero, so just return zero
+            if(result === Infinity){
+                result = 0; 
+            }
+
+            return result;
         },
 
         /**
