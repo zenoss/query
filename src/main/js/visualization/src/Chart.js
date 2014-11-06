@@ -162,10 +162,11 @@
          * @access private
          * @param {number}
          *            The number we are formatting
-         * @param {string}
-         *            The format string for example "%2f";
+         * @param {ignorePreferred}
+         *            If toEng function should ignore the preferred unit
+         *            and calculate a unit based on `value`
          */
-        formatValue: function(value) {
+        formatValue: function(value, ignorePreferred) {
             /*
              * If we were given a undefined value, Infinity, of NaN (all things that
              * can't be formatted, then just return the value.
@@ -174,7 +175,7 @@
                 return value;
             }
 
-            return toEng(value, this.preferredYUnit, this.format, this.base);
+            return toEng(value, ignorePreferred ? undefined : this.preferredYUnit, this.format, this.base);
         },
 
         /**
@@ -1173,12 +1174,6 @@
             var val = this.calculateResultsMax(data),
                 x, unitIndex;
 
-            // if val is less than one, use the smallest value
-            // to ensure enough precision after decimal point
-            if(val < 1){
-                val = this.calculateResultsMin(data, true);
-            }
-
             if(val === 0){
                 unitIndex = 0;
             } else {
@@ -1223,6 +1218,7 @@
             unit = Math.floor(Math.log(Math.abs(val)) / Math.log(base));
         }
 
+        // TODO - if Math.abs(unit) > 8, return value in scientific notation
         result = val / Math.pow(base, unit);
 
         try{
