@@ -64,7 +64,7 @@ public class JacksonTest {
     public void testPerformanceGetQuery() {
         MetricSpecification spec = new MetricSpecification();
         spec.setName("MySpec");
-        spec.setTags(makeTags("host", "morr-workstation"));
+        spec.setTags(makeTags("host", "my-workstation"));
         spec.setAggregator(Aggregator.avg);
         spec.setMetric("df.bytes.free");
         List<MetricSpecification> specList = new ArrayList<>();
@@ -92,7 +92,7 @@ public class JacksonTest {
     private OpenTSDBSubQuery makeSubQuery(String metric) {
         OpenTSDBSubQuery result = new OpenTSDBSubQuery();
         result.metric = metric;
-        result.addTag("host", "morr-workstation");
+        result.addTag("host", "my-workstation");
         return result;
     }
 
@@ -117,7 +117,7 @@ public class JacksonTest {
         MetricSpecification result = new MetricSpecification();
         result.setAggregator(Aggregator.avg);
         result.setMetric(metricName);
-        result.setTags(makeTags("host", "morr-workstation"));
+        result.setTags(makeTags("host", "my-workstation"));
         result.setName("test query");
         return result;
     }

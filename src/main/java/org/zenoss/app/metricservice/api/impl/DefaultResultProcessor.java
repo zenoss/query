@@ -129,7 +129,7 @@ public class DefaultResultProcessor implements ResultProcessor,
         BufferedReader localReader = reader;
 
         if (log.isDebugEnabled()) {
-            localReader = logReaderInformation(localReader, "JSON Returned from OpenTSDB");
+            localReader = logReaderInformation(localReader, "JSON Returned from reader");
         }
 
         ObjectMapper mapper = Utils.getObjectMapper();
@@ -145,13 +145,16 @@ public class DefaultResultProcessor implements ResultProcessor,
         for (OpenTSDBQueryResult result : allResults) {
             String metricName = result.metric;
             curTags = Tags.fromOpenTsdbTags(result.tags);
+            MetricKey key = keyCache.get(metricName, curTags);
+            QueryStatus status = result.getStatus();
+            log.debug(String.format("Adding QueryStatus %s for key %s (hashcode: %d)", status.getMessage(), key.toString(), key.hashCode()));
+            buckets.addQueryStatus(key, status);
 
             // iterate over data points for the current series
-            for (Map.Entry<Long, String> dataPointEntry : result.dps.entrySet()) {
-                double dataPointValue = Double.valueOf(dataPointEntry.getValue());
+            for (Map.Entry<Long, Double> dataPointEntry : result.dps.entrySet()) {
+                double dataPointValue = dataPointEntry.getValue();
                 dataPointTimeStamp = dataPointEntry.getKey();
 
-                MetricKey key = keyCache.get(metricName, curTags);
                 buckets.add(key, dataPointTimeStamp, dataPointValue);
             } // iterate over data points in this series
         } //iterate over all series in result set
@@ -159,10 +162,6 @@ public class DefaultResultProcessor implements ResultProcessor,
         calculateValues(calculatedValues,buckets);
         return buckets;
     }
-
-    private void addKeyToCache(MetricSpecification metricSpecification) {
-    }
-
 
     private void interpolateValues(Buckets<IHasShortcut> buckets) {
         for (InterpolatorType interpolatorType : interpolatorMap.keys()) {
@@ -183,7 +182,7 @@ public class DefaultResultProcessor implements ResultProcessor,
     }
 
 
-    private void calculateValues(List<MetricSpecification> calculatedValues, Buckets<IHasShortcut> buckets) throws ClassNotFoundException {
+    private void calculateValues(List<MetricSpecification> calculatedValues, Buckets<IHasShortcut> buckets)  {
         for (MetricSpecification metricSpecification : calculatedValues) {
             Tags tags = Tags.fromValue(metricSpecification.getTags());
             MetricKey key = keyCache.get(metricSpecification.getName(), tags);
@@ -195,12 +194,12 @@ public class DefaultResultProcessor implements ResultProcessor,
                         log.error("Null bucket at timestamp {}", timestamp);
                         throw new NullPointerException("unexpected null bucket");
                     }
-                    BucketClosure closure = new BucketClosure();
-                    closure.ts = timestamp;
-                    closure.bucket = bucket;
+
+                    BucketClosure closure = new BucketClosure(timestamp, bucket);
                     double val = 0.0;
                     try {
                         val = calculator.evaluate(closure);
+                        buckets.add(key, timestamp, val);
                     } catch (UnknownReferenceException e) {
                         log.debug("UnknownReferenceException swallowed for calculation at timestamp {}: {}", timestamp, e);
                         /*
@@ -208,8 +207,6 @@ public class DefaultResultProcessor implements ResultProcessor,
                          * mean a real failure. It is legitimate.
                          */
                     }
-
-                    buckets.add(key, timestamp, val);
                 }
             }
         }
@@ -231,7 +228,11 @@ public class DefaultResultProcessor implements ResultProcessor,
         public Buckets<IHasShortcut>.Bucket bucket;
 
         private BucketClosure() {
+        }
 
+        private BucketClosure(long timestamp, Buckets<IHasShortcut>.Bucket bucket) {
+            this.ts = timestamp;
+            this.bucket = bucket;
         }
 
         @Override

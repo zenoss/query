@@ -162,10 +162,11 @@
          * @access private
          * @param {number}
          *            The number we are formatting
-         * @param {string}
-         *            The format string for example "%2f";
+         * @param {ignorePreferred}
+         *            If toEng function should ignore the preferred unit
+         *            and calculate a unit based on `value`
          */
-        formatValue: function(value) {
+        formatValue: function(value, ignorePreferred) {
             /*
              * If we were given a undefined value, Infinity, of NaN (all things that
              * can't be formatted, then just return the value.
@@ -174,7 +175,7 @@
                 return value;
             }
 
-            return toEng(value, this.preferredYUnit, this.format, this.base);
+            return toEng(value, ignorePreferred ? undefined : this.preferredYUnit, this.format, this.base);
         },
 
         /**
@@ -314,8 +315,7 @@
                 sta = this.dateFormatter(data.startTimeActual, timezone );
                 eta = this.dateFormatter(data.endTimeActual, timezone);
             } else {
-                sta = eta = 'N/A';
-
+                sta = eta = "N/A";
             }
             $($(rows[0]).find('td')).html(
                     sta + ' to ' + eta + ' (' + timezone + ')');
@@ -352,7 +352,11 @@
                         if (this.impl) {
                             color = this.impl.color(this, this.closure, i);
                         } else {
-                            color = 'white'; // unable to determine color
+                            // unable to determine color
+                            color = {
+                                color: "white",
+                                opacity: 1
+                            };
                         }
 
                         if (dp.color) {
@@ -367,21 +371,29 @@
                         if ((k = label.indexOf('{')) > -1) {
                             label = label.substring(0, k) + '{*}';
                         }
-                        $(cols[1]).html(label);
 
-                        if (!plot) {
+                        $(cols[1]).html(label);
+                        // we purposefully put two null points so that the graph still renders
+                        if (!plot || (plot.values.length == 2 && plot.values[0].y === null && plot.values[1].y === null )) {
+                            // communicate to the user that this plot has no v
+                            $(cols[1]).html(label + " (<em>No Data Available</em>)");
                             for (v = 2; v < 6; v += 1) {
                                 $(cols[v]).html('N/A');
                             }
                         } else {
-                            vals = [ 0, -1, -1, 0 ];
+                            vals = [ 0, 0, 0, 0 ];
                             cur = 0;
                             min = 1;
                             max = 2;
                             avg = 3;
                             init = false;
+
                             for (vIdx in plot.values) {
                                 v = plot.values[vIdx];
+                                // don't attempt to calculate nulls
+                                if (v.y === null) {
+                                    continue;
+                                }
                                 if (!init) {
                                     vals[min] = v.y;
                                     vals[max] = v.y;
@@ -532,6 +544,9 @@
                     'success' : function(data) {
                         self.plots = self.__processResult(self.request, data);
 
+                        // setPreffered y unit (k, G, M, etc)
+                        self.setPreferredYUnit(data.results);
+
                         /*
                          * If the chart has not been created yet, then
                          * create it, else just update the data.
@@ -549,17 +564,22 @@
                         if (self.__updateFooter(data)) {
                             self.__resize();
                         }
-
-                        // setPreffered y unit (k, G, M, etc)
-                        self.setPreferredYUnit(data.results);
-
                     },
-                    'error' : function(res) {
+                    'error' : function() {
                         self.plots = undefined;
 
                         self.__showNoData();
-                        if (self.__updateFooter()) {
-                            self.__resize();
+                        // upon errors still show the footer
+                        if (self.showLegendOnNoData && self.__hasFooter()) {
+                            // if this is the first request that errored we will need to build
+                            // the table
+                            if (!self.table) {
+                                self.__buildFooter(self.config);
+                            } else {
+                                if (self.__updateFooter()) {
+                                    self.__resize();
+                                }
+                            }
                         }
                     }
                 });
@@ -1057,7 +1077,7 @@
                 }
 
                 // if this is not the min/max tick, and matches the previous
-                // tick value, the min tick value or the max tick value, 
+                // tick value, the min tick value or the max tick value,
                 // do not return a tick value (I'm sure that's crystal
                 // clear now)
                 if(!isMinMax && (formatted === prevY ||
@@ -1104,16 +1124,31 @@
 
         /**
          * Accepts a query service api response and determines the minimum
-         * value of all series datapoints in that response
+         * value of all series datapoints in that response.
+         * if nonZero is set to true, this will return the smallest non-zero
+         * value
          */
-        calculateResultsMin: function(data){
-            return data.reduce(function(acc, series){
+        calculateResultsMin: function(data, nonZero){
+            // if nonZero, set things up to start from Infinity
+            var minStartValue = nonZero ?  Infinity : 0,
+                result;
+
+            result = data.reduce(function(acc, series){
                 return Math.min(acc, series.datapoints.reduce(function(acc, dp){
                     // if the value is the string "NaN", ignore this dp
                     if(dp.value === "NaN") return acc;
+                    if(nonZero && dp.value === 0) return acc;
                     return Math.min(acc, +dp.value);
-                }, 0));
-            }, 0);
+                }, minStartValue));
+            }, minStartValue);
+
+            // if the result is Infinity, then all the values
+            // were zero, so just return zero
+            if(result === Infinity){
+                result = 0; 
+            }
+
+            return result;
         },
 
         /**
@@ -1136,65 +1171,61 @@
         },
 
         setPreferredYUnit: function(data){
-            var max = this.calculateResultsMax(data),
-                exponent = +max.toExponential().split("e")[1];
+            var val = this.calculateResultsMax(data),
+                x, unitIndex;
 
-            while(exponent % 3){
-                exponent--;
+            if(val === 0){
+                unitIndex = 0;
+            } else {
+                x = Math.log(Math.abs(val)) / Math.log(this.base);
+                unitIndex = Math.floor(x);
             }
 
-            this.preferredYUnit = exponent;
+            this.preferredYUnit = unitIndex;
         }
-   };
+    };
 
     var SYMBOLS = {
-        "-24": "y",
-        "-21:": "z",
-        "-18": "a",
-        "-15": "f",
-        "-12": "p",
-        "-9": "n",
-        "-6": "u",
-        "-3": "m",
+        "-8": "y",
+        "-7:": "z",
+        "-6": "a",
+        "-5": "f",
+        "-4": "p",
+        "-3": "n",
+        "-2": "μ",
+        "-1": "m",
         "0": "",
-        "3": "k",
-        "6": "M",
-        "9": "G",
-        "12": "T",
-        "15": "P",
-        "18": "E",
-        "21": "Z",
-        "24": "Y"
+        "1": "k",
+        "2": "M",
+        "3": "G",
+        "4": "T",
+        "5": "P",
+        "6": "E",
+        "7": "Z",
+        "8": "Y"
     };
 
     function toEng(val, preferredUnit, format, base){
-        var v = val.toExponential().split("e"),
-            coefficient = +v[0],
-            exponent = +v[1],
-            // engineering notation rolls over every 1000 units,
-            // and each step towards that is a power of 10, but
-            // we may want to roll over on other values, so factor
-            // in the provided base value (eg: 1024 for bytes)
-            multi = (1000 / base) * 10,
-            result = val;
+        var result,
+            unit;
 
         // if preferredUnit is provided, target that value
         if(preferredUnit !== undefined){
-            coefficient *= Math.pow(multi, exponent - preferredUnit);
-            exponent = preferredUnit;
+            unit = preferredUnit;
+        } else if(val === 0){
+            unit = 0;
+        } else {
+            unit = Math.floor(Math.log(Math.abs(val)) / Math.log(base));
         }
 
-        // exponent is not divisible by 3, we got work to do
-        while(exponent % 3){
-            coefficient *= multi;
-            exponent--;
-        }
+        // TODO - if Math.abs(unit) > 8, return value in scientific notation
+        result = val / Math.pow(base, unit);
 
-        // divide result by base
-        for(var i = 0; i < exponent; i += 3){
-           result /= base; 
+        try{
+            // if sprintf is passed a format it doesn't understand an exception is thrown
+            return sprintf(format, result) + SYMBOLS[unit];
+        } catch(err) {
+            return sprintf(DEFAULT_NUMBER_FORMAT, result) + SYMBOLS[unit];
         }
-
-        return sprintf(format, result) + SYMBOLS[exponent];
     }
 })();

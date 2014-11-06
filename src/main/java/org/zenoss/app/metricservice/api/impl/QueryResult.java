@@ -52,6 +52,15 @@ public class QueryResult {
     private List<QueryResultDataPoint> datapoints;
     private String metric;
     private final Multimap<String, String> tags = HashMultimap.create();
+    private QueryStatus queryStatus;
+
+    public QueryStatus getQueryStatus() {
+        return queryStatus;
+    }
+
+    public void setQueryStatus(QueryStatus queryStatus) {
+        this.queryStatus = queryStatus;
+    }
 
     public String getId() {
         return id;

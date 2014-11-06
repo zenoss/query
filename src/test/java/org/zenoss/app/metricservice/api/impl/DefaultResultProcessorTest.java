@@ -103,8 +103,6 @@ public class DefaultResultProcessorTest {
                 if (query.getNameOrMetric().equals(CALCULATED_VALUE_SERIES_NAME)) {
                     System.out.println(String.format("value of %s at %d is %f", nameOrMetric, timestamp, value.getValue()));
                     assertEquals(String.format("Value of %s not correct.", pointDescriptor), CONST_VALUE + CONST_VALUE, value.getValue(), EPSILON);
-                } else if (null != value) {
-                   assertEquals(String.format("Value of %s not correct.", pointDescriptor), CONST_VALUE, value.getValue(), EPSILON);
                 }
             }
         }
@@ -129,8 +127,6 @@ public class DefaultResultProcessorTest {
                 if (query.getNameOrMetric().equals(CALCULATED_VALUE_SERIES_NAME)) {
                     System.out.println(String.format("value of %s at %d is %f", nameOrMetric, timestamp, value.getValue()));
                     assertEquals(String.format("Value of %s not correct.", pointDescriptor), timestamp + timestamp, value.getValue(), EPSILON);
-                } else if (null != value) {
-                    assertEquals(String.format("Value of %s not correct.", pointDescriptor), timestamp, value.getValue(), EPSILON);
                 }
             }
         }

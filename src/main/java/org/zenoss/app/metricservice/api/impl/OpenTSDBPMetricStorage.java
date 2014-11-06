@@ -30,11 +30,8 @@
  */
 package org.zenoss.app.metricservice.api.impl;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,19 +40,17 @@ import org.springframework.context.annotation.Profile;
 import org.zenoss.app.annotations.API;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
-import org.zenoss.app.metricservice.api.model.RateOptions;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.HashMap;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
+import java.util.concurrent.*;
 
 
 @API
@@ -65,10 +60,12 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
     @Autowired
     MetricServiceAppConfiguration config;
 
-    private static final Logger log = LoggerFactory
-        .getLogger(OpenTSDBPMetricStorage.class);
+    private static final Logger log = LoggerFactory.getLogger(OpenTSDBPMetricStorage.class);
 
     private static final String SOURCE_ID = "OpenTSDB";
+
+    protected static final String SPACE_REPLACEMENT = "//-";
+    private DefaultHttpClient httpClient = null;
 
     /*
      * (non-Javadoc)
@@ -105,84 +102,25 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             query.addSubQuery(openTSDBSubQueryFromMetricSpecification(metricSpecification));
         }
 
-        String jsonQueryString = Utils.jsonStringFromObject(query);
-        if (log.isInfoEnabled()) {
-            log.info("OpenTSDB POST JSON: {}", jsonQueryString);
+        Collection<OpenTSDBQueryResult> responses = runQueries(query.asSeparateQueries());
+        for (OpenTSDBQueryResult result : responses) {
+            result.metric = result.metric.replace(SPACE_REPLACEMENT, " ");
         }
-        HttpResponse response = postRequestToOpenTsdb(config, jsonQueryString);
+        InputStream responseStream = aggregateResponses(responses);
 
-        log.info("Response code from OpenTSDB POST: {}", response.getStatusLine().getStatusCode());
-
-        throwWebExceptionIfHttpResponseIsBad(response);
-
-        return new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
+        return new BufferedReader(new InputStreamReader(responseStream, "UTF-8"));
     }
 
-    private static void throwWebExceptionIfHttpResponseIsBad(HttpResponse response) throws WebApplicationException {
-        int statusCode = response.getStatusLine().getStatusCode();
-
-        if (isNotOk(statusCode)) {
-            String content = "Unable to read content from OpenTSDB.";
-            try {
-                content = streamToString(response.getEntity().getContent());
-            } catch (IOException e) {
-                log.info("Caught exception reading content from OpenTSDB: {}", e.getMessage());
-            }
-            WebApplicationException wae;
-            // ZEN-14436: Throw 404 if no data (metric not found)
-            if (content.contains("net.opentsdb.uid.NoSuchUniqueName")) {
-                String openTSDBMessage = content;
-                try {
-                    TypeReference<HashMap<String,HashMap<String,String>>> typeRef = new TypeReference<HashMap<String,HashMap<String,String>>>() {};
-                    Map<String, Map<String,String>> tsdbError = Utils.getObjectMapper().readValue(content, typeRef);
-                    Map<String, String> errorContent = tsdbError.get("error");
-                    if (null != errorContent) {
-                        openTSDBMessage = errorContent.get("message");
-                    }
-                } catch (IOException e) {
-                    log.info("Unable to parse OpenTSDB content as JSON (exception: {}). Returning entire string in message.", e.getMessage());
-                }
-                wae = new WebApplicationException(Response.status(Response.Status.NOT_FOUND).entity(openTSDBMessage)
-                    .build());
-            } else {
-                wae = new WebApplicationException(
-                    Response.status(statusCode)
-                        .entity("Operation failed. OpenTSDB Response: Status: [" + response.getStatusLine().toString() + "] Content: [" + content + "]")
-                        .build());
-            }
-            throw wae;
-        }
+    private InputStream aggregateResponses(Collection<OpenTSDBQueryResult> responses) {
+        String aggregatedResponse;
+        aggregatedResponse = Utils.jsonStringFromObject(responses);
+        return new ByteArrayInputStream(aggregatedResponse.getBytes(StandardCharsets.UTF_8));
     }
 
-    private static String streamToString(InputStream stream) {
-        Scanner s = new Scanner(stream, "UTF-8").useDelimiter("\\A");
-        return s.hasNext() ? s.next() : "";
-    }
-
-    private static boolean isNotOk(int statusCode) {
-        return ((statusCode / 100) != 2);
-    }
-
-    private static HttpResponse postRequestToOpenTsdb(MetricServiceAppConfiguration config, String jsonQueryString) throws IOException {
-        String postUrl = String.format("%s/api/query", config.getMetricServiceConfig().getOpenTsdbUrl());
-        log.info("POSTing JSON to URL: {}", postUrl);
-
-        DefaultHttpClient httpClient = new DefaultHttpClient();
-        HttpPost postRequest = new HttpPost(postUrl);
-        log.info("Query to OpenTSDB: {}",jsonQueryString);
-        StringEntity input = new StringEntity(jsonQueryString);
-        input.setContentType("application/json");
-        postRequest.setEntity(input);
-        // Extra debug code to assist with diagnosing cause of ZEN-13307
-        HttpResponse response;
-        try {
-            response = httpClient.execute(postRequest);
-        } catch (IOException | RuntimeException e) {
-            log.error("{} Exception {} caught executing HTTP Post: {}",e.getClass().getName(), e, e.getMessage());
-            throw e;
-        }
-        log.debug("Response from httpClient.execute was {}", response);
-        return response;
+    private String getOpenTSDBApiQueryUrl() {
+        String result = String.format("%s/api/query", config.getMetricServiceConfig().getOpenTsdbUrl());
+        log.info("getOpenTSDBApiQueryUrl(): Returning {}", result);
+        return result;
     }
 
     private static OpenTSDBSubQuery openTSDBSubQueryFromMetricSpecification(MetricSpecification metricSpecification) {
@@ -191,9 +129,15 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             result = new OpenTSDBSubQuery();
             result.aggregator = metricSpecification.getAggregator();
             result.downsample = metricSpecification.getDownsample();
-            result.metric = metricSpecification.getMetric();
+
+            // escape the name of the metric since OpenTSDB doesn't like spaces
+            String metricName = metricSpecification.getMetric();
+            metricName = metricName.replace(" ", SPACE_REPLACEMENT);
+            result.metric = metricName;
+
+
             result.rate = metricSpecification.getRate();
-            result.rateOptions = openTSDBRateOptionFromRateOptions(metricSpecification.getRateOptions());
+            result.rateOptions = new OpenTSDBRateOption(metricSpecification.getRateOptions());
             Map<String, List<String>> tags = metricSpecification.getTags();
             if (null != tags) {
                 for (Map.Entry<String, List<String>> tagEntry : tags.entrySet()) {
@@ -207,22 +151,6 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         return result;
     }
 
-    private static OpenTSDBRateOption openTSDBRateOptionFromRateOptions(RateOptions rateOptions) {
-        OpenTSDBRateOption result = null;
-        if (null != rateOptions) {
-            result = new OpenTSDBRateOption();
-            if (null != rateOptions.getCounter()) {
-                result.counter = rateOptions.getCounter();
-            }
-            if (null != rateOptions.getCounterMax()) {
-                result.counterMax = rateOptions.getCounterMax();
-            }
-            if (null != rateOptions.getResetThreshold()) {
-                result.resetValue = rateOptions.getResetThreshold();
-            }
-        }
-        return result;
-    }
 
     /*
      * (non-Javadoc)
@@ -258,4 +186,98 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         return String.format("%ds-%s", newDuration, aggregation);
     }
 
+    private List<OpenTSDBQueryResult> runQueries(List<OpenTSDBQuery> queries) {
+        List<OpenTSDBQueryResult> results = new ArrayList<>();
+
+        if (null == queries) {
+            log.warn("Null query list passed to runQueries. Returning empty results list.");
+            return results;
+        }
+
+        List<Callable<OpenTSDBQueryResult>> executors = getExecutors(queries);
+        List<Future<OpenTSDBQueryResult>> futures = invokeExecutors(executors);
+        log.debug("{} futures returned.", futures.size());
+        getResultsFromFutures(results, futures);
+        log.debug("{} results returned.", results.size());
+        return results;
+    }
+
+    private List<Future<OpenTSDBQueryResult>> invokeExecutors(List<Callable<OpenTSDBQueryResult>> executors) {
+        int executorThreadPoolSize = config.getMetricServiceConfig().getExecutorThreadPoolSize();
+        log.info("Setting up executor pool with {} threads.", executorThreadPoolSize);
+        ExecutorService executorService = Executors.newFixedThreadPool(executorThreadPoolSize); // Number of threads in pool
+        List<Future<OpenTSDBQueryResult>> futures = new ArrayList<>();
+        try {
+            log.debug("invoking {} executors...", executors.size());
+            futures = executorService.invokeAll(executors); // throws: InterruptedException (checked), NullPointerException/RejectedExecutionException (unchecked)
+        } catch (InterruptedException | NullPointerException | RejectedExecutionException e) {
+            log.error("Query execution was unsuccessful: {}", e.getMessage());
+        } finally {
+            executorService.shutdown();
+        }
+        return futures;
+    }
+
+    private void getResultsFromFutures(List<OpenTSDBQueryResult> results, List<Future<OpenTSDBQueryResult>> futures) {
+        for (Future<OpenTSDBQueryResult>  future : futures) {
+            try {
+                OpenTSDBQueryResult result  = future.get(); // Throws InterruptedException, ExecutionException (checked); CancellationException (unchecked)
+                results.add(result);
+            } catch (InterruptedException | ExecutionException | CancellationException e) {
+                // On exception, return an empty result, with the queryStatus set to indicate the problem.
+                OpenTSDBQueryResult result = new OpenTSDBQueryResult();
+                QueryStatus queryStatus = new QueryStatus(QueryStatus.QueryStatusEnum.ERROR, e.getMessage());
+                result.setStatus(queryStatus);
+                log.error("{} exception getting result from future: {}", e.getClass().getName(), e.getMessage());
+            }
+        }
+    }
+
+    private List<Callable<OpenTSDBQueryResult>> getExecutors(List<OpenTSDBQuery> queries) {
+        DefaultHttpClient httpClient = getHttpClient();
+
+        List<Callable<OpenTSDBQueryResult>> executors = new ArrayList<>();
+
+        for (OpenTSDBQuery query : queries) {
+            try {
+                CallableQueryExecutor executor = new CallableQueryExecutor(httpClient, query, getOpenTSDBApiQueryUrl());
+                executors.add(executor);
+            } catch (IllegalArgumentException e) {
+                log.warn("Unable to create request from query", e);
+            }
+        }
+        return executors;
+    }
+
+    private DefaultHttpClient getHttpClient() {
+        if (null == httpClient) {
+            log.warn("httpClient was not created by PostConstruct method, as was expected. Creating it now.");
+            makeHttpClient();
+        }
+        return httpClient;
+    }
+
+    @PostConstruct
+    public void startup() {
+        log.debug("**************** PostConstruct method called. ***********");
+        makeHttpClient();
+    }
+
+    private void makeHttpClient() {
+        log.info("Creating new PoolingClientConnectionManager.");
+        PoolingClientConnectionManager cm = new PoolingClientConnectionManager();
+        int maxTotalPoolConnections = config.getMetricServiceConfig().getMaxTotalPoolConnections();
+        int maxPoolConnectionsPerRoute = config.getMetricServiceConfig().getMaxPoolConnectionsPerRoute();
+        log.debug("Setting up pool with {} total connections and {} max connections per route.", maxTotalPoolConnections, maxPoolConnectionsPerRoute);
+        cm.setMaxTotal(maxTotalPoolConnections);
+        cm.setDefaultMaxPerRoute(maxPoolConnectionsPerRoute);
+        httpClient = new DefaultHttpClient(cm);
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        log.debug("************* PreDestroy method called. ****************");
+        httpClient.getConnectionManager().shutdown();
+        httpClient = null;
+    }
 }
