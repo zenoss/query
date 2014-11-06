@@ -117,6 +117,7 @@ class CallableQueryExecutor implements Callable<OpenTSDBQueryResult> {
                 String.format("%s executing and processing query: %s", e.getClass().getName(), e.getMessage())));
         } finally {
             EntityUtils.consumeQuietly(entity);
+            httpPost.releaseConnection();
         }
         return result;
     }

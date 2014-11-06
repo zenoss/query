@@ -34,6 +34,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.zenoss.app.annotations.API;
@@ -41,6 +42,8 @@ import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -54,12 +57,15 @@ import java.util.concurrent.*;
 @Configuration
 @Profile({"default", "prod"})
 public class OpenTSDBPMetricStorage implements MetricStorageAPI {
+    @Autowired
+    MetricServiceAppConfiguration config;
 
     private static final Logger log = LoggerFactory.getLogger(OpenTSDBPMetricStorage.class);
 
     private static final String SOURCE_ID = "OpenTSDB";
 
     protected static final String SPACE_REPLACEMENT = "//-";
+    private DefaultHttpClient httpClient = null;
 
     /*
      * (non-Javadoc)
@@ -96,7 +102,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             query.addSubQuery(openTSDBSubQueryFromMetricSpecification(metricSpecification));
         }
 
-        Collection<OpenTSDBQueryResult> responses = runQueries(query.asSeparateQueries(), config);
+        Collection<OpenTSDBQueryResult> responses = runQueries(query.asSeparateQueries());
         for (OpenTSDBQueryResult result : responses) {
             result.metric = result.metric.replace(SPACE_REPLACEMENT, " ");
         }
@@ -111,8 +117,8 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         return new ByteArrayInputStream(aggregatedResponse.getBytes(StandardCharsets.UTF_8));
     }
 
-    private String getOpenTSDBApiQueryUrl(MetricServiceAppConfiguration passedConfig) {
-        String result = String.format("%s/api/query", passedConfig.getMetricServiceConfig().getOpenTsdbUrl());
+    private String getOpenTSDBApiQueryUrl() {
+        String result = String.format("%s/api/query", config.getMetricServiceConfig().getOpenTsdbUrl());
         log.info("getOpenTSDBApiQueryUrl(): Returning {}", result);
         return result;
     }
@@ -180,7 +186,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         return String.format("%ds-%s", newDuration, aggregation);
     }
 
-    private List<OpenTSDBQueryResult> runQueries(List<OpenTSDBQuery> queries, MetricServiceAppConfiguration passedConfig) {
+    private List<OpenTSDBQueryResult> runQueries(List<OpenTSDBQuery> queries) {
         List<OpenTSDBQueryResult> results = new ArrayList<>();
 
         if (null == queries) {
@@ -188,16 +194,16 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             return results;
         }
 
-        List<Callable<OpenTSDBQueryResult>> executors = getExecutors(queries, passedConfig);
-        List<Future<OpenTSDBQueryResult>> futures = invokeExecutors(executors, passedConfig);
+        List<Callable<OpenTSDBQueryResult>> executors = getExecutors(queries);
+        List<Future<OpenTSDBQueryResult>> futures = invokeExecutors(executors);
         log.debug("{} futures returned.", futures.size());
         getResultsFromFutures(results, futures);
         log.debug("{} results returned.", results.size());
         return results;
     }
 
-    private List<Future<OpenTSDBQueryResult>> invokeExecutors(List<Callable<OpenTSDBQueryResult>> executors, MetricServiceAppConfiguration passedConfig) {
-        int executorThreadPoolSize = passedConfig.getMetricServiceConfig().getExecutorThreadPoolSize();
+    private List<Future<OpenTSDBQueryResult>> invokeExecutors(List<Callable<OpenTSDBQueryResult>> executors) {
+        int executorThreadPoolSize = config.getMetricServiceConfig().getExecutorThreadPoolSize();
         log.info("Setting up executor pool with {} threads.", executorThreadPoolSize);
         ExecutorService executorService = Executors.newFixedThreadPool(executorThreadPoolSize); // Number of threads in pool
         List<Future<OpenTSDBQueryResult>> futures = new ArrayList<>();
@@ -227,14 +233,14 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         }
     }
 
-    private List<Callable<OpenTSDBQueryResult>> getExecutors(List<OpenTSDBQuery> queries, MetricServiceAppConfiguration passedConfig) {
-        DefaultHttpClient httpClient = getHttpClient(passedConfig);
+    private List<Callable<OpenTSDBQueryResult>> getExecutors(List<OpenTSDBQuery> queries) {
+        DefaultHttpClient httpClient = getHttpClient();
 
         List<Callable<OpenTSDBQueryResult>> executors = new ArrayList<>();
 
         for (OpenTSDBQuery query : queries) {
             try {
-                CallableQueryExecutor executor = new CallableQueryExecutor(httpClient, query, getOpenTSDBApiQueryUrl(passedConfig));
+                CallableQueryExecutor executor = new CallableQueryExecutor(httpClient, query, getOpenTSDBApiQueryUrl());
                 executors.add(executor);
             } catch (IllegalArgumentException e) {
                 log.warn("Unable to create request from query", e);
@@ -243,13 +249,35 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         return executors;
     }
 
-    private DefaultHttpClient getHttpClient(MetricServiceAppConfiguration passedConfig) {
+    private DefaultHttpClient getHttpClient() {
+        if (null == httpClient) {
+            log.warn("httpClient was not created by PostConstruct method, as was expected. Creating it now.");
+            makeHttpClient();
+        }
+        return httpClient;
+    }
+
+    @PostConstruct
+    public void startup() {
+        log.debug("**************** PostConstruct method called. ***********");
+        makeHttpClient();
+    }
+
+    private void makeHttpClient() {
+        log.info("Creating new PoolingClientConnectionManager.");
         PoolingClientConnectionManager cm = new PoolingClientConnectionManager();
-        int maxTotalPoolConnections = passedConfig.getMetricServiceConfig().getMaxTotalPoolConnections();
-        int maxPoolConnectionsPerRoute = passedConfig.getMetricServiceConfig().getMaxPoolConnectionsPerRoute();
+        int maxTotalPoolConnections = config.getMetricServiceConfig().getMaxTotalPoolConnections();
+        int maxPoolConnectionsPerRoute = config.getMetricServiceConfig().getMaxPoolConnectionsPerRoute();
         log.debug("Setting up pool with {} total connections and {} max connections per route.", maxTotalPoolConnections, maxPoolConnectionsPerRoute);
         cm.setMaxTotal(maxTotalPoolConnections);
         cm.setDefaultMaxPerRoute(maxPoolConnectionsPerRoute);
-        return new DefaultHttpClient(cm);
+        httpClient = new DefaultHttpClient(cm);
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        log.debug("************* PreDestroy method called. ****************");
+        httpClient.getConnectionManager().shutdown();
+        httpClient = null;
     }
 }
