@@ -31,6 +31,7 @@
 
 package org.zenoss.app.metricservice.api.impl;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Objects;
 
 import java.util.*;
@@ -38,10 +39,23 @@ import java.util.*;
 public class OpenTSDBQueryResult {
     public List<String> aggregateTags;
 
-    public SortedMap<Long,String> dps;
+    public SortedMap<Long,Double> dps = new TreeMap<>();
     public String metric;
     public Map<String, String> tags;
-    public List<String> tsuids;
+    public List<String> tsuids = new ArrayList<>();
+
+    public QueryStatus getStatus() {
+        if (null == status) {
+            status = new QueryStatus();
+        }
+        return status;
+    }
+
+    public void setStatus(QueryStatus status) {
+        this.status = status;
+    }
+
+    private QueryStatus status;
 
     public String debugString() {
         return Objects.toStringHelper(getClass())
@@ -66,15 +80,18 @@ public class OpenTSDBQueryResult {
         if (null == dps) {
             dps = new TreeMap<>();
         }
-        dps.put(i, Double.toString(pointValue));
+        dps.put(i, pointValue);
     }
 
-    public Map<Long, String> getDataPoints() {
+    @JsonIgnore
+    public Map<Long, Double> getDataPoints() {
+        if (null == dps) {
+            dps = new TreeMap<>();
+        }
         return dps;
     }
 
-    public void setDataPoints(SortedMap<Long, String> dps) {
+    public void setDataPoints(SortedMap<Long, Double> dps) {
         this.dps = dps;
     }
-
 }

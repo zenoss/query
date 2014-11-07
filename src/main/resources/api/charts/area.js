@@ -88,6 +88,15 @@
             model.width($(chart.svgwrapper).width() - 10);
             model.yAxis.axisLabel(chart.yAxisLabel);
 
+            // set a different value formatter for tooltip values
+            // than for axis labels
+            model.valueFormatter(function(d){
+                // the second arg to formatValue forces the value's
+                // unit to be derived from the value instead of the
+                // preferred unit set on the entire chart
+                return chart.formatValue(d, true);
+            });
+
             // if a max or min y are set
             if (chart.maxy !== undefined || chart.miny !== undefined) {
                 model.yDomain(chart.calculateYDomain(chart.miny, chart.maxy, data));

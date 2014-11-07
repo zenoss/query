@@ -31,7 +31,6 @@
 
 package org.zenoss.app.metricservice.api.impl;
 
-import java.io.PrintStream;
 import java.util.*;
 
 /**
@@ -111,17 +110,5 @@ public class  MetricKeyCache {
 
         // Now the harder / longer check
         return get(key.getMetric(), key.getTags());
-    }
-
-    /**
-     * Dump the contents of the cache to a print stream. Useful for debugging
-     * 
-     * @param ps
-     *            PrintStream instance to which to dump the information
-     */
-    public void dump(PrintStream ps) {
-        for (Map.Entry<String, List<MetricKey>> stringListEntry : map.entrySet()) {
-            ps.format("%s : %s%n", stringListEntry.getKey(), stringListEntry.getValue());
-        }
     }
 }

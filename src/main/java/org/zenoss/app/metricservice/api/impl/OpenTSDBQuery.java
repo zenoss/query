@@ -53,8 +53,23 @@ public class OpenTSDBQuery {
     }
 
     @JsonIgnore
-    public boolean isValidQuery() {
-        return (null != start) && (null != end);
+    public List<OpenTSDBQuery> asSeparateQueries() {
+        List<OpenTSDBQuery> result = new ArrayList<>();
+        if (null == queries) {
+            queries = new ArrayList<>();
+        }
+        for (OpenTSDBSubQuery subQuery : queries) {
+            OpenTSDBQuery query = new OpenTSDBQuery();
+            query.start = this.start;
+            query.end = this.end;
+            query.noAnnotations  = this.noAnnotations;
+            query.globalAnnotations = this.globalAnnotations;
+            query.msResolution = this.msResolution;
+            query.showTSUIDs = this.showTSUIDs;
+            query.addSubQuery(subQuery);
+            result.add(query);
+        }
+        return result;
     }
 }
 
