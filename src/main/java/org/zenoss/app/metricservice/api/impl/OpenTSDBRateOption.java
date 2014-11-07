@@ -35,7 +35,7 @@ import org.zenoss.app.metricservice.api.model.RateOptions;
 
 public class OpenTSDBRateOption {
     public boolean counter = true;
-    public long counterMax = 65535;
+    public long counterMax = Long.MAX_VALUE;
     public long resetValue = 0;
 
     public OpenTSDBRateOption() {}
