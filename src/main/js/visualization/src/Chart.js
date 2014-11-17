@@ -1145,7 +1145,7 @@
             // if the result is Infinity, then all the values
             // were zero, so just return zero
             if(result === Infinity){
-                result = 0; 
+                result = 0;
             }
 
             return result;
@@ -1173,6 +1173,16 @@
         setPreferredYUnit: function(data){
             var val = this.calculateResultsMax(data),
                 x, unitIndex;
+
+            // if maxy is set, constrain the value based on that
+            if(this.maxy !== undefined){
+                val = Math.max(val, this.maxy);
+            }
+
+            // if miny is set and val is less than miny, set val to miny
+            if(this.miny !== undefined && val < this.miny){
+                val = this.miny;
+            }
 
             if(val === 0){
                 unitIndex = 0;
