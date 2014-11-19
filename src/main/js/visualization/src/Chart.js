@@ -1176,7 +1176,7 @@
 
             // if maxy is set, constrain the value based on that
             if(this.maxy !== undefined){
-                val = Math.max(val, this.maxy);
+                val = this.maxy;
             }
 
             // if miny is set and val is less than miny, set val to miny
