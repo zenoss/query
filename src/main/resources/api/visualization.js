@@ -810,12 +810,7 @@ var visualization,
             removeChart(chart.name);
         };
 
-        // if there are many charts in here
-        // this could indicate a problem
-        numCharts = Object.keys(chartCache).length;
-        if(numCharts > 12){
-            console.warn("There are", numCharts, "cached charts. This can lead to performance issues.");
-        }
+        // TODO - watch for stale charts
     }
 
     function removeChart(name){
@@ -827,6 +822,7 @@ var visualization,
     }
 
 })();
+
 /**
  * Chart.js
  * main chart object
