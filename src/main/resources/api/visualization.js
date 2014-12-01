@@ -810,12 +810,7 @@ var visualization,
             removeChart(chart.name);
         };
 
-        // if there are many charts in here
-        // this could indicate a problem
-        numCharts = Object.keys(chartCache).length;
-        if(numCharts > 12){
-            console.warn("There are", numCharts, "cached charts. This can lead to performance issues.");
-        }
+        // TODO - watch for stale charts
     }
 
     function removeChart(name){
@@ -827,6 +822,7 @@ var visualization,
     }
 
 })();
+
 /**
  * Chart.js
  * main chart object
@@ -1974,7 +1970,7 @@ var visualization,
             // if the result is Infinity, then all the values
             // were zero, so just return zero
             if(result === Infinity){
-                result = 0; 
+                result = 0;
             }
 
             return result;
@@ -2003,6 +1999,16 @@ var visualization,
             var val = this.calculateResultsMax(data),
                 x, unitIndex;
 
+            // if maxy is set, constrain the value based on that
+            if(this.maxy !== undefined){
+                val = this.maxy;
+            }
+
+            // if miny is set and val is less than miny, set val to miny
+            if(this.miny !== undefined && val < this.miny){
+                val = this.miny;
+            }
+
             if(val === 0){
                 unitIndex = 0;
             } else {
@@ -2021,7 +2027,7 @@ var visualization,
         "-5": "f",
         "-4": "p",
         "-3": "n",
-        "-2": "μ",
+        "-2": "u",
         "-1": "m",
         "0": "",
         "1": "k",
