@@ -72,6 +72,28 @@
         }
     ];
 
+    // downsampling based on range of selection
+    var DOWNSAMPLE = [
+        // for now when the delta is < 1 hour we do NOT do downsampling
+        [3600000, '10s-avg'],     // 1 Hour
+        [7200000, '30s-avg'],     // 2 Hours
+        [14400000, '45s-avg'],    // 4 Hours
+        [18000000, '1m-avg'],     // 5 Hours
+        [28800000, '2m-avg'],     // 8 Hours
+        [43200000, '3m-avg'],     // 12 Hours
+        [64800000, '4m-avg'],     // 18 Hours
+        [86400000, '5m-avg'],     // 1 Day
+        [172800000, '10m-avg'],   // 2 Days
+        [259200000, '15m-avg'],   // 3 Days
+        [604800000, '1h-avg'],    // 1 Week
+        [1209600000, '2h-avg'],   // 2 Weeks
+        [2419200000, '6h-avg'],   // 1 Month
+        [9676800000, '1d-avg'],   // 4 Months
+        [31536000000, '10d-avg']  // 1 Year
+    ];
+
+
+
     Chart = function(name, config) {
         this.name = name;
         this.config = config;
@@ -606,12 +628,15 @@
          */
         __buildDataRequest: function(config) {
             var request = {};
+
             if (config !== undefined) {
-                if (config.range !== undefined) {
-                    if (config.range.start !== undefined) {
+
+                if(config.range){
+                    if(config.range.start){
                         request.start = config.range.start;
                     }
-                    if (config.range.end !== undefined) {
+
+                    if(config.range.end){
                         request.end = config.range.end;
                     }
                 }
@@ -624,6 +649,29 @@
 
                 if (config.downsample !== undefined) {
                     request.downsample = config.downsample;
+
+                // if no downsample provided, calculate one
+                // based on the range
+                } else {
+                    var start, end, delta;
+
+                    // if no start time, assume 1hr-ago (default)
+                    // NOTE - this uses local time which may not
+                    // be the expected timezone
+                    start = createDate(request.start || "1h-ago");
+
+                    // if no end time, assume now (default)
+                    // NOTE - this uses local time which may not
+                    // be the expected timezone
+                    end = createDate(request.end || "0s-ago");
+
+                    delta = end.valueOf() - start.valueOf();
+
+                    // iterate the DOWNSAMPLE list and choose the one which
+                    // is closest to delta, defaulting to null if delta is too small
+                    request.downsample = DOWNSAMPLE.reduce(function(acc, val){
+                        return delta >= val[0] ? val[1] : acc;
+                    }, null);
                 }
 
                 if (config.tags !== undefined) {
@@ -1237,5 +1285,59 @@
         } catch(err) {
             return sprintf(DEFAULT_NUMBER_FORMAT, result) + SYMBOLS[unit];
         }
+    }
+
+    // creates a new Date object from the following date formats:
+    //      Date object
+    //      Date string - "Thu Dec 04 2014 13:24:54 GMT-0600 (CST)"
+    //      ms since epoch - 1417721130861
+    //      relative measure - "1h-ago"
+    function createDate(val){
+        var d;
+
+        // if "ago" appears in val, calculate relative time
+        if(typeof val === "string" && val.indexOf("ago") !== -1){
+            // calculate today minus relative time
+            d = moment().subtract(relativeTimeToMS(val), "ms");
+
+        // parse as date object, date string, or ms since epoch
+        } else {
+            d = moment(val);
+        }
+
+        if(d.isValid()){
+            return d;
+        }
+    }
+
+    var TIME_UNITS = {
+        s: 1000,
+        m: 1000 * 60,
+        h: 1000 * 60 * 60,
+        d: 1000 * 60 * 60 * 24
+    };
+    // TODO - create regexp based on Oject.keys(TIME_UNITS)
+    var timeUnitsRegExp = /[smhd]/;
+
+    // takes a relative measure of time like "2s-ago",
+    // and convert to milliseconds
+    function relativeTimeToMS(val){
+        var agoMatch, unitMatch, count, unit;
+
+        // check if "ago" appears in this string
+        agoMatch = /ago/.exec(val);
+        // TODO - if !agomatch
+
+        unitMatch = timeUnitsRegExp.exec(val);
+        // TODO - if !unitMatch
+
+        // get the count portion of the string and cast to number
+        count = +val.slice(0, unitMatch.index);
+
+        // get the unit portion of the string
+        unit = val.slice(unitMatch.index, agoMatch.index - 1);
+
+        // return count times unit
+        return count * TIME_UNITS[unit];
     }
 })();
