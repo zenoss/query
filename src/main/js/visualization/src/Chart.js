@@ -1240,9 +1240,7 @@
             }
 
             this.preferredYUnit = unitIndex;
-        },
-
-        relativeTimeToMS: relativeTimeToMS
+        }
     };
 
     var SYMBOLS = {

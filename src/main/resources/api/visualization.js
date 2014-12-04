@@ -2065,9 +2065,7 @@ var visualization,
             }
 
             this.preferredYUnit = unitIndex;
-        },
-
-        relativeTimeToMS: relativeTimeToMS
+        }
     };
 
     var SYMBOLS = {
