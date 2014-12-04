@@ -672,15 +672,6 @@
                     request.downsample = DOWNSAMPLE.reduce(function(acc, val){
                         return delta >= val[0] ? val[1] : acc;
                     }, null);
-
-                    console.log({
-                        "request.start": request.start,
-                        "start": start.format(),
-                        "request.end": request.end,
-                        "end": end.format(),
-                        "delta": delta,
-                        "downsample": request.downsample
-                    });
                 }
 
                 if (config.tags !== undefined) {
