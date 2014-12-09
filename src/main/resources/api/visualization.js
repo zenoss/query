@@ -104,7 +104,7 @@ var visualization,
                         if (m[k] === undefined) {
                             m[k] = $.extend({}, v);
                         } else {
-                            m[k] = __merge(m[k], v);
+                            m[k] = __merge(m[k], v, overwriteArrays);
                         }
                     } else {
                         m[k] = $.extend(m[k], v);
@@ -129,6 +129,7 @@ var visualization,
     };
 
 })();
+
 /**
  * debug.js
  * debug/logging utils
