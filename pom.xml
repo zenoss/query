@@ -20,7 +20,7 @@
 
     <groupId>org.zenoss</groupId>
     <artifactId>central-query</artifactId>
-    <version>0.0.18</version>
+    <version>0.0.19-SNAPSHOT</version>
     <dependencies>
         <dependency>
             <groupId>org.zenoss.zapp</groupId>
