@@ -35,6 +35,8 @@ public class QueryResultDataPoint {
     private long timestamp;
     private double value;
 
+    public QueryResultDataPoint() {}
+
     public QueryResultDataPoint(long timestamp, double value) {
         this.timestamp = timestamp;
         this.value = value;
