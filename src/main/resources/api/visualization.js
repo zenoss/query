@@ -125,8 +125,70 @@ var visualization,
             this.toString = function() {
                 return this.name + ' : ' + this.message;
             };
-        }
+        },
+
+        // time conversion utilities
+        createDate: createDate,
+        relativeTimeToMS: relativeTimeToMS
+
     };
+
+
+    // friendly time to ms conversion
+    var TIME_UNITS = {
+        s: 1000,
+        m: 1000 * 60,
+        h: 1000 * 60 * 60,
+        d: 1000 * 60 * 60 * 24
+    };
+    // TODO - create regexp based on Oject.keys(TIME_UNITS)
+    var timeUnitsRegExp = /[smhd]/;
+
+    // creates a new Date object from the following date formats:
+    //      Date object
+    //      Date string - "Thu Dec 04 2014 13:24:54 GMT-0600 (CST)"
+    //      ms since epoch - 1417721130861
+    //      relative measure - "1h-ago"
+    function createDate(val){
+        var d;
+
+        // if "ago" appears in val, calculate relative time
+        if(typeof val === "string" && val.indexOf("ago") !== -1){
+            // calculate today minus relative time
+            d = moment().subtract(relativeTimeToMS(val), "ms");
+
+        // parse as date object, date string, or ms since epoch
+        } else {
+            d = moment(val);
+        }
+
+        if(d.isValid()){
+            return d;
+        }
+    }
+
+
+    // takes a relative measure of time like "2s-ago",
+    // and convert to milliseconds
+    function relativeTimeToMS(val){
+        var agoMatch, unitMatch, count, unit;
+
+        // check if "ago" appears in this string
+        agoMatch = /ago/.exec(val);
+        // TODO - if !agomatch
+
+        unitMatch = timeUnitsRegExp.exec(val);
+        // TODO - if !unitMatch
+
+        // get the count portion of the string and cast to number
+        count = +val.slice(0, unitMatch.index);
+
+        // get the unit portion of the string
+        unit = val.slice(unitMatch.index, agoMatch.index - 1);
+
+        // return count times unit
+        return count * TIME_UNITS[unit];
+    }
 
 })();
 
@@ -1484,12 +1546,12 @@ var visualization,
                     // if no start time, assume 1hr-ago (default)
                     // NOTE - this uses local time which may not
                     // be the expected timezone
-                    start = createDate(request.start || "1h-ago");
+                    start = utils.createDate(request.start || "1h-ago");
 
                     // if no end time, assume now (default)
                     // NOTE - this uses local time which may not
                     // be the expected timezone
-                    end = createDate(request.end || "0s-ago");
+                    end = utils.createDate(request.end || "0s-ago");
 
                     delta = end.valueOf() - start.valueOf();
 
@@ -2113,59 +2175,6 @@ var visualization,
         }
     }
 
-    // creates a new Date object from the following date formats:
-    //      Date object
-    //      Date string - "Thu Dec 04 2014 13:24:54 GMT-0600 (CST)"
-    //      ms since epoch - 1417721130861
-    //      relative measure - "1h-ago"
-    function createDate(val){
-        var d;
-
-        // if "ago" appears in val, calculate relative time
-        if(typeof val === "string" && val.indexOf("ago") !== -1){
-            // calculate today minus relative time
-            d = moment().subtract(relativeTimeToMS(val), "ms");
-
-        // parse as date object, date string, or ms since epoch
-        } else {
-            d = moment(val);
-        }
-
-        if(d.isValid()){
-            return d;
-        }
-    }
-
-    var TIME_UNITS = {
-        s: 1000,
-        m: 1000 * 60,
-        h: 1000 * 60 * 60,
-        d: 1000 * 60 * 60 * 24
-    };
-    // TODO - create regexp based on Oject.keys(TIME_UNITS)
-    var timeUnitsRegExp = /[smhd]/;
-
-    // takes a relative measure of time like "2s-ago",
-    // and convert to milliseconds
-    function relativeTimeToMS(val){
-        var agoMatch, unitMatch, count, unit;
-
-        // check if "ago" appears in this string
-        agoMatch = /ago/.exec(val);
-        // TODO - if !agomatch
-
-        unitMatch = timeUnitsRegExp.exec(val);
-        // TODO - if !unitMatch
-
-        // get the count portion of the string and cast to number
-        count = +val.slice(0, unitMatch.index);
-
-        // get the unit portion of the string
-        unit = val.slice(unitMatch.index, agoMatch.index - 1);
-
-        // return count times unit
-        return count * TIME_UNITS[unit];
-    }
 })();
 
 
