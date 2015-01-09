@@ -222,12 +222,18 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
     private ExecutorService getExecutorService() {
         if (null == executorServiceInstance) {
-            int executorThreadPoolSize = config.getMetricServiceConfig().getExecutorThreadPoolSize();
-            log.info("Setting up executor pool with {} threads.", executorThreadPoolSize);
+            int executorThreadPoolMaxSize = config.getMetricServiceConfig().getExecutorThreadPoolMaxSize();
+            int executorThreadPoolCoreSize = config.getMetricServiceConfig().getExecutorThreadPoolCoreSize();
+            if (executorThreadPoolCoreSize > executorThreadPoolMaxSize) {
+                log.warn("executorThreadPool max size ({}) is less than core size ({}). Using specified max ({}) for both values.", executorThreadPoolMaxSize, executorThreadPoolCoreSize, executorThreadPoolMaxSize);
+                executorThreadPoolCoreSize = executorThreadPoolMaxSize;
+            }
+
+            log.info("Setting up executor pool with {}-{} threads.", executorThreadPoolCoreSize, executorThreadPoolMaxSize);
             ThreadFactory namedThreadFactory = new ThreadFactoryBuilder().setNameFormat("TSDB-query-thread-%d").build();
             synchronized (mutex) {
                 if (null == executorServiceInstance) {
-                    executorServiceInstance = Executors.newFixedThreadPool(executorThreadPoolSize, namedThreadFactory);
+                    executorServiceInstance =  new ThreadPoolExecutor(executorThreadPoolCoreSize, executorThreadPoolMaxSize, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
                 }
             }
             if (null == executorServiceInstance) {

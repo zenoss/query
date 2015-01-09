@@ -12,13 +12,18 @@ metrics:
   defaultTsdTimeZone: UTC
   connectionTimeoutMs: 30000
   sendRateOptions: false
-  # parameters to configure thread pool for querying OpenTsdb:
+
+  # parameters to configure connection pool for querying OpenTsdb:
   # Total connections allowed per pool
-  maxTotalPoolConnections: 1000
+  maxTotalPoolConnections: 100
   # Max number of connections for a given route
-  maxPoolConnectionsPerRoute: 1000
-  # Total number of threads in thread pool
-  executorThreadPoolSize: 1000
+  maxPoolConnectionsPerRoute: 100
+
+  # parameters to configure thread pool for querying OpenTsdb:
+  # Core number of threads in thread pool
+  executorThreadPoolCoreSize: 20
+  # Maximum number of threads in thread pool
+  executorThreadPoolMaxSize: 250
 
 proxyConfiguration:
   hostname: 127.0.0.1
