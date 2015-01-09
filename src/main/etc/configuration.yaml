@@ -14,11 +14,11 @@ metrics:
   sendRateOptions: false
   # parameters to configure thread pool for querying OpenTsdb:
   # Total connections allowed per pool
-  maxTotalPoolConnections: 20
+  maxTotalPoolConnections: 1000
   # Max number of connections for a given route
-  maxPoolConnectionsPerRoute: 10
+  maxPoolConnectionsPerRoute: 1000
   # Total number of threads in thread pool
-  executorThreadPoolSize: 20
+  executorThreadPoolSize: 1000
 
 proxyConfiguration:
   hostname: 127.0.0.1
