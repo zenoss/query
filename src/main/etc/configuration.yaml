@@ -1,4 +1,4 @@
-authEnabled: false
+authEnabled: true
 logging:
   level: INFO
   loggers:
@@ -10,7 +10,7 @@ metrics:
   defaultSeries: true
   openTsdbUrl: http://127.0.0.1:4242
   defaultTsdTimeZone: UTC
-  connectionTimeoutMs: 30000
+  connectionTimeoutMs: 20000
   sendRateOptions: false
 
   # parameters to configure connection pool for querying OpenTsdb:
