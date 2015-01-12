@@ -30,6 +30,7 @@
  */
 package org.zenoss.app.metricservice.api.impl;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.slf4j.Logger;
@@ -63,6 +64,11 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
     private static final Logger log = LoggerFactory.getLogger(OpenTSDBPMetricStorage.class);
 
     private static final String SOURCE_ID = "OpenTSDB";
+
+    // mutex for synchronizing executor service creation.
+    private static Object mutex = new Object();
+
+    private static ExecutorService executorServiceInstance = null;
 
     protected static final String SPACE_REPLACEMENT = "//-";
     private DefaultHttpClient httpClient = null;
@@ -203,19 +209,39 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
     }
 
     private List<Future<OpenTSDBQueryResult>> invokeExecutors(List<Callable<OpenTSDBQueryResult>> executors) {
-        int executorThreadPoolSize = config.getMetricServiceConfig().getExecutorThreadPoolSize();
-        log.info("Setting up executor pool with {} threads.", executorThreadPoolSize);
-        ExecutorService executorService = Executors.newFixedThreadPool(executorThreadPoolSize); // Number of threads in pool
+        ExecutorService executorService = getExecutorService();
         List<Future<OpenTSDBQueryResult>> futures = new ArrayList<>();
         try {
             log.debug("invoking {} executors...", executors.size());
             futures = executorService.invokeAll(executors); // throws: InterruptedException (checked), NullPointerException/RejectedExecutionException (unchecked)
         } catch (InterruptedException | NullPointerException | RejectedExecutionException e) {
             log.error("Query execution was unsuccessful: {}", e.getMessage());
-        } finally {
-            executorService.shutdown();
         }
         return futures;
+    }
+
+    private ExecutorService getExecutorService() {
+        if (null == executorServiceInstance) {
+            int executorThreadPoolMaxSize = config.getMetricServiceConfig().getExecutorThreadPoolMaxSize();
+            int executorThreadPoolCoreSize = config.getMetricServiceConfig().getExecutorThreadPoolCoreSize();
+            if (executorThreadPoolCoreSize > executorThreadPoolMaxSize) {
+                log.warn("executorThreadPool max size ({}) is less than core size ({}). Using specified max ({}) for both values.", executorThreadPoolMaxSize, executorThreadPoolCoreSize, executorThreadPoolMaxSize);
+                executorThreadPoolCoreSize = executorThreadPoolMaxSize;
+            }
+
+            log.info("Setting up executor pool with {}-{} threads.", executorThreadPoolCoreSize, executorThreadPoolMaxSize);
+            ThreadFactory namedThreadFactory = new ThreadFactoryBuilder().setNameFormat("TSDB-query-thread-%d").build();
+            synchronized (mutex) {
+                if (null == executorServiceInstance) {
+                    executorServiceInstance =  new ThreadPoolExecutor(executorThreadPoolCoreSize, executorThreadPoolMaxSize, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+                }
+            }
+            if (null == executorServiceInstance) {
+                log.error("Failed to create executor service for querying OpenTSDB.");
+                throw new NullPointerException("Executor service is null. Executor service creation failed.");
+            }
+        }
+        return executorServiceInstance;
     }
 
     private void getResultsFromFutures(List<OpenTSDBQueryResult> results, List<Future<OpenTSDBQueryResult>> futures) {
