@@ -132,10 +132,8 @@ public class JacksonResultsWriter {
                 Buckets<IHasShortcut>.Bucket bucket = buckets.getBucket(bts);
                 if (null != bucket) {
                     Value value = bucket.getValueByShortcut(metricShortcut);
-                    if (null != value) {
+                    if ((null != value) && !Double.isNaN(value.getValue())) {
                         dataPoints.add(new QueryResultDataPoint(bts, value.getValue()));
-                    } else {
-                        log.warn("No data point found for timestamp {}, metric {}", bts, metricShortcut);
                     }
                 } else {
                     log.warn("Unable to retrieve value for timestamp {}", bts);
