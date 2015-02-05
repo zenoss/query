@@ -23,7 +23,7 @@
         </dependency>
     </dependencies>
     <modules>
-        <module>metric-service-app</module>
-        <module>metric-service-lib</module>
+        <module>central-query-app</module>
+        <module>central-query-lib</module>
     </modules>
 </project>
