@@ -20,7 +20,7 @@
     </properties>
 
     <groupId>org.zenoss</groupId>
-    <artifactId>central-query-app</artifactId>
+    <artifactId>central-query</artifactId>
     <version>0.0.21</version>
     <dependencies>
         <dependency>

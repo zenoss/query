@@ -11,7 +11,7 @@
     <groupId>org.zenoss</groupId>
     <artifactId>central-query-lib</artifactId>
     <version>0.0.21</version>
-    <name>metric-service-lib</name>
+    <name>central-query-lib</name>
     <url>http://maven.apache.org</url>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

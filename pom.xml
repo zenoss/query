@@ -3,11 +3,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.zenoss</groupId>
-    <artifactId>central-query</artifactId>
+    <artifactId>central-query-parent</artifactId>
     <version>0.0.21</version>
     <packaging>pom</packaging>
 
-    <name>central-query</name>
+    <name>central-query-parent</name>
     <url>http://maven.apache.org</url>
 
     <properties>
@@ -23,7 +23,7 @@
         </dependency>
     </dependencies>
     <modules>
-        <module>central-query-app</module>
+        <module>central-query</module>
         <module>central-query-lib</module>
     </modules>
 </project>

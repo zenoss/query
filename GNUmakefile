@@ -14,7 +14,7 @@
 # Beware of trailing spaces.
 # Don't let your editor turn tabs into spaces or vice versa.
 #============================================================================
-COMPONENT             = central-query-app
+COMPONENT             = central-query
 SUPERVISOR_CONF       = $(_COMPONENT)_supervisor.conf
 COMPONENT_SH          = $(_COMPONENT).sh
 SUPERVISORD_DIR       = $(pkgconfdir)/supervisor
