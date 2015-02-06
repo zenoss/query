@@ -17,14 +17,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
-        <zapp.version>0.0.16</zapp.version>
-        <metric-consumer.version>0.0.6</metric-consumer.version>
         <jersey.version>1.15</jersey.version>
-        <mockito.version>1.9.5</mockito.version>
         <junit.version>4.11</junit.version>
         <spring.version>3.2.1.RELEASE</spring.version>
-        <dropwizard.version>0.6.2</dropwizard.version>
-        <jsdoc3.version>1.0.4</jsdoc3.version>
         <guava.version>12.0</guava.version>
         <slf4j.version>1.0-rc1</slf4j.version>
         <ssl.cert.dir>target/cert</ssl.cert.dir>
