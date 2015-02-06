@@ -35,11 +35,6 @@ import com.google.common.base.Objects;
 import org.junit.Test;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

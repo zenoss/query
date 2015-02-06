@@ -448,7 +448,7 @@ public class MetricSpecification {
     /**
      * Parse the URL metric parameter format supported by <a
      * href="http://opentsdb.net/http-api.html#/q">OpenTSDB</a> into the metric
-     * services {@link MetricSpecification} model object.
+     * services {@link org.zenoss.app.metricservice.api.model.MetricSpecification} model object.
      * <p/>
      * <em style="color: red">NOTE: This method supports a format that is
      * proposed to OpenTSDB, but is not yet committed. This format include
@@ -457,7 +457,7 @@ public class MetricSpecification {
      * @param content
      *            the metric specification in the OpenTSDB format
      * @return model representation of the URL metric query parameter
-     * @see MetricSpecification
+     * @see org.zenoss.app.metricservice.api.model.MetricSpecification
      */
     public static MetricSpecification fromString(String content) {
 
