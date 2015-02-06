@@ -338,24 +338,6 @@
             </plugins>
         </pluginManagement>
     </build>
-    <repositories>
-        <repository>
-            <id>zenoss-nexus</id>
-            <name>Internal Zenoss Nexus</name>
-            <url>http://cmrepo.zenoss.loc/nexus/content/groups/public</url>
-            <snapshots>
-                <updatePolicy>always</updatePolicy>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>zenoss-europa</id>
-            <name>Internal Zenoss Europa Repository</name>
-            <url>http://nexus.zendev.org:8081/nexus/content/repositories/releases</url>
-            <snapshots>
-                <updatePolicy>always</updatePolicy>
-            </snapshots>
-        </repository>
-    </repositories>
     <profiles>
         <profile>
             <id>assemble</id>
