@@ -4,8 +4,8 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.zenoss</groupId>
-        <artifactId>central-query</artifactId>
-        <version>0.0.20</version>
+        <artifactId>central-query-parent</artifactId>
+        <version>0.0.21</version>
     </parent>
 
     <groupId>org.zenoss</groupId>
