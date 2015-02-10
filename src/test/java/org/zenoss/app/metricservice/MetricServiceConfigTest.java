@@ -48,7 +48,8 @@ public class MetricServiceConfigTest {
     private static final String TSDB_TZ = "UTC";
     private static final String TSDB_URL = "http://localhost:4242";
     private static final int CONN_TIMEOUT_MS = 1000;
-    private static final int EXEC_THREAD_POOL_SIZE = 37;
+    private static final int EXEC_THREAD_POOL_MAX_SIZE = 37;
+    private static final int EXEC_THREAD_POOL_CORE_SIZE = 17;
     private static final int MAX_POOL_CONNECTIONS_PER_ROUTE = 20;
     private static final int MAX_TOTAL_POOL_CONNECTIONS = 234;
     private static final Boolean SEND_RATE_OPTIONS = true;
@@ -63,7 +64,8 @@ public class MetricServiceConfigTest {
         config.setDefaultTsdTimeZone(TSDB_TZ);
         config.setOpenTsdbUrl(TSDB_URL);
         config.setConnectionTimeoutMs(CONN_TIMEOUT_MS);
-        config.setExecutorThreadPoolSize(EXEC_THREAD_POOL_SIZE);
+        config.setExecutorThreadPoolMaxSize(EXEC_THREAD_POOL_MAX_SIZE);
+        config.setExecutorThreadPoolCoreSize(EXEC_THREAD_POOL_CORE_SIZE);
         config.setMaxPoolConnectionsPerRoute(MAX_POOL_CONNECTIONS_PER_ROUTE);
         config.setMaxTotalPoolConnections(MAX_TOTAL_POOL_CONNECTIONS);
         config.setSendRateOptions(SEND_RATE_OPTIONS);
@@ -75,7 +77,8 @@ public class MetricServiceConfigTest {
         Assert.assertEquals(TSDB_TZ, config.getDefaultTsdTimeZone());
         Assert.assertEquals(TSDB_URL, config.getOpenTsdbUrl());
         Assert.assertEquals(CONN_TIMEOUT_MS, config.getConnectionTimeoutMs());
-        Assert.assertEquals(EXEC_THREAD_POOL_SIZE, config.getExecutorThreadPoolSize());
+        Assert.assertEquals(EXEC_THREAD_POOL_MAX_SIZE, config.getExecutorThreadPoolMaxSize());
+        Assert.assertEquals(EXEC_THREAD_POOL_CORE_SIZE, config.getExecutorThreadPoolCoreSize());
         Assert.assertEquals(MAX_POOL_CONNECTIONS_PER_ROUTE, config.getMaxPoolConnectionsPerRoute());
         Assert.assertEquals(MAX_TOTAL_POOL_CONNECTIONS, config.getMaxTotalPoolConnections());
         Assert.assertEquals(SEND_RATE_OPTIONS, config.getSendRateOptions());

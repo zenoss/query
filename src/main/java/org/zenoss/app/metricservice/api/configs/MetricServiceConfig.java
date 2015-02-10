@@ -69,7 +69,10 @@ public class MetricServiceConfig {
     private int maxPoolConnectionsPerRoute= 20;
 
     @JsonProperty
-    private int executorThreadPoolSize = 20;
+    private int executorThreadPoolCoreSize = 20;
+
+    @JsonProperty
+    private int executorThreadPoolMaxSize = 250;
 
 
     public int getMaxTotalPoolConnections() {
@@ -88,14 +91,20 @@ public class MetricServiceConfig {
         this.maxPoolConnectionsPerRoute = maxPoolConnectionsPerRoute;
     }
 
-    public int getExecutorThreadPoolSize() {
-        return executorThreadPoolSize;
+    public int getExecutorThreadPoolCoreSize() {
+        return executorThreadPoolCoreSize;
     }
 
-    public void setExecutorThreadPoolSize(int executorThreadPoolSize) {
-        this.executorThreadPoolSize = executorThreadPoolSize;
+    public void setExecutorThreadPoolCoreSize(int executorThreadPoolCoreSize) {
+        this.executorThreadPoolCoreSize = executorThreadPoolCoreSize;
     }
 
+    public int getExecutorThreadPoolMaxSize() {
+        return executorThreadPoolMaxSize;
+    }
+    public void setExecutorThreadPoolMaxSize(int executorThreadPoolMaxSize) {
+        this.executorThreadPoolMaxSize = executorThreadPoolMaxSize;
+    }
     /**
 
      * @return the defaultReturnSet

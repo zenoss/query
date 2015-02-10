@@ -79,12 +79,17 @@ class CallableQueryExecutor implements Callable<OpenTSDBQueryResult> {
             HttpResponse response = httpClient.execute(httpPost, context);
             StatusLine status = response.getStatusLine();
             if (status.getStatusCode() != Response.Status.OK.getStatusCode()) {
+                String message = status.getReasonPhrase();
                 log.warn("HTTP Execute returned status {}. Reason: {}", status.getStatusCode(), status.getReasonPhrase());
-                String content = EntityUtils.toString(response.getEntity());
-                log.debug("####### RESPONSE CONTENT:#########\n{}", content);
-                OpenTSDBErrorResponse tsdbResponse = Utils.getObjectMapper().readValue(content, OpenTSDBErrorResponse.class);
-                log.info("Response object: {}", Utils.jsonStringFromObject(tsdbResponse));
-                result.setStatus(new QueryStatus(QueryStatus.QueryStatusEnum.ERROR, tsdbResponse.error.message));
+                entity = response.getEntity();
+                if (null != entity) {
+                    String content = EntityUtils.toString(response.getEntity());
+                    log.debug("####### RESPONSE CONTENT:#########\n{}", content);
+                    OpenTSDBErrorResponse tsdbResponse = Utils.getObjectMapper().readValue(content, OpenTSDBErrorResponse.class);
+                    log.info("Response object: {}", Utils.jsonStringFromObject(tsdbResponse));
+                    message = tsdbResponse.error.message;
+                }
+                result.setStatus(new QueryStatus(QueryStatus.QueryStatusEnum.ERROR, message));
             } else {
                 entity = response.getEntity();
                 OpenTSDBQueryResult [] resultArray = null;
@@ -117,6 +122,7 @@ class CallableQueryExecutor implements Callable<OpenTSDBQueryResult> {
                 String.format("%s executing and processing query: %s", e.getClass().getName(), e.getMessage())));
         } finally {
             EntityUtils.consumeQuietly(entity);
+            log.debug("releasing connection.");
             httpPost.releaseConnection();
         }
         return result;
