@@ -47,6 +47,9 @@ public class QueryResult {
         this.metric = other.metric;
         this.datapoints = new ArrayList<>(other.datapoints.size());
         Collections.copy(datapoints, other.datapoints);
+        if (null != other.getQueryStatus()) {
+            this.queryStatus = new QueryStatus(other.getQueryStatus().getStatus(), other.getQueryStatus().getMessage());
+        }
     }
 
     private List<QueryResultDataPoint> datapoints;

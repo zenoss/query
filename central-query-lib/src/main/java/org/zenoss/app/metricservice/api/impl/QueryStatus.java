@@ -47,6 +47,26 @@ public class QueryStatus {
         status = QueryStatusEnum.UNKNOWN;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        QueryStatus that = (QueryStatus) o;
+
+        if (message != null ? !message.equals(that.message) : that.message != null) return false;
+        if (status != that.status) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = message != null ? message.hashCode() : 0;
+        result = 31 * result + (status != null ? status.hashCode() : 0);
+        return result;
+    }
+
     public QueryStatus(QueryStatusEnum status, String message) {
         this.status = status;
         this.message = message;
