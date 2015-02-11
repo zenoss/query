@@ -8,7 +8,7 @@
         <maven.compiler.target>1.7</maven.compiler.target>
         <zapp.version>0.0.16</zapp.version>
         <metric-consumer.version>0.0.15</metric-consumer.version>
-        <central-query-lib.version>0.0.21</central-query-lib.version>
+        <central-query-lib.version>0.1.0-SNAPSHOT</central-query-lib.version>
         <jersey.version>1.15</jersey.version>
         <junit.version>4.11</junit.version>
         <spring.version>3.2.1.RELEASE</spring.version>
@@ -20,7 +20,7 @@
 
     <groupId>org.zenoss</groupId>
     <artifactId>central-query</artifactId>
-    <version>0.0.21</version>
+    <version>0.1.0-SNAPSHOT</version>
     <dependencies>
         <dependency>
             <groupId>org.zenoss.zapp</groupId>

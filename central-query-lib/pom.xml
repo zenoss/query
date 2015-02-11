@@ -5,12 +5,12 @@
     <parent>
         <groupId>org.zenoss</groupId>
         <artifactId>central-query-parent</artifactId>
-        <version>0.0.21</version>
+        <version>0.1.0-SNAPSHOT</version>
     </parent>
 
     <groupId>org.zenoss</groupId>
     <artifactId>central-query-lib</artifactId>
-    <version>0.0.21</version>
+    <version>0.1.0-SNAPSHOT</version>
     <name>central-query-lib</name>
     <url>http://maven.apache.org</url>
     <properties>
