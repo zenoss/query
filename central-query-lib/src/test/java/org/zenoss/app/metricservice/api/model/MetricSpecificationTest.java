@@ -473,12 +473,4 @@ public class MetricSpecificationTest {
         subject.setTags(TEST_TAGS);
         Assert.assertEquals(TEST_TAGS, subject.getTags());
     }
-//
-//    @Test
-//    public void testGetAndSetSomething() {
-//        MetricSpecification subject = new MetricSpecification();
-//        Assert.assertNull(subject.getSomething());
-//        subject.setSomething(TEST_SOMETHING);
-//        Assert.assertEquals(TEST_SOMETHING, subject.getSomething());
-//    }
 }
