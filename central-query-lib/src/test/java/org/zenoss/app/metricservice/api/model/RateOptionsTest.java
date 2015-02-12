@@ -28,11 +28,10 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.metricservice;
+package org.zenoss.app.metricservice.api.model;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zenoss.app.metricservice.api.model.MetricSpecification;
 
 import javax.ws.rs.WebApplicationException;
 

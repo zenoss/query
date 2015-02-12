@@ -66,7 +66,7 @@ public class SeriesQueryResult {
         this.source = other.source;
         this.startTime = other.startTime;
         this.startTimeActual = other.startTimeActual;
-        this.results = new ArrayList<>(other.results.size());
+        this.results = new ArrayList<>(other.results);
         Collections.copy(results, other.results);
     }
 

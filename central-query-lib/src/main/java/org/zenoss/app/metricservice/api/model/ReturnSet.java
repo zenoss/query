@@ -60,7 +60,7 @@ public enum ReturnSet {
      * metric should be returned. If a results is not returned for a metric that
      * means that there is no "latest" value within the requested time range.
      */
-    LAST, testReturnSet;
+    LAST, TEST_RETURN_SET;
 
     /**
      * Provides a method used to generate a string for the resource when

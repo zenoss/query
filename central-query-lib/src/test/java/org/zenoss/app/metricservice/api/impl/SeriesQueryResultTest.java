@@ -4,8 +4,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
 
 public class SeriesQueryResultTest {
 
@@ -87,16 +86,53 @@ public class SeriesQueryResultTest {
         SeriesQueryResult subject = new SeriesQueryResult();
         Assert.assertTrue("getResults on Uninitialized SeriesQueryResult should return empty collection.", subject.getResults().isEmpty());
         Collection<QueryResult> testResults = new ArrayList<>();
-        QueryResult testQueryResult = new QueryResult();
-        testQueryResult.setMetric("Test Metric");
-        testQueryResult.setQueryStatus(new QueryStatus(QueryStatus.QueryStatusEnum.WARNING, "Test Query Status Message"));
-        testResults.add(testQueryResult);
+        testResults = createQueryResults();
+
+//        QueryResult testQueryResult = new QueryResult();
+//        testQueryResult.setMetric("Test Metric");
+//        testQueryResult.setQueryStatus(new QueryStatus(QueryStatus.QueryStatusEnum.WARNING, "Test Query Status Message"));
+//        testResults.add(testQueryResult);
         subject.addResults(testResults);
         Assert.assertEquals("After addResults, getResults should return object passed in.", testResults, subject.getResults());
     }
 
     @Test
     public void testCopyConstructor() {
-        Assert.fail("TBD: Implement copy constructor test.");
+        SeriesQueryResult subject = new SeriesQueryResult();
+
+        subject.setClientId("Test Client ID");
+        subject.setEndTime("Test EndTime");
+        long testEndTimeActual = 1423688156;
+        subject.setEndTimeActual(testEndTimeActual);
+        subject.setReturnset(ReturnSet.EXACT);
+        subject.setSeries(true);
+        subject.setSource("Test Source");
+        subject.setStartTime("Test StartTime");
+        long testStartTimeActual = 1423684556;
+        subject.setStartTimeActual(testStartTimeActual);
+
+        Collection<QueryResult> testResults = createQueryResults();
+        subject.addResults(testResults);
+
+        SeriesQueryResult clone = new SeriesQueryResult(subject);
+
+        Assert.assertEquals("ClientId of copied QueryResult should match original", subject.getClientId(), clone.getClientId());
+        Assert.assertEquals("End Time of copied QueryResult should match original", subject.getEndTime(), clone.getEndTime());
+        Assert.assertEquals("EndTimeActual of copied QueryResult should match original", subject.getEndTimeActual(), clone.getEndTimeActual());
+        Assert.assertEquals("Returnset of copied QueryResult should match original", subject.getReturnset(), clone.getReturnset());
+        Assert.assertEquals("Series flag of copied QueryResult should match original", subject.isSeries(), clone.isSeries());
+        Assert.assertEquals("Source of copied QueryResult should match original", subject.getSource(), clone.getSource());
+        Assert.assertEquals("StartTime of copied QueryResult should match original", subject.getStartTime(), clone.getStartTime());
+        Assert.assertEquals("StartTimeActual of copied QueryResult should match original", subject.getStartTimeActual(), clone.getStartTimeActual());
+        Assert.assertEquals("Results of copied QueryResult should match original.", subject.getResults(), clone.getResults());
+    }
+
+    private Collection<QueryResult> createQueryResults() {
+        QueryResult testQueryResult = new QueryResult();
+        testQueryResult.setMetric("Test Metric");
+        testQueryResult.setQueryStatus(new QueryStatus(QueryStatus.QueryStatusEnum.WARNING, "Test Query Status Message"));
+        Collection<QueryResult> testResults = new ArrayList<>();
+        testResults.add(testQueryResult);
+        return testResults;
     }
 }
