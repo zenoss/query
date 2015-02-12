@@ -16,15 +16,15 @@ public class PerformanceQueryTest {
     private static final String DOWNSAMPLE_STRING = "Test Downsample";
     private static final double DOWNSAMPLE_MULTIPLIER = 42.0;
     private static final double EPSILON = 0.000001;
-    private static final ReturnSet TEST_RETURNSET = ReturnSet.TEST_RETURN_SET;
+    private static final ReturnSet TEST_RETURNSET = ReturnSet.EXACT;
 
-    PerformanceQuery subject;
+    private PerformanceQuery subject;
 
     @Before
     public void setUp() {
         subject = new PerformanceQuery();
         TEST_METRICS.add(MetricSpecification.fromString("sum:10s-ago:rate:laLoadInt{tag2=thing|other thing,tag3=bar,tag1=value1|value2|value3}"));
-        TEST_TAGS.put("TEST_TAG", Arrays.asList("test value 1", "test value 2", "test value 3") );
+        TEST_TAGS.put("TEST_TAG", Arrays.asList("test value 1", "test value 2", "test value 3"));
     }
 
     @Test

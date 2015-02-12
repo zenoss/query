@@ -32,7 +32,7 @@ public class RateFormatExceptionTest {
 
     @Test
     public void testMessageAndExceptionConstructor() {
-        subject = new RateFormatException(TEST_MESSAGE,TEST_EXCEPTION);
+        subject = new RateFormatException(TEST_MESSAGE, TEST_EXCEPTION);
         Assert.assertNotNull(subject);
         Assert.assertEquals(TEST_MESSAGE, subject.getMessage());
         Assert.assertEquals(TEST_EXCEPTION, subject.getCause());

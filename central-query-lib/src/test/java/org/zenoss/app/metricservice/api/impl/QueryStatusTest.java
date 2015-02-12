@@ -42,7 +42,7 @@ public class QueryStatusTest {
         String testMessage = "Message for Unit Test";
         QueryStatus.QueryStatusEnum testStatus = QueryStatus.QueryStatusEnum.WARNING;
         QueryStatus one = new QueryStatus(testStatus, testMessage);
-        Assert.assertEquals("getStatus should return status passed to constructor.", testStatus, one.getStatus());;
+        Assert.assertEquals("getStatus should return status passed to constructor.", testStatus, one.getStatus());
     }
 
     @Test
@@ -51,9 +51,9 @@ public class QueryStatusTest {
         QueryStatus.QueryStatusEnum testStatus = QueryStatus.QueryStatusEnum.WARNING;
         QueryStatus.QueryStatusEnum newStatus = QueryStatus.QueryStatusEnum.ERROR;
         QueryStatus one = new QueryStatus(testStatus, testMessage);
-        Assert.assertEquals("getStatus should return status passed to constructor.", testStatus, one.getStatus());;
+        Assert.assertEquals("getStatus should return status passed to constructor.", testStatus, one.getStatus());
         one.setStatus(newStatus);
-        Assert.assertEquals("getStatus should return status set with setStatus.", newStatus, one.getStatus());;
+        Assert.assertEquals("getStatus should return status set with setStatus.", newStatus, one.getStatus());
     }
 
     @Test
@@ -61,7 +61,7 @@ public class QueryStatusTest {
         String testMessage = "Message for Unit Test";
         QueryStatus.QueryStatusEnum testStatus = QueryStatus.QueryStatusEnum.WARNING;
         QueryStatus one = new QueryStatus(testStatus, testMessage);
-        Assert.assertEquals("getMessage should return message passed to constructor.", testMessage, one.getMessage());;
+        Assert.assertEquals("getMessage should return message passed to constructor.", testMessage, one.getMessage());
 
 
     }
@@ -72,8 +72,8 @@ public class QueryStatusTest {
         String newMessage = "New Unit Test Message";
         QueryStatus.QueryStatusEnum testStatus = QueryStatus.QueryStatusEnum.WARNING;
         QueryStatus one = new QueryStatus(testStatus, testMessage);
-        Assert.assertEquals("getMessage should return message passed to constructor.", testMessage, one.getMessage());;
+        Assert.assertEquals("getMessage should return message passed to constructor.", testMessage, one.getMessage());
         one.setMessage(newMessage);
-        Assert.assertEquals("getMessage should return status set with setStatus.", newMessage, one.getMessage());;
+        Assert.assertEquals("getMessage should return status set with setStatus.", newMessage, one.getMessage());
     }
 }

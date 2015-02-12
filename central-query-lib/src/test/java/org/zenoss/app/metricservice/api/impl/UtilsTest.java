@@ -29,7 +29,7 @@ public class UtilsTest {
         String contextString = "Context String";
         Response subject = Utils.getErrorResponse(idString, status, messageString, contextString);
         Assert.assertEquals("Status of created response should match method argument", status, subject.getStatus());
-        String stringEntity = (String)subject.getEntity();
+        String stringEntity = (String) subject.getEntity();
         Assert.assertTrue("Error entity should contain message string.", stringEntity.contains(messageString));
         Assert.assertTrue("Error entity should contain context string.", stringEntity.contains(contextString));
         Assert.assertTrue("Error entity should contain ID string.", stringEntity.contains(idString));
@@ -48,21 +48,20 @@ public class UtilsTest {
         long testTime = 1422728245L;
         String testTimeString = "1422728245";
         String testTimeMillisString = "1422728245697";
-        //yyyy/MM/dd-HH:mm:ss-Z
         String testTimeGMTString = "2015/01/31-18:17:25 GMT+0";
         String testTimeCentralString = "2015/1/31-12:17:25";
         String testTimeEasternString = "2015/1/31-13:17:25-0500";
         long computedNow = System.currentTimeMillis() / 1000L;
         long now = Utils.parseDate(Utils.NOW);
-        long tenSecondsAgo=Utils.parseDate("10s-ago");
+        long tenSecondsAgo = Utils.parseDate("10s-ago");
         long lastMinute = Utils.parseDate("1m-ago");
         long lastHour = Utils.parseDate("1h-ago");
         long yesterday = Utils.parseDate("1d-ago");
         Assert.assertEquals("Parsed now should equal computed now", computedNow, now, 5);
         Assert.assertEquals("Parsed 10s-ago should equal computed now - 10", tenSecondsAgo, now - 10, 5);
-        Assert.assertEquals("Parsed 1m-ago should equal computed now - 60", lastMinute, now - 60, 5);
-        Assert.assertEquals("Parsed 1h-ago should equal computed now - 3600", lastHour, now - 3600, 5);
-        Assert.assertEquals("Parsed 1d-ago should equal computed now - (3600 * 24)", yesterday, now - (3600 * 24), 5);
+        Assert.assertEquals("Parsed 1m-ago should equal computed now - 60", lastMinute, now - Utils.SECONDS_PER_MINUTE, 5);
+        Assert.assertEquals("Parsed 1h-ago should equal computed now - 3600", lastHour, now - Utils.SECONDS_PER_HOUR, 5);
+        Assert.assertEquals("Parsed 1d-ago should equal computed now - (3600 * 24)", yesterday, now - Utils.SECONDS_PER_DAY, 5);
         Assert.assertEquals("Parsed now should equal computed now", computedNow, now, 5);
         Assert.assertEquals("Parsed now should equal computed now", computedNow, now, 5);
         Assert.assertEquals("Parsed now should equal computed now", computedNow, now, 5);
@@ -76,11 +75,11 @@ public class UtilsTest {
     @Test
     public void testParseDuration() throws Exception {
         Assert.assertEquals(Utils.parseDuration("5s"), 5);
-        Assert.assertEquals(Utils.parseDuration("5w"), 5*7*24*3600);
-        Assert.assertEquals(Utils.parseDuration("2y"), 2*365*24*3600);
+        Assert.assertEquals(Utils.parseDuration("5w"), 5 * Utils.SECONDS_PER_WEEK);
+        Assert.assertEquals(Utils.parseDuration("2y"), 2 * Utils.SECONDS_PER_YEAR);
         Assert.assertEquals(Utils.parseDuration("5s-ago"), 5);
-        Assert.assertEquals(Utils.parseDuration("5w-ago"), 5*7*24*3600);
-        Assert.assertEquals(Utils.parseDuration("2y-ago"), 2*365*24*3600);
+        Assert.assertEquals(Utils.parseDuration("5w-ago"), 5 * Utils.SECONDS_PER_WEEK);
+        Assert.assertEquals(Utils.parseDuration("2y-ago"), 2 * Utils.SECONDS_PER_YEAR);
         Assert.assertEquals(Utils.parseDuration("arglefoo-ago"), 0);
         Assert.assertEquals(Utils.parseDuration("27t-ago"), 0);
     }

@@ -4,7 +4,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
 
 public class SeriesQueryResultTest {
 
@@ -85,13 +86,7 @@ public class SeriesQueryResultTest {
     public void testGetAndAddResults() throws Exception {
         SeriesQueryResult subject = new SeriesQueryResult();
         Assert.assertTrue("getResults on Uninitialized SeriesQueryResult should return empty collection.", subject.getResults().isEmpty());
-        Collection<QueryResult> testResults = new ArrayList<>();
-        testResults = createQueryResults();
-
-//        QueryResult testQueryResult = new QueryResult();
-//        testQueryResult.setMetric("Test Metric");
-//        testQueryResult.setQueryStatus(new QueryStatus(QueryStatus.QueryStatusEnum.WARNING, "Test Query Status Message"));
-//        testResults.add(testQueryResult);
+        Collection<QueryResult> testResults = createQueryResults();
         subject.addResults(testResults);
         Assert.assertEquals("After addResults, getResults should return object passed in.", testResults, subject.getResults());
     }

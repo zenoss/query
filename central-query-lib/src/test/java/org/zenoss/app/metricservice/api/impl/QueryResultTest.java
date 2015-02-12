@@ -23,7 +23,7 @@ public class QueryResultTest {
     public void testGetAndSetId() throws Exception {
         QueryResult subject = new QueryResult();
         Assert.assertNull("Id of uninitialized QueryResult object should be null", subject.getId());
-        String newId = new String("Test Id");
+        String newId = "Test Id";
         subject.setId(newId);
         Assert.assertEquals("Id of initialized QueryResult object should return the object used to initialize it.", newId, subject.getId());
     }
@@ -32,7 +32,7 @@ public class QueryResultTest {
     public void testGetAndSetMetric() throws Exception {
         QueryResult subject = new QueryResult();
         Assert.assertNull("Metric of uninitialized QueryResult object should be null.", subject.getMetric());
-        String newMetric = new String("Test Metric");
+        String newMetric = "Test Metric";
         subject.setMetric(newMetric);
         Assert.assertEquals("Metric of initialized QueryResult should return the string used to initialize it.", newMetric, subject.getMetric());
     }
@@ -50,7 +50,7 @@ public class QueryResultTest {
     public void testGetAndSetTags() throws Exception {
         QueryResult subject = new QueryResult();
         Assert.assertTrue("tags of uninitialized QueryResult object should be an empty collection", subject.getTags().isEmpty());
-        Map<String,List<String>> newTags = new HashMap<>();
+        Map<String, List<String>> newTags = new HashMap<>();
         subject.setTags(newTags);
         Assert.assertEquals("Tags of initialized QueryResult should return the string used to initialize it.", newTags, subject.getTags());
     }

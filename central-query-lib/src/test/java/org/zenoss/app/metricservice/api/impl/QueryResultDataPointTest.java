@@ -6,8 +6,8 @@ import org.junit.Test;
 public class QueryResultDataPointTest {
 
     private static final double EPSILON = 0.000000000000001;
-    long initialTime = 1423522480;
-    double initialValue = 3.1415926535;
+    private final long initialTime = 1423522480;
+    private final double initialValue = 3.1415926535;
 
     @Test
     public void testGetTimestamp() throws Exception {
