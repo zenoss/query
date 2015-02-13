@@ -2,18 +2,20 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <jersey.version>1.15</jersey.version>
+        <central-query.version>0.1.0-SNAPSHOT</central-query.version>
+        <central-query-lib.version>0.1.0-SNAPSHOT</central-query-lib.version>
+    </properties>
+
     <groupId>org.zenoss</groupId>
     <artifactId>central-query-parent</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>${central-query.version}</version>
     <packaging>pom</packaging>
 
     <name>central-query-parent</name>
     <url>http://maven.apache.org</url>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jersey.version>1.15</jersey.version>
-    </properties>
 
     <dependencies>
         <dependency>
