@@ -25,7 +25,7 @@
 
     <groupId>org.zenoss</groupId>
     <artifactId>central-query</artifactId>
-    <version>${central-query.version}}</version>
+    <version>${central-query.version}</version>
     <dependencies>
         <dependency>
             <groupId>org.zenoss.zapp</groupId>
