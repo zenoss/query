@@ -4,9 +4,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
+        <relativePath>../pom.xml</relativePath>
         <groupId>org.zenoss</groupId>
         <artifactId>central-query-parent</artifactId>
-        <version>${central-query.version}</version>
+        <version>0.1.0-SNAPSHOT</version>
     </parent>
 
     <properties>
@@ -25,7 +26,6 @@
 
     <groupId>org.zenoss</groupId>
     <artifactId>central-query</artifactId>
-    <version>${central-query.version}</version>
     <dependencies>
         <dependency>
             <groupId>org.zenoss.zapp</groupId>
