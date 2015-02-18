@@ -52,7 +52,7 @@ public class SeriesQueryResult {
     private String startTime;
     private long startTimeActual;
     @JsonProperty("results")
-    private List<QueryResult> results;
+    private List<QueryResult> results = new ArrayList<>();
 
 
     public SeriesQueryResult() {}
@@ -66,7 +66,7 @@ public class SeriesQueryResult {
         this.source = other.source;
         this.startTime = other.startTime;
         this.startTimeActual = other.startTimeActual;
-        this.results = new ArrayList<>(other.results.size());
+        this.results = new ArrayList<>(other.results);
         Collections.copy(results, other.results);
     }
 
@@ -136,7 +136,7 @@ public class SeriesQueryResult {
 
     public void addResults(Collection<QueryResult> queryResults) {
         if (null == results) {
-            results = new ArrayList<QueryResult>();
+            results = new ArrayList<>();
         }
         results.addAll(queryResults);
     }

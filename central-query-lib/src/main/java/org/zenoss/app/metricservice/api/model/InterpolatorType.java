@@ -30,5 +30,5 @@ package org.zenoss.app.metricservice.api.model;/*
  */
 
 public enum InterpolatorType {
-    none, linear;
+    none, linear
 }

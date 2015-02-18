@@ -109,7 +109,11 @@ public final class Utils {
         errorResponse.errorSource = context;
         errorResponse.errorMessage = message;
 
-        return Response.status(status).entity(jsonStringFromObject(errorResponse)).build();
+        String jsonErrorResponse = jsonStringFromObject(errorResponse);
+
+        return Response.status(status)
+            .entity(jsonErrorResponse)
+            .build();
     }
 
     public static String createUuid() {
@@ -153,7 +157,7 @@ public final class Utils {
         }
 
         try {
-            return new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss-Z").parse(v)
+            return new SimpleDateFormat("yyyy/MM/dd-HH:mm:ssZ").parse(v)
                 .getTime() / 1000;
         } catch (ParseException e) {
             // If it failed to parse with a timezone then attempt to parse

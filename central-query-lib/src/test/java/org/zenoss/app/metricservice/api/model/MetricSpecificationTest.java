@@ -28,19 +28,46 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.metricservice;
+package org.zenoss.app.metricservice.api.model;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zenoss.app.metricservice.api.model.MetricSpecification;
 
 import java.util.*;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
- *
  */
 public class MetricSpecificationTest {
+
+    private static final String TEST_ID = "Test ID";
+    private static final Aggregator TEST_AGGREGATOR = Aggregator.min;
+    private static final String TEST_DOWNSAMPLE = "Test Downsample";
+    private static final boolean TEST_EMIT = false;
+    private static final String TEST_EXPRESSION = "Test Expression";
+    private static final InterpolatorType TEST_INTERPOLATOR = InterpolatorType.linear;
+    private static final String TEST_METRIC = "Test Metric";
+    private static final String TEST_NAME = "Test Name";
+    private static final Boolean TEST_RATE = Boolean.TRUE;
+    private static final Long COUNTER_MAX = 67123l;
+    private static final Long RESET_THRESHOLD = 9876543l;
+    private static final RateOptions TEST_RATE_OPTIONS = makeTestRateOptions(true, COUNTER_MAX, RESET_THRESHOLD);
+    private static final Map<String, List<String>> TEST_TAGS = makeTestTags();
+
+    private static Map<String, List<String>> makeTestTags() {
+        Map<String, List<String>> result = new HashMap<>();
+        result.put("tag key 1", Arrays.asList("tag value 1", "tag value 2", "tag value 3"));
+        result.put("tag key 2", Arrays.asList("other tag value"));
+        return result;
+    }
+
+    private static RateOptions makeTestRateOptions(Boolean counter, Long counterMax, Long resetThreshold) {
+        RateOptions result = new RateOptions();
+        result.setCounter(counter);
+        result.setCounterMax(counterMax);
+        result.setResetThreshold(resetThreshold);
+        return result;
+    }
 
     private MetricSpecification test(String source, String expected) {
         MetricSpecification mq = MetricSpecification.fromString(source);
@@ -249,8 +276,8 @@ public class MetricSpecificationTest {
     public void tagMergeTest() {
         MetricSpecification testSubject = new MetricSpecification();
         Map<String, List<String>> initialTags = new HashMap<>();
-        initialTags.put("key1",new ArrayList<>(Arrays.asList("k1v1","k1v2","k1v3")));
-        initialTags.put("key2",new ArrayList<>(Arrays.asList("k2v1","k2v2","k2v3")));
+        initialTags.put("key1", new ArrayList<>(Arrays.asList("k1v1", "k1v2", "k1v3")));
+        initialTags.put("key2", new ArrayList<>(Arrays.asList("k2v1", "k2v2", "k2v3")));
         testSubject.setTags(initialTags);
         Map<String, List<String>> additionalTags = new HashMap<>();
         additionalTags.put("key2", new ArrayList<>(Arrays.asList("k2v3", "k2v4", "k2v5")));
@@ -258,16 +285,16 @@ public class MetricSpecificationTest {
         testSubject.mergeTags(additionalTags);
         Map<String, List<String>> tsTags = testSubject.getTags();
         List<String> k1Tags = tsTags.get("key1");
-        for (String value : Arrays.asList("k1v1","k1v2","k1v3")) {
+        for (String value : Arrays.asList("k1v1", "k1v2", "k1v3")) {
             Assert.assertTrue("Tags should contain value " + value + " for key 1", k1Tags.contains(value));
         }
         List<String> k2Tags = tsTags.get("key2");
-        for (String value : Arrays.asList("k2v1","k2v2","k2v3","k2v4","k2v5")) {
-            Assert.assertTrue("Tags should contain value " + value + " for key 2",k2Tags.contains(value));
+        for (String value : Arrays.asList("k2v1", "k2v2", "k2v3", "k2v4", "k2v5")) {
+            Assert.assertTrue("Tags should contain value " + value + " for key 2", k2Tags.contains(value));
         }
         List<String> k3Tags = tsTags.get("key3");
-        for (String value : Arrays.asList("k3v1","k3v2")) {
-            Assert.assertTrue("Tags should contain value " + value + " for key 3",k3Tags.contains(value));
+        for (String value : Arrays.asList("k3v1", "k3v2")) {
+            Assert.assertTrue("Tags should contain value " + value + " for key 3", k3Tags.contains(value));
         }
         List<String> k4Tags = tsTags.get("key4");
         Assert.assertNull("there should be no entry for key4.", k4Tags);
@@ -282,12 +309,12 @@ public class MetricSpecificationTest {
         testSubject.mergeTags(additionalTags);
         Map<String, List<String>> tsTags = testSubject.getTags();
         List<String> k2Tags = tsTags.get("key2");
-        for (String value : Arrays.asList("k2v3","k2v4","k2v5")) {
-            Assert.assertTrue("Tags should contain value " + value + " for key 2",k2Tags.contains(value));
+        for (String value : Arrays.asList("k2v3", "k2v4", "k2v5")) {
+            Assert.assertTrue("Tags should contain value " + value + " for key 2", k2Tags.contains(value));
         }
         List<String> k3Tags = tsTags.get("key3");
-        for (String value : Arrays.asList("k3v1","k3v2")) {
-            Assert.assertTrue("Tags should contain value " + value + " for key 3",k3Tags.contains(value));
+        for (String value : Arrays.asList("k3v1", "k3v2")) {
+            Assert.assertTrue("Tags should contain value " + value + " for key 3", k3Tags.contains(value));
         }
         List<String> k4Tags = tsTags.get("key4");
         Assert.assertNull("there should be no entry for key4.", k4Tags);
@@ -297,21 +324,153 @@ public class MetricSpecificationTest {
     public void tagInitializeTest() {
         MetricSpecification testSubject = new MetricSpecification();
         Map<String, List<String>> initialTags = new HashMap<>();
-        initialTags.put("key1",new ArrayList<>(Arrays.asList("k1v1","k1v2","k1v3")));
-        initialTags.put("key2",new ArrayList<>(Arrays.asList("k2v1","k2v2","k2v3")));
+        initialTags.put("key1", new ArrayList<>(Arrays.asList("k1v1", "k1v2", "k1v3")));
+        initialTags.put("key2", new ArrayList<>(Arrays.asList("k2v1", "k2v2", "k2v3")));
         testSubject.setTags(initialTags);
         Map<String, List<String>> tsTags = testSubject.getTags();
         List<String> k1Tags = tsTags.get("key1");
-        for (String value : Arrays.asList("k1v1","k1v2","k1v3")) {
+        for (String value : Arrays.asList("k1v1", "k1v2", "k1v3")) {
             Assert.assertTrue("Tags should contain value " + value + " for key 1", k1Tags.contains(value));
         }
         List<String> k2Tags = tsTags.get("key2");
-        for (String value : Arrays.asList("k2v1","k2v2","k2v3")) {
-            Assert.assertTrue("Tags should contain value " + value + " for key 2",k2Tags.contains(value));
+        for (String value : Arrays.asList("k2v1", "k2v2", "k2v3")) {
+            Assert.assertTrue("Tags should contain value " + value + " for key 2", k2Tags.contains(value));
         }
         testSubject.setTags(null);
         tsTags = testSubject.getTags();
         Assert.assertNotNull("After setting tags to null, getTags() should return an empty collection (not NULL)");
         Assert.assertTrue("After setting tags to null, getTags() should return an empty collection.", tsTags.isEmpty());
+    }
+
+    @Test
+    public void tagRenderingTest() {
+        String testString = "sum:10s-ago:rate:laLoadInt{tag2=thing|other thing,tag3=bar,tag1=value1|value2|value3}";
+        MetricSpecification subject = MetricSpecification.fromString(testString);
+        String generatedString = subject.toString();
+        Assert.assertEquals(testString, generatedString);
+    }
+
+    @Test
+    public void testValidateGoodObjectWithErrorHandling() {
+        String testString = "sum:10s-ago:rate:laLoadInt{tag2=thing|other thing,tag3=bar,tag1=value1|value2|value3}";
+        MetricSpecification subject = MetricSpecification.fromString(testString);
+        List<Object> errorList = new ArrayList<>();
+        subject.validateWithErrorHandling(errorList);
+        Assert.assertEquals(0, errorList.size());
+    }
+
+    @Test
+    public void testValidateBadObjectWithErrorHandling() {
+        String testString = "sum:10s-ago:rate:laLoadInt{tag2=thing|other thing,tag3=ba*r,tag1=value1|value2|value3}";
+        MetricSpecification subject = MetricSpecification.fromString(testString);
+        List<Object> errorList = new ArrayList<>();
+        subject.validateWithErrorHandling(errorList);
+        Assert.assertEquals(1, errorList.size());
+    }
+
+    @Test
+    public void testGetAndSetId() {
+        MetricSpecification subject = new MetricSpecification();
+        Assert.assertNull(subject.getId());
+        subject.setId(TEST_ID);
+        Assert.assertEquals(TEST_ID, subject.getId());
+    }
+
+    @Test
+    public void testGetAndSetAggregator() {
+        MetricSpecification subject = new MetricSpecification();
+        Assert.assertEquals(MetricSpecification.DEFAULT_AGGREGATOR, subject.getAggregator());
+        subject.setAggregator(TEST_AGGREGATOR);
+        Assert.assertEquals(TEST_AGGREGATOR, subject.getAggregator());
+    }
+
+    @Test
+    public void testGetAndSetDownsample() {
+        MetricSpecification subject = new MetricSpecification();
+        Assert.assertNull(subject.getDownsample());
+        subject.setDownsample(TEST_DOWNSAMPLE);
+        Assert.assertEquals(TEST_DOWNSAMPLE, subject.getDownsample());
+    }
+
+    @Test
+    public void testGetAndSetEmit() {
+        MetricSpecification subject = new MetricSpecification();
+        Assert.assertTrue(subject.getEmit());
+        subject.setEmit(TEST_EMIT);
+        Assert.assertEquals(TEST_EMIT, subject.getEmit());
+    }
+
+    @Test
+    public void testGetAndSetExpression() {
+        MetricSpecification subject = new MetricSpecification();
+        Assert.assertNull(subject.getExpression());
+        subject.setExpression(TEST_EXPRESSION);
+        Assert.assertEquals(TEST_EXPRESSION, subject.getExpression());
+    }
+
+    @Test
+    public void testGetAndSetInterpolator() {
+        MetricSpecification subject = new MetricSpecification();
+        Assert.assertEquals(InterpolatorType.none, subject.getInterpolator());
+        subject.setInterpolator(TEST_INTERPOLATOR);
+        Assert.assertEquals(TEST_INTERPOLATOR, subject.getInterpolator());
+    }
+
+    @Test
+    public void testGetAndSetMetric() {
+        MetricSpecification subject = new MetricSpecification();
+        Assert.assertNull(subject.getMetric());
+        subject.setMetric(TEST_METRIC);
+        Assert.assertEquals(TEST_METRIC, subject.getMetric());
+    }
+
+    @Test
+    public void testGetAndSetMetricOrName() {
+        MetricSpecification subject = new MetricSpecification();
+        Assert.assertNull(subject.getMetricOrName());
+        subject.setMetric(TEST_METRIC);
+        subject.setName(TEST_NAME);
+        Assert.assertEquals(TEST_METRIC, subject.getMetricOrName());
+    }
+
+    @Test
+    public void testGetAndSetName() {
+        MetricSpecification subject = new MetricSpecification();
+        Assert.assertNull(subject.getName());
+        subject.setName(TEST_NAME);
+        Assert.assertEquals(TEST_NAME, subject.getName());
+    }
+
+    @Test
+    public void testGetAndSetNameOrMetric() {
+        MetricSpecification subject = new MetricSpecification();
+        Assert.assertNull(subject.getNameOrMetric());
+        subject.setMetric(TEST_METRIC);
+        subject.setName(TEST_NAME);
+        Assert.assertEquals(TEST_NAME, subject.getNameOrMetric());
+    }
+
+    @Test
+    public void testGetAndSetRate() {
+        MetricSpecification subject = new MetricSpecification();
+        Assert.assertEquals(Boolean.FALSE, subject.getRate());
+        subject.setRate(TEST_RATE);
+        Assert.assertEquals(TEST_RATE, subject.getRate());
+    }
+
+    @Test
+    public void testGetAndSetRateOptions() {
+        MetricSpecification subject = new MetricSpecification();
+        Assert.assertNull(subject.getRateOptions());
+        subject.setRateOptions(TEST_RATE_OPTIONS);
+        Assert.assertEquals(TEST_RATE_OPTIONS, subject.getRateOptions());
+    }
+
+    @Test
+    public void testGetAndSetTags() {
+        MetricSpecification subject = new MetricSpecification();
+        Assert.assertEquals(0, subject.getTags().size());
+        subject.setTags(TEST_TAGS);
+        Assert.assertEquals(TEST_TAGS, subject.getTags());
     }
 }

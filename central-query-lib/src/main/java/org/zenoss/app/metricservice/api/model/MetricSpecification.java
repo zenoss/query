@@ -30,6 +30,7 @@
  */
 package org.zenoss.app.metricservice.api.model;
 
+import com.google.common.base.Joiner;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -41,8 +42,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.springframework.util.StringUtils.arrayToDelimitedString;
 
 @JsonInclude(Include.NON_NULL)
 public class MetricSpecification {
@@ -97,7 +96,7 @@ public class MetricSpecification {
     }
 
     /**
-     * @return
+     * @return name
      */
     public String getName() {
         return name;
@@ -284,21 +283,15 @@ public class MetricSpecification {
      * proposed to OpenTSDB, but is not yet committed. This format include
      * "rate" options to better support counter base metrics</em>
      *
-     * @param baseTags
-     *            specifies any base tags that should be applied to the metric
-     *            before overriding with any metric specific tags.
-     *
      * @return OpenTSDB URL query formatted String instance
      */
-    public String toString(String downsample, Map<String, List<String>> baseTags, boolean withRateOptions) {
+    public String toString(boolean withRateOptions) {
         StringBuilder buf = new StringBuilder();
         if (aggregator != null) {
             buf.append(aggregator).append(':');
         }
         if (this.downsample != null) {
             buf.append(this.downsample).append(':');
-        } else if (downsample != null) {
-            buf.append(downsample).append(':');
         }
         if (rate) {
             buf.append("rate");
@@ -330,15 +323,9 @@ public class MetricSpecification {
             buf.append(name);
             buf.append(']');
         }
-        if ((baseTags != null && baseTags.size() > 0)
-            || (getTags() != null && getTags().size() > 0)) {
+        if (getTags() != null && getTags().size() > 0) {
             Map<String, List<String>> joined = new HashMap<>();
-            if (baseTags != null) {
-                joined.putAll(baseTags);
-            }
-            if (getTags() != null) {
                 joined.putAll(getTags());
-            }
             buf.append('{');
             boolean comma = false;
             for (Map.Entry<String, List<String>> tag : joined.entrySet()) {
@@ -346,16 +333,12 @@ public class MetricSpecification {
                     buf.append(',');
                 }
                 comma = true;
-                buf.append(tag.getKey())
-                    .append('=')
-                    .append(arrayToDelimitedString(
-                        tag.getValue().toArray(), "|"));
+                buf.append(tag.getKey()).append('=').append(Joiner.on("|").skipNulls().join(tag.getValue()));
             }
             buf.append('}');
         }
         return buf.toString();
     }
-
     /**
      * Encodes the current instance into the URL query parameter format that <a
      * href="http://opentsdb.net/http-api.html#/q">OpenTSDB</a> supports.
@@ -367,12 +350,9 @@ public class MetricSpecification {
      * @return OpenTSDB URL query formatted String instance
      */
     public String toString() {
-        return this.toString(null, null, false);
+        return this.toString(false);
     }
 
-    public String toString(boolean sendRateOptions) {
-        return this.toString(null, null, sendRateOptions);
-    }
 
     /**
      * @param value

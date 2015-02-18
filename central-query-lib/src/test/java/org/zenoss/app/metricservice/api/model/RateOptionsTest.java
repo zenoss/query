@@ -28,24 +28,22 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.metricservice;
+package org.zenoss.app.metricservice.api.model;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.zenoss.app.metricservice.api.model.MetricSpecification;
 
 import javax.ws.rs.WebApplicationException;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
- * 
  */
 public class RateOptionsTest {
 
     @Test
     public void parseCounter() {
         MetricSpecification ms = MetricSpecification
-                .fromString("avg:rate{counter}:laLoadInt");
+            .fromString("avg:rate{counter}:laLoadInt");
         Assert.assertNotNull(ms);
         Assert.assertNotNull(ms.getRateOptions());
         Assert.assertTrue(ms.getRateOptions().getCounter());
@@ -57,97 +55,97 @@ public class RateOptionsTest {
     @Test
     public void parseCounterThreshold() {
         MetricSpecification ms = MetricSpecification
-                .fromString("avg:rate{counter,,2000}:laLoadInt");
+            .fromString("avg:rate{counter,,2000}:laLoadInt");
         Assert.assertNotNull(ms);
         Assert.assertNotNull(ms.getRateOptions());
         Assert.assertTrue(ms.getRateOptions().getCounter());
         Assert.assertNull(ms.getRateOptions().getCounterMax());
         Assert.assertEquals((long) 2000, (long) ms.getRateOptions()
-                .getResetThreshold());
+            .getResetThreshold());
         Assert.assertEquals("avg:rate{counter,,2000}:laLoadInt",
-                ms.toString(true));
+            ms.toString(true));
     }
 
     @Test
     public void parseCounterSpaceThreshold() {
         MetricSpecification ms = MetricSpecification
-                .fromString("avg:rate{counter, ,2000}:laLoadInt");
+            .fromString("avg:rate{counter, ,2000}:laLoadInt");
         Assert.assertNotNull(ms);
         Assert.assertNotNull(ms.getRateOptions());
         Assert.assertTrue(ms.getRateOptions().getCounter());
         Assert.assertNull(ms.getRateOptions().getCounterMax());
         Assert.assertEquals((long) 2000, (long) ms.getRateOptions()
-                .getResetThreshold());
+            .getResetThreshold());
         Assert.assertEquals("avg:rate{counter,,2000}:laLoadInt",
-                ms.toString(true));
+            ms.toString(true));
     }
 
     @Test
     public void parseCounterMax() {
         MetricSpecification ms = MetricSpecification
-                .fromString("avg:rate{counter,987654321}:laLoadInt");
+            .fromString("avg:rate{counter,987654321}:laLoadInt");
         Assert.assertNotNull(ms);
         Assert.assertNotNull(ms.getRateOptions());
         Assert.assertTrue(ms.getRateOptions().getCounter());
         Assert.assertEquals((long) 987654321, (long) ms.getRateOptions()
-                .getCounterMax());
+            .getCounterMax());
         Assert.assertNull(ms.getRateOptions().getResetThreshold());
         Assert.assertEquals("avg:rate{counter,987654321}:laLoadInt",
-                ms.toString(true));
+            ms.toString(true));
     }
 
     @Test
     public void parseCounterMaxSpace() {
         MetricSpecification ms = MetricSpecification
-                .fromString("avg:rate{counter,987654321, }:laLoadInt");
+            .fromString("avg:rate{counter,987654321, }:laLoadInt");
         Assert.assertNotNull(ms);
         Assert.assertNotNull(ms.getRateOptions());
         Assert.assertTrue(ms.getRateOptions().getCounter());
         Assert.assertEquals((long) 987654321, (long) ms.getRateOptions()
-                .getCounterMax());
+            .getCounterMax());
         Assert.assertNull(ms.getRateOptions().getResetThreshold());
         Assert.assertEquals("avg:rate{counter,987654321}:laLoadInt",
-                ms.toString(true));
+            ms.toString(true));
     }
 
     @Test
     public void parseFullTest() {
         MetricSpecification ms = MetricSpecification
-                .fromString("avg:rate{counter," + Long.MAX_VALUE
-                        + ",2000}:laLoadInt");
+            .fromString("avg:rate{counter," + Long.MAX_VALUE
+                + ",2000}:laLoadInt");
         Assert.assertNotNull(ms);
         Assert.assertNotNull(ms.getRateOptions());
         Assert.assertTrue(ms.getRateOptions().getCounter());
         Assert.assertEquals(Long.MAX_VALUE, (long) ms.getRateOptions()
-                .getCounterMax());
+            .getCounterMax());
         Assert.assertEquals((long) 2000, (long) ms.getRateOptions()
-                .getResetThreshold());
+            .getResetThreshold());
         Assert.assertEquals("avg:rate{counter," + Long.MAX_VALUE
-                + ",2000}:laLoadInt", ms.toString(true));
+            + ",2000}:laLoadInt", ms.toString(true));
 
     }
 
     @Test
     public void parseFullWithDownsampleTest() {
         MetricSpecification ms = MetricSpecification
-                .fromString("avg:10m-avg:rate{counter," + Long.MAX_VALUE
-                        + ",2000}:laLoadInt");
+            .fromString("avg:10m-avg:rate{counter," + Long.MAX_VALUE
+                + ",2000}:laLoadInt");
         Assert.assertNotNull(ms);
         Assert.assertNotNull(ms.getRateOptions());
         Assert.assertTrue(ms.getRateOptions().getCounter());
         Assert.assertEquals(Long.MAX_VALUE, (long) ms.getRateOptions()
-                .getCounterMax());
+            .getCounterMax());
         Assert.assertEquals((long) 2000, (long) ms.getRateOptions()
-                .getResetThreshold());
+            .getResetThreshold());
         Assert.assertEquals("avg:10m-avg:rate{counter," + Long.MAX_VALUE
-                + ",2000}:laLoadInt", ms.toString(true));
+            + ",2000}:laLoadInt", ms.toString(true));
 
     }
 
     @Test
     public void parseNoRateWithDownsampleTest() {
         MetricSpecification ms = MetricSpecification
-                .fromString("avg:10m-avg:laLoadInt");
+            .fromString("avg:10m-avg:laLoadInt");
         Assert.assertNotNull(ms);
         Assert.assertNull(ms.getRateOptions());
     }
@@ -155,7 +153,7 @@ public class RateOptionsTest {
     @Test
     public void parseJustRateWithDownsampleTest() {
         MetricSpecification ms = MetricSpecification
-                .fromString("avg:10m-avg:rate:laLoadInt");
+            .fromString("avg:10m-avg:rate:laLoadInt");
         Assert.assertNotNull(ms);
         Assert.assertNull(ms.getRateOptions());
     }
@@ -164,11 +162,11 @@ public class RateOptionsTest {
     public void parseNoCounter() {
         try {
             MetricSpecification
-                    .fromString("avg:rate{987654321,987654321}:laLoadInt");
+                .fromString("avg:rate{987654321,987654321}:laLoadInt");
             Assert.fail("should have gotten exception");
         } catch (WebApplicationException wae) {
             Assert.assertEquals("bad request", 400, wae.getResponse()
-                    .getStatus());
+                .getStatus());
         }
     }
 
@@ -179,7 +177,7 @@ public class RateOptionsTest {
             Assert.fail("should have gotten exception");
         } catch (WebApplicationException wae) {
             Assert.assertEquals("bad request", 400, wae.getResponse()
-                    .getStatus());
+                .getStatus());
         }
     }
 
@@ -190,7 +188,7 @@ public class RateOptionsTest {
             Assert.fail("should have gotten exception");
         } catch (WebApplicationException wae) {
             Assert.assertEquals("bad request", 400, wae.getResponse()
-                    .getStatus());
+                .getStatus());
         }
     }
 
@@ -201,7 +199,7 @@ public class RateOptionsTest {
             Assert.fail("should have gotten exception");
         } catch (WebApplicationException wae) {
             Assert.assertEquals("bad request", 400, wae.getResponse()
-                    .getStatus());
+                .getStatus());
         }
     }
 
@@ -212,7 +210,7 @@ public class RateOptionsTest {
             Assert.fail("should have gotten exception");
         } catch (WebApplicationException wae) {
             Assert.assertEquals("bad request", 400, wae.getResponse()
-                    .getStatus());
+                .getStatus());
         }
     }
 
@@ -220,11 +218,11 @@ public class RateOptionsTest {
     public void parseBadMaxFormat() {
         try {
             MetricSpecification
-                    .fromString("avg:1m-avg:rate{counter,NotANumber}:laLoadInt");
+                .fromString("avg:1m-avg:rate{counter,NotANumber}:laLoadInt");
             Assert.fail("should have gotten exception");
         } catch (WebApplicationException wae) {
             Assert.assertEquals("bad request", 400, wae.getResponse()
-                    .getStatus());
+                .getStatus());
         }
     }
 
@@ -232,11 +230,11 @@ public class RateOptionsTest {
     public void parseBadResetFormat() {
         try {
             MetricSpecification
-                    .fromString("avg:1m-avg:rate{counter,,NotANumber}:laLoadInt");
+                .fromString("avg:1m-avg:rate{counter,,NotANumber}:laLoadInt");
             Assert.fail("should have gotten exception");
         } catch (WebApplicationException wae) {
             Assert.assertEquals("bad request", 400, wae.getResponse()
-                    .getStatus());
+                .getStatus());
         }
     }
 
@@ -244,11 +242,11 @@ public class RateOptionsTest {
     public void parseTooManyOptions() {
         try {
             MetricSpecification
-                    .fromString("avg:1m-avg:rate{counter,123123,123123,ExtraOption}:laLoadInt");
+                .fromString("avg:1m-avg:rate{counter,123123,123123,ExtraOption}:laLoadInt");
             Assert.fail("should have gotten exception");
         } catch (WebApplicationException wae) {
             Assert.assertEquals("bad request", 400, wae.getResponse()
-                    .getStatus());
+                .getStatus());
         }
     }
 
@@ -259,7 +257,7 @@ public class RateOptionsTest {
             Assert.fail("should have gotten exception");
         } catch (WebApplicationException wae) {
             Assert.assertEquals("bad request", 400, wae.getResponse()
-                    .getStatus());
+                .getStatus());
         }
     }
 
