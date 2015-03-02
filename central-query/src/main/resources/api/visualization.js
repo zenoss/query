@@ -1745,15 +1745,21 @@ if (typeof exports !== 'undefined') {
                                 'contentType' : 'application/json',
                                 'success' : function(projectionData) {
                                     if (projectionData.results) {
-                                        var values = projectionData.results[0].datapoints || [],
+                                        console.log(projectionData.results);
+                                        var values = projectionData.results[projectionData.results.length - 1].datapoints || [],
                                             start = utils.createDate(self.request.start || "1h-ago").unix(),
                                             end = utils.createDate(self.request.end || "0s-ago").unix(),
                                             // use strategy to create a return  function that will convert projected X values into Y's
                                             valueFn = self.createRegressionFunction(projection, values),
                                             // get the visible x, y values
                                             projectedSet = self.createRegressionData(valueFn, values, start, end, self.request.downsample);
-                                        // have the impl apply the new set of data
-
+                                        self.plots.push({
+                                            color: "#CCCCCC",
+                                            fill: false,
+                                            key: projection.legend,
+                                            values: projectedSet
+                                        });
+                                        self.impl.update(self, data);
                                     }
                                 },
                                 'error' : function() {
@@ -1818,12 +1824,12 @@ if (typeof exports !== 'undefined') {
                 step = this.__convertDownsampletoStep(downsample), t = start;
             while (t < end) {
                 regression.push({
-                    timestamp: t,
-                    value: projectionFn(t)
+                    series: 0,
+                    x: t * 1000,
+                    y: projectionFn(t)
                 });
                 t = t + step;
             }
-            console.log($.map(regression, function(o) { return o["value"]; }));
             return regression;
         },
         createRegressionFunction: function(projection, values) {
@@ -1988,32 +1994,29 @@ if (typeof exports !== 'undefined') {
          *          performance metric service
          */
         __buildProjectionRequest: function(config, dataRequest, projection) {
-            var request = {}, start, end, delta, metric;
+            var request = {
+                metrics: []
+            }, start, end, delta;
             if (!projection.dsname) {
                 return false;
             }
             dataRequest.metrics.forEach(function(m){
-                if (!m.metric) {
-                    return true;
-                }
-                if (m.metric.indexOf(projection.dsname) != -1) {
+                var metric, test = m.metric || m.name;
+                if (test.indexOf(projection.dsname.split("_")[1]) != -1) {
                     // copy of the object
                     metric = $.extend(true, {}, m);
                     // projections always go from the max
                     metric.aggregator = "max";
                     metric.emit = true;
-                    projection.legend = metric.legend + " projection";
-                    // take the first one we found
-                    return false;
+                    projection.legend = metric.name + " projection";
+                    request.metrics.push(metric);
                 }
-                return true;
             });
-            if (!metric) {
+            if (!request.metrics.length) {
                 return false;
             }
             request.returnset = config.returnset;
-            request.tags = dataRequest.tags;;
-            request.metrics = [metric];
+            request.tags = dataRequest.tags;
             request.end = parseInt(new Date().getTime()/1000); // now
             start = moment();
             start.subtract(projection.pastData[0], projection.pastData[1]);

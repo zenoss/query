@@ -70,7 +70,7 @@
             if (chart.maxy !== undefined || chart.miny !== undefined) {
                 model.yDomain(chart.calculateYDomain(chart.miny, chart.maxy, data));
             }
-            
+
             // magic to make the yaxis label show up
             // see https://github.com/novus/nvd3/issues/17
             model.margin({
