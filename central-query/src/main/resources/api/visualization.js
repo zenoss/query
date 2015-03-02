@@ -1745,7 +1745,6 @@ if (typeof exports !== 'undefined') {
                                 'contentType' : 'application/json',
                                 'success' : function(projectionData) {
                                     if (projectionData.results) {
-                                        console.log(projectionData.results);
                                         var values = projectionData.results[projectionData.results.length - 1].datapoints || [],
                                             start = utils.createDate(self.request.start || "1h-ago").unix(),
                                             end = utils.createDate(self.request.end || "0s-ago").unix(),
@@ -1837,7 +1836,7 @@ if (typeof exports !== 'undefined') {
             var x =  $.map(values, function(o) { return o["timestamp"]; }),
                 y = $.map(values, function(o) { return o["value"]; });
 
-            return zenoss.visualization.projections[projection.predictionAlgorithm](projection, x, y);
+            return zenoss.visualization.projections[projection.projectionAlgorithm](projection, x, y);
         },
         /**
          * Constructs a request object that can be POSTed to the Zenoss Data API to
@@ -2015,6 +2014,7 @@ if (typeof exports !== 'undefined') {
             if (!request.metrics.length) {
                 return false;
             }
+
             request.returnset = config.returnset;
             request.tags = dataRequest.tags;
             request.end = parseInt(new Date().getTime()/1000); // now

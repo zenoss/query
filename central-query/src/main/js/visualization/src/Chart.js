@@ -692,7 +692,7 @@
             var x =  $.map(values, function(o) { return o["timestamp"]; }),
                 y = $.map(values, function(o) { return o["value"]; });
 
-            return zenoss.visualization.projections[projection.predictionAlgorithm](projection, x, y);
+            return zenoss.visualization.projections[projection.projectionAlgorithm](projection, x, y);
         },
         /**
          * Constructs a request object that can be POSTed to the Zenoss Data API to
@@ -870,6 +870,7 @@
             if (!request.metrics.length) {
                 return false;
             }
+
             request.returnset = config.returnset;
             request.tags = dataRequest.tags;
             request.end = parseInt(new Date().getTime()/1000); // now
