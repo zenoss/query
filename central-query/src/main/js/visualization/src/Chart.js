@@ -116,6 +116,7 @@
         this.__buildPlotInfo();
 
         this.overlays = config.overlays || [];
+        this.projections = config.projections || [];
         // set the format or a default
         this.format = config.format || DEFAULT_NUMBER_FORMAT;
         if ($.isNumeric(config.miny)) {
@@ -586,6 +587,37 @@
                         if (self.__updateFooter(data)) {
                             self.__resize();
                         }
+                        // projection request
+                        self.projections.forEach(function(projection) {
+                            var projectionRequest = self.__buildProjectionRequest(self.config, self.request, projection);
+                            if (!projectionRequest) {
+                                return;
+                            }
+                            $.ajax({
+                                'url' : visualization.url + visualization.urlPerformance,
+                                'type' : 'POST',
+                                'data' : JSON.stringify(projectionRequest),
+                                'dataType' : 'json',
+                                'contentType' : 'application/json',
+                                'success' : function(projectionData) {
+                                    if (projectionData.results) {
+                                        var values = projectionData.results[0].datapoints || [],
+                                            start = utils.createDate(self.request.start || "1h-ago").unix(),
+                                            end = utils.createDate(self.request.end || "0s-ago").unix(),
+                                            // use strategy to create a return  function that will convert projected X values into Y's
+                                            valueFn = self.createRegressionFunction(projection, values),
+                                            // get the visible x, y values
+                                            projectedSet = self.createRegressionData(valueFn, values, start, end, self.request.downsample);
+                                        // have the impl apply the new set of data
+
+                                    }
+                                },
+                                'error' : function() {
+                                    // the trendline isn't critical to the graph so
+                                    // do nothing in the case of errors
+                                }
+                            });
+                        });
                     },
                     'error' : function() {
                         self.plots = undefined;
@@ -605,6 +637,7 @@
                         }
                     }
                 });
+
             } catch (x) {
                 this.plots = undefined;
                 if (self.__updateFooter()) {
@@ -614,7 +647,48 @@
                 this.__showError(x);
             }
         },
+        /**
+         *  Converts a downsample rate into a "step". For instance if you have
+         *  10s-avg then this method returns 10
+         *  if you have 1h-avg this method returns 3600.
+         **/
+        __convertDownsampletoStep: function(downsample) {
+            if (!downsample) {
+                return 300;
+            }
+            var regexp = new RegExp(/\d+/),
+                numberPart = downsample.split("-")[0],
+                number = parseInt(regexp.exec(numberPart)[0]),
+                unit = numberPart.replace(number, ""),
+                multiplier = {
+                    's': 1,
+                    'm': 60,
+                    'h': 3600,
+                    'd': 86400
+                };
+            return number * (multiplier[unit] || 1);
+        },
+        createRegressionData: function(projectionFn, values, start, end, downsample) {
+            var regression = [],
+                i,
+                step = this.__convertDownsampletoStep(downsample), t = start;
+            while (t < end) {
+                regression.push({
+                    timestamp: t,
+                    value: projectionFn(t)
+                });
+                t = t + step;
+            }
+            console.log($.map(regression, function(o) { return o["value"]; }));
+            return regression;
+        },
+        createRegressionFunction: function(projection, values) {
+            // get the implementation based on the projection "type"
+            var x =  $.map(values, function(o) { return o["timestamp"]; }),
+                y = $.map(values, function(o) { return o["value"]; });
 
+            return zenoss.visualization.projections[projection.predictionAlgorithm](projection, x, y);
+        },
         /**
          * Constructs a request object that can be POSTed to the Zenoss Data API to
          * retrieve the data for a chart. The request is based on the information in
@@ -757,6 +831,71 @@
                             });
 
                 }
+            }
+            return request;
+        },
+        /**
+         * In the case of projections we need the past data to create the projection.
+         * This creates the performance query for fetching that data
+         * @access private
+         * @param {object}
+         *            config the config from which to build a request
+         * @returns {object} a request object that can be POST-ed to the Zenoss
+         *          performance metric service
+         */
+        __buildProjectionRequest: function(config, dataRequest, projection) {
+            var request = {}, start, end, delta, metric;
+            if (!projection.dsname) {
+                return false;
+            }
+            dataRequest.metrics.forEach(function(m){
+                if (!m.metric) {
+                    return true;
+                }
+                if (m.metric.indexOf(projection.dsname) != -1) {
+                    // copy of the object
+                    metric = $.extend(true, {}, m);
+                    // projections always go from the max
+                    metric.aggregator = "max";
+                    metric.emit = true;
+                    projection.legend = metric.legend + " projection";
+                    // take the first one we found
+                    return false;
+                }
+                return true;
+            });
+            if (!metric) {
+                return false;
+            }
+            request.returnset = config.returnset;
+            request.tags = dataRequest.tags;;
+            request.metrics = [metric];
+            request.end = parseInt(new Date().getTime()/1000); // now
+            start = moment();
+            start.subtract(projection.pastData[0], projection.pastData[1]);
+            request.start = start.unix();
+
+            if (config !== undefined) {
+
+                request.series = true;
+
+                // if no start time, assume 1hr-ago (default)
+                // NOTE - this uses local time which may not
+                // be the expected timezone
+                start = utils.createDate(request.start || "1h-ago");
+
+                // if no end time, assume now (default)
+                // NOTE - this uses local time which may not
+                // be the expected timezone
+                end = utils.createDate(request.end || "0s-ago");
+
+                delta = (end.valueOf() - start.valueOf()) * 1000;
+
+                // iterate the DOWNSAMPLE list and choose the one which
+                // is closest to delta, defaulting to null if delta is too small
+                request.downsample = DOWNSAMPLE.reduce(function(acc, val){
+                    return delta >= val[0] ? val[1] : acc;
+                }, null);
             }
             return request;
         },
