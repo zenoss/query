@@ -1083,7 +1083,8 @@ if (typeof exports !== 'undefined') {
             getChart: getChart
         }
     };
-    var projections = {
+
+    var projectionAlgorithms = {
 
         /**
          * Uses the supplied values to return a function that accepts
@@ -1112,7 +1113,7 @@ if (typeof exports !== 'undefined') {
             };
         }
     };
-    visualization.projections = projections;
+    visualization.projections = projectionAlgorithms;
 
     // chart cache with getter/setters
     var chartCache = {};
@@ -1729,9 +1730,10 @@ if (typeof exports !== 'undefined') {
                         if (self.__updateFooter(data)) {
                             self.__resize();
                         }
-                        // projection request
+                        // send a separate request for the projection data since it has a different time span
                         self.projections.forEach(function(projection) {
                             var projectionRequest = self.__buildProjectionRequest(self.config, self.request, projection);
+                            // can fail if the projection is requesting a metric not present
                             if (!projectionRequest) {
                                 return;
                             }
@@ -1749,7 +1751,7 @@ if (typeof exports !== 'undefined') {
                                             // use strategy to create a return  function that will convert projected X values into Y's
                                             valueFn = self.createRegressionFunction(projection, values),
                                             // get the visible x, y values
-                                            projectedSet = self.createRegressionData(valueFn, values, start, end);
+                                            projectedSet = self.createRegressionData(valueFn, start, end);
                                         self.plots.push({
                                             color: "#CCCCCC",
                                             fill: false,
@@ -1795,9 +1797,10 @@ if (typeof exports !== 'undefined') {
             }
         },
         /**
-         *  Converts a downsample rate into a "step". For instance if you have
-         *  10s-avg then this method returns 10
-         *  if you have 1h-avg this method returns 3600.
+         *  Converts a downsample rate into a "step". To minimized clutter each step is twice
+         *  the downsample rate. For instance if you have
+         *  10s-avg then this method returns 20
+         *  if you have 1h-avg this method returns 7200 (or 3600 * 2).
          **/
         __convertDownsampletoStep: function(downsample) {
             if (!downsample) {
@@ -1815,7 +1818,20 @@ if (typeof exports !== 'undefined') {
                 };
             return (2 * number) * (multiplier[unit] || 1);
         },
-        createRegressionData: function(projectionFn, values, start, end) {
+        /**
+         * Given a projection function (returned from createRegressionFunction) this method
+         * creates all the "y" values from the given "x" values.
+         * @access public
+         * @param {Function}
+         *            The function that returns the y given an x
+         * @param {integer}
+         *            Unix timestamp of the start of the viewable range of the current chart
+         * @param {integer}
+         *            Unix timestamp of the end of the viewable range of the current chart
+         * @returns {Array}
+         *            Array of x and y values
+         **/
+        createRegressionData: function(projectionFn, start, end) {
             var regression = [],
                 downsample = this.request.downsample,
                 config = this.config,
@@ -1843,12 +1859,24 @@ if (typeof exports !== 'undefined') {
             }
             return regression;
         },
+        /**
+         * Looks up and calls a projection algorithm with the projection config and values used in the projection
+         * The projectionAlgorithm property is used to determine which function to call. It must exist on the
+         * zenoss.visualization.projections namespace
+         * @access public
+         * @param {Object}
+         *            Config settings for the projection (notably used in this method is "projectionAlgorithm")
+         * @param {Array}
+         *            Values returned from the metric service that are used to create the projection function
+         * @returns {Function}
+         *            Function that can be used to project y values given an x
+         **/
         createRegressionFunction: function(projection, values) {
-            // get the implementation based on the projection "type"
-            var x =  $.map(values, function(o) { return o["timestamp"]; }),
-                y = $.map(values, function(o) { return o["value"]; });
+            // get the implementation based on the projection "type" (or projectionAlgorithm property)
+            var xValues =  $.map(values, function(o) { return o["timestamp"]; }),
+                yValues = $.map(values, function(o) { return o["value"]; });
 
-            return zenoss.visualization.projections[projection.projectionAlgorithm](projection, x, y);
+            return zenoss.visualization.projections[projection.projectionAlgorithm](projection, xValues, yValues);
         },
         /**
          * Constructs a request object that can be POSTed to the Zenoss Data API to
@@ -2008,13 +2036,13 @@ if (typeof exports !== 'undefined') {
             var request = {
                 metrics: []
             }, start, end, delta, self = this;
-            if (!projection.dsname) {
+            if (!projection.metric) {
                 return false;
             }
             dataRequest.metrics.forEach(function(m){
                 var metric, test = m.metric || m.name;
                 // use the datapoint name for the case of rpn metrics
-                if (test.indexOf(projection.dsname.split("_")[1]) != -1) {
+                if (test.indexOf(projection.metric.split("_")[1]) != -1) {
                     // copy of the object
                     metric = $.extend(true, {}, m);
                     // projections always go from the max

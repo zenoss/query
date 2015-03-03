@@ -119,12 +119,13 @@
             getChart: getChart
         }
     };
-    var projections = {
+
+    var projectionAlgorithms = {
 
         /**
          * Uses the supplied values to return a function that accepts
          * an "x" value and returns a "y" value.
-         * Uses the "regression.js" library https://github.com/Tom-Alexander/regression-js
+         * Library: "regression.js" https://github.com/Tom-Alexander/regression-js
          **/
         linear: function(projection, xValues, yValues) {
             // the regression library an array of x,y values, e.g.  [[x, y], [x1, y1],...]
@@ -148,7 +149,7 @@
             };
         }
     };
-    visualization.projections = projections;
+    visualization.projections = projectionAlgorithms;
 
     // chart cache with getter/setters
     var chartCache = {};
