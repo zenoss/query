@@ -607,7 +607,7 @@
                                             // use strategy to create a return  function that will convert projected X values into Y's
                                             valueFn = self.createRegressionFunction(projection, values),
                                             // get the visible x, y values
-                                            projectedSet = self.createRegressionData(valueFn, values, start, end, self.request.downsample);
+                                            projectedSet = self.createRegressionData(valueFn, values, start, end);
                                         self.plots.push({
                                             color: "#CCCCCC",
                                             fill: false,
@@ -671,17 +671,31 @@
                     'h': 3600,
                     'd': 86400
                 };
-            return number * (multiplier[unit] || 1);
+            return (2 * number) * (multiplier[unit] || 1);
         },
-        createRegressionData: function(projectionFn, values, start, end, downsample) {
+        createRegressionData: function(projectionFn, values, start, end) {
             var regression = [],
-                i,
+                downsample = this.request.downsample,
+                config = this.config,
+                i, y,
                 step = this.__convertDownsampletoStep(downsample), t = start;
+
             while (t < end) {
+                y = projectionFn(t);
+                // make sure it is always visible in the graph (does not go below miny)
+                if (config.miny !== undefined && y <= config.miny) {
+                    y = config.miny;
+                }
+
+                // make sure it doesn't go above maxy
+                if (config.maxy !== undefined && y >= config.maxy) {
+                    y = config.maxy;
+                }
+
                 regression.push({
                     series: 0,
-                    x: t * 1000,
-                    y: projectionFn(t)
+                    x: t * 1000, // nvd3 works in milliseconds
+                    y: y
                 });
                 t = t + step;
             }
@@ -851,19 +865,22 @@
         __buildProjectionRequest: function(config, dataRequest, projection) {
             var request = {
                 metrics: []
-            }, start, end, delta;
+            }, start, end, delta, self = this;
             if (!projection.dsname) {
                 return false;
             }
             dataRequest.metrics.forEach(function(m){
                 var metric, test = m.metric || m.name;
+                // use the datapoint name for the case of rpn metrics
                 if (test.indexOf(projection.dsname.split("_")[1]) != -1) {
                     // copy of the object
                     metric = $.extend(true, {}, m);
                     // projections always go from the max
                     metric.aggregator = "max";
                     metric.emit = true;
-                    projection.legend = metric.name + " projection";
+                    if (self.plotInfo[metric.name || metric.metric]) {
+                        projection.legend = self.plotInfo[metric.name || metric.metric].legend + " projection";
+                    }
                     request.metrics.push(metric);
                 }
             });

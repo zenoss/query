@@ -154,8 +154,6 @@
     var chartCache = {};
 
     function cacheChart(chart){
-        var numCharts;
-
         chartCache[chart.name] = chart;
 
         // automatically remove this chart
