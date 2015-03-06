@@ -41,7 +41,7 @@
          * @default /api/performance/query
          */
         urlPerformance: "/api/performance/query/",
-        
+
 
         /**
          * @namespace
@@ -120,13 +120,41 @@
         }
     };
 
+    var projectionAlgorithms = {
+
+        /**
+         * Uses the supplied values to return a function that accepts
+         * an "x" value and returns a "y" value.
+         * Library: "regression.js" https://github.com/Tom-Alexander/regression-js
+         **/
+        linear: function(projection, xValues, yValues) {
+            // the regression library an array of x,y values, e.g.  [[x, y], [x1, y1],...]
+            var data = [], i, formula, slope, intercept;
+            for (i=0;i < xValues.length; i++) {
+                data.push([xValues[i], yValues[i]]);
+            }
+            // return basically an empty function so clients do not error out when calling it
+            if (data.length === 0) {
+                return function(x){ return 0; };
+            }
+
+            // linear regression
+            formula = window.regression("linear", data);
+            slope = formula.equation[0];
+            intercept = formula.equation[1];
+
+            return function(x) {
+                // y = mx + b
+                return (slope * x) + intercept;
+            };
+        }
+    };
+    visualization.projections = projectionAlgorithms;
 
     // chart cache with getter/setters
     var chartCache = {};
 
     function cacheChart(chart){
-        var numCharts;
-
         chartCache[chart.name] = chart;
 
         // automatically remove this chart
