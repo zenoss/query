@@ -692,27 +692,33 @@
             var regression = [],
                 downsample = this.request.downsample,
                 config = this.config,
-                i, y,
+                i, y, skipThisPoint = false,
                 step = this.__convertDownsampletoStep(downsample), t = start;
 
             while (t < end) {
                 y = projectionFn(t);
+
                 // make sure it is always visible in the graph (does not go below miny)
                 if (config.miny !== undefined && y <= config.miny) {
                     y = config.miny;
+                    skipThisPoint = true;
                 }
 
                 // make sure it doesn't go above maxy
                 if (config.maxy !== undefined && y >= config.maxy) {
                     y = config.maxy;
+                    skipThisPoint = true;
                 }
 
-                regression.push({
-                    series: 0,
-                    x: t * 1000, // nvd3 works in milliseconds
-                    y: y
-                });
+                if (!skipThisPoint) {
+                    regression.push({
+                        series: 0,
+                        x: t * 1000, // nvd3 works in milliseconds
+                        y: y
+                    });
+                }
                 t = t + step;
+                skipThisPoint = false;
             }
             return regression;
         },
@@ -906,7 +912,7 @@
                     metric.aggregator = "max";
                     metric.emit = true;
                     if (self.plotInfo[metric.name || metric.metric]) {
-                        projection.legend = self.plotInfo[metric.name || metric.metric].legend + " projection";
+                        projection.legend = self.plotInfo[metric.name || metric.metric].legend + " projected";
                     }
                     request.metrics.push(metric);
                 }
