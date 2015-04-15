@@ -1837,18 +1837,16 @@ if (typeof exports !== 'undefined') {
                 config = this.config,
                 i, y, skipThisPoint = false,
                 step = this.__convertDownsampletoStep(downsample), t = start;
-
             while (t < end) {
                 y = projectionFn(t);
-
                 // make sure it is always visible in the graph (does not go below miny)
-                if (config.miny !== undefined && y <= config.miny) {
+                if (config.miny !== undefined && config.miny != null && y <= config.miny) {
                     y = config.miny;
                     skipThisPoint = true;
                 }
 
                 // make sure it doesn't go above maxy
-                if (config.maxy !== undefined && y >= config.maxy) {
+                if (config.maxy !== undefined && config.maxy != null && y >= config.maxy) {
                     y = config.maxy;
                     skipThisPoint = true;
                 }
