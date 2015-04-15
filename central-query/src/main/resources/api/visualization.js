@@ -2052,7 +2052,8 @@ if (typeof exports !== 'undefined') {
                     // copy of the object
                     metric = $.extend(true, {}, m);
                     // projections always go from the max
-                    metric.aggregator = "max";
+                    console.log(projection);
+                    metric.aggregator = projection.aggregateFunction;;
                     metric.emit = true;
                     if (self.plotInfo[metric.name || metric.metric]) {
                         projection.legend = self.plotInfo[metric.name || metric.metric].legend + " projected";
