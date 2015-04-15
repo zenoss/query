@@ -147,6 +147,41 @@
                 // y = mx + b
                 return (slope * x) + intercept;
             };
+        },
+        polynomial: function(projection, xValues, yValues) {
+            // the regression library an array of x,y values, e.g.  [[x, y], [x1, y1],...]
+            var data = [], i, formula, slopes, intercept, n;
+            for (i=0;i < xValues.length; i++) {
+                data.push([xValues[i], yValues[i]]);
+            }
+            // return basically an empty function so clients do not error out when calling it
+            if (data.length === 0) {
+                return function(x){ return 0; };
+            }
+
+            // polynomial regression
+            n = parseInt(projection.parameters['n'] || 2);
+            formula = window.regression("polynomial", data, n);
+
+            // first entry is the intercept
+            intercept = formula.equation.shift();
+
+            slopes = formula.equation;
+            // work with the largest number first
+            slopes.reverse();
+            //equation is something like: "y = 0.1x^2 + 0.2x + -64010.58"
+            // where the coeffecients are in the array "slopes"
+            return function(x) {
+                var currentPow = n, i, result = 0;
+                // all the cx^y parts
+                for (i=0; i < slopes.length; i++) {
+                    result += slopes[i] * (Math.pow(x, currentPow));
+                    currentPow--;
+                }
+                // finally add the intercept
+                result += intercept;
+                return result;
+            };
         }
     };
     visualization.projections = projectionAlgorithms;
