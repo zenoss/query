@@ -909,7 +909,7 @@
                     metric.aggregator = projection.aggregateFunction || "max";
                     metric.emit = true;
                     if (self.plotInfo[metric.name || metric.metric]) {
-                        projection.legend = self.plotInfo[metric.name || metric.metric].legend + " projected";
+                        projection.legend = "Projected " +self.plotInfo[metric.name || metric.metric].legend;
                     }
                     request.metrics.push(metric);
                 }
