@@ -5,13 +5,11 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jersey.version>1.15</jersey.version>
-        <central-query.version>0.1.0-SNAPSHOT</central-query.version>
-        <central-query-lib.version>0.1.0-SNAPSHOT</central-query-lib.version>
     </properties>
 
     <groupId>org.zenoss</groupId>
     <artifactId>central-query-parent</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
     <packaging>pom</packaging>
 
     <name>central-query-parent</name>
