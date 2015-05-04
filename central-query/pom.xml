@@ -45,7 +45,7 @@
         <dependency>
             <groupId>org.zenoss</groupId>
             <artifactId>central-query-lib</artifactId>
-            <version>${central-query-lib.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <!-- Used for storage of chart definitions -->
         <dependency>
