@@ -16,10 +16,10 @@
 #============================================================================
 COMPONENT             = central-query
 SUPERVISOR_CONF       = $(_COMPONENT)_supervisor.conf
-SUPERVISORD_DIR       = $(pkgconfdir)/supervisor
 COMPONENT_SH          = $(_COMPONENT).sh
+SUPERVISORD_DIR       = $(pkgconfdir)/supervisor
 REQUIRES_JDK          = 1
-srcdir                = src
+#srcdir                = src
 #
 # For zapp components, keep blddir aligned with src/main/assembly/zapp.xml
 #
@@ -53,10 +53,9 @@ else
     include $(NEAREST_ZENMAGIC_MK)
 endif
 
-# List of source files needed to build this component.
-COMPONENT_SRC ?= $(DFLT_COMPONENT_SRC)
-
 # Name of jar we're building: my-component-x.y.z.jar
+COMPONENT_SRC ?= $(DFLT_COMPONENT_SRC)
+COMPONENT_VERSION ?= $(DFLT_COMPONENT_VERSION)
 COMPONENT_JAR ?= $(DFLT_COMPONENT_JAR)
 
 # Specify install-related directories to create as part of the install target.
@@ -69,8 +68,8 @@ else
     # Name of binary tar we're building: my-component-x.y.z-zapp.tar.gz
     COMPONENT_TAR = $(shell echo $(COMPONENT_JAR) | $(SED) -e "s|\.jar|-zapp.tar.gz|g")
 endif
-TARGET_JAR := $(blddir)/$(COMPONENT_JAR)
-TARGET_TAR := $(blddir)/$(COMPONENT_TAR)
+TARGET_JAR := $(COMPONENT)/$(blddir)/$(COMPONENT_JAR)
+TARGET_TAR := $(COMPONENT)/$(blddir)/$(COMPONENT_TAR)
 
 #============================================================================
 # Subset of standard build targets our makefiles should implement.  
