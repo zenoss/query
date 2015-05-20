@@ -34,8 +34,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimaps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,7 +60,14 @@ import org.zenoss.app.metricservice.api.model.MetricQuery;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.app.metricservice.buckets.Buckets;
+import org.zenoss.app.metricservice.buckets.Value;
+import org.zenoss.app.metricservice.calculators.Closure;
+import org.zenoss.app.metricservice.calculators.MetricCalculator;
+import org.zenoss.app.metricservice.calculators.MetricCalculatorFactory;
+import org.zenoss.app.metricservice.calculators.ReferenceProvider;
+import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
 
+import javax.annotation.Nullable;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
@@ -64,10 +76,12 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -148,10 +162,151 @@ public class MetricService implements MetricServiceAPI {
     @Override
     public Response query(final MetricQuery query) {
         log.debug("Thread {}: entering MetricService.query()", Thread.currentThread().getId());
+
         return makeCORS(Response.ok(new StreamingOutput() {
             @Override
             public void write(OutputStream outputStream) throws IOException, WebApplicationException {
-                Iterable<OpenTSDBQueryResult> metrics = api.query(query);
+
+                //TODO: split out request into multiple if there are RPNs
+
+                List<MetricSpecification> hasExpression = Lists.newArrayListWithCapacity(query.getMetricSpecs().size());
+                List<MetricSpecification> noExpression = Lists.newArrayListWithCapacity(query.getMetricSpecs().size());
+                List<MetricSpecification> calculatedMetrics = Lists.newArrayListWithCapacity(query.getMetricSpecs().size());
+                boolean wildCardsDetected = false;
+                for (MetricSpecification spec : query.getMetricSpecs()) {
+                    if (spec.getName() != null && spec.getMetric() == null) {
+                        calculatedMetrics.add(spec);
+                    } else if (Strings.isNullOrEmpty(spec.getExpression())) {
+                        noExpression.add(spec);
+                    } else {
+                        hasExpression.add(spec);
+                    }
+                    for (List<String> tagVals : spec.getTags().values()) {
+                        for (String tagVal : tagVals) {
+                            if ("*".equals(tagVal)) {
+                                wildCardsDetected = true;
+                                break;
+                            }
+                        }
+                        if (wildCardsDetected) {
+                            break;
+                        }
+                    }
+                }
+                // Check for expressions,
+                // Check for calculatedMetrics(metrics that are just RPNs of one ore more series),
+                //also check if any tags are wildcards and don't allow wild cards and computed values
+                //
+                // TODO: If request has calculatedMetrics, do bucketing.
+                // TODO: if request has "interpolation" set, do bucketing.
+
+                if (wildCardsDetected && !calculatedMetrics.isEmpty()) {
+                    throw new WebApplicationException(new IllegalArgumentException("Wildcard tags and " +
+                            "CalculatedMetrics cannot be processed at the same time"));
+                }
+
+                //Temporary check
+                if (!calculatedMetrics.isEmpty()) {
+                    throw new WebApplicationException(new IllegalArgumentException("Calculated Metrics not supported yet"));
+                }
+
+                Iterable<OpenTSDBQueryResult> metrics = null;
+                if (!noExpression.isEmpty()) {
+                    MetricQuery noExpressionQ = new MetricQuery();
+                    noExpressionQ.setStart(query.getStart());
+                    noExpressionQ.setEnd(query.getEnd());
+                    noExpressionQ.setReturnset(query.getReturnset());
+                    noExpressionQ.setMetricSpecs(noExpression);
+                    Iterable<OpenTSDBQueryResult> result = api.query(noExpressionQ);
+                    if (metrics == null) {
+                        metrics = result;
+                    } else {
+                        metrics = Iterables.concat(metrics, result);
+                    }
+                }
+                if (!hasExpression.isEmpty()) {
+                    //group by expression
+                    ImmutableMap<String, Collection<MetricSpecification>> grouped = Multimaps.index(hasExpression, new Function<MetricSpecification, String>() {
+                        @Nullable
+                        @Override
+                        public String apply(@Nullable MetricSpecification metricSpecification) {
+                            return metricSpecification.getExpression();
+                        }
+                    }).asMap();
+
+                    for (Entry<String, Collection<MetricSpecification>> specs : grouped.entrySet()) {
+                        MetricQuery noExpressionQ = new MetricQuery();
+                        noExpressionQ.setStart(query.getStart());
+                        noExpressionQ.setEnd(query.getEnd());
+                        noExpressionQ.setReturnset(query.getReturnset());
+                        noExpressionQ.setMetricSpecs(Lists.newArrayList(specs.getValue()));
+                        Iterable<OpenTSDBQueryResult> result = api.query(noExpressionQ);
+                        //APPLY RPN here
+                        for (final OpenTSDBQueryResult r : result) {
+                            MetricCalculator calc;
+                            try {
+                                calc = MetricCalculatorFactory.newInstance(specs.getKey());
+                                calc.setReferenceProvider(new ReferenceProvider() {
+                                    @Override
+                                    public double lookup(String name, Closure closure) throws UnknownReferenceException {
+                                        if (null == closure) {
+                                            throw new NullPointerException("null closure passed to lookup() method.");
+                                        }
+                                        /**
+                                         * If they are looking for special values like "time" then give them
+                                         * that.
+                                         */
+                                        if ("time".equalsIgnoreCase(name)) {
+                                            return closure.getTimeStamp();
+                                        }
+
+                                        /**
+                                         * Check for metrics or values in the bucket
+                                         */
+                                        Value v = closure.getValueByShortcut(name);
+                                        if (v == null) {
+                                            throw new UnknownReferenceException(name);
+                                        }
+                                        return v.getValue();
+                                    }
+                                });
+                            } catch (ClassNotFoundException e) {
+                                throw new WebApplicationException(new Exception("calculator not found for " + specs.getKey()));
+                            }
+                            for (final Entry<Long, Double> dp : r.getDataPoints().entrySet()) {
+                                try {
+                                    double newVal = calc.evaluate(new Closure() {
+                                        @Override
+                                        public long getTimeStamp() {
+                                            return dp.getKey();
+                                        }
+
+                                        @Override
+                                        public Value getValueByShortcut(String name) {
+                                            if (!r.metric.equals(name)) {
+                                                return null;
+                                            }
+                                            Value val = new Value();
+                                            val.add(dp.getValue());
+                                            return val;
+                                        }
+                                    });
+                                    log.info("metric {}, tags {}, timestamp {}, original {} new val {}", r.metric, r.tags, dp.getKey(), dp.getValue(), newVal);
+                                    r.getDataPoints().put(dp.getKey(), newVal);
+                                } catch (UnknownReferenceException e) {
+                                    throw new WebApplicationException(e);
+                                }
+                            }
+                        }
+                        if (metrics == null) {
+                            metrics = result;
+                        } else {
+                            metrics = Iterables.concat(metrics, result);
+                        }
+                    }
+
+                }
+
                 objectMapper.writeValue(outputStream, metrics);
             }
         }));
