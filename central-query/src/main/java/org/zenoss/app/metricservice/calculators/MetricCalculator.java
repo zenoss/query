@@ -36,7 +36,7 @@ package org.zenoss.app.metricservice.calculators;
  */
 public interface MetricCalculator {
 
-    public void setReferenceProvider(ReferenceProvider provider);
+    void setReferenceProvider(ReferenceProvider provider);
 
     /**
      * Stores an expression so that the calculator can evaluate the expression
@@ -45,14 +45,14 @@ public interface MetricCalculator {
      * @param expression
      *            the expression to save
      */
-    public void setExpression(String expression);
+    void setExpression(String expression);
 
     /**
      * Retrieve the stored expression
      * 
      * @return the stored expression
      */
-    public String getExpression();
+    String getExpression();
 
     /**
      * Evaluate the given expression using the given value as an initial value
@@ -67,10 +67,10 @@ public interface MetricCalculator {
      *            the expression to evaluate
      * @return result of the expression evaluation
      */
-    public double evaluate(double value, String expression, Closure closure)
+    double evaluate(double value, String expression, Closure closure)
             throws UnknownReferenceException;
 
-    public double evaluate(double value, String expression)
+    double evaluate(double value, String expression)
             throws UnknownReferenceException;
 
     /**

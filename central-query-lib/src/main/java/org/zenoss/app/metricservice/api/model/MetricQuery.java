@@ -28,46 +28,83 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.metricservice.api;
+package org.zenoss.app.metricservice.api.model;
 
-import com.google.common.base.Optional;
-import org.zenoss.app.metricservice.api.model.MetricQuery;
-import org.zenoss.app.metricservice.api.model.MetricSpecification;
-import org.zenoss.app.metricservice.api.model.ReturnSet;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.zenoss.app.metricservice.api.impl.Utils;
 
-import javax.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /**
- * @author Zenoss
+ * @author David Bainbridge <dbainbridge@zenoss.com>
+ * 
  */
-public interface MetricServiceAPI {
+@JsonInclude(Include.NON_NULL)
+public class MetricQuery {
+    @JsonProperty
+    private String start = Utils.DEFAULT_START_TIME;
+    
+    @JsonProperty
+    private String end = Utils.DEFAULT_END_TIME;
 
-    Response query(MetricQuery query);
+    @JsonProperty(required=true)
+    private List<MetricSpecification> metricSpecs = null;
+
+    @JsonProperty(value="returnset")
+    private ReturnSet returnset = null;
+
 
     /**
-     * Specifies the interface for querying performance metric data.
-     *
-     *
-     * @param id         id of the request
-     * @param start      start time of the query range
-     * @param end        end time of the query range
-     * @param returnset  return all or only those values in the query range, this is
-     *                   needed because OpenTSDB returns values outside the query
-     *                   range.
-     * @param series     should the results be returned as a series or in line
-     * @param downsample global downsample value
-     * @param downsampleMultiplier
-     *@param tags       global filters for the query
-     * @param metrics    metric queries   @return response of the request
+     * @return the start
      */
-    public Response query(Optional<String> id, Optional<String> start,
-                          Optional<String> end, Optional<ReturnSet> returnset,
-                          Optional<Boolean> series, Optional<String> downsample,
-                          double downsampleMultiplier,
-                          Optional<Map<String, List<String>>> tags,
-                          List<MetricSpecification> metrics);
+    public final String getStart() {
+        return start;
+    }
 
-    public Response options(String request);
+    /**
+     * @param start the start to set
+     */
+    public final void setStart(String start) {
+        this.start = start;
+    }
+
+    /**
+     * @return the end
+     */
+    public final String getEnd() {
+        return end;
+    }
+
+    /**
+     * @param end the end to set
+     */
+    public final void setEnd(String end) {
+        this.end = end;
+    }
+
+    /**
+	 * @return the resturnset
+	 */
+	public ReturnSet getReturnset() {
+		return returnset;
+	}
+
+	/**
+	 * @param returnset the returnset to set
+	 */
+	public void setReturnset(ReturnSet returnset) {
+		this.returnset = returnset;
+	}
+
+    public List<MetricSpecification> getMetricSpecs() {
+        return metricSpecs;
+    }
+
+    public void setMetricSpecs(List<MetricSpecification> metrics) {
+        this.metricSpecs= metrics;
+    }
 }

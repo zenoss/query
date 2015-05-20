@@ -43,7 +43,15 @@ import org.springframework.context.annotation.Configuration;
 import org.zenoss.app.annotations.API;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.MetricServiceAPI;
-import org.zenoss.app.metricservice.api.impl.*;
+import org.zenoss.app.metricservice.api.impl.DefaultResultProcessor;
+import org.zenoss.app.metricservice.api.impl.IHasShortcut;
+import org.zenoss.app.metricservice.api.impl.JacksonResultsWriter;
+import org.zenoss.app.metricservice.api.impl.JacksonWriter;
+import org.zenoss.app.metricservice.api.impl.MetricStorageAPI;
+import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryResult;
+import org.zenoss.app.metricservice.api.impl.ResultProcessor;
+import org.zenoss.app.metricservice.api.impl.Utils;
+import org.zenoss.app.metricservice.api.model.MetricQuery;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.app.metricservice.buckets.Buckets;
@@ -51,9 +59,17 @@ import org.zenoss.app.metricservice.buckets.Buckets;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
-import java.io.*;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.text.ParseException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 
 @API
@@ -104,7 +120,7 @@ public class MetricService implements MetricServiceAPI {
      * @return
      */
     public static List<MetricSpecification> calculatedValueFilter(
-        List<? extends MetricSpecification> list) {
+            List<? extends MetricSpecification> list) {
         List<MetricSpecification> result = new ArrayList<>();
         if (list != null) {
             for (MetricSpecification spec : list) {
@@ -118,8 +134,8 @@ public class MetricService implements MetricServiceAPI {
 
     private static Response makeCORS(Response.ResponseBuilder responseBuilder, String returnMethod) {
         Response.ResponseBuilder rb = responseBuilder //Response.ok()
-            .header("Access-Control-Allow-Origin", "*")
-            .header("Access-Control-Allow-Methods", "POST, OPTIONS");
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Methods", "POST, OPTIONS");
 
         if (!Strings.isNullOrEmpty(returnMethod)) {
             rb.header("Access-Control-Allow-Headers", returnMethod);
@@ -128,21 +144,40 @@ public class MetricService implements MetricServiceAPI {
         return rb.build();
     }
 
+
+    @Override
+    public Response query(final MetricQuery query) {
+        log.debug("Thread {}: entering MetricService.query()", Thread.currentThread().getId());
+        return makeCORS(Response.ok(new StreamingOutput() {
+            @Override
+            public void write(OutputStream outputStream) throws IOException, WebApplicationException {
+                Iterable<OpenTSDBQueryResult> metrics = api.query(query);
+                objectMapper.writeValue(outputStream, metrics);
+            }
+        }));
+    }
+
+
     @Override
     public Response query(Optional<String> id, Optional<String> start, Optional<String> end,
                           Optional<ReturnSet> returnset, Optional<Boolean> series, Optional<String> downsample,
                           double downsampleMultiplier, Optional<Map<String, List<String>>> tags,
                           List<MetricSpecification> metrics) {
         log.debug("Thread {}: entering MetricService.query()", Thread.currentThread().getId());
+        //series should always be true.
+        if (!series.or(this.config.getMetricServiceConfig().getDefaultSeries())) {
+            UnsupportedOperationException e = new UnsupportedOperationException("Series is no longer supported.");
+            throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
+        }
         return makeCORS(Response.ok(
-            new MetricServiceWorker(id.or(NOT_SPECIFIED),
-                start.or(config.getMetricServiceConfig().getDefaultStartTime()),
-                end.or(config.getMetricServiceConfig().getDefaultEndTime()),
-                returnset.or(config.getMetricServiceConfig().getDefaultReturnSet()),
-                series.or(config.getMetricServiceConfig().getDefaultSeries()),
-                downsample.orNull(), downsampleMultiplier,
-                tags.orNull(),
-                metrics)));
+                new MetricServiceWorker(id.or(NOT_SPECIFIED),
+                        start.or(config.getMetricServiceConfig().getDefaultStartTime()),
+                        end.or(config.getMetricServiceConfig().getDefaultEndTime()),
+                        returnset.or(config.getMetricServiceConfig().getDefaultReturnSet()),
+
+                        downsample.orNull(), downsampleMultiplier,
+                        tags.orNull(),
+                        metrics)));
     }
 
     @Override
@@ -160,7 +195,6 @@ public class MetricService implements MetricServiceAPI {
         private final String startTime;
         private final String endTime;
         private final ReturnSet returnset;
-        private final Boolean outputAsSeries;
         private final String downsample;
         private final double downsampleMultiplier;
         private final Map<String, List<String>> tags;
@@ -170,7 +204,7 @@ public class MetricService implements MetricServiceAPI {
 
         private MetricServiceWorker(String id,
                                     String startTime, String endTime, ReturnSet returnset,
-                                    Boolean outputAsSeries, String downsample, double downsampleMultiplier,
+                                    String downsample, double downsampleMultiplier,
                                     Map<String, List<String>> tags,
                                     List<MetricSpecification> queries) {
             if (queries == null) {
@@ -183,7 +217,6 @@ public class MetricService implements MetricServiceAPI {
             this.startTime = startTime;
             this.endTime = endTime;
             this.returnset = returnset;
-            this.outputAsSeries = outputAsSeries;
             this.tags = tags;
             this.downsample = downsample;
             this.downsampleMultiplier = downsampleMultiplier;
@@ -197,7 +230,7 @@ public class MetricService implements MetricServiceAPI {
          */
         @Override
         public void write(OutputStream output) throws IOException,
-            WebApplicationException {
+                WebApplicationException {
 
             validateParameters();
             // Validate the input parameters. Throw exception if any are bad.
@@ -205,19 +238,19 @@ public class MetricService implements MetricServiceAPI {
             String convertedStartTime = Long.toString(start);
             String convertedEndTime = Long.toString(end);
             log.debug("write() entry.");
-            BufferedReader reader = null;
+            Iterable<OpenTSDBQueryResult> otsdbResponse = null;
             try {
-                // The getReader call queries the datastore (e.g. openTSDB) and returns a reader for streaming the results.
-                reader = api.getReader(config, id, convertedStartTime, convertedEndTime, returnset, outputAsSeries,
-                    downsample, downsampleMultiplier, tags, metricFilter(queries));
-                if (null == reader) {
-                    throw new IOException("Unable to get reader from api.");
+                // The getReader call queries the datastore (e.g. openTSDB) and returns a otsdbResponse for streaming the results.
+                otsdbResponse = api.getResponse(config, id, convertedStartTime, convertedEndTime, returnset,
+                        downsample, downsampleMultiplier, tags, metricFilter(queries), false);
+                if (null == otsdbResponse) {
+                    throw new IOException("Unable to get otsdbResponse from api.");
                 }
 
                 log.info("returnset = {}", returnset);
                 if (returnset == ReturnSet.LAST) {
                     log.info("Applying last filter.");
-                    reader = translateOpenTsdbInputToLastInput(reader, start, end); //new LastFilter(reader, start, end);
+                    otsdbResponse = translateOpenTsdbInputToLastInput(otsdbResponse, start, end); //new LastFilter(otsdbResponse, start, end);
                 }
             } catch (WebApplicationException wae) {
                 // Log 404 messages at lower level.
@@ -230,11 +263,11 @@ public class MetricService implements MetricServiceAPI {
             } catch (IOException e) {
                 log.error("Failed to connect to metric data source: {} : {}", e.getClass().getName(), e.getMessage(), e);
                 throw new WebApplicationException(
-                    Utils.getErrorResponse(
-                        id,
-                        Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-                        String.format("Unable to connect to performance metric data source: %s", e.getMessage()),
-                        e.getMessage()));
+                        Utils.getErrorResponse(
+                                id,
+                                Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+                                String.format("Unable to connect to performance metric data source: %s", e.getMessage()),
+                                e.getMessage()));
             }
 
             /**
@@ -251,17 +284,13 @@ public class MetricService implements MetricServiceAPI {
 
             }
             try {
-                writeResultsUsingJacksonWriter(output, reader, bucketSize);
+                writeResultsUsingJacksonWriter(output, otsdbResponse, bucketSize);
             } catch (ClassNotFoundException e) {
                 throw new WebApplicationException(
-                    Utils.getErrorResponse(id,
-                        Response.Status.NOT_FOUND.getStatusCode(),
-                        String.format("Unable to write results: %s", e.getMessage()),
-                        e.getMessage()));
-            } finally {
-                if (reader != null) {
-                    reader.close();
-                }
+                        Utils.getErrorResponse(id,
+                                Response.Status.NOT_FOUND.getStatusCode(),
+                                String.format("Unable to write results: %s", e.getMessage()),
+                                e.getMessage()));
             }
         }
 
@@ -277,34 +306,20 @@ public class MetricService implements MetricServiceAPI {
 
         /**
          * translateOpenTsdbInputToLastInput:
-         *
+         * <p/>
          * Handler for 'last' specification - reads through datapoints in series, remembering and returning the datapoint
          * with the greatest timestamp betweeen start and end.
-         *
-         * */
-        private BufferedReader translateOpenTsdbInputToLastInput(BufferedReader reader, long start, long end) throws IOException {
-
-            // read query results from datastream (reader)
-            List<OpenTSDBQueryResult> allResults = new ArrayList<>();
-            ObjectMapper mapper = Utils.getObjectMapper();
-            OpenTSDBQueryResult[] queryResult = mapper.readValue(reader, OpenTSDBQueryResult[].class);
-            allResults.addAll(Arrays.asList(queryResult));
+         */
+        private Iterable<OpenTSDBQueryResult> translateOpenTsdbInputToLastInput(Iterable<OpenTSDBQueryResult> queryResult, long start, long end) throws IOException {
 
             // make a new list of resulsts, containing only the last data points per series (between start and end)
-            List<OpenTSDBQueryResult> lastDataPointResults = getLastDataPoints(allResults, start, end);
-
-            // encode the results as JSON for return
-            String resultJson = Utils.jsonStringFromObject(lastDataPointResults);
-
-            return new BufferedReader(new StringReader(resultJson));
-        }
-
-        private List<OpenTSDBQueryResult> getLastDataPoints(List<OpenTSDBQueryResult> allResults, long start, long end) {
             // iterate through list, modifying each of the members in-place.
-            for (OpenTSDBQueryResult originalResult : allResults) {
+            List<OpenTSDBQueryResult> lastResults = new LinkedList<>();
+            for (OpenTSDBQueryResult originalResult : queryResult) {
                 replaceSeriesDataPointsWithLastInRangeDataPoint(originalResult, start, end);
+                lastResults.add(originalResult);
             }
-            return allResults;
+            return lastResults;
 
         }
 
@@ -327,16 +342,16 @@ public class MetricService implements MetricServiceAPI {
             series.setDataPoints(dataPointSingleton);
         }
 
-        private void writeResultsUsingJacksonWriter(OutputStream output, BufferedReader reader, long bucketSize)
-            throws IOException, ClassNotFoundException {
+        private void writeResultsUsingJacksonWriter(OutputStream output, Iterable<OpenTSDBQueryResult> results, long bucketSize)
+                throws IOException, ClassNotFoundException {
             log.debug("Using JacksonWriter to generate JSON results.");
             try (JacksonWriter writer = new JacksonWriter(new OutputStreamWriter(output, "UTF-8"))) {
                 log.debug("processing results");
-                ResultProcessor processor = new DefaultResultProcessor(reader, queries, bucketSize);
+                ResultProcessor processor = new DefaultResultProcessor(results, queries, bucketSize, false);
                 Buckets<IHasShortcut> buckets = processor.processResults();
                 log.debug("results processed.");
                 jacksonResultsWriter.writeResults(writer, queries, buckets,
-                    id, api.getSourceId(), start, startTime, end, endTime, returnset, outputAsSeries);
+                        id, api.getSourceId(), start, startTime, end, endTime, returnset);
                 log.debug("back from jacksonResultsWriter");
             }
         }
@@ -357,9 +372,9 @@ public class MetricService implements MetricServiceAPI {
                 response.put(CLIENT_ID, id);
                 response.put(Utils.ERRORS, errors);
                 throw new WebApplicationException(Response
-                    .status(Response.Status.BAD_REQUEST.getStatusCode())
-                    .entity(objectMapper.writer().writeValueAsString(response))
-                    .build());
+                        .status(Response.Status.BAD_REQUEST.getStatusCode())
+                        .entity(objectMapper.writer().writeValueAsString(response))
+                        .build());
             }
         }
 

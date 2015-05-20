@@ -42,6 +42,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zenoss.app.AppConfiguration;
 import org.zenoss.app.metricservice.api.MetricServiceAPI;
 import org.zenoss.app.metricservice.api.impl.Utils;
+import org.zenoss.app.metricservice.api.model.MetricQuery;
 import org.zenoss.app.metricservice.api.model.PerformanceQuery;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.app.security.ZenossTenant;
@@ -58,7 +59,7 @@ import java.util.Map;
  * @author David Bainbridge <dbainbridge@zenoss.com>
  */
 @Resource(name = "query")
-@Path("/api/performance/query")
+@Path("/api/performance")
 @Produces(MediaType.APPLICATION_JSON)
 public class MetricResources {
 
@@ -84,6 +85,16 @@ public class MetricResources {
     }
 
     @POST
+    @Path("/mquery")
+    @Timed
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response query(MetricQuery mquery){
+        return api.query(mquery);
+    }
+
+
+    @POST
+    @Path("/query")
     @Timed
     @Consumes(MediaType.APPLICATION_JSON)
     public Response query(PerformanceQuery query) {

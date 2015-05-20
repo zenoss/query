@@ -67,9 +67,9 @@ public class MockPostProviderTest extends ProviderTestBase {
         }
     }
 
-    protected Map<?, ?> testQuery(Optional<String> id, Optional<String> start,
-            Optional<String> end, Optional<ReturnSet> returnset,
-            Optional<Boolean> series, String[] queries) throws Exception {
+    @Override
+    protected Map<?, ?> testQuery(Optional<String> id, Optional<String> start, Optional<String> end,
+                                  Optional<ReturnSet> returnset, Optional<Boolean> series, String[] queries) throws Exception {
         return testPostQuery(id, start, end, returnset, series, queries);
     }
 }

@@ -60,7 +60,13 @@ public class Tags {
     private static final Pattern INVALID_CHARS = Pattern.compile("[^\\w\\./_-]");
 
     //convert INVALID_CHARS to '-' as applied by the metric-consumer
-    static final String sanitize(String input) {
+    static final String sanitizeKey(String input) {
+        return INVALID_CHARS.matcher(input).replaceAll("-");
+    }
+    static final String sanitizeValue(String input, boolean allowWildCard) {
+        if (allowWildCard && "*".equals(input)){
+            return input;
+        }
         return INVALID_CHARS.matcher(input).replaceAll("-");
     }
 
@@ -92,7 +98,7 @@ public class Tags {
      *            the map of tag names to tag values
      * @return Tags representation.
      */
-    public static Tags fromValue(Map<String, List<String>> tags) {
+    public static Tags fromValue(Map<String, List<String>> tags, boolean allowWildCard) {
         Tags result = new Tags();
         StringBuilder buf = new StringBuilder();
         boolean pipe;
@@ -105,9 +111,9 @@ public class Tags {
                 } else {
                     pipe = true;
                 }
-                buf.append(sanitize(value));
+                buf.append(sanitizeValue(value, allowWildCard));
             }
-            result.tags.put(sanitize(entry.getKey()), buf.toString());
+            result.tags.put(sanitizeKey(entry.getKey()), buf.toString());
         }
         return result;
     }

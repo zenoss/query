@@ -41,10 +41,11 @@ import org.zenoss.app.metricservice.api.impl.MetricStorageAPI;
 import org.zenoss.app.metricservice.api.impl.OpenTSDBPMetricStorage;
 import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryResult;
 import org.zenoss.app.metricservice.api.impl.Utils;
+import org.zenoss.app.metricservice.api.model.MetricQuery;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 
-import java.io.*;
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,7 +54,6 @@ import java.util.Map;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
- * 
  */
 @API
 @Configuration
@@ -72,14 +72,12 @@ public class MockMetricStorage implements MetricStorageAPI {
     MetricServiceAppConfiguration config;
 
 
-    public byte[] generateData(MetricServiceAppConfiguration config, String id,
-            String startTime, String endTime, ReturnSet returnset,
-            Boolean series, String downsample, Map<String, List<String>> tags,
-            List<MetricSpecification> queries) throws IOException {
+    public List<OpenTSDBQueryResult> generateData(MetricServiceAppConfiguration config, String id,
+                                                  String startTime, String endTime, ReturnSet returnset,
+                                                  String downsample, Map<String, List<String>> tags,
+                                                  List<MetricSpecification> queries) throws IOException {
         log.debug("Generate data for '{}' to '{}' requested", startTime,
                 endTime);
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         long start = 0;
         try {
@@ -110,7 +108,7 @@ public class MockMetricStorage implements MetricStorageAPI {
 
         // Return an array of results from 0.0 to 1.0 equally distributed
         // over the time range with 1 second steps.
-        double inc = 1.0 *  step / dur;
+        double inc = 1.0 * step / dur;
 
         List<OpenTSDBQueryResult> resultList = new ArrayList<>();
         int count = 0;
@@ -150,10 +148,9 @@ public class MockMetricStorage implements MetricStorageAPI {
             }
             resultList.add(result);
         }
-        baos.write(Utils.jsonStringFromObject(resultList).getBytes("UTF-8"));
 
         log.debug("Generated {} lines of data", count);
-        return baos.toByteArray();
+        return resultList;
     }
 
     private static long determineStepFromDuration(long dur) {
@@ -168,23 +165,23 @@ public class MockMetricStorage implements MetricStorageAPI {
         return step;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.zenoss.app.query.api.impl.MetricStorageAPI#getReader(org.zenoss.app
-     * .query.QueryAppConfiguration, java.lang.String, java.lang.String,
-     * java.lang.String, java.lang.Boolean, java.lang.Boolean, java.util.List)
-     */
     @Override
-    public BufferedReader getReader(MetricServiceAppConfiguration config,
-            String id, String startTime, String endTime, ReturnSet returnset,
-            Boolean series, String downsample, double downsampleMultiplier, Map<String, List<String>> tags,
-            List<MetricSpecification> queries) throws IOException {
-        byte[] data = generateData(config, id, startTime, endTime, returnset,
-                series, downsample, tags, queries);
-        return new BufferedReader(new InputStreamReader(new ByteArrayInputStream(data),"UTF-8"));
+    public Iterable<OpenTSDBQueryResult> query(MetricQuery query) {
+        return null;
+    }
 
+    /*
+         * (non-Javadoc)
+         *
+         * @see
+         * org.zenoss.app.query.api.impl.MetricStorageAPI#getReader(org.zenoss.app
+         * .query.QueryAppConfiguration, java.lang.String, java.lang.String,
+         * java.lang.String, java.lang.Boolean, java.lang.Boolean, java.util.List)
+         */
+    @Override
+    public Iterable<OpenTSDBQueryResult> getResponse(MetricServiceAppConfiguration config, String id, String startTime, String endTime, ReturnSet returnset, String downsample, double downsampleMultiplier, Map<String, List<String>> tags, List<MetricSpecification> queries, boolean allowWildCard) throws IOException {
+        return generateData(config, id, startTime, endTime, returnset,
+                downsample, tags, queries);
     }
 
     /*

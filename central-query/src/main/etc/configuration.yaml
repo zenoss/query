@@ -1,6 +1,6 @@
-authEnabled: true
+authEnabled: false
 logging:
-  level: INFO
+  level: DEBUG
   loggers:
     "org.zenoss": INFO
 metrics:
@@ -8,7 +8,7 @@ metrics:
   defaultStartTime: 1h-ago
   defaultEndTime: now
   defaultSeries: true
-  openTsdbUrl: http://127.0.0.1:4242
+  openTsdbUrl: http://toast:4242
   defaultTsdTimeZone: UTC
   connectionTimeoutMs: 20000
   sendRateOptions: false
@@ -41,7 +41,3 @@ http:
     console:
       enabled: false
 
-managedReporter:
-    metricReporters:
-      - {posterType: http, username: "$env[CONTROLPLANE_CONSUMER_USERNAME]", password: "$env[CONTROLPLANE_CONSUMER_PASSWORD]", urlEnvironment: "CONTROLPLANE_CONSUMER_URL"}
-      - {posterType: http, username: "$zcreds[]", password: "$zcreds[]", protocol: http, host: localhost, port: 8080, apiPath: /api/metrics/store}

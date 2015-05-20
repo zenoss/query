@@ -60,7 +60,7 @@ public class TagsTest {
         Map<String, List<String>> spec = new HashMap<>();
         spec.put("tag1", val1);
         spec.put("tag2", val2);
-        Tags tags2 = Tags.fromValue(spec);
+        Tags tags2 = Tags.fromValue(spec, false);
 
         Assert.assertEquals("two different constructors", tags1, tags2);
     }
@@ -80,7 +80,7 @@ public class TagsTest {
         Map<String, List<String>> spec = new HashMap<>();
         spec.put("tag 1", val1);
         spec.put("tag 2", val2);
-        Tags tags2 = Tags.fromValue(spec);
+        Tags tags2 = Tags.fromValue(spec, false);
 
         Assert.assertEquals("two different constructors", tags1, tags2);
     }
