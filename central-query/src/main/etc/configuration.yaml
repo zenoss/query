@@ -37,6 +37,9 @@ http:
       keyStore: ${ssl.cert.dir}/ssl.pfx
       keyStorePassword: zapp_pass
       keyStoreType: pkcs12
+  requestLog:
+    console:
+      enabled: false
 
 managedReporter:
     metricReporters:
