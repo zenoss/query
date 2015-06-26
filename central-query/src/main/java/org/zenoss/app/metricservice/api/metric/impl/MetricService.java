@@ -90,7 +90,7 @@ public class MetricService implements MetricServiceAPI {
                 if (spec.getMetric() != null) {
                     result.add(spec);
                 } else {
-                    log.warn("skipping metricSpecification {} - no metric value found.", spec.getNameOrMetric());
+                    log.debug("MetricFilter: filtering out metricSpecification {} - no metric value found.", spec.getNameOrMetric());
                 }
             }
         }

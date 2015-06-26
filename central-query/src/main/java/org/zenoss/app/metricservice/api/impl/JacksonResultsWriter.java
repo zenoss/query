@@ -117,9 +117,6 @@ public class JacksonResultsWriter {
     private QueryStatus getQueryStatus(MetricSpecification query, Buckets<IHasShortcut> buckets) {
         MetricKey key = MetricKey.fromValue(query);
         QueryStatus result = buckets.getQueryStatus(key);
-        if (null == result) {
-            result = new QueryStatus(QueryStatus.QueryStatusEnum.UNKNOWN, String.format("Unknown query status for query %s", query.toString()));
-        }
         return result;
     }
 
