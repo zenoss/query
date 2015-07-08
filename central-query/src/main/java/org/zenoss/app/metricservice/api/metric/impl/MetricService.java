@@ -169,15 +169,18 @@ public class MetricService implements MetricServiceAPI {
 
                 //TODO: split out request into multiple if there are RPNs
 
+                //metrics that have calculation expression
                 List<MetricSpecification> hasExpression = Lists.newArrayListWithCapacity(query.getMetricSpecs().size());
-                List<MetricSpecification> noExpression = Lists.newArrayListWithCapacity(query.getMetricSpecs().size());
+                //metrics that have no calculation expression
+                List<MetricSpecification> bareSpec = Lists.newArrayListWithCapacity(query.getMetricSpecs().size());
+                //metrics that are purely calculate based on one or more metrics being collected from other queries.
                 List<MetricSpecification> calculatedMetrics = Lists.newArrayListWithCapacity(query.getMetricSpecs().size());
                 boolean wildCardsDetected = false;
                 for (MetricSpecification spec : query.getMetricSpecs()) {
                     if (spec.getName() != null && spec.getMetric() == null) {
                         calculatedMetrics.add(spec);
                     } else if (Strings.isNullOrEmpty(spec.getExpression())) {
-                        noExpression.add(spec);
+                        bareSpec.add(spec);
                     } else {
                         hasExpression.add(spec);
                     }
@@ -195,33 +198,28 @@ public class MetricService implements MetricServiceAPI {
                 }
                 // Check for expressions,
                 // Check for calculatedMetrics(metrics that are just RPNs of one ore more series),
-                //also check if any tags are wildcards and don't allow wild cards and computed values
+                // also check if any tags are wildcards and don't allow wild cards and computed values
                 //
                 // TODO: If request has calculatedMetrics, do bucketing.
                 // TODO: if request has "interpolation" set, do bucketing.
+                boolean doBucket = false;
 
                 if (wildCardsDetected && !calculatedMetrics.isEmpty()) {
                     throw new WebApplicationException(new IllegalArgumentException("Wildcard tags and " +
                             "CalculatedMetrics cannot be processed at the same time"));
                 }
 
-                //Temporary check
+                //Temporary check, TODO: check interpolation
                 if (!calculatedMetrics.isEmpty()) {
-                    throw new WebApplicationException(new IllegalArgumentException("Calculated Metrics not supported yet"));
+                    doBucket = true;
+//                    throw new WebApplicationException(new IllegalArgumentException("Calculated Metrics not supported yet"));
                 }
 
                 Iterable<OpenTSDBQueryResult> metrics = null;
-                if (!noExpression.isEmpty()) {
-                    MetricQuery noExpressionQ = new MetricQuery();
-                    noExpressionQ.setStart(query.getStart());
-                    noExpressionQ.setEnd(query.getEnd());
-                    noExpressionQ.setReturnset(query.getReturnset());
-                    noExpressionQ.setMetricSpecs(noExpression);
-                    Iterable<OpenTSDBQueryResult> result = api.query(noExpressionQ);
-                    if (metrics == null) {
-                        metrics = result;
-                    } else {
-                        metrics = Iterables.concat(metrics, result);
+                if (!bareSpec.isEmpty()) {
+                    metrics = getOpenTSDBQueryResults(bareSpec, query);
+                    if (doBucket) {
+
                     }
                 }
                 if (!hasExpression.isEmpty()) {
@@ -235,81 +233,154 @@ public class MetricService implements MetricServiceAPI {
                     }).asMap();
 
                     for (Entry<String, Collection<MetricSpecification>> specs : grouped.entrySet()) {
-                        MetricQuery noExpressionQ = new MetricQuery();
-                        noExpressionQ.setStart(query.getStart());
-                        noExpressionQ.setEnd(query.getEnd());
-                        noExpressionQ.setReturnset(query.getReturnset());
-                        noExpressionQ.setMetricSpecs(Lists.newArrayList(specs.getValue()));
-                        Iterable<OpenTSDBQueryResult> result = api.query(noExpressionQ);
+
+                        Iterable<OpenTSDBQueryResult> result = getOpenTSDBQueryResults(Lists.newArrayList(specs.getValue()), query);
                         //APPLY RPN here
-                        for (final OpenTSDBQueryResult r : result) {
-                            MetricCalculator calc;
-                            try {
-                                calc = MetricCalculatorFactory.newInstance(specs.getKey());
-                                calc.setReferenceProvider(new ReferenceProvider() {
-                                    @Override
-                                    public double lookup(String name, Closure closure) throws UnknownReferenceException {
-                                        if (null == closure) {
-                                            throw new NullPointerException("null closure passed to lookup() method.");
-                                        }
-                                        /**
-                                         * If they are looking for special values like "time" then give them
-                                         * that.
-                                         */
-                                        if ("time".equalsIgnoreCase(name)) {
-                                            return closure.getTimeStamp();
-                                        }
-
-                                        /**
-                                         * Check for metrics or values in the bucket
-                                         */
-                                        Value v = closure.getValueByShortcut(name);
-                                        if (v == null) {
-                                            throw new UnknownReferenceException(name);
-                                        }
-                                        return v.getValue();
-                                    }
-                                });
-                            } catch (ClassNotFoundException e) {
-                                throw new WebApplicationException(new Exception("calculator not found for " + specs.getKey()));
-                            }
-                            for (final Entry<Long, Double> dp : r.getDataPoints().entrySet()) {
-                                try {
-                                    double newVal = calc.evaluate(new Closure() {
-                                        @Override
-                                        public long getTimeStamp() {
-                                            return dp.getKey();
-                                        }
-
-                                        @Override
-                                        public Value getValueByShortcut(String name) {
-                                            if (!r.metric.equals(name)) {
-                                                return null;
-                                            }
-                                            Value val = new Value();
-                                            val.add(dp.getValue());
-                                            return val;
-                                        }
-                                    });
-                                    log.info("metric {}, tags {}, timestamp {}, original {} new val {}", r.metric, r.tags, dp.getKey(), dp.getValue(), newVal);
-                                    r.getDataPoints().put(dp.getKey(), newVal);
-                                } catch (UnknownReferenceException e) {
-                                    throw new WebApplicationException(e);
-                                }
-                            }
-                        }
+                        appyRPN(specs, result);
                         if (metrics == null) {
                             metrics = result;
                         } else {
                             metrics = Iterables.concat(metrics, result);
                         }
                     }
-
                 }
-
                 objectMapper.writeValue(outputStream, metrics);
             }
         }));
+    }
+
+    private void appyRPN(Entry<String, Collection<MetricSpecification>> specs, Iterable<OpenTSDBQueryResult> result) {
+        for (final OpenTSDBQueryResult r : result) {
+            MetricCalculator calc;
+            try {
+                calc = MetricCalculatorFactory.newInstance(specs.getKey());
+                calc.setReferenceProvider(new ReferenceProvider() {
+                    @Override
+                    public double lookup(String name, Closure closure) throws UnknownReferenceException {
+                        if (null == closure) {
+                            throw new NullPointerException("null closure passed to lookup() method.");
+                        }
+                        /**
+                         * If they are looking for special values like "time" then give them
+                         * that.
+                         */
+                        if ("time".equalsIgnoreCase(name)) {
+                            return closure.getTimeStamp();
+                        }
+
+                        /**
+                         * Check for metrics or values in the bucket
+                         */
+                        Value v = closure.getValueByShortcut(name);
+                        if (v == null) {
+                            throw new UnknownReferenceException(name);
+                        }
+                        return v.getValue();
+                    }
+                });
+            } catch (ClassNotFoundException e) {
+                throw new WebApplicationException(new Exception("calculator not found for " + specs.getKey()));
+            }
+            for (final Entry<Long, Double> dp : r.getDataPoints().entrySet()) {
+                try {
+                    double newVal = calc.evaluate(new Closure() {
+                        @Override
+                        public long getTimeStamp() {
+                            return dp.getKey();
+                        }
+
+                        @Override
+                        public Value getValueByShortcut(String name) {
+                            if (!r.metric.equals(name)) {
+                                return null;
+                            }
+                            Value val = new Value();
+                            val.add(dp.getValue());
+                            return val;
+                        }
+                    });
+                    log.info("metric {}, tags {}, timestamp {}, original {} new val {}", r.metric, r.tags, dp.getKey(), dp.getValue(), newVal);
+                    r.getDataPoints().put(dp.getKey(), newVal);
+                } catch (UnknownReferenceException e) {
+                    throw new WebApplicationException(e);
+                }
+            }
+        }
+    }
+
+    private Iterable<OpenTSDBQueryResult> getOpenTSDBQueryResults(List<MetricSpecification> metricSpecs, MetricQuery query) {
+        MetricQuery newQuery = new MetricQuery();
+        newQuery.setStart(query.getStart());
+        newQuery.setEnd(query.getEnd());
+        newQuery.setReturnset(query.getReturnset());
+        newQuery.setMetricSpecs(metricSpecs);
+        Iterable<OpenTSDBQueryResult> results = api.query(newQuery);
+
+        Optional<String> start = Optional.fromNullable(query.getStart());
+        Optional<String> end = Optional.fromNullable(query.getEnd());
+        Optional<ReturnSet> returnset = Optional.fromNullable(query.getReturnset());
+        String startTime = start.or(config.getMetricServiceConfig().getDefaultStartTime());
+        String endTime = end.or(config.getMetricServiceConfig().getDefaultEndTime());
+        ReturnSet returnSet = returnset.or(config.getMetricServiceConfig().getDefaultReturnSet());
+
+        List<Object> errors = new ArrayList<>();
+        // Validate start time
+        long startTimestamp = parseTimeWithErrorHandling(startTime, Utils.START, errors);
+        // Validate end time
+        long endTimestamp = parseTimeWithErrorHandling(endTime, Utils.END, errors);
+        for (OpenTSDBQueryResult series : results) {
+            if (returnSet == ReturnSet.LAST) {
+                applyLastValReturnSet(startTimestamp, endTimestamp, series);
+            } else if (returnSet == ReturnSet.EXACT) {
+                filterExactReturnSet(startTimestamp, endTimestamp, series);
+            }
+        }
+        return results;
+    }
+
+    private long parseTimeWithErrorHandling(String timeString, String timeTypeDescription, List<Object> errors) {
+        long result = -1;
+        try {
+            result = Utils.parseDate(timeString);
+        } catch (ParseException e) {
+            log.error("Failed to parse {} time option of '{}': {} : {}", timeTypeDescription, timeString, e.getClass().getName(), e.getMessage());
+            String errorString = String.format("Unable to parse specified %s time value of '%s'", timeTypeDescription, timeString);
+            errors.add(Utils.makeError(errorString, e.getMessage(), timeTypeDescription));
+        }
+        return result;
+    }
+
+    private void filterExactReturnSet(long startTimestamp, long endTimestamp, OpenTSDBQueryResult series) {
+        log.info("Applying exact filter.");
+        long currentPointTimeStamp;
+        SortedMap<Long, Double> filteredDataPoints = new TreeMap<>();
+        for (Map.Entry<Long, Double> dataPoint : series.getDataPoints().entrySet()) {
+            currentPointTimeStamp = dataPoint.getKey();
+            if (currentPointTimeStamp >= startTimestamp && currentPointTimeStamp <= endTimestamp) {
+                filteredDataPoints.put(currentPointTimeStamp, dataPoint.getValue());
+            }
+        }
+        series.setDataPoints(filteredDataPoints);
+    }
+
+    private void applyLastValReturnSet(long startTimestamp, long endTimestamp, OpenTSDBQueryResult series) {
+        log.info("Applying last filter.");
+        long currentPointTimeStamp;
+        SortedMap<Long, Double> dataPointSingleton = new TreeMap<>();
+        Map.Entry<Long, Double> lastDataPoint = null;
+        for (Map.Entry<Long, Double> dataPoint : series.getDataPoints().entrySet()) {
+            currentPointTimeStamp = dataPoint.getKey();
+            if (currentPointTimeStamp < startTimestamp || currentPointTimeStamp > endTimestamp) {
+                continue;
+            }
+            if (null == lastDataPoint || currentPointTimeStamp > lastDataPoint.getKey()) {
+                lastDataPoint = dataPoint;
+            }
+        }
+        if (null != lastDataPoint) {
+            dataPointSingleton.put(lastDataPoint.getKey(), lastDataPoint.getValue());
+        }
+        series.setDataPoints(dataPointSingleton);
     }
 
 

@@ -48,10 +48,13 @@ import org.zenoss.app.metricservice.api.model.ReturnSet;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -88,11 +91,9 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
     public Iterable<OpenTSDBQueryResult> query(MetricQuery query) {
         Optional<String> start = Optional.fromNullable(query.getStart());
         Optional<String> end = Optional.fromNullable(query.getEnd());
-        Optional<ReturnSet> returnset = Optional.fromNullable(query.getReturnset());
         //provide defaults
         String startTime = start.or(config.getMetricServiceConfig().getDefaultStartTime());
         String endTime = end.or(config.getMetricServiceConfig().getDefaultEndTime());
-        ReturnSet returnSet = returnset.or(config.getMetricServiceConfig().getDefaultReturnSet());
 
         OpenTSDBQuery otsdbQuery = new OpenTSDBQuery();
         // This could maybe be better - for now, it works : end time defaults to 'now', start time does not default.
@@ -107,8 +108,8 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
         OpenTSDBClient client = new OpenTSDBClient(this.httpClient, getOpenTSDBApiQueryUrl());
         OpenTSDBQueryReturn result = client.query(otsdbQuery);
-        for (OpenTSDBQueryResult val : result.getResults()) {
-            val.metric = val.metric.replace(SPACE_REPLACEMENT, " ");
+        for (OpenTSDBQueryResult series : result.getResults()) {
+            series.metric = series.metric.replace(SPACE_REPLACEMENT, " ");
         }
         return result.getResults();
     }
