@@ -1,3 +1,4 @@
+
 (function() {
     "use strict";
 
@@ -41,6 +42,7 @@
                 .call(_chart.model());
 
             this.styleThresholds(chart.div);
+            this.styleProjections(chart);
         },
 
         build : function(chart, data) {
@@ -85,10 +87,11 @@
             nv.addGraph(function() {
                 chart.svg.transition().duration(0).call(model);
                 this.styleThresholds(chart.div);
-
+                this.styleProjections(chart);
                 nv.utils.windowResize(function() {
                     chart.svg.call(model);
                     this.styleThresholds(chart.div);
+                    this.styleProjections(chart);
                 }.bind(this));
             }.bind(this));
 
@@ -121,6 +124,21 @@
                     legend.classList.add("threshold");
                 }
             });
+        },
+        /**
+         * All plot series that have the "projection" attribute to true will
+         * be styled distinctively
+         **/
+        styleProjections: function(chart) {
+            var i, n;
+            for (i = 0; i < chart.plots.length; i ++ ) {
+                if (chart.plots[i].projection) {
+                    n = i - 1;
+                    d3.select('#' + chart.name).selectAll('.nv-series-' +
+                                                n.toString()).selectAll('.nv-line').style("stroke-dasharray", ('3, 3'));
+
+                }
+            }
         }
     };
 
