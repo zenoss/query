@@ -580,7 +580,10 @@
                             }
                             self.__render(data);
                         } else {
-                            self.__updateData(data);
+                            // if we have projections wait to render so the chart doesn't jump around
+                            if (self.projections === undefined || self.projections.length === 0) {
+                                self.__updateData(data);
+                            }
                         }
 
                         // Update the footer
