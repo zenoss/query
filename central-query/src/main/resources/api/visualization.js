@@ -1758,7 +1758,10 @@ if (typeof exports !== 'undefined') {
                             }
                             self.__render(data);
                         } else {
-                            self.__updateData(data);
+                            // if we have projections wait to render so the chart doesn't jump around
+                            if (self.projections === undefined || self.projections.length === 0) {
+                                self.__updateData(data);
+                            }
                         }
 
                         // Update the footer
@@ -1788,12 +1791,17 @@ if (typeof exports !== 'undefined') {
                                             // get the visible x, y values
                                             projectedSet = self.createRegressionData(valueFn, start, end);
                                         self.plots.push({
-                                            color: "#CCCCCC",
+                                            color: "#EBEBEF",
                                             fill: false,
+                                            projection: true,
                                             key: projection.legend,
                                             values: projectedSet
                                         });
-                                        self.impl.update(self, data);
+                                        // self.closure isn't set because we are still loading dependencies
+                                        // wait until the regular chart build is called
+                                        if (self.closure) {
+                                            self.impl.update(self, data);
+                                        }
                                     }
                                 },
                                 'error' : function() {
@@ -1832,14 +1840,12 @@ if (typeof exports !== 'undefined') {
             }
         },
         /**
-         *  Converts a downsample rate into a "step". To minimized clutter each step is twice
-         *  the downsample rate. For instance if you have
-         *  10s-avg then this method returns 20
-         *  if you have 1h-avg this method returns 7200 (or 3600 * 2).
+         *  Converts a downsample rate into a "step". To minimized clutter each step is a multiple
+         *  the downsample rate.
          **/
         __convertDownsampletoStep: function(downsample) {
             if (!downsample) {
-                return 300;
+                return 600;
             }
             var regexp = new RegExp(/\d+/),
                 numberPart = downsample.split("-")[0],
@@ -1851,7 +1857,7 @@ if (typeof exports !== 'undefined') {
                     'h': 3600,
                     'd': 86400
                 };
-            return (2 * number) * (multiplier[unit] || 1);
+            return (12 * number) * (multiplier[unit] || 1);
         },
         /**
          * Given a projection function (returned from createRegressionFunction) this method
