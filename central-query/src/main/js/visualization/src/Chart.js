@@ -491,7 +491,7 @@
                 div.append('<div id=' + uniqueDivId  +
                            ' title="placeholder"  > <div class="zenfooter_box" style="opacity: 1;">' +
                            '</div><span class="projectionLegend">&nbsp;&nbsp;' + projection.key.replace("Projected ", "") +
-                           '</span></div>');
+                           '</span><div class="info_icon"><span style="font-style: italic">i</span></div></div>');
                 $("#" + uniqueDivId + " .zenfooter_box").css("background-color", projection.color);
                 // use jQuery UI tool tips to register a table tool tip showing projected values on hover
                 $("#" + uniqueDivId).tooltip({
