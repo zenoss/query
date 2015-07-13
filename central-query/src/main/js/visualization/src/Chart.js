@@ -333,6 +333,7 @@
             if (!this.table) {
                 return false;
             }
+
             rows = $(this.table).find('tr');
             if (data) {
                 sta = this.dateFormatter(data.startTimeActual, timezone );
@@ -445,9 +446,66 @@
                 }
                 resize = true;
             }
+
             return resize;
         },
+        /**
+         * Returns all the current chart's plots that are of type projection
+         *
+         * @access private
+         * @return [object] all the projection plots
+         */
+        __getProjectionPlots: function() {
+            return $.grep(this.plots, function(p) { return p.projection; } );
+        },
+        /**
+         * Renders the projection legend with a mouse over of future dates
+         * @access private
+         **/
+        __renderProjectionFooter: function() {
+            var projections = this.__getProjectionPlots(),
+                // the days out that we are showing projections for (e.g. 30 days from now)
+                futureTimes = [30, 60, 90];
 
+            // recreate the legend from scratch each update
+            $(this.footer).find(".projectionPlots").remove();
+
+            // create the content div.
+            $(this.footer).append("<div class='projectionPlots'><span style='font-weight:bold;'>Projections</></div>");
+            // get a jquery handle on it
+            var div = $(this.footer).find(".projectionPlots");
+
+            // create a new row with
+            projections.forEach(function(projection) {
+                var table = "<table width='250px'>" +
+                    "<tr><th><b>Date</b></th><th><b>Value</b></th></tr>", i, futureTime, uniqueDivId = Math.round(new Date().getTime() + (Math.random() * 100)).toString();
+                for (i=0; i< futureTimes.length; i++) {
+                    futureTime = moment().add(futureTimes[i], 'days');
+                    table += "<tr><td>" + futureTime.format("MMM-D") + " ("  + futureTimes[i].toString() + " days)</td><td align='right'>" +
+                        Number(projection.projectionFn(futureTime.unix()).toFixed(2)).toLocaleString('en')  +
+                        "</td></tr>";
+                }
+                table  += "</table>";
+
+                // add a row representing the projection
+                div.append('<div id=' + uniqueDivId  +
+                           ' title="placeholder"  > <div class="zenfooter_box" style="opacity: 1;">' +
+                           '</div><span class="projectionLegend">&nbsp;&nbsp;' + projection.key.replace("Projected ", "") +
+                           '</span><div class="info_icon"><span style="font-style: italic">i</span></div></div>');
+                $("#" + uniqueDivId + " .zenfooter_box").css("background-color", projection.color);
+                // use jQuery UI tool tips to register a table tool tip showing projected values on hover
+                $("#" + uniqueDivId).tooltip({
+                    show: {
+                        effect: "slideDown",
+                        delay: 150
+                    },
+                    content: function() {
+                        return table;
+                    }
+                });
+            }.bind(this));
+
+        },
         /**
          * Returns true if this chart is displaying a footer, else false
          *
@@ -591,6 +649,8 @@
                             self.__resize();
                         }
                         // send a separate request for the projection data since it has a different time span
+
+                        var projectionColors = ["#EBEBEF", "#FDDFE7", "#FCF1C0", "#DAFBEB"], projectionIndex = 0;
                         self.projections.forEach(function(projection) {
                             var projectionRequest = self.__buildProjectionRequest(self.config, self.request, projection);
                             // can fail if the projection is requesting a metric not present
@@ -604,6 +664,7 @@
                                 'dataType' : 'json',
                                 'contentType' : 'application/json',
                                 'success' : function(projectionData) {
+
                                     if (projectionData.results) {
                                         var values = projectionData.results[projectionData.results.length - 1].datapoints || [],
                                             start = utils.createDate(self.request.start || "1h-ago").unix(),
@@ -613,9 +674,10 @@
                                             // get the visible x, y values
                                             projectedSet = self.createRegressionData(valueFn, start, end);
                                         self.plots.push({
-                                            color: "#EBEBEF",
+                                            color: projectionColors[projectionIndex++ % projectionColors.length],
                                             fill: false,
                                             projection: true,
+                                            projectionFn: valueFn,
                                             key: projection.legend,
                                             values: projectedSet
                                         });
@@ -624,6 +686,7 @@
                                         if (self.closure) {
                                             self.impl.update(self, data);
                                         }
+                                        self.__renderProjectionFooter();
                                     }
                                 },
                                 'error' : function() {
