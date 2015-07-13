@@ -333,6 +333,7 @@
             if (!this.table) {
                 return false;
             }
+
             rows = $(this.table).find('tr');
             if (data) {
                 sta = this.dateFormatter(data.startTimeActual, timezone );
@@ -445,9 +446,64 @@
                 }
                 resize = true;
             }
+
             return resize;
         },
+        /**
+         * Returns all the current chart's plots that are of type projection
+         *
+         * @access private
+         * @return [object] all the projection plots
+         */
+        __getProjectionPlots: function() {
+            return $.grep(this.plots, function(p) { return p.projection; } );
+        },
+        /**
+         * Renders the projection legend with a mouse over of future dates
+         * @access private
+         **/
+        __renderProjectionFooter: function() {
+            var projections = this.__getProjectionPlots(),
+                // the days out that we are showing projections for (e.g. 30 days from now)
+                futureTimes = [30, 60, 90];
 
+            // recreate the legend from scratch each update
+            $(this.footer).find(".projectionPlots").remove();
+
+            // create the content div.
+            $(this.footer).append("<div class='projectionPlots'><span style='font-weight:bold;'>Projections</></div>");
+            // get a jquery handle on it
+            var div = $(this.footer).find(".projectionPlots");
+
+            // create a new row with
+            projections.forEach(function(projection) {
+                var table = "<table width='250px'>" +
+                    "<tr><th><b>Date</b></th><th><b>Value</b></th></tr>", i, futureTime, uniqueDivId = Math.round(new Date().getTime() + (Math.random() * 100)).toString();
+                for (i=0; i< futureTimes.length; i++) {
+                    futureTime = moment().add(futureTimes[i], 'days');
+                    table += "<tr><td>" + futureTime.format("MMM-D") + " ("  + futureTimes[i].toString() + " days)</td><td align='right'>" + projection.projectionFn(futureTime.unix()).toFixed(2)  + "</td></tr>";
+                }
+                table  += "</table>";
+
+                // add a row representing the projection
+                div.append('<div id=' + uniqueDivId  +
+                           ' title="placeholder"  > <div class="zenfooter_box" style="opacity: 1; background-color: ' + projection.color +
+                           '"></div><span class="projectionLegend">&nbsp;&nbsp;' + projection.key.replace("Projected ", "") +
+                           '</span></div>');
+
+                // use jQuery UI tool tips to register a table tool tip showing projected values on hover
+                $("#" + uniqueDivId).tooltip({
+                    show: {
+                        effect: "slideDown",
+                        delay: 150
+                    },
+                    content: function() {
+                        return table;
+                    }
+                });
+            }.bind(this));
+
+        },
         /**
          * Returns true if this chart is displaying a footer, else false
          *
@@ -616,6 +672,7 @@
                                             color: "#EBEBEF",
                                             fill: false,
                                             projection: true,
+                                            projectionFn: valueFn,
                                             key: projection.legend,
                                             values: projectedSet
                                         });
@@ -624,6 +681,7 @@
                                         if (self.closure) {
                                             self.impl.update(self, data);
                                         }
+                                        self.__renderProjectionFooter();
                                     }
                                 },
                                 'error' : function() {

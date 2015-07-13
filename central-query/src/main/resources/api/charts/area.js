@@ -15,7 +15,7 @@
     var area = {
         required : {
             defined : 'nv',
-            source : [ 'nv.d3.min.js', 'css/nv.d3.css' ]
+            source : [ 'nv.d3.min.js', 'css/nv.d3.css', 'css/jquery-ui.css' ]
         },
 
         color : function(chart, impl, idx) {
@@ -47,7 +47,7 @@
                 .transition()
                 .duration(0)
                 .call(model);
-            
+
             this.styleThresholds(chart.div);
         },
 
@@ -118,7 +118,7 @@
         render : function() {
 
         },
-        
+
         // look for series' that are actually thresholds
         // and style them differently
         styleThresholds: function(el){
