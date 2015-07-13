@@ -481,7 +481,9 @@
                     "<tr><th><b>Date</b></th><th><b>Value</b></th></tr>", i, futureTime, uniqueDivId = Math.round(new Date().getTime() + (Math.random() * 100)).toString();
                 for (i=0; i< futureTimes.length; i++) {
                     futureTime = moment().add(futureTimes[i], 'days');
-                    table += "<tr><td>" + futureTime.format("MMM-D") + " ("  + futureTimes[i].toString() + " days)</td><td align='right'>" + projection.projectionFn(futureTime.unix()).toFixed(2)  + "</td></tr>";
+                    table += "<tr><td>" + futureTime.format("MMM-D") + " ("  + futureTimes[i].toString() + " days)</td><td align='right'>" +
+                        Number(projection.projectionFn(futureTime.unix())).toLocaleString('en')  +
+                        "</td></tr>";
                 }
                 table  += "</table>";
 

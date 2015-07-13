@@ -1648,27 +1648,37 @@ if (typeof exports !== 'undefined') {
          **/
         __renderProjectionFooter: function() {
             var projections = this.__getProjectionPlots(),
+                // the days out that we are showing projections for (e.g. 30 days from now)
                 futureTimes = [30, 60, 90];
+
             // recreate the legend from scratch each update
             $(this.footer).find(".projectionPlots").remove();
 
+            // create the content div.
             $(this.footer).append("<div class='projectionPlots'><span style='font-weight:bold;'>Projections</></div>");
+            // get a jquery handle on it
             var div = $(this.footer).find(".projectionPlots");
 
             // create a new row with
             projections.forEach(function(projection) {
                 var table = "<table width='250px'>" +
-                    "<tr><th><b>Date</b></th><th><b>Value</b></th></tr>", i, futureTime, key = Math.round(new Date().getTime() + (Math.random() * 100)).toString();
+                    "<tr><th><b>Date</b></th><th><b>Value</b></th></tr>", i, futureTime, uniqueDivId = Math.round(new Date().getTime() + (Math.random() * 100)).toString();
                 for (i=0; i< futureTimes.length; i++) {
                     futureTime = moment().add(futureTimes[i], 'days');
-                    table += "<tr><td>" + futureTime.format("MMM-D") + " ("  + futureTimes[i].toString() + " days)</td><td align='right'>" + projection.projectionFn(futureTime.unix()).toFixed(2)  + "</td></tr>";
+                    table += "<tr><td>" + futureTime.format("MMM-D") + " ("  + futureTimes[i].toString() + " days)</td><td align='right'>" +
+                        Number(projection.projectionFn(futureTime.unix())).toLocaleString('en')  +
+                        "</td></tr>";
                 }
                 table  += "</table>";
-                div.append('<div id=' + key  +
+
+                // add a row representing the projection
+                div.append('<div id=' + uniqueDivId  +
                            ' title="placeholder"  > <div class="zenfooter_box" style="opacity: 1; background-color: ' + projection.color +
                            '"></div><span class="projectionLegend">&nbsp;&nbsp;' + projection.key.replace("Projected ", "") +
                            '</span></div>');
-                $("#" + key).tooltip({
+
+                // use jQuery UI tool tips to register a table tool tip showing projected values on hover
+                $("#" + uniqueDivId).tooltip({
                     show: {
                         effect: "slideDown",
                         delay: 150
