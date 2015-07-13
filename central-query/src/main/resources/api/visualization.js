@@ -1666,17 +1666,17 @@ if (typeof exports !== 'undefined') {
                 for (i=0; i< futureTimes.length; i++) {
                     futureTime = moment().add(futureTimes[i], 'days');
                     table += "<tr><td>" + futureTime.format("MMM-D") + " ("  + futureTimes[i].toString() + " days)</td><td align='right'>" +
-                        Number(projection.projectionFn(futureTime.unix())).toLocaleString('en')  +
+                        Number(projection.projectionFn(futureTime.unix()).toFixed(2)).toLocaleString('en')  +
                         "</td></tr>";
                 }
                 table  += "</table>";
 
                 // add a row representing the projection
                 div.append('<div id=' + uniqueDivId  +
-                           ' title="placeholder"  > <div class="zenfooter_box" style="opacity: 1; background-color: ' + projection.color +
-                           '"></div><span class="projectionLegend">&nbsp;&nbsp;' + projection.key.replace("Projected ", "") +
+                           ' title="placeholder"  > <div class="zenfooter_box" style="opacity: 1;">' +
+                           '</div><span class="projectionLegend">&nbsp;&nbsp;' + projection.key.replace("Projected ", "") +
                            '</span></div>');
-
+                $("#" + uniqueDivId + " .zenfooter_box").css("background-color", projection.color);
                 // use jQuery UI tool tips to register a table tool tip showing projected values on hover
                 $("#" + uniqueDivId).tooltip({
                     show: {
@@ -1833,6 +1833,8 @@ if (typeof exports !== 'undefined') {
                             self.__resize();
                         }
                         // send a separate request for the projection data since it has a different time span
+
+                        var projectionColors = ["#EBEBEF", "#FDDFE7", "#FCF1C0", "#DAFBEB"], projectionIndex = 0;
                         self.projections.forEach(function(projection) {
                             var projectionRequest = self.__buildProjectionRequest(self.config, self.request, projection);
                             // can fail if the projection is requesting a metric not present
@@ -1846,6 +1848,7 @@ if (typeof exports !== 'undefined') {
                                 'dataType' : 'json',
                                 'contentType' : 'application/json',
                                 'success' : function(projectionData) {
+
                                     if (projectionData.results) {
                                         var values = projectionData.results[projectionData.results.length - 1].datapoints || [],
                                             start = utils.createDate(self.request.start || "1h-ago").unix(),
@@ -1855,7 +1858,7 @@ if (typeof exports !== 'undefined') {
                                             // get the visible x, y values
                                             projectedSet = self.createRegressionData(valueFn, start, end);
                                         self.plots.push({
-                                            color: "#EBEBEF",
+                                            color: projectionColors[projectionIndex++ % projectionColors.length],
                                             fill: false,
                                             projection: true,
                                             projectionFn: valueFn,
