@@ -1,3 +1,13 @@
+/*
+ * ****************************************************************************
+ *
+ *  Copyright (C) Zenoss, Inc. 2015, all rights reserved.
+ *
+ *  This content is made available according to terms specified in
+ *  License.zenoss distributed with this file.
+ *
+ * ***************************************************************************
+ */
 package org.zenoss.app.metricservice.api.impl;
 
 import org.apache.http.HttpEntity;
