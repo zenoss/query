@@ -28,9 +28,8 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.metricservice.api.metric.remote;
+package org.zenoss.app.metricservice.v2.remote;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.yammer.metrics.annotation.Timed;
@@ -40,30 +39,29 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zenoss.app.AppConfiguration;
-import org.zenoss.app.metricservice.api.MetricServiceAPI;
-import org.zenoss.app.metricservice.api.impl.Utils;
+import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryResult;
+import org.zenoss.app.metricservice.api.model.v2.MetricQuery;
 import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
-import org.zenoss.app.metricservice.api.model.PerformanceQuery;
-import org.zenoss.app.metricservice.api.model.ReturnSet;
+import org.zenoss.app.metricservice.v2.QueryService;
 import org.zenoss.app.security.ZenossTenant;
 import org.zenoss.app.zauthbundle.ZappSecurity;
 import org.zenoss.dropwizardspring.annotations.Resource;
 
-import javax.ws.rs.*;
+import javax.validation.Valid;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @author David Bainbridge <dbainbridge@zenoss.com>
- */
-@Resource(name = "query")
-@Path("/api/performance")
+@Resource(name = "v2query")
+@Path("/api/v2/metric")
 @Produces(MediaType.APPLICATION_JSON)
-public class MetricResources {
+public class Resources {
 
-    private static final Logger log = LoggerFactory.getLogger(MetricResources.class);
+    private static final Logger log = LoggerFactory.getLogger(Resources.class);
 
     @Autowired
     AppConfiguration configuration;
@@ -72,52 +70,25 @@ public class MetricResources {
     ZappSecurity security;
 
     @Autowired(required = true)
-    MetricServiceAPI api;
+    QueryService api;
 
-    public MetricResources() {
+    public Resources() {
     }
-
-    public MetricResources(AppConfiguration configuration, ZappSecurity security, MetricServiceAPI api) {
-        log.info("MetricResources constructor starting...");
-        this.configuration = configuration;
-        this.security = security;
-        this.api = api;
-    }
-
-//    @POST
-//    @Path("/metricquery")
-//    @Timed
-//    @Consumes(MediaType.APPLICATION_JSON)
-//    public Response query(MetricRequest mquery){
-//        return api.query(mquery);
-//    }
-
 
     @POST
     @Path("/query")
     @Timed
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response query(PerformanceQuery query) {
-        log.info("Thread {}: Entered NewMetricResources.query with single param (POST). REQUEST: {}", Thread.currentThread().getId(), Utils.jsonStringFromObject(query));
-        if (query == null) {
-            return Utils.getErrorResponse(null, Response.Status.BAD_REQUEST.getStatusCode(),
-                    "Received an empty query request", "Empty Request");
+    public Iterable<OpenTSDBQueryResult> query(@Valid MetricRequest metricRequest) {
+
+        for (MetricQuery mq : metricRequest.getQueries()) {
+            Map<String, List<String>> tags = addTentanId(mq.getTags());
+            mq.setTags(tags);
         }
-        Optional<String> id = Optional.absent();
-        Optional<String> start = Optional.fromNullable(query.getStart());
-        Optional<String> end = Optional.fromNullable(query.getEnd());
-        Optional<ReturnSet> returnset = Optional.fromNullable(query.getReturnset());
-        Optional<Boolean> series = Optional.fromNullable(query.getSeries());
-        Optional<String> downsample = Optional.fromNullable(query.getDownsample());
-        double downsampleMultiplier = query.getDownsampleMultiplier();
-        Optional<Map<String, List<String>>> tags = getTags( query.getTags());
-        return api.query(id, start, end, returnset, series, downsample, downsampleMultiplier, tags, query.getMetrics());
+        Iterable<OpenTSDBQueryResult> result = api.query(metricRequest);
+        return result;
     }
 
-    @OPTIONS
-    public Response handleOptions(@HeaderParam("Access-Control-Request-Headers")  String request) {
-        return api.options(request);
-    }
 
     String getTenantId() {
         Subject subject = security.getSubject();
@@ -126,15 +97,15 @@ public class MetricResources {
         return tenant.id();
     }
 
-    Optional<Map<String, List<String>>> getTags(Map<String, List<String>> tags) {
+    Map<String, List<String>> addTentanId(Map<String, List<String>> tags) {
+        if (tags == null) {
+            tags = Maps.newHashMap();
+        }
         if (configuration.isAuthEnabled()) {
-            if (tags == null) {
-                tags = Maps.newHashMap();
-            }
             String tenantId = getTenantId();
             tags.put("zenoss_tenant_id", Lists.newArrayList(tenantId));
         }
 
-        return Optional.fromNullable(tags);
+        return tags;
     }
 }

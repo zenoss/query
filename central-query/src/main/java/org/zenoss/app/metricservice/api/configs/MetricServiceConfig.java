@@ -35,7 +35,6 @@ import org.zenoss.app.metricservice.api.model.ReturnSet;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
- * 
  */
 public class MetricServiceConfig {
     @JsonProperty
@@ -66,7 +65,7 @@ public class MetricServiceConfig {
     private int maxTotalPoolConnections = 50;
 
     @JsonProperty
-    private int maxPoolConnectionsPerRoute= 20;
+    private int maxPoolConnectionsPerRoute = 20;
 
     @JsonProperty
     private int executorThreadPoolCoreSize = 20;
@@ -102,11 +101,12 @@ public class MetricServiceConfig {
     public int getExecutorThreadPoolMaxSize() {
         return executorThreadPoolMaxSize;
     }
+
     public void setExecutorThreadPoolMaxSize(int executorThreadPoolMaxSize) {
         this.executorThreadPoolMaxSize = executorThreadPoolMaxSize;
     }
-    /**
 
+    /**
      * @return the defaultReturnSet
      */
     public final ReturnSet getDefaultReturnSet() {
@@ -149,40 +149,35 @@ public class MetricServiceConfig {
     }
 
     /**
-     * @param defaultReturnSet
-     *            the defaultReturnSet to set
+     * @param defaultReturnSet the defaultReturnSet to set
      */
     public final void setDefaultReturnSet(ReturnSet defaultReturnSet) {
         this.defaultReturnSet = defaultReturnSet;
     }
 
     /**
-     * @param defaultStartTime
-     *            the defaultStartTime to set
+     * @param defaultStartTime the defaultStartTime to set
      */
     public final void setDefaultStartTime(String defaultStartTime) {
         this.defaultStartTime = defaultStartTime;
     }
 
     /**
-     * @param defaultEndTime
-     *            the defaultEndTime to set
+     * @param defaultEndTime the defaultEndTime to set
      */
     public final void setDefaultEndTime(String defaultEndTime) {
         this.defaultEndTime = defaultEndTime;
     }
 
     /**
-     * @param defaultSeries
-     *            the defaultSeries to set
+     * @param defaultSeries the defaultSeries to set
      */
     public final void setDefaultSeries(Boolean defaultSeries) {
         this.defaultSeries = defaultSeries;
     }
 
     /**
-     * @param openTsdbUrl
-     *            the openTsdbUrl to set
+     * @param openTsdbUrl the openTsdbUrl to set
      */
     public final void setOpenTsdbUrl(String openTsdbUrl) {
 
@@ -199,8 +194,7 @@ public class MetricServiceConfig {
     }
 
     /**
-     * @param defaultTsdTimeZone
-     *            the defaultTsdTimeZone to set
+     * @param defaultTsdTimeZone the defaultTsdTimeZone to set
      */
     public final void setDefaultTsdTimeZone(String defaultTsdTimeZone) {
         this.defaultTsdTimeZone = defaultTsdTimeZone;
@@ -216,14 +210,15 @@ public class MetricServiceConfig {
 
     /**
      * @return the sendRateOptions
+     * @deprecated
      */
     public Boolean getSendRateOptions() {
         return sendRateOptions;
     }
 
     /**
-     * @param sendRateOptions
-     *            the sendRateOptions to set
+     * @param sendRateOptions the sendRateOptions to set
+     * @deprecated
      */
     public void setSendRateOptions(Boolean sendRateOptions) {
         this.sendRateOptions = sendRateOptions;

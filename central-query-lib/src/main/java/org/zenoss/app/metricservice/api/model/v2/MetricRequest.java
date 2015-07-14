@@ -28,31 +28,38 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.zenoss.app.metricservice.api.model;
+package org.zenoss.app.metricservice.api.model.v2;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.zenoss.app.metricservice.api.impl.Utils;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
-import java.util.ArrayList;
+
+import org.zenoss.app.metricservice.api.impl.Utils;
+import org.zenoss.app.metricservice.api.model.ReturnSet;
+
 import java.util.List;
-import java.util.Map;
 
 /**
- * @author David Bainbridge <dbainbridge@zenoss.com>
- * 
+ *
  */
 @JsonInclude(Include.NON_NULL)
-public class MetricQuery {
+public class MetricRequest {
     @JsonProperty
+    @NotNull
     private String start = Utils.DEFAULT_START_TIME;
     
     @JsonProperty
     private String end = Utils.DEFAULT_END_TIME;
 
     @JsonProperty(required=true)
-    private List<MetricSpecification> metricSpecs = null;
+    @NotNull
+    @Size(min=1)
+    @Valid
+    private List<MetricQuery> queries = null;
 
     @JsonProperty(value="returnset")
     private ReturnSet returnset = null;
@@ -100,11 +107,11 @@ public class MetricQuery {
 		this.returnset = returnset;
 	}
 
-    public List<MetricSpecification> getMetricSpecs() {
-        return metricSpecs;
+    public List<MetricQuery> getQueries() {
+        return queries;
     }
 
-    public void setMetricSpecs(List<MetricSpecification> metrics) {
-        this.metricSpecs= metrics;
+    public void setQueries(List<MetricQuery> metrics) {
+        this.queries= metrics;
     }
 }

@@ -39,7 +39,7 @@ import java.util.regex.Pattern;
 
 /**
  * A comparable and matchable representation of metric tags
- * 
+ *
  * @author Zenoss
  */
 public class Tags {
@@ -58,24 +58,27 @@ public class Tags {
 
     //illegal characters
     private static final Pattern INVALID_CHARS = Pattern.compile("[^\\w\\./_-]");
+    //allow word chars, "*", ".", "_" and "-"
+    private static final Pattern WILDCARD_INVALID_CHARS = Pattern.compile("[^\\w\\*\\./_-]");
 
     //convert INVALID_CHARS to '-' as applied by the metric-consumer
     static final String sanitizeKey(String input) {
         return INVALID_CHARS.matcher(input).replaceAll("-");
     }
+
     static final String sanitizeValue(String input, boolean allowWildCard) {
-        if (allowWildCard && "*".equals(input)){
-            return input;
+        Pattern pattern = INVALID_CHARS;
+        if (allowWildCard) {
+            pattern = WILDCARD_INVALID_CHARS;
         }
-        return INVALID_CHARS.matcher(input).replaceAll("-");
+        return pattern.matcher(input).replaceAll("-");
     }
 
     /**
      * Constructs a Tags representation from a string representation of of a
      * tags list. Useful when dealing with the results from OpenTSDB.
-     * 
-     * @param value
-     *            string representation of a tags list
+     *
+     * @param value string representation of a tags list
      * @return tag representation
      */
     public static Tags fromValue(String value) {
@@ -90,12 +93,11 @@ public class Tags {
         }
         return tags;
     }
-    
+
     /**
      * Construct a Tags representation from a map of tag names to tag values.
-     * 
-     * @param tags
-     *            the map of tag names to tag values
+     *
+     * @param tags the map of tag names to tag values
      * @return Tags representation.
      */
     public static Tags fromValue(Map<String, List<String>> tags, boolean allowWildCard) {
@@ -118,7 +120,7 @@ public class Tags {
         return result;
     }
 
-    public static Tags fromOpenTsdbTags(Map<String,String> tags) {
+    public static Tags fromOpenTsdbTags(Map<String, String> tags) {
         Tags result = new Tags();
         if (null != tags) {
             result.tags.putAll(tags);
@@ -151,7 +153,7 @@ public class Tags {
 
     /**
      * Returns the number of tags in the representation
-     * 
+     *
      * @return
      */
     public int size() {
@@ -180,9 +182,8 @@ public class Tags {
      * considered a match if the "other" has at minimum all the tags as "this"
      * and the "other" tags values match any patterns specified in the "this"
      * tag values.
-     * 
-     * @param other
-     *            the instance to which to compare
+     *
+     * @param other the instance to which to compare
      * @return true if they match, else false
      */
     public boolean match(Tags other) {

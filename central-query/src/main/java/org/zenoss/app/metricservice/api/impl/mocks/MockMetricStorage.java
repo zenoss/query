@@ -41,7 +41,7 @@ import org.zenoss.app.metricservice.api.impl.MetricStorageAPI;
 import org.zenoss.app.metricservice.api.impl.OpenTSDBPMetricStorage;
 import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryResult;
 import org.zenoss.app.metricservice.api.impl.Utils;
-import org.zenoss.app.metricservice.api.model.MetricQuery;
+import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 
@@ -166,7 +166,7 @@ public class MockMetricStorage implements MetricStorageAPI {
     }
 
     @Override
-    public Iterable<OpenTSDBQueryResult> query(MetricQuery query) {
+    public List<OpenTSDBQueryResult> query(MetricRequest query) {
         return null;
     }
 
@@ -179,7 +179,7 @@ public class MockMetricStorage implements MetricStorageAPI {
          * java.lang.String, java.lang.Boolean, java.lang.Boolean, java.util.List)
          */
     @Override
-    public Iterable<OpenTSDBQueryResult> getResponse(MetricServiceAppConfiguration config, String id, String startTime, String endTime, ReturnSet returnset, String downsample, double downsampleMultiplier, Map<String, List<String>> tags, List<MetricSpecification> queries, boolean allowWildCard) throws IOException {
+    public List<OpenTSDBQueryResult> getResponse(MetricServiceAppConfiguration config, String id, String startTime, String endTime, ReturnSet returnset, String downsample, double downsampleMultiplier, Map<String, List<String>> tags, List<MetricSpecification> queries, boolean allowWildCard) throws IOException {
         return generateData(config, id, startTime, endTime, returnset,
                 downsample, tags, queries);
     }

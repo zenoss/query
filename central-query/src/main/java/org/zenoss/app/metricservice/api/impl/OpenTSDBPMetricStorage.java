@@ -41,20 +41,17 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.zenoss.app.annotations.API;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
-import org.zenoss.app.metricservice.api.model.MetricQuery;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
+import org.zenoss.app.metricservice.api.model.v2.MetricQuery;
+import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -88,7 +85,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
 
     @Override
-    public Iterable<OpenTSDBQueryResult> query(MetricQuery query) {
+    public List<OpenTSDBQueryResult> query(MetricRequest query) {
         Optional<String> start = Optional.fromNullable(query.getStart());
         Optional<String> end = Optional.fromNullable(query.getEnd());
         //provide defaults
@@ -102,8 +99,8 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             otsdbQuery.end = endTime;
         }
 
-        for (MetricSpecification metricSpecification : query.getMetricSpecs()) {
-            otsdbQuery.addSubQuery(openTSDBSubQueryFromMetricSpecification(metricSpecification, true));
+        for (MetricQuery mq : query.getQueries()) {
+            otsdbQuery.addSubQuery(createOTSDBQuery(mq));
         }
 
         OpenTSDBClient client = new OpenTSDBClient(this.httpClient, getOpenTSDBApiQueryUrl());
@@ -124,11 +121,11 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
      * java.lang.String, java.lang.Boolean, java.lang.Boolean, java.util.List)
      */
     @Override
-    public Iterable<OpenTSDBQueryResult> getResponse(MetricServiceAppConfiguration config,
-                                                     String id, String startTime, String endTime, ReturnSet returnset,
-                                                     String downsample, double downsampleMultiplier,
-                                                     Map<String, List<String>> globalTags,
-                                                     List<MetricSpecification> queries, boolean allowWildCard) throws IOException {
+    public List<OpenTSDBQueryResult> getResponse(MetricServiceAppConfiguration config,
+                                                 String id, String startTime, String endTime, ReturnSet returnset,
+                                                 String downsample, double downsampleMultiplier,
+                                                 Map<String, List<String>> globalTags,
+                                                 List<MetricSpecification> queries, boolean allowWildCard) throws IOException {
 
         OpenTSDBQuery query = new OpenTSDBQuery();
 
@@ -150,7 +147,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             query.addSubQuery(openTSDBSubQueryFromMetricSpecification(metricSpecification, allowWildCard));
         }
 
-        Collection<OpenTSDBQueryResult> responses = runQueries(query.asSeparateQueries());
+        List<OpenTSDBQueryResult> responses = runQueries(query.asSeparateQueries());
         for (OpenTSDBQueryResult result : responses) {
             result.metric = result.metric.replace(SPACE_REPLACEMENT, " ");
         }
@@ -163,6 +160,36 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         log.info("getOpenTSDBApiQueryUrl(): Returning {}", result);
         return result;
     }
+
+    private static OpenTSDBSubQuery createOTSDBQuery(MetricQuery mq) {
+        boolean allowWildCard = true;
+        OpenTSDBSubQuery result = null;
+        if (null != mq) {
+            result = new OpenTSDBSubQuery();
+            result.aggregator = mq.getAggregator();
+            result.downsample = mq.getDownsample();
+
+            // escape the name of the metric since OpenTSDB doesn't like spaces
+            String metricName = mq.getMetric();
+            metricName = metricName.replace(" ", SPACE_REPLACEMENT);
+            result.metric = metricName;
+
+
+            result.rate = mq.getRate();
+            result.rateOptions = new OpenTSDBRateOption(mq.getRateOptions());
+            Map<String, List<String>> tags = mq.getTags();
+            if (null != tags) {
+                for (Map.Entry<String, List<String>> tagEntry : tags.entrySet()) {
+                    for (String tagValue : tagEntry.getValue()) {
+                        //apply metric-consumer sanitization to tags in query
+                        result.addTag(Tags.sanitizeKey(tagEntry.getKey()), Tags.sanitizeValue(tagValue, allowWildCard));
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
 
     private static OpenTSDBSubQuery openTSDBSubQueryFromMetricSpecification(MetricSpecification metricSpecification, boolean allowWildCard) {
         OpenTSDBSubQuery result = null;

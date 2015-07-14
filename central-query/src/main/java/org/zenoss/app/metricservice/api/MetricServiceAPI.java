@@ -31,7 +31,7 @@
 package org.zenoss.app.metricservice.api;
 
 import com.google.common.base.Optional;
-import org.zenoss.app.metricservice.api.model.MetricQuery;
+import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 
@@ -43,8 +43,6 @@ import java.util.Map;
  * @author Zenoss
  */
 public interface MetricServiceAPI {
-
-    Response query(MetricQuery query);
 
     /**
      * Specifies the interface for querying performance metric data.
