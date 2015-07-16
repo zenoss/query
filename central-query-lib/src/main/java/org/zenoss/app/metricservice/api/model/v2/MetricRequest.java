@@ -19,9 +19,11 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 
+import com.google.common.collect.Lists;
 import org.zenoss.app.metricservice.api.impl.Utils;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -92,7 +94,7 @@ public class MetricRequest {
         return queries;
     }
 
-    public void setQueries(List<MetricQuery> metrics) {
-        this.queries= metrics;
+    public void setQueries(Collection<MetricQuery> metrics) {
+        this.queries= Lists.newArrayList(metrics);
     }
 }

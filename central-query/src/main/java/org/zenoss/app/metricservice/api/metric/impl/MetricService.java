@@ -34,13 +34,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimaps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,17 +53,8 @@ import org.zenoss.app.metricservice.api.impl.ResultProcessor;
 import org.zenoss.app.metricservice.api.impl.Utils;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
-import org.zenoss.app.metricservice.api.model.v2.MetricQuery;
-import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
 import org.zenoss.app.metricservice.buckets.Buckets;
-import org.zenoss.app.metricservice.buckets.Value;
-import org.zenoss.app.metricservice.calculators.Closure;
-import org.zenoss.app.metricservice.calculators.MetricCalculator;
-import org.zenoss.app.metricservice.calculators.MetricCalculatorFactory;
-import org.zenoss.app.metricservice.calculators.ReferenceProvider;
-import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
 
-import javax.annotation.Nullable;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
@@ -77,12 +63,10 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -158,7 +142,6 @@ public class MetricService implements MetricServiceAPI {
 
         return rb.build();
     }
-
 
 
     @Override

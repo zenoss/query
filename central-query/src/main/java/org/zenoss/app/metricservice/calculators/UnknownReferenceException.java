@@ -33,7 +33,6 @@ package org.zenoss.app.metricservice.calculators;
 
 /**
  * @author david
- * 
  */
 public class UnknownReferenceException extends Exception {
     private static final long serialVersionUID = 7470448997172692107L;
@@ -41,6 +40,7 @@ public class UnknownReferenceException extends Exception {
     private final String reference;
 
     public UnknownReferenceException(String reference) {
+        super(String.format("Unknown reference for metric calculation: %s", reference));
         this.reference = reference;
     }
 

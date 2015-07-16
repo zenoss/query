@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface MetricStorageAPI {
-    List<OpenTSDBQueryResult> query(MetricRequest query);
+    OpenTSDBQueryReturn query(MetricRequest query);
 
     List<OpenTSDBQueryResult> getResponse(MetricServiceAppConfiguration config,
                                           String id, String startTime, String endTime,

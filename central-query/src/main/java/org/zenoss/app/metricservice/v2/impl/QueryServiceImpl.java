@@ -15,7 +15,6 @@ import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
 import org.slf4j.Logger;
@@ -25,10 +24,14 @@ import org.zenoss.app.annotations.API;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.impl.MetricStorageAPI;
 import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryResult;
+import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryReturn;
+import org.zenoss.app.metricservice.api.impl.QueryStatus;
+import org.zenoss.app.metricservice.api.impl.QueryStatus.QueryStatusEnum;
 import org.zenoss.app.metricservice.api.impl.Utils;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.app.metricservice.api.model.v2.MetricQuery;
 import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
+import org.zenoss.app.metricservice.api.model.v2.QueryResult;
 import org.zenoss.app.metricservice.buckets.Value;
 import org.zenoss.app.metricservice.calculators.Closure;
 import org.zenoss.app.metricservice.calculators.MetricCalculator;
@@ -42,6 +45,7 @@ import javax.ws.rs.WebApplicationException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -60,7 +64,7 @@ public class QueryServiceImpl implements QueryService {
 
 
     @Override
-    public Iterable<OpenTSDBQueryResult> query(final MetricRequest query) {
+    public QueryResult query(final MetricRequest query) {
         log.debug("Thread {}: entering MetricService.query()", Thread.currentThread().getId());
 
         //metrics that have calculation expression
@@ -75,10 +79,16 @@ public class QueryServiceImpl implements QueryService {
                 expressionQueries.add(metricQuery);
             }
         }
-        // Check for expressions,
+        QueryResultBuilder qrb = new QueryResultBuilder();
         Iterable<OpenTSDBQueryResult> metrics = null;
         if (!simpleQueries.isEmpty()) {
-            metrics = getOpenTSDBQueryResults(simpleQueries, query);
+            for (MetricQuery mq : simpleQueries) {
+                OpenTSDBQueryReturn otsdbResults = getOpenTSDBQueryResults(Collections.singletonList(mq), query);
+                qrb.setStatus(otsdbResults.getStatus());
+                for (OpenTSDBQueryResult m : otsdbResults.getResults()) {
+                    qrb.addSeries(m.metric, m.getDataPoints(), m.tags);
+                }
+            }
         }
         if (!expressionQueries.isEmpty()) {
             //group by expression so we can query apply the same expression to all results of a qery
@@ -90,28 +100,34 @@ public class QueryServiceImpl implements QueryService {
                 }
             }).asMap();
 
-            //TODO: do these in parallel
             for (Entry<String, Collection<MetricQuery>> specs : grouped.entrySet()) {
-                List<OpenTSDBQueryResult> result = getOpenTSDBQueryResults(Lists.newArrayList(specs.getValue()), query);
+                OpenTSDBQueryReturn otsdbResults = getOpenTSDBQueryResults(specs.getValue(), query);
+                //TODO: check result and throw exception?
                 //APPLY RPN here
-                applyRPN(specs, result);
-                if (metrics == null) {
-                    metrics = result;
-                } else {
-                    metrics = Iterables.concat(metrics, result);
+                try {
+                    applyRPN(specs, otsdbResults.getResults());
+                    for (OpenTSDBQueryResult m : otsdbResults.getResults()) {
+                        qrb.addSeries(m.metric, m.getDataPoints(), m.tags);
+                    }
+                    qrb.setStatus(otsdbResults.getStatus());
+                } catch (UnknownReferenceException e) {
+                    QueryStatus status = new QueryStatus();
+                    status.setMessage(e.getMessage());
+                    status.setStatus(QueryStatusEnum.ERROR);
+                    qrb.setStatus(status);
                 }
             }
         }
-        return metrics;
+        return qrb.build();
     }
 
-    private List<OpenTSDBQueryResult> getOpenTSDBQueryResults(List<MetricQuery> metricQueries, MetricRequest query) {
+    private OpenTSDBQueryReturn getOpenTSDBQueryResults(Collection<MetricQuery> metricQueries, MetricRequest query) {
         MetricRequest newQuery = new MetricRequest();
         newQuery.setStart(query.getStart());
         newQuery.setEnd(query.getEnd());
         newQuery.setReturnset(query.getReturnset());
         newQuery.setQueries(metricQueries);
-        List<OpenTSDBQueryResult> results = metricStorage.query(newQuery);
+        OpenTSDBQueryReturn results = metricStorage.query(newQuery);
 
         Optional<String> start = Optional.fromNullable(query.getStart());
         Optional<String> end = Optional.fromNullable(query.getEnd());
@@ -125,17 +141,19 @@ public class QueryServiceImpl implements QueryService {
         long startTimestamp = parseTimeWithErrorHandling(startTime, Utils.START, errors);
         // Validate end time
         long endTimestamp = parseTimeWithErrorHandling(endTime, Utils.END, errors);
-        for (OpenTSDBQueryResult series : results) {
-            if (returnSet == ReturnSet.LAST) {
-                filterLastReturnSet(startTimestamp, endTimestamp, series);
-            } else if (returnSet == ReturnSet.EXACT) {
-                filterExactReturnSet(startTimestamp, endTimestamp, series);
+        if (ReturnSet.ALL != returnSet) {
+            for (OpenTSDBQueryResult series : results.getResults()) {
+                if (returnSet == ReturnSet.LAST) {
+                    filterLastReturnSet(startTimestamp, endTimestamp, series);
+                } else if (returnSet == ReturnSet.EXACT) {
+                    filterExactReturnSet(startTimestamp, endTimestamp, series);
+                }
             }
         }
         return results;
     }
 
-    private void applyRPN(Entry<String, Collection<MetricQuery>> specs, Iterable<OpenTSDBQueryResult> result) {
+    private void applyRPN(Entry<String, Collection<MetricQuery>> specs, Iterable<OpenTSDBQueryResult> result) throws UnknownReferenceException {
         for (final OpenTSDBQueryResult r : result) {
             MetricCalculator calc;
             try {
@@ -168,28 +186,24 @@ public class QueryServiceImpl implements QueryService {
                 throw new WebApplicationException(new Exception("calculator not found for " + specs.getKey()));
             }
             for (final Entry<Long, Double> dp : r.getDataPoints().entrySet()) {
-                try {
-                    double newVal = calc.evaluate(new Closure() {
-                        @Override
-                        public long getTimeStamp() {
-                            return dp.getKey();
-                        }
+                double newVal = calc.evaluate(new Closure() {
+                    @Override
+                    public long getTimeStamp() {
+                        return dp.getKey();
+                    }
 
-                        @Override
-                        public Value getValueByShortcut(String name) {
-                            if (!r.metric.equals(name)) {
-                                return null;
-                            }
-                            Value val = new Value();
-                            val.add(dp.getValue());
-                            return val;
+                    @Override
+                    public Value getValueByShortcut(String name) {
+                        if (!r.metric.equals(name)) {
+                            return null;
                         }
-                    });
-                    log.info("metric {}, tags {}, timestamp {}, original {} new val {}", r.metric, r.tags, dp.getKey(), dp.getValue(), newVal);
-                    r.getDataPoints().put(dp.getKey(), newVal);
-                } catch (UnknownReferenceException e) {
-                    throw new WebApplicationException(e);
-                }
+                        Value val = new Value();
+                        val.add(dp.getValue());
+                        return val;
+                    }
+                });
+                log.info("metric {}, tags {}, timestamp {}, original {} new val {}", r.metric, r.tags, dp.getKey(), dp.getValue(), newVal);
+                r.getDataPoints().put(dp.getKey(), newVal);
             }
         }
     }
@@ -220,7 +234,7 @@ public class QueryServiceImpl implements QueryService {
     }
 
     private void filterLastReturnSet(long startTimestamp, long endTimestamp, OpenTSDBQueryResult series) {
-        if (series.getDataPoints().isEmpty()){
+        if (series.getDataPoints().isEmpty()) {
             log.info("Applying last filter skipped, no values.");
             return;
         }

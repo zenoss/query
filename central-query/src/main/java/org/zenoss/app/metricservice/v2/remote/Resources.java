@@ -20,9 +20,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zenoss.app.AppConfiguration;
-import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryResult;
 import org.zenoss.app.metricservice.api.model.v2.MetricQuery;
 import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
+import org.zenoss.app.metricservice.api.model.v2.QueryResult;
 import org.zenoss.app.metricservice.v2.QueryService;
 import org.zenoss.app.security.ZenossTenant;
 import org.zenoss.app.zauthbundle.ZappSecurity;
@@ -60,13 +60,13 @@ public class Resources {
     @Path("/query")
     @Timed
     @Consumes(MediaType.APPLICATION_JSON)
-    public Iterable<OpenTSDBQueryResult> query(@Valid MetricRequest metricRequest) {
+    public QueryResult query(@Valid MetricRequest metricRequest) {
 
         for (MetricQuery mq : metricRequest.getQueries()) {
             Map<String, List<String>> tags = addTentanId(mq.getTags());
             mq.setTags(tags);
         }
-        Iterable<OpenTSDBQueryResult> result = api.query(metricRequest);
+        QueryResult result = api.query(metricRequest);
         return result;
     }
 

@@ -85,7 +85,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
 
     @Override
-    public List<OpenTSDBQueryResult> query(MetricRequest query) {
+    public OpenTSDBQueryReturn query(MetricRequest query) {
         Optional<String> start = Optional.fromNullable(query.getStart());
         Optional<String> end = Optional.fromNullable(query.getEnd());
         //provide defaults
@@ -108,7 +108,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         for (OpenTSDBQueryResult series : result.getResults()) {
             series.metric = series.metric.replace(SPACE_REPLACEMENT, " ");
         }
-        return result.getResults();
+        return result;
     }
 
 
