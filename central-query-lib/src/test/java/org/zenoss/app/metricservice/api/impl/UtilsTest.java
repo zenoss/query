@@ -4,6 +4,9 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import javax.ws.rs.core.Response;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
@@ -49,7 +52,9 @@ public class UtilsTest {
         String testTimeString = "1422728245";
         String testTimeMillisString = "1422728245697";
         String testTimeGMTString = "2015/01/31-18:17:25 GMT+0";
-        String testTimeCentralString = "2015/1/31-12:17:25";
+
+        String testTimeLocalNoTzString = new SimpleDateFormat("YYYY/MM/dd-HH:mm:ss").format(new Date(testTime*1000));//"2015/1/31-12:17:25";
+
         String testTimeEasternString = "2015/1/31-13:17:25-0500";
         long computedNow = System.currentTimeMillis() / 1000L;
         long now = Utils.parseDate(Utils.NOW);
@@ -66,7 +71,7 @@ public class UtilsTest {
         Assert.assertEquals("Parsed now should equal computed now", computedNow, now, 5);
         Assert.assertEquals("Parsed now should equal computed now", computedNow, now, 5);
         Assert.assertEquals("Parsed GMT String should return appropriate time", testTime, Utils.parseDate(testTimeGMTString));
-        Assert.assertEquals("Parsed Central String should return appropriate time", testTime, Utils.parseDate(testTimeCentralString));
+        Assert.assertEquals("Parsed Local no TimeZone String should return appropriate time", testTime, Utils.parseDate(testTimeLocalNoTzString));
         Assert.assertEquals("Parsed Eastern String should return appropriate time", testTime, Utils.parseDate(testTimeEasternString));
         Assert.assertEquals("Parsed Epoch string should return appropriate time", testTime, Utils.parseDate(testTimeString));
         Assert.assertEquals("Parsed Epoch millisecond string should return appropriate time", testTime, Utils.parseDate(testTimeMillisString));
