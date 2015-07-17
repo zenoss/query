@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 
 @Resource(name = "v2query")
-@Path("/api/v2/metric")
+@Path("/api/v2/performance")
 @Produces(MediaType.APPLICATION_JSON)
 public class Resources {
 
@@ -60,6 +60,7 @@ public class Resources {
     @Path("/query")
     @Timed
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public QueryResult query(@Valid MetricRequest metricRequest) {
 
         for (MetricQuery mq : metricRequest.getQueries()) {

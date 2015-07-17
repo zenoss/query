@@ -84,15 +84,6 @@ public class MetricResources {
         this.api = api;
     }
 
-//    @POST
-//    @Path("/metricquery")
-//    @Timed
-//    @Consumes(MediaType.APPLICATION_JSON)
-//    public Response query(MetricRequest mquery){
-//        return api.query(mquery);
-//    }
-
-
     @POST
     @Path("/query")
     @Timed
