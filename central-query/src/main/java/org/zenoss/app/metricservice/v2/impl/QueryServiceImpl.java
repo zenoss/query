@@ -46,6 +46,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -221,16 +222,18 @@ public class QueryServiceImpl implements QueryService {
     }
 
     private void filterExactReturnSet(long startTimestamp, long endTimestamp, OpenTSDBQueryResult series) {
-        log.info("Applying exact filter.");
+        log.debug("Applying exact filter. start {}; end {}", startTimestamp, endTimestamp);
         long currentPointTimeStamp;
         SortedMap<Long, Double> filteredDataPoints = new TreeMap<>();
-        for (Map.Entry<Long, Double> dataPoint : series.getDataPoints().entrySet()) {
-            currentPointTimeStamp = dataPoint.getKey();
-            if (currentPointTimeStamp >= startTimestamp && currentPointTimeStamp <= endTimestamp) {
-                filteredDataPoints.put(currentPointTimeStamp, dataPoint.getValue());
+        Iterator<Entry<Long, Double>> iter = series.getDataPoints().entrySet().iterator();
+        while(iter.hasNext()){
+            Entry<Long, Double> datapoint = iter.next();
+            currentPointTimeStamp = datapoint.getKey();
+            if (currentPointTimeStamp < startTimestamp || currentPointTimeStamp > endTimestamp) {
+                log.debug("filtering datapoint {}: start{}, end{}", datapoint, startTimestamp, endTimestamp);
+                iter.remove();
             }
         }
-        series.setDataPoints(filteredDataPoints);
     }
 
     private void filterLastReturnSet(long startTimestamp, long endTimestamp, OpenTSDBQueryResult series) {
