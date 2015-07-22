@@ -97,6 +97,38 @@ public class ResourcesTest extends ResourceTest {
         testQuery(expectedResultFile, metricRequestFile, otsdbRequestFile, otsdbRequestFile2);
     }
 
+    @Test
+    public void testSimpleQuery() throws IOException, JSONException {
+
+        String expectedResultFile = "/simplequery/result.json";
+        String metricRequestFile = "/simplequery/request.json";
+
+        String otsdbInteraction = "/simplequery/otsdbInteraction.json";
+
+        testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
+    }
+
+    @Test
+    public void testLastQuery() throws IOException, JSONException {
+
+        String expectedResultFile = "/lastquery/result.json";
+        String metricRequestFile = "/lastquery/request.json";
+
+        String otsdbInteraction = "/lastquery/otsdbInteraction.json";
+
+        testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
+    }
+
+    @Test
+    public void testExpressionQuery() throws IOException, JSONException {
+
+        String expectedResultFile = "/expressionquery/result.json";
+        String metricRequestFile = "/expressionquery/request.json";
+
+        String otsdbInteraction = "/expressionquery/otsdbInteraction.json";
+
+        testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
+    }
 
     /**
      * posts a metric query and verifies results.  OpenTSDB interaction needs to "mocked" out in infiles
