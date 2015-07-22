@@ -97,4 +97,8 @@ public class MetricRequest {
     public void setQueries(Collection<MetricQuery> metrics) {
         this.queries= Lists.newArrayList(metrics);
     }
+
+    public void setQuery(MetricQuery... metrics) {
+        this.queries= Lists.newArrayList(metrics);
+    }
 }

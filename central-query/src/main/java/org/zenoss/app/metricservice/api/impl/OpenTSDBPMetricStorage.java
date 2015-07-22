@@ -69,7 +69,7 @@ import java.util.concurrent.TimeUnit;
 @Profile({"default", "prod"})
 public class OpenTSDBPMetricStorage implements MetricStorageAPI {
     @Autowired
-    MetricServiceAppConfiguration config;
+    public MetricServiceAppConfiguration config;
 
     private static final Logger log = LoggerFactory.getLogger(OpenTSDBPMetricStorage.class);
 
@@ -103,7 +103,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             otsdbQuery.addSubQuery(createOTSDBQuery(mq));
         }
 
-        OpenTSDBClient client = new OpenTSDBClient(this.httpClient, getOpenTSDBApiQueryUrl());
+        OpenTSDBClient client = new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiQueryUrl());
         OpenTSDBQueryReturn result = client.query(otsdbQuery);
         for (OpenTSDBQueryResult series : result.getResults()) {
             series.metric = series.metric.replace(SPACE_REPLACEMENT, " ");

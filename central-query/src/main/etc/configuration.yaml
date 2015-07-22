@@ -8,7 +8,7 @@ metrics:
   defaultStartTime: 1h-ago
   defaultEndTime: now
   defaultSeries: true
-  openTsdbUrl: http://localhost:4242
+  openTsdbUrl: http://toast:4242
   defaultTsdTimeZone: UTC
   connectionTimeoutMs: 20000
   sendRateOptions: false

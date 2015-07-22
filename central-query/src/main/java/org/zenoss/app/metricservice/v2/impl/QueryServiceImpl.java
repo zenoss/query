@@ -58,10 +58,10 @@ public class QueryServiceImpl implements QueryService {
     private static final Logger log = LoggerFactory.getLogger(QueryServiceImpl.class);
 
     @Autowired
-    MetricServiceAppConfiguration config;
+    public MetricServiceAppConfiguration config;
 
     @Autowired
-    MetricStorageAPI metricStorage;
+    public MetricStorageAPI metricStorage;
 
 
     @Override

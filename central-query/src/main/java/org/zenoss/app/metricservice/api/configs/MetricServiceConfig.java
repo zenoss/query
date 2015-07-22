@@ -50,7 +50,7 @@ public class MetricServiceConfig {
     private Boolean defaultSeries = Boolean.FALSE;
 
     @JsonProperty
-    private String openTsdbUrl = "http://tsdb.zenaas.com:4242";
+    private String openTsdbUrl = "http://localhost:4242";
 
     @JsonProperty
     private String defaultTsdTimeZone = "UTC";
