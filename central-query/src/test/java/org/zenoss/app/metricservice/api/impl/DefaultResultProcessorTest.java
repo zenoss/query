@@ -42,8 +42,8 @@ import org.zenoss.app.metricservice.testutil.DataReaderGenerator;
 import org.zenoss.app.metricservice.testutil.SeriesGenerator;
 import org.zenoss.app.metricservice.testutil.YEqualsXSeriesGenerator;
 
-import java.io.BufferedReader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -86,9 +86,9 @@ public class DefaultResultProcessorTest {
 
     @Test
     public void testProcessResultsWithConstantSeries() throws Exception {
-        BufferedReader reader = makeReader();  // creates data for test
+        Collection<OpenTSDBQueryResult> qResults = makeResults();  // creates data for test
         List<MetricSpecification> queries = makeQueries(); // creates queries for test
-        DefaultResultProcessor victim = new DefaultResultProcessor(reader, queries, BUCKET_SIZE);
+        DefaultResultProcessor victim = new DefaultResultProcessor(qResults, queries, BUCKET_SIZE);
         Buckets<IHasShortcut> results = victim.processResults();
         assertNotNull("Result of processing query should not be null", results);
         assertEquals("Seconds per bucket should match specified bucket size.", BUCKET_SIZE, results.getSecondsPerBucket());
@@ -110,9 +110,9 @@ public class DefaultResultProcessorTest {
 
     @Test
     public void testProcessResultsWithYEqualsXSeries() throws Exception {
-        BufferedReader reader = makeYEqualsXReader();  // creates data for test
+        Collection<OpenTSDBQueryResult> qResults = makeYEqualsXResults();  // creates data for test
         List<MetricSpecification> queries = makeQueries(); // creates queries for test
-        DefaultResultProcessor victim = new DefaultResultProcessor(reader, queries, BUCKET_SIZE);
+        DefaultResultProcessor victim = new DefaultResultProcessor(qResults, queries, BUCKET_SIZE);
         Buckets<IHasShortcut> results = victim.processResults();
         assertNotNull("Result of processing query should not be null", results);
         assertEquals("Seconds per bucket should match specified bucket size.", BUCKET_SIZE, results.getSecondsPerBucket());
@@ -132,22 +132,22 @@ public class DefaultResultProcessorTest {
         }
     }
 
-    private BufferedReader makeReader() {
+    private Collection<OpenTSDBQueryResult> makeResults() {
         DataReaderGenerator generator = new DataReaderGenerator();
         SeriesGenerator dataGen = new ConstantSeriesGenerator(CONST_VALUE);
         generator.addSeries(MetricSpecification.fromString("hourlyMetric"), dataGen, START_TIME, END_TIME, HOURLY_STEP);
         generator.addSeries(MetricSpecification.fromString("dailyMetric"), dataGen, START_TIME, END_TIME, DAILY_STEP);
-        return generator.makeReader();
+        return generator.getResults();
     }
 
-    private BufferedReader makeYEqualsXReader() {
+    private Collection<OpenTSDBQueryResult> makeYEqualsXResults() {
         DataReaderGenerator generator = new DataReaderGenerator();
         SeriesGenerator dataGen = new YEqualsXSeriesGenerator();
         MetricSpecification dailySpecification = MetricSpecification.fromString("dailyMetric");
         dailySpecification.setInterpolator(InterpolatorType.linear);
         generator.addSeries(MetricSpecification.fromString("hourlyMetric"), dataGen, START_TIME, END_TIME, HOURLY_STEP);
         generator.addSeries(MetricSpecification.fromString("dailyMetric"), dataGen, START_TIME, END_TIME, DAILY_STEP);
-        return generator.makeReader();
+        return generator.getResults();
     }
 
     private List<MetricSpecification> makeQueries() {

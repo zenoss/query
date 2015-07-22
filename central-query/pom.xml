@@ -62,6 +62,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>com.github.tomakehurst</groupId>
+            <artifactId>wiremock</artifactId>
+            <version>1.38</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.yammer.dropwizard</groupId>
             <artifactId>dropwizard-testing</artifactId>
             <version>${dropwizard.version}</version>
@@ -82,7 +88,6 @@
             <classifier>standalone</classifier>
             <scope>test</scope>
         </dependency>
-
         <!--runtime -->
         <dependency>
             <groupId>com.sun.jersey</groupId>
