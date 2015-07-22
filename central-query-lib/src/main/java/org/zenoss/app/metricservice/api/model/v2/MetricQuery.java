@@ -14,7 +14,6 @@ package org.zenoss.app.metricservice.api.model.v2;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Joiner;
 import org.zenoss.app.metricservice.api.model.Aggregator;
 import org.zenoss.app.metricservice.api.model.RateOptions;
 
@@ -153,18 +152,6 @@ public class MetricQuery {
         } else {
             this.tags = tags;
         }
-    }
-
-    public final void addTag(String key, String value) {
-
-        List<String> tagList = null;
-        if (this.tags.containsKey(key)) {
-            tagList = this.tags.get(key);
-        } else {
-            tagList = new ArrayList<>(1);
-        }
-        tagList.add(value);
-        this.tags.put(key, tagList);
     }
 
 }
