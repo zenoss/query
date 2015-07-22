@@ -31,7 +31,6 @@
 package org.zenoss.app.metricservice.api;
 
 import com.google.common.base.Optional;
-import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 
@@ -47,25 +46,24 @@ public interface MetricServiceAPI {
     /**
      * Specifies the interface for querying performance metric data.
      *
-     *
-     * @param id         id of the request
-     * @param start      start time of the query range
-     * @param end        end time of the query range
-     * @param returnset  return all or only those values in the query range, this is
-     *                   needed because OpenTSDB returns values outside the query
-     *                   range.
-     * @param series     should the results be returned as a series or in line
-     * @param downsample global downsample value
+     * @param id                   id of the request
+     * @param start                start time of the query range
+     * @param end                  end time of the query range
+     * @param returnset            return all or only those values in the query range, this is
+     *                             needed because OpenTSDB returns values outside the query
+     *                             range.
+     * @param series               should the results be returned as a series or in line
+     * @param downsample           global downsample value
      * @param downsampleMultiplier
-     *@param tags       global filters for the query
-     * @param metrics    metric queries   @return response of the request
+     * @param tags                 global filters for the query
+     * @param metrics              metric queries   @return response of the request
      */
-    public Response query(Optional<String> id, Optional<String> start,
-                          Optional<String> end, Optional<ReturnSet> returnset,
-                          Optional<Boolean> series, Optional<String> downsample,
-                          double downsampleMultiplier,
-                          Optional<Map<String, List<String>>> tags,
-                          List<MetricSpecification> metrics);
+    Response query(Optional<String> id, Optional<String> start,
+                   Optional<String> end, Optional<ReturnSet> returnset,
+                   Optional<Boolean> series, Optional<String> downsample,
+                   double downsampleMultiplier,
+                   Optional<Map<String, List<String>>> tags,
+                   List<MetricSpecification> metrics);
 
-    public Response options(String request);
+    Response options(String request);
 }
