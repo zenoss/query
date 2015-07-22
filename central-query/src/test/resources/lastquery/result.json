@@ -1,0 +1,23 @@
+{
+  "series": [
+    {
+      "datapoints": [
+        [
+          1437521223,
+          107714.0
+        ]
+      ],
+      "metric": "cgroup.cpuacct.user",
+      "tags": {
+        "isvc": "true",
+        "isvcname": "elasticsearch-serviced"
+      }
+    }
+  ],
+  "statuses": [
+    {
+      "message": "",
+      "status": "SUCCESS"
+    }
+  ]
+}
