@@ -143,7 +143,7 @@ public class MetricKey implements IHasShortcut {
         key.name = spec.getNameOrMetric();
         key.id = spec.getId();
         if (spec.getTags() != null && spec.getTags().size() > 0) {
-            key.tags = Tags.fromValue(spec.getTags(), false);
+            key.tags = Tags.fromValue(spec.getTags());
         }
         return key;
     }

@@ -12,7 +12,6 @@ import org.json.JSONException;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
-import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompare;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.skyscreamer.jsonassert.JSONCompareResult;
@@ -22,8 +21,6 @@ import org.zenoss.app.metricservice.api.impl.OpenTSDBPMetricStorage;
 import org.zenoss.app.metricservice.api.impl.OpenTSDBQuery;
 import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryResult;
 import org.zenoss.app.metricservice.api.impl.Utils;
-import org.zenoss.app.metricservice.api.model.v2.MetricQuery;
-import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
 import org.zenoss.app.metricservice.v2.impl.QueryServiceImpl;
 import org.zenoss.app.security.ZenossTenant;
 import org.zenoss.app.zauthbundle.ZappSecurity;
@@ -89,48 +86,6 @@ public class ResourcesTest extends ResourceTest {
     }
 
     @Test
-    public void testQuery1() throws IOException, JSONException {
-
-        InputStream input = this.getClass().getResourceAsStream("/wildcardquery/query1Result.json");
-        String expectedJSON = CharStreams.toString(new InputStreamReader(input));
-
-        input = this.getClass().getResourceAsStream("/wildcardquery/query1OtsdbResponse.json");
-        String otsdbResponse = CharStreams.toString(new InputStreamReader(input));
-
-        input = this.getClass().getResourceAsStream("/wildcardquery/query1OtsdbResponse.json");
-        String otsdbRequest = CharStreams.toString(new InputStreamReader(input));
-
-
-        //Should check that post body json matches.  This version of wiremock makes it
-        stubFor(post(urlEqualTo(OTSDB_QUERY_PATH))
-                .withHeader(HttpHeaders.CONTENT_TYPE, matching("application/json"))
-                .withRequestBody(equalToJson(otsdbRequest))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(otsdbResponse)));
-
-        MetricRequest request = new MetricRequest();
-        MetricQuery q = new MetricQuery();
-        q.setMetric("cgroup.cpuacct.system");
-        q.addTag("isvcname", "*");
-        MetricQuery q2 = new MetricQuery();
-        q2.setMetric("cgroup.cpuacct.user");
-        q2.addTag("isvcname", "*");
-        request.setQuery(q, q2);
-
-        String qr = client().resource(URL_PATH)
-                .type(MediaType.APPLICATION_JSON_TYPE)
-                .post(String.class, request);
-
-
-        assertNotNull(qr);
-
-        JSONAssert.assertEquals(expectedJSON, qr, JSONCompareMode.NON_EXTENSIBLE);
-    }
-
-
-    @Test
     public void testWildcardQuery() throws IOException, JSONException {
 
         String expectedResultFile = "/wildcardquery/query1Result.json";
@@ -143,6 +98,16 @@ public class ResourcesTest extends ResourceTest {
     }
 
 
+    /**
+     * posts a metric query and verifies results.  OpenTSDB interaction needs to "mocked" out in infiles
+     *
+     * @param expectedResultFile    file that contains the expected json
+     * @param metricRequestFile     file that contains the metric request to make
+     * @param otsdbInteractionFiles File(s) that contains the opentsdb request that is expected to be made and the mock result
+     *                              see OtsdbInteraction class
+     * @throws IOException
+     * @throws JSONException
+     */
     private void testQuery(String expectedResultFile, String metricRequestFile, String... otsdbInteractionFiles) throws IOException, JSONException {
         InputStream input = this.getClass().getResourceAsStream(expectedResultFile);
         String expectedJSON = CharStreams.toString(new InputStreamReader(input));
@@ -166,11 +131,9 @@ public class ResourcesTest extends ResourceTest {
                             .withBody(otsdbResponse)));
 
         }
-        MetricRequest request = Utils.getObjectMapper().readValue(metricRequest, MetricRequest.class);
         String qr = client().resource(URL_PATH)
                 .type(MediaType.APPLICATION_JSON_TYPE)
-                .post(String.class, request);
-
+                .post(String.class, metricRequest);
 
         assertNotNull(qr);
 

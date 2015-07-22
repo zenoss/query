@@ -49,6 +49,7 @@ import org.zenoss.app.metricservice.calculators.MetricCalculatorFactory;
 import org.zenoss.app.metricservice.calculators.ReferenceProvider;
 import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -70,17 +71,14 @@ public class DefaultResultProcessor implements ResultProcessor,
     private final Iterable<OpenTSDBQueryResult> results;
     private final List<MetricSpecification> queries;
     private final long bucketSize;
-    final boolean allowWildCard;
     private Map<MetricKey, MetricCalculator> calculatorMap;
     private MetricKeyCache keyCache;
     private Buckets<IHasShortcut> buckets;
 
-    public DefaultResultProcessor(Iterable<OpenTSDBQueryResult> results, List<MetricSpecification> queries, long bucketSize,
-                                  boolean allowWildCard) {
+    public DefaultResultProcessor(Iterable<OpenTSDBQueryResult> results, List<MetricSpecification> queries, long bucketSize) {
         this.results = results;
         this.queries = queries;
         this.bucketSize = bucketSize;
-        this.allowWildCard = allowWildCard;
     }
 
 
@@ -132,14 +130,6 @@ public class DefaultResultProcessor implements ResultProcessor,
         // Get a list of calculated values
         List<MetricSpecification> calculatedValues = MetricService.calculatedValueFilter(queries);
 
-        List<OpenTSDBQueryResult> allResults = new ArrayList<>();
-
-
-        if (log.isDebugEnabled()) {
-            //TODO: print all result contents
-            //localReader = logReaderInformation(localReader, "JSON Returned from reader");
-        }
-
         long dataPointTimeStamp = 0l;
         Tags curTags = null;
 
@@ -186,7 +176,7 @@ public class DefaultResultProcessor implements ResultProcessor,
 
     private void calculateValues(List<MetricSpecification> calculatedValues, Buckets<IHasShortcut> buckets) {
         for (MetricSpecification metricSpecification : calculatedValues) {
-            Tags tags = Tags.fromValue(metricSpecification.getTags(), allowWildCard);
+            Tags tags = Tags.fromValue(metricSpecification.getTags());
             MetricKey key = keyCache.get(metricSpecification.getName(), tags);
             MetricCalculator calculator = calculatorMap.get(key);
             if (null != calculator) {
@@ -229,9 +219,6 @@ public class DefaultResultProcessor implements ResultProcessor,
         private long ts;
         public Buckets<IHasShortcut>.Bucket bucket;
 
-        private BucketClosure() {
-        }
-
         private BucketClosure(long timestamp, Buckets<IHasShortcut>.Bucket bucket) {
             this.ts = timestamp;
             this.bucket = bucket;
@@ -247,29 +234,4 @@ public class DefaultResultProcessor implements ResultProcessor,
             return bucket.getValueByShortcut(name);
         }
     }
-    /**
-     * This method takes a buffered reader, logs the information that was in it, and returns a
-     * reader with the same content. It can be useful for peeking at the data stream (e.g. coming back from
-     * OpenTSDB) when debugging.
-     *
-     * @param reader The reader to display on the log
-     * @return A new reader that contains the contents of the original reader.
-     * @throws IOException
-     */
-//    private static BufferedReader logReaderInformation(BufferedReader reader, String contentDescription) throws IOException {
-//        StringBuffer readerPeekBuffer = new StringBuffer(4096);
-//        long lineCount = 0l;
-//        String line;
-//        while (null != (line = reader.readLine())) {
-//            lineCount++;
-//
-//            readerPeekBuffer.append(line);
-//            readerPeekBuffer.append('\n');
-//        }
-//
-//        String contents = readerPeekBuffer.toString();
-//        reader = new BufferedReader(new StringReader(contents));
-//        log.debug("{}: {}", contentDescription, contents);
-//        return reader;
-//    }
 }

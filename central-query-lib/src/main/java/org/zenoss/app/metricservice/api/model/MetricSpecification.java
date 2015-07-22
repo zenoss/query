@@ -521,11 +521,10 @@ public class MetricSpecification {
 
     public void validateWithErrorHandling(List<Object> errors) {
         // Add error if '*' is specified within a tag
-        if (true){return;}
         if (null != tags) {
             for (Map.Entry<String, List<String>> entry : tags.entrySet()) {
                 for (String tagValue : entry.getValue()) {
-                    if (tagValue.contains("blamo")) {
+                    if (tagValue.contains("*")) {
                         String tagKey = entry.getKey();
                         String errorMessage = String.format("Tag %s has value %s, which contains '*'.", tagKey, tagValue);
                         String tagLocation = String.format("Value %s in tag %s of series %s", tagValue, tagKey, getNameOrMetric());

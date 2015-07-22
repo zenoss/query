@@ -100,7 +100,7 @@ public class Tags {
      * @param tags the map of tag names to tag values
      * @return Tags representation.
      */
-    public static Tags fromValue(Map<String, List<String>> tags, boolean allowWildCard) {
+    public static Tags fromValue(Map<String, List<String>> tags) {
         Tags result = new Tags();
         StringBuilder buf = new StringBuilder();
         boolean pipe;
@@ -113,7 +113,7 @@ public class Tags {
                 } else {
                     pipe = true;
                 }
-                buf.append(sanitizeValue(value, allowWildCard));
+                buf.append(sanitizeValue(value, false));
             }
             result.tags.put(sanitizeKey(entry.getKey()), buf.toString());
         }

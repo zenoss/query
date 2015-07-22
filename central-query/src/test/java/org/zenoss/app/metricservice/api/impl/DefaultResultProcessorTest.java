@@ -79,7 +79,7 @@ public class DefaultResultProcessorTest {
         myValue.add(1.0);
         when(closure.getValueByShortcut("name")).thenReturn(myValue);
 
-        DefaultResultProcessor victim = new DefaultResultProcessor(null, null, Buckets.DEFAULT_BUCKET_SIZE, false);
+        DefaultResultProcessor victim = new DefaultResultProcessor(null, null, Buckets.DEFAULT_BUCKET_SIZE);
         double foundValue = victim.lookup("name", closure);
         assertEquals("lookup should return correct value for series.", myValue.getValue(), foundValue, EPSILON);
     }
@@ -88,7 +88,7 @@ public class DefaultResultProcessorTest {
     public void testProcessResultsWithConstantSeries() throws Exception {
         Collection<OpenTSDBQueryResult> qResults = makeResults();  // creates data for test
         List<MetricSpecification> queries = makeQueries(); // creates queries for test
-        DefaultResultProcessor victim = new DefaultResultProcessor(qResults, queries, BUCKET_SIZE, false);
+        DefaultResultProcessor victim = new DefaultResultProcessor(qResults, queries, BUCKET_SIZE);
         Buckets<IHasShortcut> results = victim.processResults();
         assertNotNull("Result of processing query should not be null", results);
         assertEquals("Seconds per bucket should match specified bucket size.", BUCKET_SIZE, results.getSecondsPerBucket());
@@ -112,7 +112,7 @@ public class DefaultResultProcessorTest {
     public void testProcessResultsWithYEqualsXSeries() throws Exception {
         Collection<OpenTSDBQueryResult> qResults = makeYEqualsXResults();  // creates data for test
         List<MetricSpecification> queries = makeQueries(); // creates queries for test
-        DefaultResultProcessor victim = new DefaultResultProcessor(qResults, queries, BUCKET_SIZE, false);
+        DefaultResultProcessor victim = new DefaultResultProcessor(qResults, queries, BUCKET_SIZE);
         Buckets<IHasShortcut> results = victim.processResults();
         assertNotNull("Result of processing query should not be null", results);
         assertEquals("Seconds per bucket should match specified bucket size.", BUCKET_SIZE, results.getSecondsPerBucket());
