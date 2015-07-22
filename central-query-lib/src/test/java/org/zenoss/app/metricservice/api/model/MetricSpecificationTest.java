@@ -365,7 +365,7 @@ public class MetricSpecificationTest {
         MetricSpecification subject = MetricSpecification.fromString(testString);
         List<Object> errorList = new ArrayList<>();
         subject.validateWithErrorHandling(errorList);
-//        Assert.assertEquals(1, errorList.size());
+        Assert.assertEquals(1, errorList.size());
     }
 
     @Test
