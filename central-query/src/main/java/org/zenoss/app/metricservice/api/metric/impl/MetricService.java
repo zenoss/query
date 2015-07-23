@@ -233,9 +233,8 @@ public class MetricService implements MetricServiceAPI {
                     throw new IOException("Unable to get otsdbResponse from api.");
                 }
 
-                log.info("returnset = {}", returnset);
                 if (returnset == ReturnSet.LAST) {
-                    log.info("Applying last filter.");
+                    log.debug("Applying last filter.");
                     otsdbResponse = translateOpenTsdbInputToLastInput(otsdbResponse, start, end); //new LastFilter(otsdbResponse, start, end);
                 }
             } catch (WebApplicationException wae) {
@@ -266,7 +265,7 @@ public class MetricService implements MetricServiceAPI {
             long bucketSize = 1;
             if (downsample != null && downsample.length() > 1) {
                 bucketSize = Utils.parseDuration(downsample);
-                log.info("Downsample was {}: setting bucketSize to {}.", downsample, bucketSize);
+                log.debug("Downsample was {}: setting bucketSize to {}.", downsample, bucketSize);
 
             }
             try {

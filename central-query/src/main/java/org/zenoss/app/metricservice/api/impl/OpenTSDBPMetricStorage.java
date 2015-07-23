@@ -136,7 +136,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         }
 
         String appliedDownsample = createModifiedDownsampleRequest(downsample, downsampleMultiplier);
-        log.info("Specified Downsample = {}, Specified Multiplier = {}, Applied Downsample = {}.", downsample, downsampleMultiplier, appliedDownsample);
+        log.debug("Specified Downsample = {}, Specified Multiplier = {}, Applied Downsample = {}.", downsample, downsampleMultiplier, appliedDownsample);
 
         for (MetricSpecification metricSpecification : queries) {
             String oldDownsample = metricSpecification.getDownsample();
@@ -157,7 +157,6 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
     private String getOpenTSDBApiQueryUrl() {
         String result = String.format("%s/api/query", config.getMetricServiceConfig().getOpenTsdbUrl());
-        log.info("getOpenTSDBApiQueryUrl(): Returning {}", result);
         return result;
     }
 
