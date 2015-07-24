@@ -182,3 +182,122 @@ The results of the query will be a JSON object of the form:
 This response object contains the information which was given as part of the query as well as an array of results for each query. While some of the information in this response object may seem redundant it is not as each data point in the underling storage (OpenTSDB) may have a different set of tags.
 
 Also note the __client id__ attribute in the response object. This is the value that was specified as the __id__ as the query parameter.
+
+
+  - `POST /api/v2/performance/query` - 
+  
+  New endpoint for retrieving metrics, does not support all features for the original query endpoint.  This endpoint 
+  supports adds support for wildcard, "*", in tag values.
+  
+  **Request**
+
+  | Name | type | Required | Description | default |
+  |---|---|---|---|---|---|
+  |start|string|n|start of query see TIMESTAMP| one hour ago |
+  |end|string|n|end of query see TIMESTAMP|current time|
+  |queries|array|y|one or more metric queries, see METRIC_QUERY|
+  |returnset|string|n|For each time series return all metrics (some may be outside timerange), strictly metrics in the time range or the last metric. See RETURNSET|exact|
+
+  **METRIC_QUERY**
+  
+  |Name|type|Required|Description|default|
+  |---|---|---|---|---|---|
+  |aggregator|string|n|Name of aggregator. See AGGREGATOR|avg|
+  |metric|string|y|name of stored metric||
+  |rate|bool|n|return series as rate/deltas|false|
+  |rateOptions|map|n|see RATE_OPTIONS|
+  |downsample|string|n|downsample data series. See DOWNSAMPLE||
+  |tags|map|y|name value pair of tag name and tag value(s). Tag value can is an array of one or more values.  Deviates from OpenTSDB by being an array in the value instead of a pipe (`|`) separated string. Tag values are an OR operation.||
+  |expression|string|n|perform a calculation on the time series. see EXPRESSION||
+
+  **RATE_OPTIONS**
+
+  |Name|type|Required|Description|default|
+  |---|---|---|---|---|---|
+  |counter|boolean|n|Is the rate a counter. i.e. monotonically increasing and may rollover|false|
+  |counterMax|integer|n|The max value for a counter Java Long.MaxValue||
+  |resetThreshold|integer|n|An optional value that, when exceeded, will cause the aggregator to return a 0 instead of the calculated rate. Useful when data sources are frequently reset to avoid spurious spikes.|0|
+
+  **RETURNSET**
+  
+  Valid values are “all”, “exact” and “last”. Return values can contain some values that fall right outside the given 
+  time range, the “all” setting returns them all. The “exact” setting strictly returns values in the given time range. 
+  The “last” setting returns the last value in the time ranges.  See the “last” api for returning the last datapoint.
+  
+  **AGGREGATOR**
+  
+  One of `min, max, avg, sum`
+  
+  **EXPRESSION**
+  
+  An expression to run a calculation on a metric, supported expressions are RPN.
+  
+  Example: `rpn:cgroup.cpuacct.user,2,*`
+  
+  **DOWNSAMPLE**
+  
+  Combination of a time and aggregator. e.g 5min-avg.  See opentsdb for downsample values.
+  
+  **TIMESTAMP** 
+  
+   - Timestamp string, acceptable values:
+     - timestamp in seconds or millis 
+     - `2015/01/31-18:17:25 GMT+0`    
+     - `2015/1/31-13:17:25-0500`      
+     - `<N><UNIT>-ago`
+       - where `<N>` is a positive integer
+       - where `<UNIT>` is:               
+         - `ms` - Milliseconds              
+         - `s` - Seconds                    
+         - `m` - Minutes                    
+         - `h` - Hours                      
+         - `d` - Days (24 hours)            
+         - `w` - Weeks (7 days)             
+         - `n` - Months (30 days)           
+         - `y` - Years (365 days)           
+          
+  **Examples**
+  
+  Example request:
+  
+        {
+          "start": "1437520683",
+          "end": "1437521231",
+          "queries": [
+            {
+              "metric": "cgroup.cpuacct.user",
+              "rate": false,
+              "tags": {
+                "isvcname": [
+                  "elasticsearch-serviced"
+                ]
+              }
+            }
+          ]
+        }
+                                                                                             
+  Example Response:
+    
+        {  
+          "series":[  
+            {  
+              "datapoints":[  
+                [1437520683, 107561.0],
+                [1437520693,107564.0],
+                [1437520703,107568.0],
+                [1437520713,107570.0]
+              ],
+              "metric":"cgroup.cpuacct.user",
+              "tags":{  
+                "isvc":"true",
+                "isvcname":"elasticsearch-serviced"
+              }
+            }
+          ],
+          "statuses":[  
+            {  
+              "message":"",
+              "status":"SUCCESS"
+            }
+          ]
+        }
