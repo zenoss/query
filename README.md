@@ -207,7 +207,7 @@ Also note the __client id__ attribute in the response object. This is the value 
   |rate|bool|n|return series as rate/deltas|false|
   |rateOptions|map|n|see RATE_OPTIONS|
   |downsample|string|n|downsample data series. See DOWNSAMPLE||
-  |tags|map|y|name value pair of tag name and tag value(s). Tag value can is an array of one or more values.  Deviates from OpenTSDB by being an array in the value instead of a pipe (|) separated string. Tag values are an OR operation.||
+  |tags|map|y|name value pair of tag name and tag value(s). Tag value can is an array of one or more values.  Deviates from OpenTSDB by being an array in the value instead of a pipe (`|`) separated string. Tag values are an OR operation.||
   |expression|string|n|perform a calculation on the time series. see EXPRESSION||
 
   **RATE_OPTIONS**
@@ -224,29 +224,39 @@ Also note the __client id__ attribute in the response object. This is the value 
   time range, the “all” setting returns them all. The “exact” setting strictly returns values in the given time range. 
   The “last” setting returns the last value in the time ranges.  See the “last” api for returning the last datapoint.
   
+  **AGGREGATOR**
+  
+  One of `min, max, avg, sum`
+  
+  **EXPRESSION**
+  
+  An expression to run a calculation on a metric, supported expressions are RPN.
+  
+  Example: `rpn:cgroup.cpuacct.user,2,*`
+  
   **DOWNSAMPLE**
   
   Combination of a time and aggregator. e.g 5min-avg.  See opentsdb for downsample values.
   
   **TIMESTAMP** 
   
-  * Timestamp string, acceptable values:
-    - timestamp in seconds or millis 
-    - `2015/01/31-18:17:25 GMT+0`    
-    - `2015/1/31-13:17:25-0500`      
-    - `<N><UNIT>-ago`
-      - where `<N>` is a positive integer
-      - where `<UNIT>` is:               
-        - `ms` - Milliseconds              
-        - `s` - Seconds                    
-        - `m` - Minutes                    
-        - `h` - Hours                      
-        - `d` - Days (24 hours)            
-        - `w` - Weeks (7 days)             
-        - `n` - Months (30 days)           
-        - `y` - Years (365 days)           
-        
-  ** Result **
+   - Timestamp string, acceptable values:
+     - timestamp in seconds or millis 
+     - `2015/01/31-18:17:25 GMT+0`    
+     - `2015/1/31-13:17:25-0500`      
+     - `<N><UNIT>-ago`
+       - where `<N>` is a positive integer
+       - where `<UNIT>` is:               
+         - `ms` - Milliseconds              
+         - `s` - Seconds                    
+         - `m` - Minutes                    
+         - `h` - Hours                      
+         - `d` - Days (24 hours)            
+         - `w` - Weeks (7 days)             
+         - `n` - Months (30 days)           
+         - `y` - Years (365 days)           
+          
+  **Examples**
   
   Example request:
   
