@@ -203,7 +203,7 @@ public class QueryServiceImpl implements QueryService {
                         return val;
                     }
                 });
-                log.info("metric {}, tags {}, timestamp {}, original {} new val {}", r.metric, r.tags, dp.getKey(), dp.getValue(), newVal);
+                log.debug("metric {}, tags {}, timestamp {}, original {} new val {}", r.metric, r.tags, dp.getKey(), dp.getValue(), newVal);
                 r.getDataPoints().put(dp.getKey(), newVal);
             }
         }
@@ -238,10 +238,10 @@ public class QueryServiceImpl implements QueryService {
 
     private void filterLastReturnSet(long startTimestamp, long endTimestamp, OpenTSDBQueryResult series) {
         if (series.getDataPoints().isEmpty()) {
-            log.info("Applying last filter skipped, no values.");
+            log.debug("Applying last filter skipped, no values.");
             return;
         }
-        log.info("Applying last filter.");
+        log.debug("Applying last filter.");
         long currentPointTimeStamp;
         SortedMap<Long, Double> dataPointSingleton = new TreeMap<>();
         Map.Entry<Long, Double> lastDataPoint = null;
