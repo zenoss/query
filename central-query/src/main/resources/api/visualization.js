@@ -29,8 +29,8 @@ var visualization,
     }
 
     if (typeof String.prototype.startsWith !== 'function') {
-        String.prototype.startsWith = function(prefix) {
-            return this.indexOf(prefix) === 0;
+        String.prototype.startsWith = function(str) {
+            return this.slice(0, str.length) === str;
         };
     }
 
@@ -2116,13 +2116,14 @@ if (typeof exports !== 'undefined') {
                                         name: m.name,
                                         // rewrite the expression to look for the
                                         // renamed datapoint
-                                        expression: dp.expression.replace("rpn:", "rpn:"+ m.name + "-rpn,")
+                                        expression: dp.expression.replace("rpn:", "rpn:"+ m.name + "-raw,")
                                     };
 
                                     // original datapoint is now just a vehicle for the
-                                    // expression to evaluate against
+                                    // expression to evaluate against. Rename with -raw suffix as that is the default
+                                    // used by zenoss to self reference a datapoint in an RPN
                                     m.emit = false;
-                                    m.name = m.name + "-rpn";
+                                    m.name = m.name + "-raw";
                                 }
 
                                 request.metrics.push(m);
