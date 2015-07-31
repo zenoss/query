@@ -107,8 +107,6 @@ public class Buckets<P extends IHasShortcut> {
         @JsonProperty("valuesByName")
         private Map<String, Value> valuesByName = new HashMap<>();
 
-        private Map<String, Value> valuesById = new HashMap<>();
-
         /**
          * Add a value to a bucket
          * 
@@ -152,7 +150,6 @@ public class Buckets<P extends IHasShortcut> {
                 value = new Value();
                 values.put(primaryKey, value);
                 valuesByName.put(primaryKey.getShortcut(), value);
-                valuesById.put(primaryKey.getId(), value);
             }
             return value;
         }
@@ -169,9 +166,6 @@ public class Buckets<P extends IHasShortcut> {
                 throw new IllegalArgumentException("shortcut cannot be null.");
             }
             Value result = valuesByName.get(shortcut);
-            if (null == result) {
-                result = valuesById.get(shortcut);
-            }
             if (null == result) {
                 result = new Value();
             }

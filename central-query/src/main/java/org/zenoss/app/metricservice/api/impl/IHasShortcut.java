@@ -41,6 +41,4 @@ public interface IHasShortcut {
      * @return  a string used as a 'shortcut' to identify the instance of the class implementing this interface.
      */
     String getShortcut();
-
-    String getId();
 }
