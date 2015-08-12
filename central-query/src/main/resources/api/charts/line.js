@@ -35,6 +35,19 @@
             if (chart.maxy !== undefined || chart.miny !== undefined) {
                 _chart.model().yDomain(chart.calculateYDomain(chart.miny, chart.maxy, data));
             }
+            // find out which series are disabled or not
+            var disabled = {};
+            chart.svg.selectAll("g.nv-series")
+                .each(function(d) {
+                    disabled[d.key] = d.disabled;
+                });
+
+            // make sure when we update we preserve the disabled behavior
+            chart.plots.forEach(function(d) {
+                if (disabled[d.key] === true) {
+                    d.disabled = true;
+                }
+            });
 
             chart.svg
                 .datum(chart.plots)
