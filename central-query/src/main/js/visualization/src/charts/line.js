@@ -19,8 +19,9 @@
      **/
     function addHovers(chart) {
         // add hovers
-        chart.svg.selectAll('g.nv-series').on('mouseover', function(d){
+        chart.svg.selectAll('g.nv-series').on('mouseenter', function(d){
             var key = d.key;
+
             chart.svg.selectAll('.nv-group').style('opacity', function(d) {
                 if (d.key === key) {
                     return 1;
@@ -34,7 +35,7 @@
                 return 1.5;
             });
         });
-        chart.svg.selectAll('g.nv-series').on('mouseout', function(d) {
+        chart.svg.selectAll('g.nv-series').on('mouseleave', function(d) {
             chart.svg.selectAll('.nv-group').style('opacity', 1);
             chart.svg.selectAll('.nv-group').style('stroke-width', 1.5);
         });
