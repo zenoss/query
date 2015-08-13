@@ -12,6 +12,30 @@
             _model = _;
         };
     }
+    function addHovers(chart) {
+        // add hovers
+        chart.svg.selectAll('g.nv-series').on('mouseover', function(d){
+            console.log('got here');
+            var key = d.key;
+            chart.svg.selectAll('.nv-group').style('opacity', function(d) {
+                if (d.key === key) {
+                    return 1;
+                }
+                return 0.15;
+            });
+            chart.svg.selectAll('.nv-group').style('stroke-width', function(d) {
+                if (d.key === key) {
+                    return 4;
+                }
+                return 1.5;
+            });
+        });
+        chart.svg.selectAll('g.nv-series').on('mouseout', function(d) {
+            chart.svg.selectAll('.nv-group').style('opacity', 1);
+            chart.svg.selectAll('.nv-group').style('stroke-width', 1.5);
+        });
+
+    }
 
     var line = {
         required : {
@@ -56,6 +80,7 @@
 
             this.styleThresholds(chart.div);
             this.styleProjections(chart);
+            addHovers(chart);
         },
 
         build : function(chart, data) {
@@ -106,6 +131,7 @@
                     this.styleThresholds(chart.div);
                     this.styleProjections(chart);
                 }.bind(this));
+                addHovers(chart);
             }.bind(this));
 
             // don't draw null point lines and areas
@@ -116,6 +142,7 @@
                 .isArea(function(d) {
                     return d.fill;
                 });
+
 
             return _chart;
         },
