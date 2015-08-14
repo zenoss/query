@@ -162,13 +162,13 @@ public class Calculator extends BaseMetricCalculator {
     }
 
     /**
-     * Pops three values from the stack and if the third value popped is greater
-     * than 0, then the first value popped is pushed back on the stack, else the
+     * Pops three values from the stack and if the third value popped is 0,
+     * the first value popped is pushed back on the stack, else the
      * second item popped is pushed back on the stack.
      */
     public void ifte() {
         Double a = pop(), b = pop(), c = pop();
-        push(c > 0.0 ? a : b);
+        push(c == 0.0 ? a : b);
     }
 
     /**
