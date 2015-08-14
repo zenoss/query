@@ -135,8 +135,15 @@ public class RpnTest {
             UnknownReferenceException {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
+
         double result = calc.evaluate("0, 7000,2024,if");
         Assert.assertEquals(2024.0, result, 0.0);
+
+        result = calc.evaluate("10, 7000,2024,if");
+        Assert.assertEquals(7000.0, result, 0.0);
+
+        result = calc.evaluate("-10, 7000,2024,if");
+        Assert.assertEquals(7000.0, result, 0.0);
     }
 
     @Test
