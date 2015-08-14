@@ -136,7 +136,7 @@ public class RpnTest {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         double result = calc.evaluate("0, 7000,2024,if");
-        Assert.assertEquals(7000.0, result, 0.0);
+        Assert.assertEquals(2024.0, result, 0.0);
     }
 
     @Test
@@ -145,7 +145,7 @@ public class RpnTest {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         double result = calc.evaluate("128,8,*,7000,GT,7000,128,8,*,IF");
-        Assert.assertEquals(7000.0, result, 0.0);
+        Assert.assertEquals(1024.0, result, 0.0);
     }
 
     @Test
@@ -289,13 +289,13 @@ public class RpnTest {
         MetricCalculator calc = new MetricCalculatorFactory()
                 .newInstance("rpn");
         Assert.assertEquals(
-                0.0,
+                99.99523008177547,
                 calc.evaluate(100.0,
                         "1024,*,DUP,2146787328,LT,EXC,2146787328,/,1.0,-,-100,*,0.0,IF"),
                 0.0);
         // 2146738 1024 * DUP 2146787328 LT EXC 2146787328 / 1.0 - -100 * 0.0 IF
         Assert.assertEquals(
-                -2.39,
+                0.0,
                 calc.evaluate(2146738.0,
                         "1024,*,DUP,2146787328,LT,EXC,2146787328,/,1.0,-,-100,*,0.0,IF"),
                 0.5);
