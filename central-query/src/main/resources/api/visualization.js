@@ -1324,6 +1324,8 @@ if (typeof exports !== 'undefined') {
         $(this.footer).addClass('zenfooter');
         this.$div.append($(this.footer));
 
+        this.__renderForecastedExastionFooter = config.renderForecastedExastionFooter;
+
         this.svg = d3.select(this.svgwrapper).append('svg');
         try {
             this.request = this.__buildDataRequest(this.config);
@@ -1879,6 +1881,10 @@ if (typeof exports !== 'undefined') {
                                 }
                             });
                         });
+
+                        if (self.__renderForecastedExastionFooter !== undefined) {
+                            self.__renderForecastedExastionFooter(self.plots);
+                        }
                     },
                     'error' : function() {
                         self.plots = undefined;
