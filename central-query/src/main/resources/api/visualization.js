@@ -1883,7 +1883,7 @@ if (typeof exports !== 'undefined') {
                         });
 
                         if (self.__renderForecastedExastionFooter !== undefined) {
-                            self.__renderForecastedExastionFooter(self.plots);
+                            self.__renderForecastedExastionFooter(self);
                         }
                     },
                     'error' : function() {
