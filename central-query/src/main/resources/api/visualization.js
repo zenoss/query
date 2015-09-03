@@ -1324,7 +1324,7 @@ if (typeof exports !== 'undefined') {
         $(this.footer).addClass('zenfooter');
         this.$div.append($(this.footer));
 
-        this.__renderForecastedExastionFooter = config.renderForecastedExastionFooter;
+        this.__renderForecastingTimeHorizonFooter = config.renderForecastingTimeHorizonFooter;
 
         this.svg = d3.select(this.svgwrapper).append('svg');
         try {
@@ -1882,8 +1882,8 @@ if (typeof exports !== 'undefined') {
                             });
                         });
 
-                        if (self.__renderForecastedExastionFooter !== undefined) {
-                            self.__renderForecastedExastionFooter(self);
+                        if (self.__renderForecastingTimeHorizonFooter !== undefined) {
+                            self.__renderForecastingTimeHorizonFooter(self);
                         }
                     },
                     'error' : function() {
