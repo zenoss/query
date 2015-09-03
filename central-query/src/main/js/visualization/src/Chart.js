@@ -140,7 +140,7 @@
         $(this.footer).addClass('zenfooter');
         this.$div.append($(this.footer));
 
-        this.__renderForecastingTimeHorizonFooter = config.__renderForecastingTimeHorizonFooter;
+        this.__renderForecastingTimeHorizonFooter = config.renderForecastingTimeHorizonFooter;
 
         this.svg = d3.select(this.svgwrapper).append('svg');
         try {
