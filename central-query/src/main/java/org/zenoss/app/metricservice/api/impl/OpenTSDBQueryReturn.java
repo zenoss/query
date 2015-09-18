@@ -21,7 +21,11 @@ public class OpenTSDBQueryReturn {
 
     public OpenTSDBQueryReturn(OpenTSDBQueryResult[] results, QueryStatus status) {
         this.results = ImmutableList.copyOf(results);
-        this.status = status;
+        if (null == status) {
+            this.status = new QueryStatus();
+        } else {
+            this.status = status;
+        }
     }
 
     public List<OpenTSDBQueryResult> getResults() {

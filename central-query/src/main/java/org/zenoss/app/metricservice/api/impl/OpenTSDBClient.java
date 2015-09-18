@@ -83,6 +83,9 @@ public class OpenTSDBClient {
                 if (null != resultArray && resultArray.length > 0) {
                     queryStatus = new QueryStatus(QueryStatus.QueryStatusEnum.SUCCESS, "");
                 }
+                if (null == queryStatus) {
+                    queryStatus = new QueryStatus(QueryStatus.QueryStatusEnum.WARNING, "OpenTSDB query was successful, but no data was returned.");
+                }
             }
         } catch (ClientProtocolException e) {
             log.error("ClientProtocolException executing and processing query: {}", e.getMessage());
