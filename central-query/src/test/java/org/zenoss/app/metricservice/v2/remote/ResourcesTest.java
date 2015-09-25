@@ -130,17 +130,13 @@ public class ResourcesTest extends ResourceTest {
         testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
     }
 
-
     @Test
     public void testEmptyDataQuery() throws IOException, JSONException {
-
         String expectedResultFile = "/emptydataquery/query1Result.json";
         String metricRequestFile = "/emptydataquery/query1Request.json";
-
         String otsdbRequestFile = "/emptydataquery/query1OtsdbRequest.json";
-        String otsdbRequestFile2 = "/emptydataquery/query1OtsdbRequest2.json";
 
-        testQuery(expectedResultFile, metricRequestFile, otsdbRequestFile, otsdbRequestFile2);
+        testQuery(expectedResultFile, metricRequestFile, otsdbRequestFile);
     }
 
 

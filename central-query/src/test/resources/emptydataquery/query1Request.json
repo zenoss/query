@@ -10,15 +10,6 @@
           "*"
         ]
       }
-    },
-    {
-      "metric": "cgroup.cpuacct.user",
-      "rate": false,
-      "tags": {
-        "isvcname": [
-          "*"
-        ]
-      }
     }
   ]
 }
