@@ -248,13 +248,13 @@
         /**
          * Set the relative size of the chart and footer, if configured for a
          * footer, and then resizes the underlying chart.
-         *
-         * @access private
          */
-        __resize: function() {
+        resize: function() {
             var fheight, height, span;
 
-            fheight = this.__hasFooter() ? parseInt($(this.table).outerHeight(), 10)
+            var $footer = this.$div.find(".zenfooter");
+
+            fheight = this.__hasFooter() ? parseInt($footer.outerHeight(), 10)
                     : 0;
             height = parseInt(this.$div.height(), 10) - fheight;
             span = $(this.message).find('span');
@@ -650,7 +650,7 @@
 
                         // Update the footer
                         if (self.__updateFooter(data)) {
-                            self.__resize();
+                            self.resize();
                         }
                         // send a separate request for the projection data since it has a different time span
 
@@ -716,7 +716,7 @@
                                 self.__buildFooter(self.config);
                             } else {
                                 if (self.__updateFooter()) {
-                                    self.__resize();
+                                    self.resize();
                                 }
                             }
                         }
@@ -726,7 +726,7 @@
             } catch (x) {
                 this.plots = undefined;
                 if (self.__updateFooter()) {
-                    self.__resize();
+                    self.resize();
                 }
                 debug.__error(x);
                 this.__showError(x);
@@ -1200,7 +1200,7 @@
             }
 
             if (this.__updateFooter(data)) {
-                this.__resize();
+                this.resize();
             }
         },
 
@@ -1260,7 +1260,14 @@
                         if (self.__hasFooter()) {
                             self.__buildFooter(self.config, data);
                         }
-                        self.__resize();
+                        self.resize();
+
+                        if(self.afterRender){
+                            setTimeout(function(){
+                                self.afterRender();
+                            }, 0);
+                        }
+
                     });
             });
         },

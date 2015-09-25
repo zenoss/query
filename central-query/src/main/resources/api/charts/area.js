@@ -84,9 +84,6 @@
             var model = nv.models.stackedAreaChart();
             _chart.model(model);
 
-            // disable advanced area controls
-            model.controlsData([]);
-
             // override calculateResultsMax
             // with a stacked area specific method
             chart.calculateResultsMax = calculateResultsMax;

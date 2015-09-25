@@ -104,15 +104,22 @@
              */
             create : function(name, config) {
 
+                var chart, deferred = $.Deferred();
+
                 if (!depsLoaded) {
                     dependency.__bootstrap(function() {
                         depsLoaded = true;
-                        cacheChart(new Chart(name, config));
+                        chart = new Chart(name, config);
+                        cacheChart(chart);
+                        deferred.resolve(chart);
                     });
-                    return;
+                } else {
+                    chart = new Chart(name, config);
+                    cacheChart(chart);
+                    deferred.resolve(chart);
                 }
 
-                cacheChart(new Chart(name, config));
+                return deferred.promise();
             },
 
             // expose chart cache getter
