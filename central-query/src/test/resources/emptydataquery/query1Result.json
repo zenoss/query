@@ -1,0 +1,9 @@
+{
+  "series": [],
+  "statuses": [
+    {
+      "message": "OpenTSDB query was successful, but no data was returned.",
+      "status": "WARNING"
+    }
+  ]
+}

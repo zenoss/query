@@ -130,6 +130,16 @@ public class ResourcesTest extends ResourceTest {
         testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
     }
 
+    @Test
+    public void testEmptyDataQuery() throws IOException, JSONException {
+        String expectedResultFile = "/emptydataquery/query1Result.json";
+        String metricRequestFile = "/emptydataquery/query1Request.json";
+        String otsdbRequestFile = "/emptydataquery/query1OtsdbRequest.json";
+
+        testQuery(expectedResultFile, metricRequestFile, otsdbRequestFile);
+    }
+
+
     /**
      * posts a metric query and verifies results.  OpenTSDB interaction needs to "mocked" out in infiles
      *
