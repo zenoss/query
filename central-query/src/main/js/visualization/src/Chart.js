@@ -479,13 +479,15 @@
 
             // create a new row with
             projections.forEach(function(projection) {
-                var table = "<table width='250px'>" +
-                    "<tr><th><b>Date</b></th><th><b>Value</b></th></tr>", i, futureTime, uniqueDivId = Math.round(new Date().getTime() + (Math.random() * 100)).toString();
+                var table = "<table width='250px'><tr><th><b>Date</b></th><th><b>Value</b></th></tr>", 
+                    i, futureTime, rawProjectedValue, projectedValue, 
+                    uniqueDivId = Math.round(new Date().getTime() + (Math.random() * 100)).toString();
                 for (i=0; i< futureTimes.length; i++) {
-                    futureTime = moment().add(futureTimes[i], 'days');
+                    futureTime = moment().add(futureTimes[i], 'days'),
+                    rawProjectedValue = Number(projection.projectionFn(futureTime.unix()).toFixed(2)),
+                    projectedValue = (rawProjectedValue > 0) ? rawProjectedValue.toLocaleString('en') : "N/A";
                     table += "<tr><td>" + futureTime.format("MMM-D") + " ("  + futureTimes[i].toString() + " days)</td><td align='right'>" +
-                        Number(projection.projectionFn(futureTime.unix()).toFixed(2)).toLocaleString('en')  +
-                        "</td></tr>";
+                        projectedValue + "</td></tr>";
                 }
                 table  += "</table>";
 
