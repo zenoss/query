@@ -1,0 +1,27 @@
+{
+  "request": {
+    "start": "1437520683",
+    "end": "1437521231",
+    "queries": [
+      {
+        "aggregator": "avg",
+        "metric": "cgroup.cpuacct.system",
+        "rate": false,
+        "rateOptions": {
+          "counter": true,
+          "counterMax": 9223372036854775807,
+          "resetValue": 0
+        },
+        "tags": {
+          "isvcname": "*"
+        }
+      }
+    ],
+    "noAnnotations": false,
+    "globalAnnotations": false,
+    "msResolution": false,
+    "showTSUIDs": false
+  },
+  "response": []
+}
+

@@ -140,6 +140,8 @@
         $(this.footer).addClass('zenfooter');
         this.$div.append($(this.footer));
 
+        this.__renderForecastingTimeHorizonFooter = config.renderForecastingTimeHorizonFooter;
+
         this.svg = d3.select(this.svgwrapper).append('svg');
         try {
             this.request = this.__buildDataRequest(this.config);
@@ -246,13 +248,13 @@
         /**
          * Set the relative size of the chart and footer, if configured for a
          * footer, and then resizes the underlying chart.
-         *
-         * @access private
          */
-        __resize: function() {
+        resize: function() {
             var fheight, height, span;
 
-            fheight = this.__hasFooter() ? parseInt($(this.table).outerHeight(), 10)
+            var $footer = this.$div.find(".zenfooter");
+
+            fheight = this.__hasFooter() ? parseInt($footer.outerHeight(), 10)
                     : 0;
             height = parseInt(this.$div.height(), 10) - fheight;
             span = $(this.message).find('span');
@@ -333,6 +335,7 @@
             if (!this.table) {
                 return false;
             }
+
             rows = $(this.table).find('tr');
             if (data) {
                 sta = this.dateFormatter(data.startTimeActual, timezone );
@@ -445,9 +448,68 @@
                 }
                 resize = true;
             }
+
             return resize;
         },
+        /**
+         * Returns all the current chart's plots that are of type projection
+         *
+         * @access private
+         * @return [object] all the projection plots
+         */
+        __getProjectionPlots: function() {
+            return $.grep(this.plots, function(p) { return p.projection; } );
+        },
+        /**
+         * Renders the projection legend with a mouse over of future dates
+         * @access private
+         **/
+        __renderProjectionFooter: function() {
+            var projections = this.__getProjectionPlots(),
+                // the days out that we are showing projections for (e.g. 30 days from now)
+                futureTimes = [30, 60, 90];
 
+            // recreate the legend from scratch each update
+            $(this.footer).find(".projectionPlots").remove();
+
+            // create the content div.
+            $(this.footer).append("<div class='projectionPlots'><span style='font-weight:bold;'>Projections</></div>");
+            // get a jquery handle on it
+            var div = $(this.footer).find(".projectionPlots");
+
+            // create a new row with
+            projections.forEach(function(projection) {
+                var table = "<table width='250px'><tr><th><b>Date</b></th><th><b>Value</b></th></tr>", 
+                    i, futureTime, rawProjectedValue, projectedValue, 
+                    uniqueDivId = Math.round(new Date().getTime() + (Math.random() * 100)).toString();
+                for (i=0; i< futureTimes.length; i++) {
+                    futureTime = moment().add(futureTimes[i], 'days'),
+                    rawProjectedValue = Number(projection.projectionFn(futureTime.unix()).toFixed(2)),
+                    projectedValue = (rawProjectedValue > 0) ? rawProjectedValue.toLocaleString('en') : "N/A";
+                    table += "<tr><td>" + futureTime.format("MMM-D") + " ("  + futureTimes[i].toString() + " days)</td><td align='right'>" +
+                        projectedValue + "</td></tr>";
+                }
+                table  += "</table>";
+
+                // add a row representing the projection
+                div.append('<div id=' + uniqueDivId  +
+                           ' title="placeholder"  > <div class="zenfooter_box" style="opacity: 1;">' +
+                           '</div><span class="projectionLegend">&nbsp;&nbsp;' + projection.key.replace("Projected ", "") +
+                           '</span><div class="info_icon"><span style="font-style: italic">i</span></div></div>');
+                $("#" + uniqueDivId + " .zenfooter_box").css("background-color", projection.color);
+                // use jQuery UI tool tips to register a table tool tip showing projected values on hover
+                $("#" + uniqueDivId).tooltip({
+                    show: {
+                        effect: "slideDown",
+                        delay: 150
+                    },
+                    content: function() {
+                        return table;
+                    }
+                });
+            }.bind(this));
+
+        },
         /**
          * Returns true if this chart is displaying a footer, else false
          *
@@ -580,14 +642,19 @@
                             }
                             self.__render(data);
                         } else {
-                            self.__updateData(data);
+                            // if we have projections wait to render so the chart doesn't jump around
+                            if (self.projections === undefined || self.projections.length === 0) {
+                                self.__updateData(data);
+                            }
                         }
 
                         // Update the footer
                         if (self.__updateFooter(data)) {
-                            self.__resize();
+                            self.resize();
                         }
                         // send a separate request for the projection data since it has a different time span
+
+                        var projectionColors = ["#EBEBEF", "#FDDFE7", "#FCF1C0", "#DAFBEB"], projectionIndex = 0;
                         self.projections.forEach(function(projection) {
                             var projectionRequest = self.__buildProjectionRequest(self.config, self.request, projection);
                             // can fail if the projection is requesting a metric not present
@@ -601,6 +668,7 @@
                                 'dataType' : 'json',
                                 'contentType' : 'application/json',
                                 'success' : function(projectionData) {
+
                                     if (projectionData.results) {
                                         var values = projectionData.results[projectionData.results.length - 1].datapoints || [],
                                             start = utils.createDate(self.request.start || "1h-ago").unix(),
@@ -610,12 +678,19 @@
                                             // get the visible x, y values
                                             projectedSet = self.createRegressionData(valueFn, start, end);
                                         self.plots.push({
-                                            color: "#CCCCCC",
+                                            color: projectionColors[projectionIndex++ % projectionColors.length],
                                             fill: false,
+                                            projection: true,
+                                            projectionFn: valueFn,
                                             key: projection.legend,
                                             values: projectedSet
                                         });
-                                        self.impl.update(self, data);
+                                        // self.closure isn't set because we are still loading dependencies
+                                        // wait until the regular chart build is called
+                                        if (self.closure) {
+                                            self.impl.update(self, data);
+                                        }
+                                        self.__renderProjectionFooter();
                                     }
                                 },
                                 'error' : function() {
@@ -624,6 +699,10 @@
                                 }
                             });
                         });
+
+                        if (self.__renderForecastingTimeHorizonFooter !== undefined) {
+                            self.__renderForecastingTimeHorizonFooter(self);
+                        }
                     },
                     'error' : function() {
                         self.plots = undefined;
@@ -637,7 +716,7 @@
                                 self.__buildFooter(self.config);
                             } else {
                                 if (self.__updateFooter()) {
-                                    self.__resize();
+                                    self.resize();
                                 }
                             }
                         }
@@ -647,21 +726,19 @@
             } catch (x) {
                 this.plots = undefined;
                 if (self.__updateFooter()) {
-                    self.__resize();
+                    self.resize();
                 }
                 debug.__error(x);
                 this.__showError(x);
             }
         },
         /**
-         *  Converts a downsample rate into a "step". To minimized clutter each step is twice
-         *  the downsample rate. For instance if you have
-         *  10s-avg then this method returns 20
-         *  if you have 1h-avg this method returns 7200 (or 3600 * 2).
+         *  Converts a downsample rate into a "step". To minimized clutter each step is a multiple
+         *  the downsample rate.
          **/
         __convertDownsampletoStep: function(downsample) {
             if (!downsample) {
-                return 300;
+                return 600;
             }
             var regexp = new RegExp(/\d+/),
                 numberPart = downsample.split("-")[0],
@@ -673,7 +750,7 @@
                     'h': 3600,
                     'd': 86400
                 };
-            return (2 * number) * (multiplier[unit] || 1);
+            return (12 * number) * (multiplier[unit] || 1);
         },
         /**
          * Given a projection function (returned from createRegressionFunction) this method
@@ -863,13 +940,14 @@
                                         name: m.name,
                                         // rewrite the expression to look for the
                                         // renamed datapoint
-                                        expression: dp.expression.replace("rpn:", "rpn:"+ m.name + "-rpn,")
+                                        expression: dp.expression.replace("rpn:", "rpn:"+ m.name + "-raw,")
                                     };
 
                                     // original datapoint is now just a vehicle for the
-                                    // expression to evaluate against
+                                    // expression to evaluate against. Rename with -raw suffix as that is the default
+                                    // used by zenoss to self reference a datapoint in an RPN
                                     m.emit = false;
-                                    m.name = m.name + "-rpn";
+                                    m.name = m.name + "-raw";
                                 }
 
                                 request.metrics.push(m);
@@ -1122,7 +1200,7 @@
             }
 
             if (this.__updateFooter(data)) {
-                this.__resize();
+                this.resize();
             }
         },
 
@@ -1182,7 +1260,14 @@
                         if (self.__hasFooter()) {
                             self.__buildFooter(self.config, data);
                         }
-                        self.__resize();
+                        self.resize();
+
+                        if(self.afterRender){
+                            setTimeout(function(){
+                                self.afterRender();
+                            }, 0);
+                        }
+
                     });
             });
         },

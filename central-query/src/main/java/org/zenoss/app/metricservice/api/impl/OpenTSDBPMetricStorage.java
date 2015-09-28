@@ -30,6 +30,7 @@
  */
 package org.zenoss.app.metricservice.api.impl;
 
+import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
@@ -42,16 +43,25 @@ import org.zenoss.app.annotations.API;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
+import org.zenoss.app.metricservice.api.model.v2.MetricQuery;
+import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 
 @API
@@ -59,7 +69,7 @@ import java.util.concurrent.*;
 @Profile({"default", "prod"})
 public class OpenTSDBPMetricStorage implements MetricStorageAPI {
     @Autowired
-    MetricServiceAppConfiguration config;
+    public MetricServiceAppConfiguration config;
 
     private static final Logger log = LoggerFactory.getLogger(OpenTSDBPMetricStorage.class);
 
@@ -73,6 +83,35 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
     protected static final String SPACE_REPLACEMENT = "//-";
     private DefaultHttpClient httpClient = null;
 
+
+    @Override
+    public OpenTSDBQueryReturn query(MetricRequest query) {
+        Optional<String> start = Optional.fromNullable(query.getStart());
+        Optional<String> end = Optional.fromNullable(query.getEnd());
+        //provide defaults
+        String startTime = start.or(config.getMetricServiceConfig().getDefaultStartTime());
+        String endTime = end.or(config.getMetricServiceConfig().getDefaultEndTime());
+
+        OpenTSDBQuery otsdbQuery = new OpenTSDBQuery();
+        // This could maybe be better - for now, it works : end time defaults to 'now', start time does not default.
+        otsdbQuery.start = startTime;
+        if (!Utils.NOW.equals(endTime)) {
+            otsdbQuery.end = endTime;
+        }
+
+        for (MetricQuery mq : query.getQueries()) {
+            otsdbQuery.addSubQuery(createOTSDBQuery(mq));
+        }
+
+        OpenTSDBClient client = new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiQueryUrl());
+        OpenTSDBQueryReturn result = client.query(otsdbQuery);
+        for (OpenTSDBQueryResult series : result.getResults()) {
+            series.metric = series.metric.replace(SPACE_REPLACEMENT, " ");
+        }
+        return result;
+    }
+
+
     /*
      * (non-Javadoc)
      *
@@ -82,11 +121,11 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
      * java.lang.String, java.lang.Boolean, java.lang.Boolean, java.util.List)
      */
     @Override
-    public BufferedReader getReader(MetricServiceAppConfiguration config,
-                                    String id, String startTime, String endTime, ReturnSet returnset,
-                                    Boolean series, String downsample, double downsampleMultiplier,
-                                    Map<String, List<String>> globalTags,
-                                    List<MetricSpecification> queries) throws IOException {
+    public List<OpenTSDBQueryResult> getResponse(MetricServiceAppConfiguration config,
+                                                 String id, String startTime, String endTime, ReturnSet returnset,
+                                                 String downsample, double downsampleMultiplier,
+                                                 Map<String, List<String>> globalTags,
+                                                 List<MetricSpecification> queries, boolean allowWildCard) throws IOException {
 
         OpenTSDBQuery query = new OpenTSDBQuery();
 
@@ -97,7 +136,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         }
 
         String appliedDownsample = createModifiedDownsampleRequest(downsample, downsampleMultiplier);
-        log.info("Specified Downsample = {}, Specified Multiplier = {}, Applied Downsample = {}.", downsample, downsampleMultiplier, appliedDownsample);
+        log.debug("Specified Downsample = {}, Specified Multiplier = {}, Applied Downsample = {}.", downsample, downsampleMultiplier, appliedDownsample);
 
         for (MetricSpecification metricSpecification : queries) {
             String oldDownsample = metricSpecification.getDownsample();
@@ -105,31 +144,53 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
                 log.info("Overriding specified series downsample ({}) with global specification of {}", oldDownsample, appliedDownsample);
             }
             metricSpecification.setDownsample(appliedDownsample);
-            query.addSubQuery(openTSDBSubQueryFromMetricSpecification(metricSpecification));
+            query.addSubQuery(openTSDBSubQueryFromMetricSpecification(metricSpecification, allowWildCard));
         }
 
-        Collection<OpenTSDBQueryResult> responses = runQueries(query.asSeparateQueries());
+        List<OpenTSDBQueryResult> responses = runQueries(query.asSeparateQueries());
         for (OpenTSDBQueryResult result : responses) {
             result.metric = result.metric.replace(SPACE_REPLACEMENT, " ");
         }
-        InputStream responseStream = aggregateResponses(responses);
-
-        return new BufferedReader(new InputStreamReader(responseStream, "UTF-8"));
+        return responses;
     }
 
-    private InputStream aggregateResponses(Collection<OpenTSDBQueryResult> responses) {
-        String aggregatedResponse;
-        aggregatedResponse = Utils.jsonStringFromObject(responses);
-        return new ByteArrayInputStream(aggregatedResponse.getBytes(StandardCharsets.UTF_8));
-    }
 
     private String getOpenTSDBApiQueryUrl() {
         String result = String.format("%s/api/query", config.getMetricServiceConfig().getOpenTsdbUrl());
-        log.info("getOpenTSDBApiQueryUrl(): Returning {}", result);
         return result;
     }
 
-    private static OpenTSDBSubQuery openTSDBSubQueryFromMetricSpecification(MetricSpecification metricSpecification) {
+    private static OpenTSDBSubQuery createOTSDBQuery(MetricQuery mq) {
+        boolean allowWildCard = true;
+        OpenTSDBSubQuery result = null;
+        if (null != mq) {
+            result = new OpenTSDBSubQuery();
+            result.aggregator = mq.getAggregator();
+            result.downsample = mq.getDownsample();
+
+            // escape the name of the metric since OpenTSDB doesn't like spaces
+            String metricName = mq.getMetric();
+            metricName = metricName.replace(" ", SPACE_REPLACEMENT);
+            result.metric = metricName;
+
+
+            result.rate = mq.getRate();
+            result.rateOptions = new OpenTSDBRateOption(mq.getRateOptions());
+            Map<String, List<String>> tags = mq.getTags();
+            if (null != tags) {
+                for (Map.Entry<String, List<String>> tagEntry : tags.entrySet()) {
+                    for (String tagValue : tagEntry.getValue()) {
+                        //apply metric-consumer sanitization to tags in query
+                        result.addTag(Tags.sanitizeKey(tagEntry.getKey()), Tags.sanitizeValue(tagValue, allowWildCard));
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+
+    private static OpenTSDBSubQuery openTSDBSubQueryFromMetricSpecification(MetricSpecification metricSpecification, boolean allowWildCard) {
         OpenTSDBSubQuery result = null;
         if (null != metricSpecification) {
             result = new OpenTSDBSubQuery();
@@ -149,7 +210,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
                 for (Map.Entry<String, List<String>> tagEntry : tags.entrySet()) {
                     for (String tagValue : tagEntry.getValue()) {
                         //apply metric-consumer sanitization to tags in query
-                        result.addTag( Tags.sanitize(tagEntry.getKey()), Tags.sanitize(tagValue));
+                        result.addTag(Tags.sanitizeKey(tagEntry.getKey()), Tags.sanitizeValue(tagValue, allowWildCard));
                     }
                 }
             }
@@ -184,7 +245,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         }
         long duration = Utils.parseDuration(downsample);
         String aggregation = parseAggregation(downsample);
-        long newDuration = (long)(duration / downsampleMultiplier);
+        long newDuration = (long) (duration / downsampleMultiplier);
         if (newDuration <= 0) {
             log.warn("Applying value {} of downsampleMultiplier to downsample value of {} would result in a request with resolution finer than 1 sec. returning 1 second.", downsampleMultiplier, downsample);
             newDuration = 1;
@@ -233,7 +294,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
             ThreadFactory namedThreadFactory = new ThreadFactoryBuilder().setNameFormat("TSDB-query-thread-%d").build();
             synchronized (mutex) {
                 if (null == executorServiceInstance) {
-                    executorServiceInstance =  new ThreadPoolExecutor(executorThreadPoolCoreSize, executorThreadPoolMaxSize, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+                    executorServiceInstance = new ThreadPoolExecutor(executorThreadPoolCoreSize, executorThreadPoolMaxSize, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
                 }
             }
             if (null == executorServiceInstance) {
@@ -245,9 +306,9 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
     }
 
     private void getResultsFromFutures(List<OpenTSDBQueryResult> results, List<Future<OpenTSDBQueryResult>> futures) {
-        for (Future<OpenTSDBQueryResult>  future : futures) {
+        for (Future<OpenTSDBQueryResult> future : futures) {
             try {
-                OpenTSDBQueryResult result  = future.get(); // Throws InterruptedException, ExecutionException (checked); CancellationException (unchecked)
+                OpenTSDBQueryResult result = future.get(); // Throws InterruptedException, ExecutionException (checked); CancellationException (unchecked)
                 results.add(result);
             } catch (InterruptedException | ExecutionException | CancellationException e) {
                 // On exception, return an empty result, with the queryStatus set to indicate the problem.

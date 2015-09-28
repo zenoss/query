@@ -31,7 +31,6 @@
 
 package org.zenoss.app.metricservice.api.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -44,12 +43,19 @@ import org.zenoss.app.metricservice.buckets.Buckets;
 import org.zenoss.app.metricservice.buckets.Interpolator;
 import org.zenoss.app.metricservice.buckets.InterpolatorFactory;
 import org.zenoss.app.metricservice.buckets.Value;
-import org.zenoss.app.metricservice.calculators.*;
+import org.zenoss.app.metricservice.calculators.Closure;
+import org.zenoss.app.metricservice.calculators.MetricCalculator;
+import org.zenoss.app.metricservice.calculators.MetricCalculatorFactory;
+import org.zenoss.app.metricservice.calculators.ReferenceProvider;
+import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.StringReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Processes the output stream from the back end metric query storage into
@@ -58,19 +64,19 @@ import java.util.*;
  * @author Zenoss
  */
 public class DefaultResultProcessor implements ResultProcessor,
-    ReferenceProvider {
+        ReferenceProvider {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultResultProcessor.class);
     private final Multimap<InterpolatorType, IHasShortcut> interpolatorMap = ArrayListMultimap.create();
-    private final BufferedReader reader;
+    private final Iterable<OpenTSDBQueryResult> results;
     private final List<MetricSpecification> queries;
     private final long bucketSize;
     private Map<MetricKey, MetricCalculator> calculatorMap;
     private MetricKeyCache keyCache;
     private Buckets<IHasShortcut> buckets;
 
-    public DefaultResultProcessor(BufferedReader reader, List<MetricSpecification> queries, long bucketSize) {
-        this.reader = reader;
+    public DefaultResultProcessor(Iterable<OpenTSDBQueryResult> results, List<MetricSpecification> queries, long bucketSize) {
+        this.results = results;
         this.queries = queries;
         this.bucketSize = bucketSize;
     }
@@ -84,7 +90,7 @@ public class DefaultResultProcessor implements ResultProcessor,
      */
     @Override
     public double lookup(String name, Closure closure)
-        throws UnknownReferenceException {
+            throws UnknownReferenceException {
         if (null == closure) {
             throw new NullPointerException("null closure passed to lookup() method.");
         }
@@ -124,25 +130,11 @@ public class DefaultResultProcessor implements ResultProcessor,
         // Get a list of calculated values
         List<MetricSpecification> calculatedValues = MetricService.calculatedValueFilter(queries);
 
-        List<OpenTSDBQueryResult> allResults = new ArrayList<>();
-
-        BufferedReader localReader = reader;
-
-        if (log.isDebugEnabled()) {
-            localReader = logReaderInformation(localReader, "JSON Returned from reader");
-        }
-
-        ObjectMapper mapper = Utils.getObjectMapper();
-
-        OpenTSDBQueryResult[] queryResult = mapper.readValue(localReader, OpenTSDBQueryResult[].class);
-        allResults.addAll(Arrays.asList(queryResult));
-
-
         long dataPointTimeStamp = 0l;
         Tags curTags = null;
 
         // iterate over results (a result is a data series - with metric name, collection of points, tags, etc.
-        for (OpenTSDBQueryResult result : allResults) {
+        for (OpenTSDBQueryResult result : this.results) {
             String metricName = result.metric;
             curTags = Tags.fromOpenTsdbTags(result.tags);
             MetricKey key = keyCache.get(metricName, curTags);
@@ -159,7 +151,7 @@ public class DefaultResultProcessor implements ResultProcessor,
             } // iterate over data points in this series
         } //iterate over all series in result set
         interpolateValues(buckets);
-        calculateValues(calculatedValues,buckets);
+        calculateValues(calculatedValues, buckets);
         return buckets;
     }
 
@@ -182,14 +174,14 @@ public class DefaultResultProcessor implements ResultProcessor,
     }
 
 
-    private void calculateValues(List<MetricSpecification> calculatedValues, Buckets<IHasShortcut> buckets)  {
+    private void calculateValues(List<MetricSpecification> calculatedValues, Buckets<IHasShortcut> buckets) {
         for (MetricSpecification metricSpecification : calculatedValues) {
             Tags tags = Tags.fromValue(metricSpecification.getTags());
             MetricKey key = keyCache.get(metricSpecification.getName(), tags);
             MetricCalculator calculator = calculatorMap.get(key);
             if (null != calculator) {
                 for (Long timestamp : buckets.getTimestamps()) {
-                    Buckets<IHasShortcut>.Bucket bucket =  buckets.getBucket(timestamp);
+                    Buckets<IHasShortcut>.Bucket bucket = buckets.getBucket(timestamp);
                     if (null == bucket) {
                         log.error("Null bucket at timestamp {}", timestamp);
                         throw new NullPointerException("unexpected null bucket");
@@ -227,9 +219,6 @@ public class DefaultResultProcessor implements ResultProcessor,
         private long ts;
         public Buckets<IHasShortcut>.Bucket bucket;
 
-        private BucketClosure() {
-        }
-
         private BucketClosure(long timestamp, Buckets<IHasShortcut>.Bucket bucket) {
             this.ts = timestamp;
             this.bucket = bucket;
@@ -244,30 +233,5 @@ public class DefaultResultProcessor implements ResultProcessor,
         public Value getValueByShortcut(String name) {
             return bucket.getValueByShortcut(name);
         }
-    }
-    /**
-     * This method takes a buffered reader, logs the information that was in it, and returns a
-     * reader with the same content. It can be useful for peeking at the data stream (e.g. coming back from
-     * OpenTSDB) when debugging.
-     *
-     * @param reader The reader to display on the log
-     * @return A new reader that contains the contents of the original reader.
-     * @throws IOException
-     */
-    private static BufferedReader logReaderInformation(BufferedReader reader, String contentDescription) throws IOException {
-        StringBuffer readerPeekBuffer = new StringBuffer(4096);
-        long lineCount = 0l;
-        String line;
-        while (null != (line = reader.readLine())) {
-            lineCount++;
-
-            readerPeekBuffer.append(line);
-            readerPeekBuffer.append('\n');
-        }
-
-        String contents = readerPeekBuffer.toString();
-        reader = new BufferedReader(new StringReader(contents));
-        log.debug("{}: {}", contentDescription, contents);
-        return reader;
     }
 }

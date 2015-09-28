@@ -3,7 +3,7 @@
  * Dependency injection utils
  */
 (function(){
-	"use strict";
+    "use strict";
 
     /**
      * Used to track dependency loading, including the load state
@@ -282,6 +282,11 @@
                     return !!window.jQuery;
                 }
             },{
+                source: "jquery-ui.min.js",
+                check: function(){
+                    return !!window.jQuery && !!window.jQuery.tooltip;
+                }
+            },{
                 source: "d3.v3.min.js",
                 check: function(){
                     // TODO - check window.d3.version
@@ -317,7 +322,7 @@
                 sources.push(depCheck.source);
             }
         });
-        
+
         __loadDependencies({
             'defined' : 'd3',
             'source' : sources

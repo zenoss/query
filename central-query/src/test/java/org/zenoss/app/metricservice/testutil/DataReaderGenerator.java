@@ -31,21 +31,15 @@
 package org.zenoss.app.metricservice.testutil;
 
 import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryResult;
-import org.zenoss.app.metricservice.api.impl.Utils;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 
-import java.io.BufferedReader;
-import java.io.StringReader;
 import java.util.*;
 
 public class DataReaderGenerator {
-    private Collection<OpenTSDBQueryResult> results = new ArrayList<OpenTSDBQueryResult>();
+    private Collection<OpenTSDBQueryResult> results = new ArrayList<>();
 
-    public BufferedReader makeReader() {
-        // generate reader that spits out JSON for an array of OpenTSDBQueryResult
-        String resultString = Utils.jsonStringFromObject(results);
-        StringReader sr = new StringReader(resultString);
-        return new BufferedReader(sr);
+    public Collection<OpenTSDBQueryResult> getResults(){
+        return results;
     }
 
     public void addSeries(MetricSpecification specification, SeriesGenerator dataGen, long start, long end, long step) {

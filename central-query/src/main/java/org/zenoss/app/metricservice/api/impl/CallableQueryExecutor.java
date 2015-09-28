@@ -30,102 +30,32 @@
  */
 package org.zenoss.app.metricservice.api.impl;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.StatusLine;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.util.EntityUtils;
 import org.slf4j.LoggerFactory;
+import org.zenoss.app.metricservice.api.impl.QueryStatus.QueryStatusEnum;
 
-import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.concurrent.Callable;
 
 class CallableQueryExecutor implements Callable<OpenTSDBQueryResult> {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(CallableQueryExecutor.class);
-    private final HttpContext context;
-    private final HttpPost httpPost;
-    private final DefaultHttpClient httpClient;
     private final OpenTSDBQuery query;
+    private final OpenTSDBClient client;
 
     public CallableQueryExecutor(DefaultHttpClient httpClient, OpenTSDBQuery query, String queryURL) {
-        this.context = new BasicHttpContext();
+        client = new OpenTSDBClient(httpClient, queryURL);
         this.query = query;
-        this.httpClient = httpClient;
-        httpPost = new HttpPost(queryURL);
-        String jsonQueryString = Utils.jsonStringFromObject(query);
-        StringEntity input = null;
-        try {
-            input = new StringEntity(jsonQueryString);
-        } catch (UnsupportedEncodingException e) {
-            log.error("UnsupportedEncodingException converting json string {} to StringEntity: {}", jsonQueryString, e.getMessage());
-            throw new IllegalArgumentException("Could not create StringEntity from query.", e);
-        }
-        input.setContentType("application/json");
-        httpPost.setEntity(input);
     }
 
     @Override
     public OpenTSDBQueryResult call() {
-        OpenTSDBQueryResult result = defaultResult();
-        HttpEntity entity = null;
-        try {
-            HttpResponse response = httpClient.execute(httpPost, context);
-            StatusLine status = response.getStatusLine();
-            if (status.getStatusCode() != Response.Status.OK.getStatusCode()) {
-                String message = status.getReasonPhrase();
-                log.warn("HTTP Execute returned status {}. Reason: {}", status.getStatusCode(), status.getReasonPhrase());
-                entity = response.getEntity();
-                if (null != entity) {
-                    String content = EntityUtils.toString(response.getEntity());
-                    log.debug("####### RESPONSE CONTENT:#########\n{}", content);
-                    OpenTSDBErrorResponse tsdbResponse = Utils.getObjectMapper().readValue(content, OpenTSDBErrorResponse.class);
-                    log.info("Response object: {}", Utils.jsonStringFromObject(tsdbResponse));
-                    message = tsdbResponse.error.message;
-                }
-                result.setStatus(new QueryStatus(QueryStatus.QueryStatusEnum.ERROR, message));
-            } else {
-                entity = response.getEntity();
-                OpenTSDBQueryResult [] resultArray = null;
-                String contentString = EntityUtils.toString(entity);
-                try {
-                    resultArray = Utils.getObjectMapper().readValue(contentString, OpenTSDBQueryResult[].class);
-                } catch (IOException e) {
-                    log.warn("Unable to parse HTTP response as OpenTSDBQueryResult.");
-                    result.setStatus(new QueryStatus(QueryStatus.QueryStatusEnum.WARNING,
-                        String.format("Could not parse content as OpenTSDBQueryResult[]. Content: \"%s\"", contentString)));
-                }
-                if (null != resultArray && resultArray.length > 0) {
-                    result = resultArray[0];
-                    result.setStatus(new QueryStatus(QueryStatus.QueryStatusEnum.SUCCESS, ""));
-                }
-            }
-        } catch (ClientProtocolException e) {
-            log.error("ClientProtocolException executing and processing query: {}", e.getMessage());
-            if (log.isDebugEnabled()) {
-                log.debug("IOException stack trace: {}", e.getStackTrace());
-            }
-            result.setStatus(new QueryStatus(QueryStatus.QueryStatusEnum.ERROR,
-                String.format("%s executing and processing query: %s", e.getClass().getName(), e.getMessage())));
-        } catch (IOException e) {
-            log.error("IOException executing and processing query: {}", e.getMessage());
-            if (log.isDebugEnabled()) {
-                log.debug("IOException stack trace: {}", e.getStackTrace());
-            }
-            result.setStatus(new QueryStatus(QueryStatus.QueryStatusEnum.ERROR,
-                String.format("%s executing and processing query: %s", e.getClass().getName(), e.getMessage())));
-        } finally {
-            EntityUtils.consumeQuietly(entity);
-            log.debug("releasing connection.");
-            httpPost.releaseConnection();
+
+        OpenTSDBQueryReturn queryResult = this.client.query(this.query);
+        if (queryResult.getStatus().getStatus() != QueryStatusEnum.SUCCESS) {
+            OpenTSDBQueryResult result = defaultResult();
+            result.setStatus(queryResult.getStatus());
+            return result;
         }
-        return result;
+        return queryResult.getResults().get(0);
     }
 
     private OpenTSDBQueryResult defaultResult() {

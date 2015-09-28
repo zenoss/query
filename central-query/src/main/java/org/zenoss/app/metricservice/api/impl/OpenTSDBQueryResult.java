@@ -34,7 +34,12 @@ package org.zenoss.app.metricservice.api.impl;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Objects;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 public class OpenTSDBQueryResult {
     public List<String> aggregateTags;
@@ -59,12 +64,12 @@ public class OpenTSDBQueryResult {
 
     public String debugString() {
         return Objects.toStringHelper(getClass())
-            .add("aggregateTags", aggregateTags)
-            .add("dps", dps)
-            .add("metric", metric)
-            .add("tags", tags)
-            .add("tsuids", tsuids)
-            .toString();
+                .add("aggregateTags", aggregateTags)
+                .add("dps", dps)
+                .add("metric", metric)
+                .add("tags", tags)
+                .add("tsuids", tsuids)
+                .toString();
     }
 
     public void addTags(Map<String, List<String>> tagsToAdd) {
@@ -84,7 +89,7 @@ public class OpenTSDBQueryResult {
     }
 
     @JsonIgnore
-    public Map<Long, Double> getDataPoints() {
+    public SortedMap<Long, Double> getDataPoints() {
         if (null == dps) {
             dps = new TreeMap<>();
         }

@@ -48,7 +48,12 @@ import org.zenoss.app.security.ZenossTenant;
 import org.zenoss.app.zauthbundle.ZappSecurity;
 import org.zenoss.dropwizardspring.annotations.Resource;
 
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.OPTIONS;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
@@ -87,7 +92,7 @@ public class MetricResources {
     @Timed
     @Consumes(MediaType.APPLICATION_JSON)
     public Response query(PerformanceQuery query) {
-        log.info("Thread {}: Entered NewMetricResources.query with single param (POST). REQUEST: {}", Thread.currentThread().getId(), Utils.jsonStringFromObject(query));
+        log.debug("Thread {}: Entered NewMetricResources.query with single param (POST). REQUEST: {}", Thread.currentThread().getId(), Utils.jsonStringFromObject(query));
         if (query == null) {
             return Utils.getErrorResponse(null, Response.Status.BAD_REQUEST.getStatusCode(),
                     "Received an empty query request", "Empty Request");

@@ -54,17 +54,12 @@ public class JacksonResultsWriter {
 
     public void writeResults(Writer writer, List<MetricSpecification> queries, Buckets<IHasShortcut> buckets,
                              String id, String sourceId, long startTs, String startTimeConfig, long endTs,
-                             String endTimeConfig, ReturnSet returnset, boolean series) throws IOException {
-        if (series) {
+                             String endTimeConfig, ReturnSet returnset) throws IOException {
             SeriesQueryResult results = makeResults(queries, buckets, id, sourceId, startTs, startTimeConfig, endTs, endTimeConfig, returnset);
             // write results (JSON serialization)
             String resultJson = Utils.jsonStringFromObject(results);
             log.debug("Resulting JSON: {}", resultJson);
             writer.write(resultJson);
-        } else {
-            UnsupportedOperationException e = new UnsupportedOperationException("Series is no longer supported.");
-            throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
-        }
     }
 
     private SeriesQueryResult makeResults(List<MetricSpecification> queries, Buckets<IHasShortcut> buckets,
@@ -117,9 +112,6 @@ public class JacksonResultsWriter {
     private QueryStatus getQueryStatus(MetricSpecification query, Buckets<IHasShortcut> buckets) {
         MetricKey key = MetricKey.fromValue(query);
         QueryStatus result = buckets.getQueryStatus(key);
-        if (null == result) {
-            result = new QueryStatus(QueryStatus.QueryStatusEnum.UNKNOWN, String.format("Unknown query status for query %s", query.toString()));
-        }
         return result;
     }
 
