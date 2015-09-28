@@ -68,6 +68,7 @@
         resize : function(chart) {
             var _chart = chart.closure, model = _chart.model();
             model.height($(chart.svgwrapper).height());
+            model.width($(chart.svgwrapper).width());
             chart.svg.transition().duration(0).call(model);
         },
 

@@ -1480,9 +1480,11 @@ if (typeof exports !== 'undefined') {
             height = parseInt(this.$div.height(), 10) - fheight;
             span = $(this.message).find('span');
 
+            // resize wrapper to ensure enough space for graph
             $(this.svgwrapper).outerHeight(height);
+
             if (this.impl) {
-                this.impl.resize(this, height);
+                this.impl.resize(this);
             }
 
             $(this.message).outerHeight(height);
