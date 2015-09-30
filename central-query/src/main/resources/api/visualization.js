@@ -1708,7 +1708,7 @@ if (typeof exports !== 'undefined') {
                 for (i=0; i< futureTimes.length; i++) {
                     futureTime = moment().add(futureTimes[i], 'days'),
                     rawProjectedValue = Number(projection.projectionFn(futureTime.unix()).toFixed(2)),
-                    projectedValue = (rawProjectedValue > 0) ? rawProjectedValue.toLocaleString('en') : 0;
+                    projectedValue = (rawProjectedValue > 0) ? this.formatValue(rawProjectedValue) : 0;
                     table += "<tr><td>" + futureTime.format("MMM-D") + " ("  + futureTimes[i].toString() + " days)</td><td align='right'>" +
                         projectedValue + "</td></tr>";
                 }
