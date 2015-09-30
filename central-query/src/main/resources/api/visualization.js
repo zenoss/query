@@ -1432,13 +1432,14 @@ if (typeof exports !== 'undefined') {
          * @access private
          */
         __buildPlotInfo: function() {
-            var i, info, dp, nameOrMetric, key;
+            var i, info, dp, nameOrMetric, key, tag;
             var plotInfo = {};
 
             for (i in this.config.datapoints) {
                 dp = this.config.datapoints[i];
                 nameOrMetric = dp.name || dp.metric;
-                key = nameOrMetric +"_"+ dp.tags.key[0];
+                tag = dp.tags && dp.tags.key ? dp.tags.key[0] : "";
+                key = nameOrMetric +"_"+ tag;
                 info = {
                     'legend' : dp.legend || nameOrMetric,
                     'color' : dp.color,
@@ -1449,7 +1450,8 @@ if (typeof exports !== 'undefined') {
 
             this.getPlotInfo = function(dp){
                 var nameOrMetric = dp.name || dp.metric,
-                    key = nameOrMetric +"_"+ dp.tags.key[0],
+                    tag = dp.tags && dp.tags.key ? dp.tags.key[0] : "",
+                    key = nameOrMetric +"_"+ tag,
                     info = plotInfo[key];
 
                 return info;
