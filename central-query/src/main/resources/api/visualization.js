@@ -1452,14 +1452,15 @@ if (typeof exports !== 'undefined') {
          * @access private
          */
         __buildPlotInfo: function() {
-            var i, info, dp, nameOrMetric, key, tag;
+            var i, info, dp, nameOrMetric, key;
             var plotInfo = {};
 
             for (i in this.config.datapoints) {
                 dp = this.config.datapoints[i];
+                // TODO - better random key
+                key = Math.floor(Math.random() + new Date().getTime());
+                dp.id = key;
                 nameOrMetric = dp.name || dp.metric;
-                tag = dp.tags && dp.tags.key ? dp.tags.key[0] : "";
-                key = nameOrMetric +"_"+ tag;
                 info = {
                     'legend' : dp.legend || nameOrMetric,
                     'color' : dp.color,
@@ -1469,11 +1470,7 @@ if (typeof exports !== 'undefined') {
             }
 
             this.getPlotInfo = function(dp){
-                var nameOrMetric = dp.name || dp.metric,
-                    tag = dp.tags && dp.tags.key ? dp.tags.key[0] : "",
-                    key = nameOrMetric +"_"+ tag,
-                    info = plotInfo[key];
-
+                var info = plotInfo[key];
                 return info;
             };
         },
@@ -2146,6 +2143,10 @@ if (typeof exports !== 'undefined') {
                                 if (dp.metric !== undefined) {
                                     m.metric = dp.metric;
 
+                                    if(dp.id){
+                                        m.id = dp.id;
+                                    }
+
                                     if (dp.rate !== undefined) {
                                         m.rate = dp.rate;
                                     }
@@ -2203,6 +2204,7 @@ if (typeof exports !== 'undefined') {
                                     // used by zenoss to self reference a datapoint in an RPN
                                     m.emit = false;
                                     m.name = m.name + "-raw";
+                                    m.id = m.id + "-rpn";
                                 }
 
                                 request.metrics.push(m);
