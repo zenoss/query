@@ -211,18 +211,28 @@
          * @access private
          */
         __buildPlotInfo: function() {
-            var i, info, dp;
+            var i, info, dp, nameOrMetric, key;
+            var plotInfo = {};
 
-            this.plotInfo = {};
             for (i in this.config.datapoints) {
                 dp = this.config.datapoints[i];
+                nameOrMetric = dp.name || dp.metric;
+                key = nameOrMetric +"_"+ dp.tags.key[0];
                 info = {
-                    'legend' : dp.legend || dp.name || dp.metric,
+                    'legend' : dp.legend || nameOrMetric,
                     'color' : dp.color,
                     'fill' : dp.fill
                 };
-                this.plotInfo[dp.name || dp.metric] = info;
+                plotInfo[key] = info;
             }
+
+            this.getPlotInfo = function(dp){
+                var nameOrMetric = dp.name || dp.metric,
+                    key = nameOrMetric +"_"+ dp.tags.key[0],
+                    info = plotInfo[key];
+
+                return info;
+            };
         },
 
         /**
@@ -259,9 +269,11 @@
             height = parseInt(this.$div.height(), 10) - fheight;
             span = $(this.message).find('span');
 
+            // resize wrapper to ensure enough space for graph
             $(this.svgwrapper).outerHeight(height);
+
             if (this.impl) {
-                this.impl.resize(this, height);
+                this.impl.resize(this);
             }
 
             $(this.message).outerHeight(height);
@@ -485,7 +497,7 @@
                 for (i=0; i< futureTimes.length; i++) {
                     futureTime = moment().add(futureTimes[i], 'days'),
                     rawProjectedValue = Number(projection.projectionFn(futureTime.unix()).toFixed(2)),
-                    projectedValue = (rawProjectedValue > 0) ? rawProjectedValue.toLocaleString('en') : "N/A";
+                    projectedValue = (rawProjectedValue > 0) ? this.formatValue(rawProjectedValue) : 0;
                     table += "<tr><td>" + futureTime.format("MMM-D") + " ("  + futureTimes[i].toString() + " days)</td><td align='right'>" +
                         projectedValue + "</td></tr>";
                 }
@@ -986,8 +998,8 @@
                     metric = $.extend(true, {}, m);
                     metric.aggregator = projection.aggregateFunction || "max";
                     metric.emit = true;
-                    if (self.plotInfo[metric.name || metric.metric]) {
-                        projection.legend = "Projected " +self.plotInfo[metric.name || metric.metric].legend;
+                    if (self.getPlotInfo(metric)) {
+                        projection.legend = "Projected " +self.getPlotInfo(metric).legend;
                     }
                     request.metrics.push(metric);
                 }
@@ -1084,7 +1096,7 @@
 
 
                 // create plots from each datapoint
-                info = this.plotInfo[series.metric];
+                info = this.getPlotInfo(series);
                 key = info.legend;
                 // TODO - use tags to make key unique
                 plot = {
