@@ -90,6 +90,7 @@
             chart.calculateResultsMax = calculateResultsMax;
 
             model.useInteractiveGuideline(true);
+            model.showControls(false);
 
             chart.updateXLabels(data.startTimeActual * 1000, data.endTimeActual * 1000, _chart.model().xAxis);
 
