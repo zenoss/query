@@ -90,8 +90,13 @@
             chart.calculateResultsMax = calculateResultsMax;
 
             model.useInteractiveGuideline(true);
+            model.showControls(false);
+            model.duration(0);
 
             chart.updateXLabels(data.startTimeActual * 1000, data.endTimeActual * 1000, _chart.model().xAxis);
+            // since were controlling labels ourselves,
+            // tell nvd3 not to try to format them
+            model.headerFormatter(function(d) { return d; });
 
             // ensure that there are no duplicate ticks on the y axis
             model.yAxis.tickFormat(chart.dedupeYLabels(model));
