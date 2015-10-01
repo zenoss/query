@@ -91,6 +91,7 @@
 
             model.useInteractiveGuideline(true);
             model.showControls(false);
+            model.duration(0);
 
             chart.updateXLabels(data.startTimeActual * 1000, data.endTimeActual * 1000, _chart.model().xAxis);
             // since were controlling labels ourselves,
