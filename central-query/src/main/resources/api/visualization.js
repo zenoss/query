@@ -159,7 +159,19 @@ var visualization,
 
         // time conversion utilities
         createDate: createDate,
-        relativeTimeToMS: relativeTimeToMS
+        relativeTimeToMS: relativeTimeToMS,
+
+        shortId: function(targetLength){
+            targetLength = targetLength || 10;
+            var shortIdChars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+                shortId = [];
+
+            while(shortId.length < targetLength){
+                shortId.push(shortIdChars[Math.floor(Math.random() * shortIdChars.length)]);
+            }
+
+            return shortId.join("");
+        }
 
     };
 
@@ -1457,8 +1469,7 @@ if (typeof exports !== 'undefined') {
 
             for (i in this.config.datapoints) {
                 dp = this.config.datapoints[i];
-                // TODO - better random key
-                key = Math.floor(Math.random() + new Date().getTime());
+                key = utils.shortId();
                 dp.id = key;
                 nameOrMetric = dp.name || dp.metric;
                 info = {

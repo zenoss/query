@@ -216,8 +216,7 @@
 
             for (i in this.config.datapoints) {
                 dp = this.config.datapoints[i];
-                // TODO - better random key
-                key = Math.floor(Math.random() + new Date().getTime());
+                key = utils.shortId();
                 dp.id = key;
                 nameOrMetric = dp.name || dp.metric;
                 info = {
