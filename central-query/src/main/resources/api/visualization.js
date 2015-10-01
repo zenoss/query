@@ -1469,9 +1469,8 @@ if (typeof exports !== 'undefined') {
                 plotInfo[key] = info;
             }
 
-            this.getPlotInfo = function(dp){
-                var info = plotInfo[key];
-                return info;
+            this.getPlotInfo = function(d){
+                return plotInfo[d.id] || {};
             };
         },
 
