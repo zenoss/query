@@ -2206,7 +2206,8 @@ if (typeof exports !== 'undefined') {
                                         name: m.name,
                                         // rewrite the expression to look for the
                                         // renamed datapoint
-                                        expression: dp.expression.replace("rpn:", "rpn:"+ m.name + "-raw,")
+                                        expression: dp.expression.replace("rpn:", "rpn:"+ m.name + "-raw,"),
+                                        id: m.id
                                     };
 
                                     // original datapoint is now just a vehicle for the
@@ -2214,7 +2215,7 @@ if (typeof exports !== 'undefined') {
                                     // used by zenoss to self reference a datapoint in an RPN
                                     m.emit = false;
                                     m.name = m.name + "-raw";
-                                    m.id = m.id + "-rpn";
+                                    m.id = m.id + "-raw";
                                 }
 
                                 request.metrics.push(m);
