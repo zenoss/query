@@ -216,8 +216,9 @@
 
             for (i in this.config.datapoints) {
                 dp = this.config.datapoints[i];
+                key = utils.shortId();
+                dp.id = key;
                 nameOrMetric = dp.name || dp.metric;
-                key = nameOrMetric +"_"+ dp.tags.key[0];
                 info = {
                     'legend' : dp.legend || nameOrMetric,
                     'color' : dp.color,
@@ -226,12 +227,8 @@
                 plotInfo[key] = info;
             }
 
-            this.getPlotInfo = function(dp){
-                var nameOrMetric = dp.name || dp.metric,
-                    key = nameOrMetric +"_"+ dp.tags.key[0],
-                    info = plotInfo[key];
-
-                return info;
+            this.getPlotInfo = function(d){
+                return plotInfo[d.id] || {};
             };
         },
 
@@ -903,6 +900,10 @@
                                 if (dp.metric !== undefined) {
                                     m.metric = dp.metric;
 
+                                    if(dp.id){
+                                        m.id = dp.id;
+                                    }
+
                                     if (dp.rate !== undefined) {
                                         m.rate = dp.rate;
                                     }
@@ -952,7 +953,8 @@
                                         name: m.name,
                                         // rewrite the expression to look for the
                                         // renamed datapoint
-                                        expression: dp.expression.replace("rpn:", "rpn:"+ m.name + "-raw,")
+                                        expression: dp.expression.replace("rpn:", "rpn:"+ m.name + "-raw,"),
+                                        id: m.id
                                     };
 
                                     // original datapoint is now just a vehicle for the
@@ -960,6 +962,7 @@
                                     // used by zenoss to self reference a datapoint in an RPN
                                     m.emit = false;
                                     m.name = m.name + "-raw";
+                                    m.id = m.id + "-raw";
                                 }
 
                                 request.metrics.push(m);

@@ -159,7 +159,19 @@ var visualization,
 
         // time conversion utilities
         createDate: createDate,
-        relativeTimeToMS: relativeTimeToMS
+        relativeTimeToMS: relativeTimeToMS,
+
+        shortId: function(targetLength){
+            targetLength = targetLength || 10;
+            var shortIdChars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+                shortId = [];
+
+            while(shortId.length < targetLength){
+                shortId.push(shortIdChars[Math.floor(Math.random() * shortIdChars.length)]);
+            }
+
+            return shortId.join("");
+        }
 
     };
 
@@ -1104,7 +1116,27 @@ if (typeof exports !== 'undefined') {
              */
             create : function(name, config) {
 
-                var chart, deferred = $.Deferred();
+                //var chart, deferred = $.Deferred();
+                var chart;
+
+                // HACK - quick n dirty promise implementation
+                // since jquery may not be available yet
+                var thens = [];
+                var promise = {
+                    then: function(callback){
+                        thens.push(callback);
+                    }
+                };
+                var deferred = {
+                    resolve: function(){
+                        thens.forEach(function(callback){
+                            callback.apply(null, arguments);
+                        });
+                    },
+                    promise: function(){
+                        return promise;
+                    }
+                };
 
                 if (!depsLoaded) {
                     dependency.__bootstrap(function() {
@@ -1437,8 +1469,9 @@ if (typeof exports !== 'undefined') {
 
             for (i in this.config.datapoints) {
                 dp = this.config.datapoints[i];
+                key = utils.shortId();
+                dp.id = key;
                 nameOrMetric = dp.name || dp.metric;
-                key = nameOrMetric +"_"+ dp.tags.key[0];
                 info = {
                     'legend' : dp.legend || nameOrMetric,
                     'color' : dp.color,
@@ -1447,12 +1480,8 @@ if (typeof exports !== 'undefined') {
                 plotInfo[key] = info;
             }
 
-            this.getPlotInfo = function(dp){
-                var nameOrMetric = dp.name || dp.metric,
-                    key = nameOrMetric +"_"+ dp.tags.key[0],
-                    info = plotInfo[key];
-
-                return info;
+            this.getPlotInfo = function(d){
+                return plotInfo[d.id] || {};
             };
         },
 
@@ -2124,6 +2153,10 @@ if (typeof exports !== 'undefined') {
                                 if (dp.metric !== undefined) {
                                     m.metric = dp.metric;
 
+                                    if(dp.id){
+                                        m.id = dp.id;
+                                    }
+
                                     if (dp.rate !== undefined) {
                                         m.rate = dp.rate;
                                     }
@@ -2173,7 +2206,8 @@ if (typeof exports !== 'undefined') {
                                         name: m.name,
                                         // rewrite the expression to look for the
                                         // renamed datapoint
-                                        expression: dp.expression.replace("rpn:", "rpn:"+ m.name + "-raw,")
+                                        expression: dp.expression.replace("rpn:", "rpn:"+ m.name + "-raw,"),
+                                        id: m.id
                                     };
 
                                     // original datapoint is now just a vehicle for the
@@ -2181,6 +2215,7 @@ if (typeof exports !== 'undefined') {
                                     // used by zenoss to self reference a datapoint in an RPN
                                     m.emit = false;
                                     m.name = m.name + "-raw";
+                                    m.id = m.id + "-raw";
                                 }
 
                                 request.metrics.push(m);
