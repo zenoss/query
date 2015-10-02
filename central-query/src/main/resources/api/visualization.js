@@ -159,7 +159,19 @@ var visualization,
 
         // time conversion utilities
         createDate: createDate,
-        relativeTimeToMS: relativeTimeToMS
+        relativeTimeToMS: relativeTimeToMS,
+
+        shortId: function(targetLength){
+            targetLength = targetLength || 10;
+            var shortIdChars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+                shortId = [];
+
+            while(shortId.length < targetLength){
+                shortId.push(shortIdChars[Math.floor(Math.random() * shortIdChars.length)]);
+            }
+
+            return shortId.join("");
+        }
 
     };
 
@@ -1104,7 +1116,27 @@ if (typeof exports !== 'undefined') {
              */
             create : function(name, config) {
 
-                var chart, deferred = $.Deferred();
+                //var chart, deferred = $.Deferred();
+                var chart;
+
+                // HACK - quick n dirty promise implementation
+                // since jquery may not be available yet
+                var thens = [];
+                var promise = {
+                    then: function(callback){
+                        thens.push(callback);
+                    }
+                };
+                var deferred = {
+                    resolve: function(){
+                        thens.forEach(function(callback){
+                            callback.apply(null, arguments);
+                        });
+                    },
+                    promise: function(){
+                        return promise;
+                    }
+                };
 
                 if (!depsLoaded) {
                     dependency.__bootstrap(function() {
@@ -1432,18 +1464,25 @@ if (typeof exports !== 'undefined') {
          * @access private
          */
         __buildPlotInfo: function() {
-            var i, info, dp;
+            var i, info, dp, nameOrMetric, key;
+            var plotInfo = {};
 
-            this.plotInfo = {};
             for (i in this.config.datapoints) {
                 dp = this.config.datapoints[i];
+                key = utils.shortId();
+                dp.id = key;
+                nameOrMetric = dp.name || dp.metric;
                 info = {
-                    'legend' : dp.legend || dp.name || dp.metric,
+                    'legend' : dp.legend || nameOrMetric,
                     'color' : dp.color,
                     'fill' : dp.fill
                 };
-                this.plotInfo[dp.name || dp.metric] = info;
+                plotInfo[key] = info;
             }
+
+            this.getPlotInfo = function(d){
+                return plotInfo[d.id] || {};
+            };
         },
 
         /**
@@ -1708,17 +1747,18 @@ if (typeof exports !== 'undefined') {
                 for (i=0; i< futureTimes.length; i++) {
                     futureTime = moment().add(futureTimes[i], 'days'),
                     rawProjectedValue = Number(projection.projectionFn(futureTime.unix()).toFixed(2)),
-                    projectedValue = (rawProjectedValue > 0) ? rawProjectedValue.toLocaleString('en') : 0;
+                    projectedValue = (rawProjectedValue > 0) ? this.formatValue(rawProjectedValue) : 0;
                     table += "<tr><td>" + futureTime.format("MMM-D") + " ("  + futureTimes[i].toString() + " days)</td><td align='right'>" +
                         projectedValue + "</td></tr>";
                 }
                 table  += "</table>";
 
                 // add a row representing the projection
-                div.append('<div id=' + uniqueDivId  +
-                           ' title="placeholder"  > <div class="zenfooter_box" style="opacity: 1;">' +
-                           '</div><span class="projectionLegend">&nbsp;&nbsp;' + projection.key.replace("Projected ", "") +
-                           '</span><div class="info_icon"><span style="font-style: italic">i</span></div></div>');
+                div.append('<div id=' + uniqueDivId +
+                           ' title="placeholder" style="clear:both;"> <div class="zenfooter_box" style="opacity: 1;">' +
+                           '</div><div class="projection_legend" style="min-height:15px; float:left;">&nbsp;&nbsp;' + projection.key.replace("Projected ", "") +
+                           '</div><div class="info_icon"><span style="font-style: italic">i</span></div></div>');
+
                 $("#" + uniqueDivId + " .zenfooter_box").css("background-color", projection.color);
                 // use jQuery UI tool tips to register a table tool tip showing projected values on hover
                 $("#" + uniqueDivId).tooltip({
@@ -2114,6 +2154,10 @@ if (typeof exports !== 'undefined') {
                                 if (dp.metric !== undefined) {
                                     m.metric = dp.metric;
 
+                                    if(dp.id){
+                                        m.id = dp.id;
+                                    }
+
                                     if (dp.rate !== undefined) {
                                         m.rate = dp.rate;
                                     }
@@ -2163,7 +2207,8 @@ if (typeof exports !== 'undefined') {
                                         name: m.name,
                                         // rewrite the expression to look for the
                                         // renamed datapoint
-                                        expression: dp.expression.replace("rpn:", "rpn:"+ m.name + "-raw,")
+                                        expression: dp.expression.replace("rpn:", "rpn:"+ m.name + "-raw,"),
+                                        id: m.id
                                     };
 
                                     // original datapoint is now just a vehicle for the
@@ -2171,6 +2216,7 @@ if (typeof exports !== 'undefined') {
                                     // used by zenoss to self reference a datapoint in an RPN
                                     m.emit = false;
                                     m.name = m.name + "-raw";
+                                    m.id = m.id + "-raw";
                                 }
 
                                 request.metrics.push(m);
@@ -2209,8 +2255,8 @@ if (typeof exports !== 'undefined') {
                     metric = $.extend(true, {}, m);
                     metric.aggregator = projection.aggregateFunction || "max";
                     metric.emit = true;
-                    if (self.plotInfo[metric.name || metric.metric]) {
-                        projection.legend = "Projected " +self.plotInfo[metric.name || metric.metric].legend;
+                    if (self.getPlotInfo(metric)) {
+                        projection.legend = "Projected " +self.getPlotInfo(metric).legend;
                     }
                     request.metrics.push(metric);
                 }
@@ -2307,7 +2353,7 @@ if (typeof exports !== 'undefined') {
 
 
                 // create plots from each datapoint
-                info = this.plotInfo[series.metric];
+                info = this.getPlotInfo(series);
                 key = info.legend;
                 // TODO - use tags to make key unique
                 plot = {

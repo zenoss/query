@@ -92,7 +92,19 @@
 
         // time conversion utilities
         createDate: createDate,
-        relativeTimeToMS: relativeTimeToMS
+        relativeTimeToMS: relativeTimeToMS,
+
+        shortId: function(targetLength){
+            targetLength = targetLength || 10;
+            var shortIdChars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+                shortId = [];
+
+            while(shortId.length < targetLength){
+                shortId.push(shortIdChars[Math.floor(Math.random() * shortIdChars.length)]);
+            }
+
+            return shortId.join("");
+        }
 
     };
 
