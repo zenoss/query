@@ -1754,10 +1754,11 @@ if (typeof exports !== 'undefined') {
                 table  += "</table>";
 
                 // add a row representing the projection
-                div.append('<div id=' + uniqueDivId  +
-                           ' title="placeholder"  > <div class="zenfooter_box" style="opacity: 1;">' +
-                           '</div><span class="projectionLegend">&nbsp;&nbsp;' + projection.key.replace("Projected ", "") +
-                           '</span><div class="info_icon"><span style="font-style: italic">i</span></div></div>');
+                div.append('<div id=' + uniqueDivId +
+                           ' title="placeholder" style="clear:both;"> <div class="zenfooter_box" style="opacity: 1;">' +
+                           '</div><div class="projection_legend" style="min-height:15px; float:left;">&nbsp;&nbsp;' + projection.key.replace("Projected ", "") +
+                           '</div><div class="info_icon"><span style="font-style: italic">i</span></div></div>');
+
                 $("#" + uniqueDivId + " .zenfooter_box").css("background-color", projection.color);
                 // use jQuery UI tool tips to register a table tool tip showing projected values on hover
                 $("#" + uniqueDivId).tooltip({
