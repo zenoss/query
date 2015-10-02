@@ -1281,6 +1281,7 @@ if (typeof exports !== 'undefined') {
      */
 
     var DEFAULT_NUMBER_FORMAT = "%4.2f";
+    var MAX_Y_AXIS_LABEL_LENGTH = 5;
 
     // data for formatting time ranges
     var TIME_DATA = [
@@ -2808,7 +2809,9 @@ if (typeof exports !== 'undefined') {
 
     function toEng(val, preferredUnit, format, base){
         var result,
-            unit;
+            unit,
+            formatted,
+            symbol;
 
         // if preferredUnit is provided, target that value
         if(preferredUnit !== undefined){
@@ -2819,17 +2822,46 @@ if (typeof exports !== 'undefined') {
             unit = Math.floor(Math.log(Math.abs(val)) / Math.log(base));
         }
 
+        symbol = SYMBOLS[unit];
+
         // TODO - if Math.abs(unit) > 8, return value in scientific notation
         result = val / Math.pow(base, unit);
 
         try{
             // if sprintf is passed a format it doesn't understand an exception is thrown
-            return sprintf(format, result) + SYMBOLS[unit];
+            formatted = sprintf(format, result);
         } catch(err) {
-            return sprintf(DEFAULT_NUMBER_FORMAT, result) + SYMBOLS[unit];
+            console.error("Invalid format", format, "using default", DEFAULT_NUMBER_FORMAT);
+            formatted = sprintf(DEFAULT_NUMBER_FORMAT, result);
         }
+
+        // TODO - make graph y axis capable of expanding to
+        // accommodate long numbers
+        return shortenNumber(formatted, MAX_Y_AXIS_LABEL_LENGTH) + symbol;
     }
 
+    // attempts to make a long floating point number
+    // fit in `length` characters. It will trim the
+    // fractional part of the number, but never the
+    // whole part of the number
+    function shortenNumber(numStr, targetLength){
+        var parts = numStr.split("."),
+            whole = parts[0],
+            fractional = parts[1] || "";
+
+        // if the number is already short enough
+        if(whole.length + fractional.length <= targetLength){
+            return numStr;
+        }
+
+        // if the whole part of the number is
+        // too long, return it as is. we tried our best.
+        if(whole.length >= targetLength){
+            return whole;
+        }
+
+        return whole +"."+ fractional.substring(0, targetLength - whole.length);
+    }
 })();
 
 
