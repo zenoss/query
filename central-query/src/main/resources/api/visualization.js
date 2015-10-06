@@ -1752,7 +1752,7 @@ if (typeof exports !== 'undefined') {
             // get a jquery handle on it
             var div = $(this.footer).find(".projectionPlots");
 
-			if (projections.length) {
+            if (projections.length) {
                 projections.sort(Ext.bind(utils.compareASC, undefined, ['key'], true));
             }
             // create a new row with
