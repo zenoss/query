@@ -117,8 +117,9 @@
                 };
                 var deferred = {
                     resolve: function(){
+                        var args = arguments;
                         thens.forEach(function(callback){
-                            callback.apply(null, arguments);
+                            callback.apply(null, args);
                         });
                     },
                     promise: function(){
