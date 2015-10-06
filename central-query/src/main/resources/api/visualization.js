@@ -1364,6 +1364,8 @@ if (typeof exports !== 'undefined') {
             throw new utils.Error('SelectorError', 'unknown selector specified, "' + this.name + '"');
         }
 
+        this.printOptimized = config.printOptimized;
+
         // base should be something like 1000 or 1024
         this.base = config.base || 1000;
 
@@ -1965,7 +1967,7 @@ if (typeof exports !== 'undefined') {
                             });
                         });
 
-                        if (self.__renderForecastingTimeHorizonFooter !== undefined) {
+                        if (!self.printOptimized && self.__renderForecastingTimeHorizonFooter !== undefined) {
                             self.__renderForecastingTimeHorizonFooter(self);
                         }
                     },
