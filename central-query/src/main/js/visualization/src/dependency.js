@@ -303,11 +303,6 @@
                     return !!window.moment.tz;
                 }
             },{
-                source: "moment-timezone-data.js",
-                check: function(){
-                    return !!window.moment.tz;
-                }
-            },{
                 source: "sprintf.min.js",
                 check: function(){
                     return !!window.sprintf;
