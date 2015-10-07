@@ -201,7 +201,7 @@ var visualization,
 
         // parse as date object, date string, or ms since epoch
         } else {
-            d = moment(val);
+            d = moment(new Date(val));
         }
 
         if(d.isValid()){
@@ -887,11 +887,6 @@ if (typeof exports !== 'undefined') {
                     return !!window.moment.tz;
                 }
             },{
-                source: "moment-timezone-data.js",
-                check: function(){
-                    return !!window.moment.tz;
-                }
-            },{
                 source: "sprintf.min.js",
                 check: function(){
                     return !!window.sprintf;
@@ -1281,6 +1276,7 @@ if (typeof exports !== 'undefined') {
      */
 
     var DEFAULT_NUMBER_FORMAT = "%4.2f";
+    var MAX_Y_AXIS_LABEL_LENGTH = 5;
 
     // data for formatting time ranges
     var TIME_DATA = [
@@ -1754,10 +1750,11 @@ if (typeof exports !== 'undefined') {
                 table  += "</table>";
 
                 // add a row representing the projection
-                div.append('<div id=' + uniqueDivId  +
-                           ' title="placeholder"  > <div class="zenfooter_box" style="opacity: 1;">' +
-                           '</div><span class="projectionLegend">&nbsp;&nbsp;' + projection.key.replace("Projected ", "") +
-                           '</span><div class="info_icon"><span style="font-style: italic">i</span></div></div>');
+                div.append('<div id=' + uniqueDivId +
+                           ' title="placeholder" style="clear:both;"> <div class="zenfooter_box" style="opacity: 1;">' +
+                           '</div><div class="projection_legend" style="min-height:15px; float:left;">&nbsp;&nbsp;' + projection.key.replace("Projected ", "") +
+                           '</div><div class="info_icon"><span style="font-style: italic">i</span></div></div>');
+
                 $("#" + uniqueDivId + " .zenfooter_box").css("background-color", projection.color);
                 // use jQuery UI tool tips to register a table tool tip showing projected values on hover
                 $("#" + uniqueDivId).tooltip({
@@ -2807,7 +2804,9 @@ if (typeof exports !== 'undefined') {
 
     function toEng(val, preferredUnit, format, base){
         var result,
-            unit;
+            unit,
+            formatted,
+            symbol;
 
         // if preferredUnit is provided, target that value
         if(preferredUnit !== undefined){
@@ -2818,17 +2817,46 @@ if (typeof exports !== 'undefined') {
             unit = Math.floor(Math.log(Math.abs(val)) / Math.log(base));
         }
 
+        symbol = SYMBOLS[unit];
+
         // TODO - if Math.abs(unit) > 8, return value in scientific notation
         result = val / Math.pow(base, unit);
 
         try{
             // if sprintf is passed a format it doesn't understand an exception is thrown
-            return sprintf(format, result) + SYMBOLS[unit];
+            formatted = sprintf(format, result);
         } catch(err) {
-            return sprintf(DEFAULT_NUMBER_FORMAT, result) + SYMBOLS[unit];
+            console.error("Invalid format", format, "using default", DEFAULT_NUMBER_FORMAT);
+            formatted = sprintf(DEFAULT_NUMBER_FORMAT, result);
         }
+
+        // TODO - make graph y axis capable of expanding to
+        // accommodate long numbers
+        return shortenNumber(formatted, MAX_Y_AXIS_LABEL_LENGTH) + symbol;
     }
 
+    // attempts to make a long floating point number
+    // fit in `length` characters. It will trim the
+    // fractional part of the number, but never the
+    // whole part of the number
+    function shortenNumber(numStr, targetLength){
+        var parts = numStr.split("."),
+            whole = parts[0],
+            fractional = parts[1] || "";
+
+        // if the number is already short enough
+        if(whole.length + fractional.length <= targetLength){
+            return numStr;
+        }
+
+        // if the whole part of the number is
+        // too long, return it as is. we tried our best.
+        if(whole.length >= targetLength){
+            return whole;
+        }
+
+        return whole +"."+ fractional.substring(0, targetLength - whole.length);
+    }
 })();
 
 

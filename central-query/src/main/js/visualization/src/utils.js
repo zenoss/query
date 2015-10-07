@@ -134,7 +134,7 @@
 
         // parse as date object, date string, or ms since epoch
         } else {
-            d = moment(val);
+            d = moment(new Date(val));
         }
 
         if(d.isValid()){
