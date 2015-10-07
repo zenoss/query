@@ -104,10 +104,43 @@
             }
 
             return shortId.join("");
-        }
+        },
 
+        getDeferred: getDeferred
     };
 
+    // quick n dirty promise implementation
+    // since jquery may not be available yet and this
+    // is needed for the dependency loading code that
+    // loads jquery
+    // NOTE - this deferred only handles successful
+    // resolutions, and its promise can only "then"
+    function getDeferred(){
+        var thens = [];
+        var resolved;
+        var promise = {
+            then: function(callback){
+                if(resolved){
+                    callback.apply(null, resolved);
+                } else {
+                    thens.push(callback);
+                }
+            }
+        };
+        var deferred = {
+            resolve: function(){
+                resolved = arguments;
+                thens.forEach(function(callback){
+                    callback.apply(null, resolved);
+                });
+            },
+            promise: function(){
+                return promise;
+            }
+        };
+
+        return deferred;
+    }
 
     // friendly time to ms conversion
     var TIME_UNITS = {
