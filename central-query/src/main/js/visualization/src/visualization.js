@@ -104,28 +104,8 @@
              */
             create : function(name, config) {
 
-                //var chart, deferred = $.Deferred();
-                var chart;
-
-                // HACK - quick n dirty promise implementation
-                // since jquery may not be available yet
-                var thens = [];
-                var promise = {
-                    then: function(callback){
-                        thens.push(callback);
-                    }
-                };
-                var deferred = {
-                    resolve: function(){
-                        var args = arguments;
-                        thens.forEach(function(callback){
-                            callback.apply(null, args);
-                        });
-                    },
-                    promise: function(){
-                        return promise;
-                    }
-                };
+                var chart,
+                    deferred = utils.getDeferred();
 
                 if (!depsLoaded) {
                     dependency.__bootstrap(function() {

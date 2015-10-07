@@ -171,10 +171,43 @@ var visualization,
             }
 
             return shortId.join("");
-        }
+        },
 
+        getDeferred: getDeferred
     };
 
+    // quick n dirty promise implementation
+    // since jquery may not be available yet and this
+    // is needed for the dependency loading code that
+    // loads jquery
+    // NOTE - this deferred only handles successful
+    // resolutions, and its promise can only "then"
+    function getDeferred(){
+        var thens = [];
+        var resolved;
+        var promise = {
+            then: function(callback){
+                if(resolved){
+                    callback.apply(null, resolved);
+                } else {
+                    thens.push(callback);
+                }
+            }
+        };
+        var deferred = {
+            resolve: function(){
+                resolved = arguments;
+                thens.forEach(function(callback){
+                    callback.apply(null, resolved);
+                });
+            },
+            promise: function(){
+                return promise;
+            }
+        };
+
+        return deferred;
+    }
 
     // friendly time to ms conversion
     var TIME_UNITS = {
@@ -1116,28 +1149,8 @@ if (typeof exports !== 'undefined') {
              */
             create : function(name, config) {
 
-                //var chart, deferred = $.Deferred();
-                var chart;
-
-                // HACK - quick n dirty promise implementation
-                // since jquery may not be available yet
-                var thens = [];
-                var promise = {
-                    then: function(callback){
-                        thens.push(callback);
-                    }
-                };
-                var deferred = {
-                    resolve: function(){
-                        var args = arguments;
-                        thens.forEach(function(callback){
-                            callback.apply(null, args);
-                        });
-                    },
-                    promise: function(){
-                        return promise;
-                    }
-                };
+                var chart,
+                    deferred = utils.getDeferred();
 
                 if (!depsLoaded) {
                     dependency.__bootstrap(function() {
