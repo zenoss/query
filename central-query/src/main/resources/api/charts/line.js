@@ -102,6 +102,12 @@
             // tell nvd3 not to try to format them
             model.headerFormatter(function(d) { return d; });
 
+            // if this is intended to be printed, ain't no
+            // reason to show the legend!
+            if(chart.printOptimized){
+                model.showLegend(false);
+            }
+
             // ensure that there are no duplicate ticks on the y axis
             model.yAxis.tickFormat(chart.dedupeYLabels(model));
             model.yAxis.axisLabel(chart.yAxisLabel);
