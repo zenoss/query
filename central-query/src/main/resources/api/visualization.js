@@ -173,6 +173,12 @@ var visualization,
             return shortId.join("");
         },
 
+        compareASC: function(key) {
+            return function(a, b) {
+                return (a[key] < b[key]) ? -1 : (a[key] > b[key]) ? 1 : 0;
+            };
+        },
+
         getDeferred: getDeferred
     };
 
@@ -1381,7 +1387,11 @@ if (typeof exports !== 'undefined') {
         this.__buildPlotInfo();
 
         this.overlays = config.overlays || [];
+        this.overlays.sort(utils.compareASC('legend'));
+
         this.projections = config.projections || [];
+        this.projections.sort(utils.compareASC('id'));
+
         // set the format or a default
         this.format = config.format || DEFAULT_NUMBER_FORMAT;
         if ($.isNumeric(config.miny)) {
@@ -1750,6 +1760,8 @@ if (typeof exports !== 'undefined') {
             $(this.footer).append("<div class='projectionPlots'><span style='font-weight:bold;'>Projections</></div>");
             // get a jquery handle on it
             var div = $(this.footer).find(".projectionPlots");
+
+            projections.sort(utils.compareASC('key'));
 
             // create a new row with
             projections.forEach(function(projection) {
