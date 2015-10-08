@@ -1492,8 +1492,12 @@ if (typeof exports !== 'undefined') {
                 plotInfo[key] = info;
             }
 
-            this.getPlotInfo = function(d){
-                return plotInfo[d.id] || {};
+            this.getPlotInfo = function(d) {
+                var metricId = d.id;
+                if (metricId.endsWith('-raw')) {
+                    metricId = metricId.replace('-raw', '');
+                }
+                return plotInfo[metricId] || {};
             };
         },
 
