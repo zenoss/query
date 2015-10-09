@@ -469,6 +469,10 @@
                 resize = true;
             }
 
+            if (this.__renderForecastingTimeHorizonFooter !== undefined) {
+                this.__renderForecastingTimeHorizonFooter(this);
+            }
+
             return resize;
         },
         /**
@@ -722,10 +726,6 @@
                                 }
                             });
                         });
-
-                        if (!self.printOptimized && self.__renderForecastingTimeHorizonFooter !== undefined) {
-                            self.__renderForecastingTimeHorizonFooter(self);
-                        }
                     },
                     'error' : function() {
                         self.plots = undefined;
