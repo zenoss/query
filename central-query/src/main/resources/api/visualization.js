@@ -1631,7 +1631,7 @@ if (typeof exports !== 'undefined') {
             } else {
                 sta = eta = "N/A";
             }
-            $($(rows[0]).find('td')).html(
+            $($(rows[0]).find('td')[0]).html(
                     sta + ' to ' + eta + ' (' + timezone + ')');
 
             /*
