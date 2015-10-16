@@ -60,14 +60,15 @@ public class OpenTSDBClient {
             StatusLine status = response.getStatusLine();
             if (status.getStatusCode() != Response.Status.OK.getStatusCode()) {
                 String message = status.getReasonPhrase();
-                log.warn("HTTP Execute returned status {}. Reason: {}", status.getStatusCode(), status.getReasonPhrase());
                 entity = response.getEntity();
                 if (null != entity) {
                     String content = EntityUtils.toString(response.getEntity());
-                    log.debug("####### RESPONSE CONTENT:#########\n{}", content);
                     OpenTSDBErrorResponse tsdbResponse = Utils.getObjectMapper().readValue(content, OpenTSDBErrorResponse.class);
-                    log.info("Response object: {}", Utils.jsonStringFromObject(tsdbResponse));
+                    log.info("Response code {}, message: {}", tsdbResponse.error.code, tsdbResponse.error.message);
+                    log.debug("Response object: {}", Utils.jsonStringFromObject(tsdbResponse));
                     message = tsdbResponse.error.message;
+                }else{
+                    log.info("HTTP Execute returned status {}. Reason: {}", status.getStatusCode(), status.getReasonPhrase());
                 }
                 queryStatus = new QueryStatus(QueryStatus.QueryStatusEnum.ERROR, message);
             } else {
