@@ -2388,7 +2388,8 @@ if (typeof exports !== 'undefined') {
                     'key' : key,
                     'color' : info.color,
                     'fill' : info.fill,
-                    'values' : []
+                    'values' : [],
+                    'disabled' : info.disabled
                 };
 
                 series.datapoints.forEach(function(datapoint){
@@ -2426,15 +2427,20 @@ if (typeof exports !== 'undefined') {
 
             // add overlays
             if (this.overlays.length && plots.length && plots[0].values.length) {
-                for (i in this.overlays) {
-                    overlay = this.overlays[i];
+                this.overlays.forEach(function(overlay){
+                    // if disabled is undefined, default to true, otherwise
+                    // use the disabled value
+                    var isDisabled = "disabled" in overlay ? overlay.disabled : true;
                     // get the date range
                     firstMetric = plots[0];
                     plot = {
                         'key' : overlay.legend + "*",
-                        'disabled' : true,
+                        'disabled' : isDisabled,
                         'values' : [],
-                        'color' : overlay.color
+                        'color' : overlay.color,
+                        // store original overlay object
+                        // on this plot
+                        'overlay': overlay
                     };
                     minDate = firstMetric.values[0].x;
                     maxDate = firstMetric.values[firstMetric.values.length - 1].x;
@@ -2452,7 +2458,7 @@ if (typeof exports !== 'undefined') {
                         });
                     }
                     plots.push(plot);
-                }
+                });
             }
 
             return plots;

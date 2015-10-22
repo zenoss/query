@@ -43,18 +43,11 @@
                 model.yDomain(chart.calculateYDomain(chart.miny, chart.maxy, data));
             }
 
-            // find out which series are disabled or not
-            var disabled = {};
-            chart.svg.selectAll("g.nv-series")
-                .each(function(d) {
-                    disabled[d.key] = d.disabled;
-                });
-
-            // make sure when we update we preserve the disabled behavior
-            chart.plots.forEach(function(d) {
-                if (disabled[d.key] === true) {
-                    d.disabled = true;
-                }
+            // copy series disabled flags to plots
+            // so that graph will preserve series
+            // toggle state
+            chart.plots.forEach(function(plot, i){
+                plot.disabled = model.legendState[i];
             });
 
             chart.svg.datum(chart.plots)
@@ -92,6 +85,15 @@
             model.useInteractiveGuideline(true);
             model.showControls(false);
             model.duration(0);
+
+            // on legend state change, update any
+            // overlays disabled state so they
+            // can persist through graph refresh
+            model.dispatch.on("stateChange", function(state){
+                if(model.legendState){
+                    model.legendState = state.disabled;
+                }
+            });
 
             chart.updateXLabels(data.startTimeActual * 1000, data.endTimeActual * 1000, _chart.model().xAxis);
             // since were controlling labels ourselves,
