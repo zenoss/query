@@ -70,7 +70,9 @@
             // so that graph will preserve series
             // toggle state
             chart.plots.forEach(function(plot, i){
-                plot.disabled = model.legendState[i];
+                if(model.legendState){
+                    plot.disabled = model.legendState[i];
+                }
             });
 
             chart.svg
