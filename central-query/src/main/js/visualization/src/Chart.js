@@ -481,52 +481,91 @@
          * @access private
          **/
         __renderProjectionFooter: function() {
-            var projections = this.__getProjectionPlots(),
+            var chart = this;
+
+            // first remove all previous projections
+            $(chart.footer).find(".zenfooter_projection").remove();
+
+            var projectionPlots = chart.__getProjectionPlots(),
                 // the days out that we are showing projections for (e.g. 30 days from now)
-                futureTimes = [30, 60, 90];
+                futureTimes = [30, 60, 90],
+                tableRows = $(chart.footer).find('tr'),
+                linedSpacerStyle = "width: 15px; border-right: 1px solid #ccc;";
 
-            // recreate the legend from scratch each update
-            $(this.footer).find(".projectionPlots").remove();
+            var titleRow = $(tableRows[0]),
+                headerRow = tableRows[1];
 
-            // create the content div.
-            $(this.footer).append("<div class='projectionPlots'><span style='font-weight:bold;'>Projections</></div>");
-            // get a jquery handle on it
-            var div = $(this.footer).find(".projectionPlots");
+            // append title spacer
+            titleRow.append($("<td/>", {
+                text: "",
+                class: "zenfooter_lined_spacer zenfooter_projection",
+                style: linedSpacerStyle
+            }));
+            // append title header
+            titleRow.append($("<td/>", {
+                colspan: futureTimes.length,
+                text: "Projected Values",
+                class: "zenfooter_dates zenfooter_projection"
+            }));
+            // append header spacer
+            $(headerRow).append($("<td/>", {
+                text: "",
+                class: "zenfooter_lined_spacer zenfooter_projection",
+                style: linedSpacerStyle
+            }));
+            // append column headers
+            for (var i=0; i < futureTimes.length; i++) {
+                var futureTime = moment().add(futureTimes[i], 'days'),
+                    newColumn = $("<th/>", {
+                        text: futureTime.format("MMM-D") + " (" + futureTimes[i].toString() + " days)",
+                        class: 'footer_header zenfooter_data_text zenfooter_projection'
+                    });
+                $(headerRow).append(newColumn);
+            }
 
-            projections.sort(utils.compareASC('key'));
-
-            // create a new row with
-            projections.forEach(function(projection) {
-                var table = "<table width='250px'><tr><th><b>Date</b></th><th><b>Value</b></th></tr>", 
-                    i, futureTime, rawProjectedValue, projectedValue, 
-                    uniqueDivId = Math.round(new Date().getTime() + (Math.random() * 100)).toString();
-                for (i=0; i< futureTimes.length; i++) {
-                    futureTime = moment().add(futureTimes[i], 'days'),
-                    rawProjectedValue = Number(projection.projectionFn(futureTime.unix()).toFixed(2)),
-                    projectedValue = (rawProjectedValue > 0) ? this.formatValue(rawProjectedValue) : 0;
-                    table += "<tr><td>" + futureTime.format("MMM-D") + " ("  + futureTimes[i].toString() + " days)</td><td align='right'>" +
-                        projectedValue + "</td></tr>";
+            // append column data
+            var duplicateRowNames = {};
+            projectionPlots.forEach(function(plot) {
+                // projection plot data comes in the same order as the graph footer data
+                // we need to keep track of seen row names because duplicate names are possible
+                // in that case, we rely on the order that we've seen the data
+                var plotKey = plot.key.replace("Projected ", "");
+                if (duplicateRowNames[plotKey] != undefined) {
+                    duplicateRowNames[plotKey]++;
+                } else {
+                    duplicateRowNames[plotKey] = 0;
                 }
-                table  += "</table>";
+                var rowIndex = duplicateRowNames[plotKey],
+                    row = $($(chart.footer).find('.zenfooter_data_text:contains(' + plotKey + ')').get(rowIndex)).parent();
+                // append row spacer
+                row.append($("<td/>",{
+                    text: "",
+                    class: "zenfooter_lined_spacer zenfooter_projection",
+                    style: linedSpacerStyle
+                }));
 
-                // add a row representing the projection
-                div.append('<div id=' + uniqueDivId +
-                           ' title="placeholder" style="clear:both;"> <div class="zenfooter_box" style="opacity: 1;">' +
-                           '</div><div class="projection_legend" style="min-height:15px; float:left;">&nbsp;&nbsp;' + projection.key.replace("Projected ", "") +
-                           '</div><div class="info_icon"><span style="font-style: italic">i</span></div></div>');
+                for (var i=0; i < futureTimes.length; i++) {
+                    var futureTime = moment().add(futureTimes[i], 'days'),
+                        projectedValue = plot.projectionFn(futureTime.unix() * 1000).toFixed(2);
 
-                $("#" + uniqueDivId + " .zenfooter_box").css("background-color", projection.color);
-                // use jQuery UI tool tips to register a table tool tip showing projected values on hover
-                $("#" + uniqueDivId).tooltip({
-                    show: {
-                        effect: "slideDown",
-                        delay: 150
-                    },
-                    content: function() {
-                        return table;
+                    if (isNaN(projectedValue) || projectedValue < 0) {
+                        projectedValue = "N/A";
+                    } else if (chart.yAxisLabel.toLowerCase() === "percentage") {
+                        projectedValue = projectedValue + "%";
+                    } else {
+                        projectedValue = chart.formatValue(projectedValue);
                     }
-                });
-            }.bind(this));
+
+                    var projectedData = $("<td/>", {
+                        text: projectedValue,
+                        class: "zenfooter_data zenfooter_data_number zenfooter_projection"
+                    });
+
+                    $(row).append(projectedData);
+                }
+            }.bind(chart));
+
+            chart.resize();
 
         },
         /**
