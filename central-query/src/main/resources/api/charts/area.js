@@ -90,7 +90,9 @@
             // overlays disabled state so they
             // can persist through graph refresh
             model.dispatch.on("stateChange", function(state){
-                model.legendState = state.disabled;
+                if(model.legendState){
+                    model.legendState = state.disabled;
+                }
             });
 
             chart.updateXLabels(data.startTimeActual * 1000, data.endTimeActual * 1000, _chart.model().xAxis);
