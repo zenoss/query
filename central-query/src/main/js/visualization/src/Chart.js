@@ -147,6 +147,7 @@
         $(this.footer).addClass('zenfooter');
         this.$div.append($(this.footer));
 
+        this.__renderCapacityFooter = config.renderCapacityFooter;
         this.__renderForecastingTimeHorizonFooter = config.renderForecastingTimeHorizonFooter;
 
         this.svg = d3.select(this.svgwrapper).append('svg');
@@ -469,6 +470,9 @@
                 resize = true;
             }
 
+            if (this.__renderCapacityFooter !== undefined) {
+                this.__renderCapacityFooter(this);
+            }
             if (this.__renderForecastingTimeHorizonFooter !== undefined) {
                 this.__renderForecastingTimeHorizonFooter(this);
             }
