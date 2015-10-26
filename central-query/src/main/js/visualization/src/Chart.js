@@ -1592,6 +1592,24 @@
             }
 
             this.preferredYUnit = unitIndex;
+        },
+
+        // returns date object for start time of this chart
+        getStartDate: function(){
+            if(!this.request.start){
+                console.warn("Missing start date");
+                return;
+            }
+            var date = utils.createDate(this.request.start);
+            return date;
+        },
+        getEndDate: function(){
+            if(!this.request.end){
+                console.warn("Missing end date");
+                return;
+            }
+            var date = utils.createDate(this.request.end);
+            return date;
         }
     };
 
