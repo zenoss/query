@@ -279,13 +279,14 @@
          * footer, and then resizes the underlying chart.
          */
         resize: function () {
-            var fheight, height, span;
+            var theight, fheight, height, span;
 
             var $footer = this.$div.find(".zenfooter");
+            var $title = this.$div.find(".graph_title");
 
-            fheight = this.__hasFooter() ? parseInt($footer.outerHeight(), 10)
-                : 0;
-            height = parseInt(this.$div.height(), 10) - fheight;
+            theight = parseInt($title.outerHeight(), 10);
+            fheight = this.__hasFooter() ? parseInt($footer.outerHeight(), 10) : 0;
+            height = parseInt(this.$div.height(), 10) - fheight - theight;
             span = $(this.message).find('span');
 
             // resize wrapper to ensure enough space for graph
@@ -578,6 +579,8 @@
                     $(row).append(projectionColumn);
                 }
             }.bind(this));
+
+            this.resize();
         },
         /**
          * Returns true if this chart is displaying a footer, else false
