@@ -1,8 +1,8 @@
 authEnabled: true
 logging:
-  level: INFO
+  level: WARN
   loggers:
-    "org.zenoss": INFO
+    "org.zenoss": WARN
 metrics:
   defaultReturnSet: EXACT
   defaultStartTime: 1h-ago
