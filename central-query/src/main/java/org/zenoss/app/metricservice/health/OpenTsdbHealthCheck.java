@@ -30,16 +30,12 @@
  */
 package org.zenoss.app.metricservice.health;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.dropwizardspring.annotations.HealthCheck;
 
-import java.io.InputStream;
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Map;
@@ -50,50 +46,28 @@ public class OpenTsdbHealthCheck extends com.yammer.metrics.core.HealthCheck {
     @Autowired
     MetricServiceAppConfiguration config;
 
-    private static final Logger log = LoggerFactory.getLogger(OpenTsdbHealthCheck.class);
-
     protected OpenTsdbHealthCheck() {
         super("OpenTSDB");
     }
 
     @Override
     protected Result check() throws Exception {
-        InputStream is = null;
-        HttpURLConnection connection = null;
         try {
             URL url = new URL(config.getMetricServiceConfig().getOpenTsdbUrl() + "/api/stats");
-            connection = (HttpURLConnection) url.openConnection();
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setConnectTimeout(config.getMetricServiceConfig().getConnectionTimeoutMs());
             connection.setReadTimeout(config.getMetricServiceConfig().getConnectionTimeoutMs());
             if (connection.getResponseCode() / 100 != 2) {
                 return Result.unhealthy("Unexpected result code from OpenTSDB Server: " + connection.getResponseCode());
             }
 
-            is = connection.getInputStream();
-
             // Exception if unable to parse object from input stream
             new ObjectMapper().reader(Map[].class)
-                    .readValue(is).toString();
+                    .readValue(connection.getInputStream()).toString();
 
             return Result.healthy();
-
         } catch (Exception e) {
-
             return Result.unhealthy(e);
-
-        } finally {
-
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException e) {
-                    log.warn("Unable to close InputStream.");
-                }
-            }
-
-            if (connection != null) {
-                connection.disconnect();
-            }
         }
     }
 }
