@@ -30,8 +30,6 @@
  */
 package org.zenoss.app.metricservice.health;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -53,7 +51,6 @@ public class OpenTsdbHealthCheck extends com.yammer.metrics.core.HealthCheck {
     @Autowired
     MetricServiceAppConfiguration config;
 
-    private static final Logger log = LoggerFactory.getLogger(OpenTsdbHealthCheck.class);
     private static DefaultHttpClient httpclient = new DefaultHttpClient();
 
     protected OpenTsdbHealthCheck() {
@@ -63,28 +60,30 @@ public class OpenTsdbHealthCheck extends com.yammer.metrics.core.HealthCheck {
     @Override
     protected Result check() throws Exception {
         HttpGet httpGet = null;
+        InputStream instream = null;
         try {
             HttpGet httpget = new HttpGet(config.getMetricServiceConfig().getOpenTsdbUrl() + "/api/stats");
             HttpResponse response = httpclient.execute(httpget);
             int code = response.getStatusLine().getStatusCode();
-            if(code != Response.Status.OK.getStatusCode()) {
+            if (code != Response.Status.OK.getStatusCode()) {
                 return Result.unhealthy("Unexpected result code from OpenTSDB Server: " + code);
             }
 
             HttpEntity entity = response.getEntity();
-            InputStream instream = entity.getContent();
+            instream = entity.getContent();
 
             // Exception if unable to parse object from input stream.
             new ObjectMapper().reader(Map[].class).readValue(instream).toString();
 
-            instream.close();
-
-            EntityUtils.consumeQuietly(entity);
+            EntityUtils.consume(entity);
 
             return Result.healthy();
         } catch (Exception e) {
             return Result.unhealthy(e);
         } finally {
+            if (instream != null) {
+                instream.close();
+            }
             httpGet.releaseConnection();
         }
     }
