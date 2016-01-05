@@ -59,25 +59,29 @@ public class OpenTsdbHealthCheck extends com.yammer.metrics.core.HealthCheck {
 
     @Override
     protected Result check() throws Exception {
+
         HttpGet httpGet = null;
         InputStream instream = null;
+
         try {
+
             HttpGet httpget = new HttpGet(config.getMetricServiceConfig().getOpenTsdbUrl() + "/api/stats");
             HttpResponse response = httpclient.execute(httpget);
-            int code = response.getStatusLine().getStatusCode();
-            if (code != Response.Status.OK.getStatusCode()) {
-                return Result.unhealthy("Unexpected result code from OpenTSDB Server: " + code);
-            }
-
             HttpEntity entity = response.getEntity();
-            instream = entity.getContent();
 
+            instream = entity.getContent();
             // Exception if unable to parse object from input stream.
             new ObjectMapper().reader(Map[].class).readValue(instream).toString();
 
             EntityUtils.consume(entity);
 
+            int code = response.getStatusLine().getStatusCode();
+            if (code != Response.Status.OK.getStatusCode()) {
+                return Result.unhealthy("Unexpected result code from OpenTSDB Server: " + code);
+            }
+
             return Result.healthy();
+
         } catch (Exception e) {
             return Result.unhealthy(e);
         } finally {
