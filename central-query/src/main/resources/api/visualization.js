@@ -29,8 +29,8 @@ var visualization,
     }
 
     if (typeof String.prototype.startsWith !== 'function') {
-        String.prototype.startsWith = function(str) {
-            return this.slice(0, str.length) === str;
+        String.prototype.startsWith = function(prefix) {
+            return this.indexOf(prefix) === 0;
         };
     }
 
@@ -171,10 +171,49 @@ var visualization,
             }
 
             return shortId.join("");
-        }
+        },
 
+        compareASC: function(key) {
+            return function(a, b) {
+                return (a[key] < b[key]) ? -1 : (a[key] > b[key]) ? 1 : 0;
+            };
+        },
+
+        getDeferred: getDeferred
     };
 
+    // quick n dirty promise implementation
+    // since jquery may not be available yet and this
+    // is needed for the dependency loading code that
+    // loads jquery
+    // NOTE - this deferred only handles successful
+    // resolutions, and its promise can only "then"
+    function getDeferred(){
+        var thens = [];
+        var resolved;
+        var promise = {
+            then: function(callback){
+                if(resolved){
+                    callback.apply(null, resolved);
+                } else {
+                    thens.push(callback);
+                }
+            }
+        };
+        var deferred = {
+            resolve: function(){
+                resolved = arguments;
+                thens.forEach(function(callback){
+                    callback.apply(null, resolved);
+                });
+            },
+            promise: function(){
+                return promise;
+            }
+        };
+
+        return deferred;
+    }
 
     // friendly time to ms conversion
     var TIME_UNITS = {
@@ -1111,27 +1150,8 @@ if (typeof exports !== 'undefined') {
              */
             create : function(name, config) {
 
-                //var chart, deferred = $.Deferred();
-                var chart;
-
-                // HACK - quick n dirty promise implementation
-                // since jquery may not be available yet
-                var thens = [];
-                var promise = {
-                    then: function(callback){
-                        thens.push(callback);
-                    }
-                };
-                var deferred = {
-                    resolve: function(){
-                        thens.forEach(function(callback){
-                            callback.apply(null, arguments);
-                        });
-                    },
-                    promise: function(){
-                        return promise;
-                    }
-                };
+                var chart,
+                    deferred = utils.getDeferred();
 
                 if (!depsLoaded) {
                     dependency.__bootstrap(function() {
@@ -1250,7 +1270,7 @@ if (typeof exports !== 'undefined') {
  * Chart.js
  * main chart object
  */
-(function(){
+(function () {
     "use strict";
 
     /**
@@ -1286,38 +1306,50 @@ if (typeof exports !== 'undefined') {
             ticks: 4,
             // max number of units before we should go up a level
             breakpoint: 90,
-            format: function(tz, d){ return moment.utc(d).tz(tz).format("HH:mm:ss"); }
-        },{
+            format: function (tz, d) {
+                return moment.utc(d).tz(tz).format("HH:mm:ss");
+            }
+        }, {
             name: "hour",
             value: 3.6e+6,
             ticks: 4,
             breakpoint: 20,
-            format: function(tz, d){ return moment.utc(d).tz(tz).format("HH:mm:ss"); }
-        },{
+            format: function (tz, d) {
+                return moment.utc(d).tz(tz).format("HH:mm:ss");
+            }
+        }, {
             name: "day",
             value: 8.64e+7,
             ticks: 3,
             breakpoint: 7,
-            format: function(tz, d){ return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss"); }
-        },{
+            format: function (tz, d) {
+                return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss");
+            }
+        }, {
             name: "week",
             value: 6.048e+8,
             ticks: 3,
             breakpoint: 4,
-            format: function(tz, d){ return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss"); }
-        },{
+            format: function (tz, d) {
+                return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss");
+            }
+        }, {
             name: "month",
             value: 2.63e+9,
             ticks: 3,
             breakpoint: 13,
-            format: function(tz, d){ return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss"); }
-        },{
+            format: function (tz, d) {
+                return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss");
+            }
+        }, {
             name: "year",
             value: 3.156e+10,
 
             ticks: 3,
             breakpoint: 1000,
-            format: function(tz, d){ return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss"); }
+            format: function (tz, d) {
+                return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss");
+            }
         }
     ];
 
@@ -1342,8 +1374,7 @@ if (typeof exports !== 'undefined') {
     ];
 
 
-
-    Chart = function(name, config) {
+    Chart = function (name, config) {
         this.name = name;
         this.config = config;
         this.yAxisLabel = config.yAxisLabel;
@@ -1358,6 +1389,8 @@ if (typeof exports !== 'undefined') {
             throw new utils.Error('SelectorError', 'unknown selector specified, "' + this.name + '"');
         }
 
+        this.printOptimized = config.printOptimized;
+
         // base should be something like 1000 or 1024
         this.base = config.base || 1000;
 
@@ -1365,7 +1398,11 @@ if (typeof exports !== 'undefined') {
         this.__buildPlotInfo();
 
         this.overlays = config.overlays || [];
+        this.overlays.sort(utils.compareASC('legend'));
+
         this.projections = config.projections || [];
+        this.projections.sort(utils.compareASC('id'));
+
         // set the format or a default
         this.format = config.format || DEFAULT_NUMBER_FORMAT;
         if ($.isNumeric(config.miny)) {
@@ -1389,6 +1426,7 @@ if (typeof exports !== 'undefined') {
         $(this.footer).addClass('zenfooter');
         this.$div.append($(this.footer));
 
+        this.__renderCapacityFooter = config.renderCapacityFooter;
         this.__renderForecastingTimeHorizonFooter = config.renderForecastingTimeHorizonFooter;
 
         this.svg = d3.select(this.svgwrapper).append('svg');
@@ -1420,10 +1458,10 @@ if (typeof exports !== 'undefined') {
     Chart.prototype = {
         constructor: Chart,
 
-        __onDestroyed: function(e){
+        __onDestroyed: function (e) {
             // check if the removed element is the chart container
-            if(this.$div[0] === e.target){
-                if(typeof this.onDestroyed === "function"){
+            if (this.$div[0] === e.target) {
+                if (typeof this.onDestroyed === "function") {
                     this.onDestroyed.call(this, e);
                 }
             }
@@ -1440,7 +1478,7 @@ if (typeof exports !== 'undefined') {
          *            If toEng function should ignore the preferred unit
          *            and calculate a unit based on `value`
          */
-        formatValue: function(value, ignorePreferred) {
+        formatValue: function (value, ignorePreferred) {
             /*
              * If we were given a undefined value, Infinity, of NaN (all things that
              * can't be formatted, then just return the value.
@@ -1459,7 +1497,7 @@ if (typeof exports !== 'undefined') {
          *
          * @access private
          */
-        __buildPlotInfo: function() {
+        __buildPlotInfo: function () {
             var i, info, dp, nameOrMetric, key;
             var plotInfo = {};
 
@@ -1469,15 +1507,19 @@ if (typeof exports !== 'undefined') {
                 dp.id = key;
                 nameOrMetric = dp.name || dp.metric;
                 info = {
-                    'legend' : dp.legend || nameOrMetric,
-                    'color' : dp.color,
-                    'fill' : dp.fill
+                    'legend': dp.legend || nameOrMetric,
+                    'color': dp.color,
+                    'fill': dp.fill
                 };
                 plotInfo[key] = info;
             }
 
-            this.getPlotInfo = function(d){
-                return plotInfo[d.id] || {};
+            this.getPlotInfo = function (d) {
+                var metricId = d.id;
+                if (metricId.endsWith('-raw')) {
+                    metricId = metricId.replace('-raw', '');
+                }
+                return plotInfo[metricId] || {};
             };
         },
 
@@ -1489,7 +1531,7 @@ if (typeof exports !== 'undefined') {
          *            plot the object representing the plot
          * @return boolean if the plot is an overlay
          */
-        __isOverlay: function(plot) {
+        __isOverlay: function (plot) {
             var i, key = (typeof plot === 'string' ? plot : plot.key);
             if (this.overlays.length) {
                 for (i = 0; i < this.overlays.length; i += 1) {
@@ -1505,14 +1547,15 @@ if (typeof exports !== 'undefined') {
          * Set the relative size of the chart and footer, if configured for a
          * footer, and then resizes the underlying chart.
          */
-        resize: function() {
-            var fheight, height, span;
+        resize: function () {
+            var theight, fheight, height, span;
 
             var $footer = this.$div.find(".zenfooter");
+            var $title = this.$div.find(".graph_title");
 
-            fheight = this.__hasFooter() ? parseInt($footer.outerHeight(), 10)
-                    : 0;
-            height = parseInt(this.$div.height(), 10) - fheight;
+            theight = parseInt($title.outerHeight(), 10);
+            fheight = this.__hasFooter() ? parseInt($footer.outerHeight(), 10) : 0;
+            height = parseInt(this.$div.height(), 10) - fheight - theight;
             span = $(this.message).find('span');
 
             // resize wrapper to ensure enough space for graph
@@ -1531,7 +1574,7 @@ if (typeof exports !== 'undefined') {
          *
          * @access private
          */
-        __appendFooterRow: function() {
+        __appendFooterRow: function () {
             var tr, td, d, i;
 
             tr = document.createElement('tr');
@@ -1564,7 +1607,7 @@ if (typeof exports !== 'undefined') {
             return $(tr);
         },
 
-        __getAssociatedPlot: function(dp) {
+        __getAssociatedPlot: function (dp) {
             var i, ll;
             if (!this.plots) {
                 return undefined;
@@ -1587,7 +1630,7 @@ if (typeof exports !== 'undefined') {
          * @return true if the changes to the footer necesitates a resize of the
          *         chart, else false.
          */
-        __updateFooter: function(data) {
+        __updateFooter: function (data) {
             var sta, eta, plot, dp, vals, cur, min, max, avg, cols, init, label, ll, i, v, vIdx, k, rows, row, box, color, resize = false,
                 timezone = this.timezone;
             if (!this.table) {
@@ -1596,13 +1639,13 @@ if (typeof exports !== 'undefined') {
 
             rows = $(this.table).find('tr');
             if (data) {
-                sta = this.dateFormatter(data.startTimeActual, timezone );
+                sta = this.dateFormatter(data.startTimeActual, timezone);
                 eta = this.dateFormatter(data.endTimeActual, timezone);
             } else {
                 sta = eta = "N/A";
             }
-            $($(rows[0]).find('td')).html(
-                    sta + ' to ' + eta + ' (' + timezone + ')');
+            $($(rows[0]).find('td')[0]).html(
+                sta + ' to ' + eta + ' (' + timezone + ')');
 
             /*
              * The class on the value rows was set when they were created so get a
@@ -1621,7 +1664,7 @@ if (typeof exports !== 'undefined') {
                     dp = this.config.datapoints[i];
                     plot = this.__getAssociatedPlot(dp);
                     if (!this.__isOverlay(dp.legend || dp.metric) &&
-                            (dp.emit === undefined || dp.emit)) {
+                        (dp.emit === undefined || dp.emit)) {
                         if (row >= rows.length) {
                             rows.push(this.__appendFooterRow());
                             resize = true;
@@ -1665,7 +1708,7 @@ if (typeof exports !== 'undefined') {
                                 $(cols[v]).html('N/A');
                             }
                         } else {
-                            vals = [ 0, 0, 0, 0 ];
+                            vals = [0, 0, 0, 0];
                             cur = 0;
                             min = 1;
                             max = 2;
@@ -1707,6 +1750,17 @@ if (typeof exports !== 'undefined') {
                 resize = true;
             }
 
+            if (this.__renderCapacityFooter !== undefined) {
+                this.__renderCapacityFooter(this);
+            }
+            if (this.__renderForecastingTimeHorizonFooter !== undefined) {
+                this.__renderForecastingTimeHorizonFooter(this);
+            }
+
+            if (this.__getProjectionPlots().length > 0) {
+                this.__renderProjectionFooter();
+            }
+
             return resize;
         },
         /**
@@ -1715,59 +1769,90 @@ if (typeof exports !== 'undefined') {
          * @access private
          * @return [object] all the projection plots
          */
-        __getProjectionPlots: function() {
-            return $.grep(this.plots, function(p) { return p.projection; } );
+        __getProjectionPlots: function () {
+            return $.grep(this.plots, function (p) {
+                return p.projection;
+            });
         },
         /**
          * Renders the projection legend with a mouse over of future dates
          * @access private
          **/
-        __renderProjectionFooter: function() {
+        __renderProjectionFooter: function () {
+            // first remove all previous projections
+            $(this.footer).find(".zenfooter_projection").remove();
+            var tableRows = $(this.footer).find('tr');
+            var titleRow = $(tableRows[0]);
+            var headerRow = tableRows[1];
+
             var projections = this.__getProjectionPlots(),
-                // the days out that we are showing projections for (e.g. 30 days from now)
+            // the days out that we are showing projections for (e.g. 30 days from now)
                 futureTimes = [30, 60, 90];
+            projections.sort(utils.compareASC('key'));
 
-            // recreate the legend from scratch each update
-            $(this.footer).find(".projectionPlots").remove();
+            titleRow.append($("<td/>",{
+                text: "",
+                class: "zenfooter_lined_spacer zenfooter_projection"
+            }));
+            // append title header
+            titleRow.append($("<td/>",{
+                colspan: futureTimes.length,
+                text: "Projected Values",
+                class: "zenfooter_dates zenfooter_projection"
+            }));
 
-            // create the content div.
-            $(this.footer).append("<div class='projectionPlots'><span style='font-weight:bold;'>Projections</></div>");
-            // get a jquery handle on it
-            var div = $(this.footer).find(".projectionPlots");
-
-            // create a new row with
-            projections.forEach(function(projection) {
-                var table = "<table width='250px'><tr><th><b>Date</b></th><th><b>Value</b></th></tr>", 
-                    i, futureTime, rawProjectedValue, projectedValue, 
-                    uniqueDivId = Math.round(new Date().getTime() + (Math.random() * 100)).toString();
-                for (i=0; i< futureTimes.length; i++) {
-                    futureTime = moment().add(futureTimes[i], 'days'),
-                    rawProjectedValue = Number(projection.projectionFn(futureTime.unix()).toFixed(2)),
-                    projectedValue = (rawProjectedValue > 0) ? this.formatValue(rawProjectedValue) : 0;
-                    table += "<tr><td>" + futureTime.format("MMM-D") + " ("  + futureTimes[i].toString() + " days)</td><td align='right'>" +
-                        projectedValue + "</td></tr>";
-                }
-                table  += "</table>";
-
-                // add a row representing the projection
-                div.append('<div id=' + uniqueDivId +
-                           ' title="placeholder" style="clear:both;"> <div class="zenfooter_box" style="opacity: 1;">' +
-                           '</div><div class="projection_legend" style="min-height:15px; float:left;">&nbsp;&nbsp;' + projection.key.replace("Projected ", "") +
-                           '</div><div class="info_icon"><span style="font-style: italic">i</span></div></div>');
-
-                $("#" + uniqueDivId + " .zenfooter_box").css("background-color", projection.color);
-                // use jQuery UI tool tips to register a table tool tip showing projected values on hover
-                $("#" + uniqueDivId).tooltip({
-                    show: {
-                        effect: "slideDown",
-                        delay: 150
-                    },
-                    content: function() {
-                        return table;
-                    }
+            $(headerRow).append($("<td/>",{
+                text: "",
+                class: "zenfooter_lined_spacer zenfooter_projection"
+            }));
+            //append column headers
+            for(var i=0; i<futureTimes.length; ++i) {
+                var futureTime = moment().add(futureTimes[i], 'days');
+                var newColumn = $("<th/>", {
+                    text: futureTime.format("MMM-D") + " (" + futureTimes[i].toString() + " days)",
+                    class: 'footer_header zenfooter_data_text zenfooter_projection'
                 });
+                $(headerRow).append(newColumn);
+            }
+
+            // append column data
+            var duplicateRowKeys = {};
+            projections.forEach(function (projection) {
+                var i, futureTime, rawProjectedValue, projectedValue
+                // append row spacer
+                var rowKey = projection.key.replace("Projected ", "");
+
+                // forecasting plot data comes in the same order as the graph footer data
+                // we need to keep track of seen row names because duplicate names are possible
+                // in that case, we rely on the order that we've seen the data
+                if(duplicateRowKeys[rowKey] != undefined) {
+                    duplicateRowKeys[rowKey]++;
+                }else{
+                    duplicateRowKeys[rowKey] = 0;
+                }
+                var rowIndex = duplicateRowKeys[rowKey];
+
+                var row = $($(this.footer).find('.zenfooter_data_text:contains(' + rowKey + ')').get(rowIndex)).parent();
+                row.append($("<td/>",{
+                    text: "",
+                    class: "zenfooter_lined_spacer zenfooter_projection"
+                }));
+
+                for (i = 0; i < futureTimes.length; i++) {
+                    var futureTime = moment().add(futureTimes[i], 'days'),
+                        rawProjectedValue = Number(projection.projectionFn(futureTime.unix()).toFixed(2)),
+                        projectedValue = (rawProjectedValue > 0) ? this.formatValue(rawProjectedValue) : 0;
+
+                    var projectionColumn = $("<td/>", {
+                        text: projectedValue,
+                        class: "zenfooter_data zenfooter_data_number zenfooter_projection"
+                    });
+
+                    $(row).append(projectionColumn);
+                }
             }.bind(this));
 
+            this.resize();
         },
         /**
          * Returns true if this chart is displaying a footer, else false
@@ -1775,10 +1860,10 @@ if (typeof exports !== 'undefined') {
          * @access private
          * @return true if this chart is displaying a footer, else false
          */
-        __hasFooter: function() {
+        __hasFooter: function () {
             return (this.config.footer === undefined ||
-                (typeof this.config.footer === 'boolean' && this.config.footer === true) ||
-                (typeof this.config.footer === 'string' && this.config.footer === 'range'));
+            (typeof this.config.footer === 'boolean' && this.config.footer === true) ||
+            (typeof this.config.footer === 'string' && this.config.footer === 'range'));
         },
 
         /**
@@ -1789,7 +1874,7 @@ if (typeof exports !== 'undefined') {
          * @return true if this chart is displaying only the range in the footer,
          *         else false
          */
-        __footerRangeOnly: function() {
+        __footerRangeOnly: function () {
             return (typeof this.config.footer === 'string' && this.config.footer === 'range');
         },
 
@@ -1805,7 +1890,7 @@ if (typeof exports !== 'undefined') {
          *            data the data returned from the metric service that contains
          *            the data to be charted
          */
-        __buildFooter: function(config, data) {
+        __buildFooter: function (config, data) {
             var tr, td, dates, th;
             this.table = document.createElement('table');
             $(this.table).addClass('zenfooter_content');
@@ -1828,11 +1913,11 @@ if (typeof exports !== 'undefined') {
 
                 // One row for the stats table header
                 tr = document.createElement('tr');
-                tr.innerHTML = '<th class="footer_header zenfooter_box_column"></th>'+
-                    '<th class="footer_header zenfooter_data_text">Metric</th>'+
-                    '<th class="footer_header zenfooter_data_number">Last</th>'+
-                    '<th class="footer_header zenfooter_data_number">Min</th>'+
-                    '<th class="footer_header zenfooter_data_number">Max</th>'+
+                tr.innerHTML = '<th class="footer_header zenfooter_box_column"></th>' +
+                    '<th class="footer_header zenfooter_data_text">Metric</th>' +
+                    '<th class="footer_header zenfooter_data_number">Last</th>' +
+                    '<th class="footer_header zenfooter_data_number">Min</th>' +
+                    '<th class="footer_header zenfooter_data_number">Max</th>' +
                     '<th class="footer_header zenfooter_data_number">Avg</th>';
                 $(this.table).append($(tr));
             }
@@ -1849,7 +1934,7 @@ if (typeof exports !== 'undefined') {
          * @param {object}
          *            changeset updates to the existing graph's configuration.
          */
-        update: function(changeset) {
+        update: function (changeset) {
             var self = this, kill = [], property;
 
             // This function is really meant to only handle given types of changes,
@@ -1868,7 +1953,7 @@ if (typeof exports !== 'undefined') {
                     }
                 }
             }
-            kill.forEach(function(p) {
+            kill.forEach(function (p) {
                 delete self.config[p];
             });
 
@@ -1880,12 +1965,12 @@ if (typeof exports !== 'undefined') {
             try {
                 this.request = this.__buildDataRequest(this.config);
                 $.ajax({
-                    'url' : visualization.url + visualization.urlPerformance,
-                    'type' : 'POST',
-                    'data' : JSON.stringify(this.request),
-                    'dataType' : 'json',
-                    'contentType' : 'application/json',
-                    'success' : function(data) {
+                    'url': visualization.url + visualization.urlPerformance,
+                    'type': 'POST',
+                    'data': JSON.stringify(this.request),
+                    'dataType': 'json',
+                    'contentType': 'application/json',
+                    'success': function (data) {
                         self.plots = self.__processResult(self.request, data);
 
                         // setPreffered y unit (k, G, M, etc)
@@ -1914,27 +1999,27 @@ if (typeof exports !== 'undefined') {
                         // send a separate request for the projection data since it has a different time span
 
                         var projectionColors = ["#EBEBEF", "#FDDFE7", "#FCF1C0", "#DAFBEB"], projectionIndex = 0;
-                        self.projections.forEach(function(projection) {
+                        self.projections.forEach(function (projection) {
                             var projectionRequest = self.__buildProjectionRequest(self.config, self.request, projection);
                             // can fail if the projection is requesting a metric not present
                             if (!projectionRequest) {
                                 return;
                             }
                             $.ajax({
-                                'url' : visualization.url + visualization.urlPerformance,
-                                'type' : 'POST',
-                                'data' : JSON.stringify(projectionRequest),
-                                'dataType' : 'json',
-                                'contentType' : 'application/json',
-                                'success' : function(projectionData) {
+                                'url': visualization.url + visualization.urlPerformance,
+                                'type': 'POST',
+                                'data': JSON.stringify(projectionRequest),
+                                'dataType': 'json',
+                                'contentType': 'application/json',
+                                'success': function (projectionData) {
 
                                     if (projectionData.results) {
                                         var values = projectionData.results[projectionData.results.length - 1].datapoints || [],
                                             start = utils.createDate(self.request.start || "1h-ago").unix(),
                                             end = utils.createDate(self.request.end || "0s-ago").unix(),
-                                            // use strategy to create a return  function that will convert projected X values into Y's
+                                        // use strategy to create a return  function that will convert projected X values into Y's
                                             valueFn = self.createRegressionFunction(projection, values),
-                                            // get the visible x, y values
+                                        // get the visible x, y values
                                             projectedSet = self.createRegressionData(valueFn, start, end);
                                         self.plots.push({
                                             color: projectionColors[projectionIndex++ % projectionColors.length],
@@ -1952,18 +2037,14 @@ if (typeof exports !== 'undefined') {
                                         self.__renderProjectionFooter();
                                     }
                                 },
-                                'error' : function() {
+                                'error': function () {
                                     // the trendline isn't critical to the graph so
                                     // do nothing in the case of errors
                                 }
                             });
                         });
-
-                        if (self.__renderForecastingTimeHorizonFooter !== undefined) {
-                            self.__renderForecastingTimeHorizonFooter(self);
-                        }
                     },
-                    'error' : function() {
+                    'error': function () {
                         self.plots = undefined;
 
                         self.__showNoData();
@@ -1995,7 +2076,7 @@ if (typeof exports !== 'undefined') {
          *  Converts a downsample rate into a "step". To minimized clutter each step is a multiple
          *  the downsample rate.
          **/
-        __convertDownsampletoStep: function(downsample) {
+        __convertDownsampletoStep: function (downsample) {
             if (!downsample) {
                 return 600;
             }
@@ -2024,7 +2105,7 @@ if (typeof exports !== 'undefined') {
          * @returns {Array}
          *            Array of x and y values
          **/
-        createRegressionData: function(projectionFn, start, end) {
+        createRegressionData: function (projectionFn, start, end) {
             var regression = [],
                 downsample = this.request.downsample,
                 config = this.config,
@@ -2068,10 +2149,14 @@ if (typeof exports !== 'undefined') {
          * @returns {Function}
          *            Function that can be used to project y values given an x
          **/
-        createRegressionFunction: function(projection, values) {
+        createRegressionFunction: function (projection, values) {
             // get the implementation based on the projection "type" (or projectionAlgorithm property)
-            var xValues =  $.map(values, function(o) { return o["timestamp"]; }),
-                yValues = $.map(values, function(o) { return o["value"]; });
+            var xValues = $.map(values, function (o) {
+                    return o["timestamp"];
+                }),
+                yValues = $.map(values, function (o) {
+                    return o["value"];
+                });
 
             return zenoss.visualization.projections[projection.projectionAlgorithm](projection, xValues, yValues);
         },
@@ -2086,17 +2171,17 @@ if (typeof exports !== 'undefined') {
          * @returns {object} a request object that can be POST-ed to the Zenoss
          *          performance metric service
          */
-        __buildDataRequest: function(config) {
+        __buildDataRequest: function (config) {
             var request = {};
 
             if (config !== undefined) {
 
-                if(config.range){
-                    if(config.range.start){
+                if (config.range) {
+                    if (config.range.start) {
                         request.start = config.range.start;
                     }
 
-                    if(config.range.end){
+                    if (config.range.end) {
                         request.end = config.range.end;
                     }
                 }
@@ -2110,8 +2195,8 @@ if (typeof exports !== 'undefined') {
                 if (config.downsample !== undefined) {
                     request.downsample = config.downsample;
 
-                // if no downsample provided, calculate one
-                // based on the range
+                    // if no downsample provided, calculate one
+                    // based on the range
                 } else {
                     var start, end, delta;
 
@@ -2129,7 +2214,7 @@ if (typeof exports !== 'undefined') {
 
                     // iterate the DOWNSAMPLE list and choose the one which
                     // is closest to delta, defaulting to null if delta is too small
-                    request.downsample = DOWNSAMPLE.reduce(function(acc, val){
+                    request.downsample = DOWNSAMPLE.reduce(function (acc, val) {
                         return delta >= val[0] ? val[1] : acc;
                     }, null);
                 }
@@ -2145,83 +2230,83 @@ if (typeof exports !== 'undefined') {
                 if (config.datapoints !== undefined) {
                     request.metrics = [];
                     config.datapoints
-                            .forEach(function(dp) {
-                                var m = {}, key, expressionMetric;
-                                if (dp.metric !== undefined) {
-                                    m.metric = dp.metric;
+                        .forEach(function (dp) {
+                            var m = {}, key, expressionMetric;
+                            if (dp.metric !== undefined) {
+                                m.metric = dp.metric;
 
-                                    if(dp.id){
-                                        m.id = dp.id;
-                                    }
+                                if (dp.id) {
+                                    m.id = dp.id;
+                                }
 
-                                    if (dp.rate !== undefined) {
-                                        m.rate = dp.rate;
-                                    }
-                                    if (dp.rateOptions !== undefined && dp.rateOptions !== null) {
-                                        m.rateOptions = dp.rateOptions;
-                                    }
-                                    if (dp.aggregator !== undefined) {
-                                        m.aggregator = dp.aggregator;
-                                    }
+                                if (dp.rate !== undefined) {
+                                    m.rate = dp.rate;
+                                }
+                                if (dp.rateOptions !== undefined && dp.rateOptions !== null) {
+                                    m.rateOptions = dp.rateOptions;
+                                }
+                                if (dp.aggregator !== undefined) {
+                                    m.aggregator = dp.aggregator;
+                                }
 
-                                    if (dp.tags !== undefined) {
-                                        m.tags = {};
-                                        for (key in dp.tags) {
-                                            if (dp.tags.hasOwnProperty(key)) {
-                                                m.tags[key] = dp.tags[key];
-                                            }
+                                if (dp.tags !== undefined) {
+                                    m.tags = {};
+                                    for (key in dp.tags) {
+                                        if (dp.tags.hasOwnProperty(key)) {
+                                            m.tags[key] = dp.tags[key];
                                         }
                                     }
-
-                                    if (dp.emit === false) {
-                                        m.emit = false;
-                                    }
-
-                                    if (dp.name === undefined) {
-                                        m.name = dp.metric;
-                                    } else {
-                                        m.name = dp.name;
-                                    }
-                                } else if (dp.name !== undefined) {
-                                    m.name = dp.name;
-                                } else {
-                                    /*
-                                     * This data point has neither a metric
-                                     * definition nor a name (virtual metric)
-                                     * deffined. As such this is an invalid
-                                     * specification. Because of this we will fail
-                                     * the entire request so that the caller is not
-                                     * confused as to why partial data is returned.
-                                     */
-                                    throw sprintf(
-                                        "Invalid data point specification in request, '%s'. No 'metric' or 'name' attribute specified, failing entire request.",
-                                        JSON.stringify(dp, null, ' '));
                                 }
 
-                                if (dp.expression) {
-                                    expressionMetric = {
-                                        name: m.name,
-                                        // rewrite the expression to look for the
-                                        // renamed datapoint
-                                        expression: dp.expression.replace("rpn:", "rpn:"+ m.name + "-raw,"),
-                                        id: m.id
-                                    };
-
-                                    // original datapoint is now just a vehicle for the
-                                    // expression to evaluate against. Rename with -raw suffix as that is the default
-                                    // used by zenoss to self reference a datapoint in an RPN
+                                if (dp.emit === false) {
                                     m.emit = false;
-                                    m.name = m.name + "-raw";
-                                    m.id = m.id + "-raw";
                                 }
 
-                                request.metrics.push(m);
-
-                                // if an expressionMetric was created, add to request
-                                if(expressionMetric){
-                                    request.metrics.push(expressionMetric);
+                                if (dp.name === undefined) {
+                                    m.name = dp.metric;
+                                } else {
+                                    m.name = dp.name;
                                 }
-                            });
+                            } else if (dp.name !== undefined) {
+                                m.name = dp.name;
+                            } else {
+                                /*
+                                 * This data point has neither a metric
+                                 * definition nor a name (virtual metric)
+                                 * deffined. As such this is an invalid
+                                 * specification. Because of this we will fail
+                                 * the entire request so that the caller is not
+                                 * confused as to why partial data is returned.
+                                 */
+                                throw sprintf(
+                                    "Invalid data point specification in request, '%s'. No 'metric' or 'name' attribute specified, failing entire request.",
+                                    JSON.stringify(dp, null, ' '));
+                            }
+
+                            if (dp.expression) {
+                                expressionMetric = {
+                                    name: m.name,
+                                    // rewrite the expression to look for the
+                                    // renamed datapoint
+                                    expression: dp.expression.replace("rpn:", "rpn:" + m.name + "-raw,"),
+                                    id: m.id
+                                };
+
+                                // original datapoint is now just a vehicle for the
+                                // expression to evaluate against. Rename with -raw suffix as that is the default
+                                // used by zenoss to self reference a datapoint in an RPN
+                                m.emit = false;
+                                m.name = m.name + "-raw";
+                                m.id = m.id + "-raw";
+                            }
+
+                            request.metrics.push(m);
+
+                            // if an expressionMetric was created, add to request
+                            if (expressionMetric) {
+                                request.metrics.push(expressionMetric);
+                            }
+                        });
 
                 }
             }
@@ -2236,14 +2321,14 @@ if (typeof exports !== 'undefined') {
          * @returns {object} a request object that can be POST-ed to the Zenoss
          *          performance metric service
          */
-        __buildProjectionRequest: function(config, dataRequest, projection) {
+        __buildProjectionRequest: function (config, dataRequest, projection) {
             var request = {
                 metrics: []
             }, start, end, delta, self = this;
             if (!projection.metric) {
                 return false;
             }
-            dataRequest.metrics.forEach(function(m){
+            dataRequest.metrics.forEach(function (m) {
                 var metric, test = m.metric || m.name;
                 // use the datapoint name for the case of rpn metrics
                 if (test.indexOf(projection.metric.split("_")[1]) != -1) {
@@ -2252,7 +2337,7 @@ if (typeof exports !== 'undefined') {
                     metric.aggregator = projection.aggregateFunction || "max";
                     metric.emit = true;
                     if (self.getPlotInfo(metric)) {
-                        projection.legend = "Projected " +self.getPlotInfo(metric).legend;
+                        projection.legend = "Projected " + self.getPlotInfo(metric).legend;
                     }
                     request.metrics.push(metric);
                 }
@@ -2263,7 +2348,7 @@ if (typeof exports !== 'undefined') {
 
             request.returnset = config.returnset;
             request.tags = dataRequest.tags;
-            request.end = parseInt(new Date().getTime()/1000); // now
+            request.end = parseInt(new Date().getTime() / 1000); // now
             start = moment();
             start.subtract(projection.pastData[0], projection.pastData[1]);
             request.start = start.unix();
@@ -2286,7 +2371,7 @@ if (typeof exports !== 'undefined') {
 
                 // iterate the DOWNSAMPLE list and choose the one which
                 // is closest to delta, defaulting to null if delta is too small
-                request.downsample = DOWNSAMPLE.reduce(function(acc, val){
+                request.downsample = DOWNSAMPLE.reduce(function (acc, val) {
                     return delta >= val[0] ? val[1] : acc;
                 }, null);
             }
@@ -2306,41 +2391,40 @@ if (typeof exports !== 'undefined') {
          * @returns {object} the data in the format that can be utilized by the
          *          chart library.
          */
-        __processResultAsSeries: function(request, data) {
+        __processResultAsSeries: function (request, data) {
 
             var plots = [],
                 start = data.startTimeActual,
                 end = data.endTimeActual,
                 drange = end - start,
-                // allowable deviation expected start/end points
+            // allowable deviation expected start/end points
                 drangeDeviation = drange * 0.2;
 
-            data.results.forEach(function(series){
+            data.results.forEach(function (series) {
 
                 var dp, info, key, plot;
 
                 // if series.datapoints is not defined, or there are no points
-                if(!series.datapoints || (series.datapoints && !series.datapoints.length)){
+                if (!series.datapoints || (series.datapoints && !series.datapoints.length)) {
                     series.datapoints = [{
                         timestamp: start,
                         value: null
-                    },{
+                    }, {
                         timestamp: end,
                         value: null
                     }];
                 }
 
                 // ensure the series starts at the expected time (or near it at least)
-                if(series.datapoints[0].timestamp !== start && series.datapoints[0].timestamp - start > drangeDeviation){
+                if (series.datapoints[0].timestamp !== start && series.datapoints[0].timestamp - start > drangeDeviation) {
                     series.datapoints.unshift({
                         timestamp: start,
                         value: null
                     });
                 }
                 // ensure the series ends at the expected time (or near it at least)
-                if(series.datapoints[series.datapoints.length-1].timestamp !== end &&
-                    (end - series.datapoints[series.datapoints.length-1].timestamp) > drangeDeviation)
-                {
+                if (series.datapoints[series.datapoints.length - 1].timestamp !== end &&
+                    (end - series.datapoints[series.datapoints.length - 1].timestamp) > drangeDeviation) {
                     series.datapoints.push({
                         timestamp: end,
                         value: null
@@ -2353,17 +2437,18 @@ if (typeof exports !== 'undefined') {
                 key = info.legend;
                 // TODO - use tags to make key unique
                 plot = {
-                    'key' : key,
-                    'color' : info.color,
-                    'fill' : info.fill,
-                    'values' : []
+                    'key': key,
+                    'color': info.color,
+                    'fill': info.fill,
+                    'values': [],
+                    'disabled': info.disabled
                 };
 
-                series.datapoints.forEach(function(datapoint){
+                series.datapoints.forEach(function (datapoint) {
                     plot.values.push({
-                        x : datapoint.timestamp * 1000,
+                        x: datapoint.timestamp * 1000,
                         // ensure value is a number
-                        y : typeof datapoint.value !== "number" ? null : datapoint.value
+                        y: typeof datapoint.value !== "number" ? null : datapoint.value
                     });
                 });
 
@@ -2387,22 +2472,27 @@ if (typeof exports !== 'undefined') {
          * @returns {object} the data in the format that can be utilized by the
          *          chart library.
          */
-        __processResult: function(request, data) {
+        __processResult: function (request, data) {
             var plots, i, overlay, minDate, maxDate, plot, k, firstMetric;
 
             plots = this.__processResultAsSeries(request, data);
 
             // add overlays
             if (this.overlays.length && plots.length && plots[0].values.length) {
-                for (i in this.overlays) {
-                    overlay = this.overlays[i];
+                this.overlays.forEach(function (overlay) {
+                    // if disabled is undefined, default to true, otherwise
+                    // use the disabled value
+                    var isDisabled = "disabled" in overlay ? overlay.disabled : true;
                     // get the date range
                     firstMetric = plots[0];
                     plot = {
-                        'key' : overlay.legend + "*",
-                        'disabled' : true,
-                        'values' : [],
-                        'color' : overlay.color
+                        'key': overlay.legend + "*",
+                        'disabled': isDisabled,
+                        'values': [],
+                        'color': overlay.color,
+                        // store original overlay object
+                        // on this plot
+                        'overlay': overlay
                     };
                     minDate = firstMetric.values[0].x;
                     maxDate = firstMetric.values[firstMetric.values.length - 1].x;
@@ -2411,16 +2501,16 @@ if (typeof exports !== 'undefined') {
                         // create a line by putting a point at the start and a point
                         // at the end
                         plot.values.push({
-                            x : minDate,
-                            y : overlay.values[k]
+                            x: minDate,
+                            y: overlay.values[k]
                         });
                         plot.values.push({
-                            x : maxDate,
-                            y : overlay.values[k]
+                            x: maxDate,
+                            y: overlay.values[k]
                         });
                     }
                     plots.push(plot);
-                }
+                });
             }
 
             return plots;
@@ -2432,7 +2522,7 @@ if (typeof exports !== 'undefined') {
          *
          * @access private
          */
-        __havePlotData: function() {
+        __havePlotData: function () {
             var i, ll;
 
             if (!this.plots || this.plots.length === 0) {
@@ -2455,7 +2545,7 @@ if (typeof exports !== 'undefined') {
          * @param {object}
          *            the new data to display in the chart
          */
-        __updateData: function(data) {
+        __updateData: function (data) {
 
             if (!this.__havePlotData()) {
                 this.__showNoData();
@@ -2476,9 +2566,9 @@ if (typeof exports !== 'undefined') {
          *            the data returned from a metric query
          * @access private
          */
-        __buildChart: function(data) {
+        __buildChart: function (data) {
             $(this.svgwrapper).outerHeight(
-                    this.$div.height() - $(this.footer).outerHeight());
+                this.$div.height() - $(this.footer).outerHeight());
             this.closure = this.impl.build(this, data);
             this.impl.render(this);
 
@@ -2496,44 +2586,44 @@ if (typeof exports !== 'undefined') {
          * @param {object}
          *            data the data that is being rendered in the graph
          */
-        __render: function(data) {
+        __render: function (data) {
             var self = this;
             dependency.__loadDependencies({
-                    'defined' : self.config.type.replace('.', '_'),
-                    'source' : [ 'charts/' + self.config.type.replace('.', '/') + '.js' ]
-                }, function() {
-                    var impl;
-                    try {
-                        impl = visualization.chart;
-                        self.config.type.split('.').forEach(function(seg) {
-                            impl = impl[seg];
-                        });
-                        self.impl = impl;
-                    } catch (err) {
-                        throw new utils.Error(
-                            'DependencyError',
-                            'Unable to locate loaded chart type, "' +
-                                self.config.type + '", error: ' + err
-                        );
+                'defined': self.config.type.replace('.', '_'),
+                'source': ['charts/' + self.config.type.replace('.', '/') + '.js']
+            }, function () {
+                var impl;
+                try {
+                    impl = visualization.chart;
+                    self.config.type.split('.').forEach(function (seg) {
+                        impl = impl[seg];
+                    });
+                    self.impl = impl;
+                } catch (err) {
+                    throw new utils.Error(
+                        'DependencyError',
+                        'Unable to locate loaded chart type, "' +
+                        self.config.type + '", error: ' + err
+                    );
+                }
+
+                // Check the impl to see if a dependency is listed
+                // and
+                // if so load that.
+                dependency.__loadDependencies(self.impl.required, function () {
+                    self.__buildChart(data);
+                    if (self.__hasFooter()) {
+                        self.__buildFooter(self.config, data);
+                    }
+                    self.resize();
+
+                    if (self.afterRender) {
+                        setTimeout(function () {
+                            self.afterRender();
+                        }, 0);
                     }
 
-                    // Check the impl to see if a dependency is listed
-                    // and
-                    // if so load that.
-                    dependency.__loadDependencies(self.impl.required, function() {
-                        self.__buildChart(data);
-                        if (self.__hasFooter()) {
-                            self.__buildFooter(self.config, data);
-                        }
-                        self.resize();
-
-                        if(self.afterRender){
-                            setTimeout(function(){
-                                self.afterRender();
-                            }, 0);
-                        }
-
-                    });
+                });
             });
         },
 
@@ -2549,7 +2639,7 @@ if (typeof exports !== 'undefined') {
          * @param {string}
          *            detail the detailed error message
          */
-        __showError: function(detail) {
+        __showError: function (detail) {
             this.__showMessage('<span class="zenerror">' + detail + '</span>');
         },
 
@@ -2561,15 +2651,15 @@ if (typeof exports !== 'undefined') {
          * @param {string}
          *            name of the div wrapper for the chart
          */
-        __showNoData: function() {
+        __showNoData: function () {
             this.__showMessage('<span class="nodata"></span>');
         },
 
-        __hideMessage: function() {
+        __hideMessage: function () {
             this.$div.find(".message").css('display', 'none');
         },
 
-        __showMessage: function(message) {
+        __showMessage: function (message) {
             // cache some commonly used selectors
             var $message = this.$div.find(".message"),
                 $messageSpan = $message.find("span");
@@ -2582,7 +2672,7 @@ if (typeof exports !== 'undefined') {
             $message.css('display', 'block');
         },
 
-        __hideChart: function() {
+        __hideChart: function () {
             this.$div.find('.zenchart').css('display', 'none');
 
             if (!this.showLegendOnNoData) {
@@ -2590,7 +2680,7 @@ if (typeof exports !== 'undefined') {
             }
         },
 
-        __showChart: function() {
+        __showChart: function () {
             this.__hideMessage();
             this.$div.find('.zenchart').css('display', 'block');
             this.$div.find('.zenfooter').css('display', 'block');
@@ -2605,7 +2695,7 @@ if (typeof exports !== 'undefined') {
          * @returns a string representation of the date
          * @access public
          */
-        dateFormatter: function(date, timezone) {
+        dateFormatter: function (date, timezone) {
             return moment.utc(date, "X").tz(timezone).format(this.dateFormat);
         },
 
@@ -2629,13 +2719,13 @@ if (typeof exports !== 'undefined') {
 
         // uses TIME_DATA to determine which time range we care about
         // and format labels representative of that time range
-        updateXLabels: function(start, end, axis){
+        updateXLabels: function (start, end, axis) {
             var dateRange = end - start,
                 done, timeFormat;
 
             // figure out which unit we care about
-            TIME_DATA.forEach(function(timeFormatObj){
-                if(!done && dateRange <= timeFormatObj.value * timeFormatObj.breakpoint){
+            TIME_DATA.forEach(function (timeFormatObj) {
+                if (!done && dateRange <= timeFormatObj.value * timeFormatObj.breakpoint) {
                     timeFormat = timeFormatObj;
                     done = true;
                 }
@@ -2646,20 +2736,20 @@ if (typeof exports !== 'undefined') {
                 .tickFormat(timeFormat.format.bind(null, this.timezone));
         },
 
-        dedupeYLabels: function(model){
+        dedupeYLabels: function (model) {
             var prevY;
 
-            return function(value, index) {
-                var yDomain = model.yDomain() || [0,1],
+            return function (value, index) {
+                var yDomain = model.yDomain() || [0, 1],
                     formatted = this.formatValue(value),
-                    // min and max labels do not have an index set
-                    // where regular labels do
+                // min and max labels do not have an index set
+                // where regular labels do
                     isMinMax = index === undefined ? true : false;
 
                 // if prevY hasn't been set yet, this is
                 // the first time this has been run, so
                 // set it.
-                if(prevY === undefined){
+                if (prevY === undefined) {
                     prevY = this.formatValue(yDomain[0]);
                 }
 
@@ -2667,12 +2757,12 @@ if (typeof exports !== 'undefined') {
                 // tick value, the min tick value or the max tick value,
                 // do not return a tick value (I'm sure that's crystal
                 // clear now)
-                if(!isMinMax && (formatted === prevY ||
-                   formatted === this.formatValue(yDomain[0]) ||
-                   formatted === this.formatValue(yDomain[1])) ){
+                if (!isMinMax && (formatted === prevY ||
+                    formatted === this.formatValue(yDomain[0]) ||
+                    formatted === this.formatValue(yDomain[1]))) {
                     return undefined;
 
-                // if prevY is a unique value, return it
+                    // if prevY is a unique value, return it
                 } else {
                     prevY = formatted;
                     return formatted;
@@ -2683,26 +2773,26 @@ if (typeof exports !== 'undefined') {
         /**
          * Create y domain based on options and calculated data range
          */
-        calculateYDomain: function(miny, maxy, data){
+        calculateYDomain: function (miny, maxy, data) {
             // if max is not provided, calcuate max
-            if(maxy === undefined){
+            if (maxy === undefined) {
                 maxy = this.calculateResultsMax(data.results);
             }
 
             // if min is not provided, calculate min
-            if(miny === undefined){
+            if (miny === undefined) {
                 miny = this.calculateResultsMin(data.results);
             }
 
             // if min and max are the same, add a bit to
             // max to separate them
-            if(miny === maxy){
+            if (miny === maxy) {
                 maxy += maxy * 0.1;
             }
 
             // if min and max are zero, force a
             // 0,1 domain
-            if(miny + maxy === 0){
+            if (miny + maxy === 0) {
                 maxy = 1;
             }
 
@@ -2715,23 +2805,23 @@ if (typeof exports !== 'undefined') {
          * if nonZero is set to true, this will return the smallest non-zero
          * value
          */
-        calculateResultsMin: function(data, nonZero){
+        calculateResultsMin: function (data, nonZero) {
             // if nonZero, set things up to start from Infinity
-            var minStartValue = nonZero ?  Infinity : 0,
+            var minStartValue = nonZero ? Infinity : 0,
                 result;
 
-            result = data.reduce(function(acc, series){
-                return Math.min(acc, series.datapoints.reduce(function(acc, dp){
+            result = data.reduce(function (acc, series) {
+                return Math.min(acc, series.datapoints.reduce(function (acc, dp) {
                     // if the value is the string "NaN", ignore this dp
-                    if(dp.value === "NaN") return acc;
-                    if(nonZero && dp.value === 0) return acc;
+                    if (dp.value === "NaN") return acc;
+                    if (nonZero && dp.value === 0) return acc;
                     return Math.min(acc, +dp.value);
                 }, minStartValue));
             }, minStartValue);
 
             // if the result is Infinity, then all the values
             // were zero, so just return zero
-            if(result === Infinity){
+            if (result === Infinity) {
                 result = 0;
             }
 
@@ -2742,36 +2832,36 @@ if (typeof exports !== 'undefined') {
          * Accepts a query service api response and determines the maximum
          * value of all series datapoints in that response
          */
-        calculateResultsMax: function(data){
+        calculateResultsMax: function (data) {
 
-            var seriesCalc = function(a,b){
-                return a+b;
+            var seriesCalc = function (a, b) {
+                return a + b;
             };
 
-            return data.reduce(function(acc, series){
-                return seriesCalc(acc, series.datapoints.reduce(function(acc, dp){
+            return data.reduce(function (acc, series) {
+                return seriesCalc(acc, series.datapoints.reduce(function (acc, dp) {
                     // if the value is the string "NaN", ignore this dp
-                    if(dp.value === "NaN") return acc;
+                    if (dp.value === "NaN") return acc;
                     return Math.max(acc, +dp.value);
                 }, 0));
             }, 0);
         },
 
-        setPreferredYUnit: function(data){
+        setPreferredYUnit: function (data) {
             var val = this.calculateResultsMax(data),
                 x, unitIndex;
 
             // if maxy is set, constrain the value based on that
-            if(this.maxy !== undefined){
+            if (this.maxy !== undefined) {
                 val = this.maxy;
             }
 
             // if miny is set and val is less than miny, set val to miny
-            if(this.miny !== undefined && val < this.miny){
+            if (this.miny !== undefined && val < this.miny) {
                 val = this.miny;
             }
 
-            if(val === 0){
+            if (val === 0) {
                 unitIndex = 0;
             } else {
                 x = Math.log(Math.abs(val)) / Math.log(this.base);
@@ -2779,6 +2869,24 @@ if (typeof exports !== 'undefined') {
             }
 
             this.preferredYUnit = unitIndex;
+        },
+
+        // returns date object for start time of this chart
+        getStartDate: function () {
+            if (!this.request.start) {
+                console.warn("Missing start date");
+                return;
+            }
+            var date = utils.createDate(this.request.start);
+            return date;
+        },
+        getEndDate: function () {
+            if (!this.request.end) {
+                console.warn("Missing end date");
+                return;
+            }
+            var date = utils.createDate(this.request.end);
+            return date;
         }
     };
 
@@ -2802,16 +2910,16 @@ if (typeof exports !== 'undefined') {
         "8": "Y"
     };
 
-    function toEng(val, preferredUnit, format, base){
+    function toEng(val, preferredUnit, format, base) {
         var result,
             unit,
             formatted,
             symbol;
 
         // if preferredUnit is provided, target that value
-        if(preferredUnit !== undefined){
+        if (preferredUnit !== undefined) {
             unit = preferredUnit;
-        } else if(val === 0){
+        } else if (val === 0) {
             unit = 0;
         } else {
             unit = Math.floor(Math.log(Math.abs(val)) / Math.log(base));
@@ -2822,10 +2930,10 @@ if (typeof exports !== 'undefined') {
         // TODO - if Math.abs(unit) > 8, return value in scientific notation
         result = val / Math.pow(base, unit);
 
-        try{
+        try {
             // if sprintf is passed a format it doesn't understand an exception is thrown
             formatted = sprintf(format, result);
-        } catch(err) {
+        } catch (err) {
             console.error("Invalid format", format, "using default", DEFAULT_NUMBER_FORMAT);
             formatted = sprintf(DEFAULT_NUMBER_FORMAT, result);
         }
@@ -2839,23 +2947,23 @@ if (typeof exports !== 'undefined') {
     // fit in `length` characters. It will trim the
     // fractional part of the number, but never the
     // whole part of the number
-    function shortenNumber(numStr, targetLength){
+    function shortenNumber(numStr, targetLength) {
         var parts = numStr.split("."),
             whole = parts[0],
             fractional = parts[1] || "";
 
         // if the number is already short enough
-        if(whole.length + fractional.length <= targetLength){
+        if (whole.length + fractional.length <= targetLength) {
             return numStr;
         }
 
         // if the whole part of the number is
         // too long, return it as is. we tried our best.
-        if(whole.length >= targetLength){
+        if (whole.length >= targetLength) {
             return whole;
         }
 
-        return whole +"."+ fractional.substring(0, targetLength - whole.length);
+        return whole + "." + fractional.substring(0, targetLength - whole.length);
     }
 })();
 

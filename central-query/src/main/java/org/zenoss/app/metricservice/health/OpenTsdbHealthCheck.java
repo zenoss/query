@@ -35,9 +35,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.dropwizardspring.annotations.HealthCheck;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.HttpEntity;
+import org.apache.http.util.EntityUtils;
 
-import java.net.HttpURLConnection;
-import java.net.URL;
+import javax.ws.rs.core.Response;
+import java.io.InputStream;
 import java.util.Map;
 
 @Configuration
@@ -46,28 +51,40 @@ public class OpenTsdbHealthCheck extends com.yammer.metrics.core.HealthCheck {
     @Autowired
     MetricServiceAppConfiguration config;
 
+    private static DefaultHttpClient httpclient = new DefaultHttpClient();
+
     protected OpenTsdbHealthCheck() {
         super("OpenTSDB");
     }
 
     @Override
     protected Result check() throws Exception {
+        HttpGet httpGet = null;
+        InputStream instream = null;
         try {
-            URL url = new URL(config.getMetricServiceConfig().getOpenTsdbUrl() + "/api/stats");
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setConnectTimeout(config.getMetricServiceConfig().getConnectionTimeoutMs());
-            connection.setReadTimeout(config.getMetricServiceConfig().getConnectionTimeoutMs());
-            if (connection.getResponseCode() / 100 != 2) {
-                return Result.unhealthy("Unexpected result code from OpenTSDB Server: " + connection.getResponseCode());
+            HttpGet httpget = new HttpGet(config.getMetricServiceConfig().getOpenTsdbUrl() + "/api/stats");
+            HttpResponse response = httpclient.execute(httpget);
+            int code = response.getStatusLine().getStatusCode();
+            if (code != Response.Status.OK.getStatusCode()) {
+                return Result.unhealthy("Unexpected result code from OpenTSDB Server: " + code);
             }
 
-            // Exception if unable to parse object from input stream
-            new ObjectMapper().reader(Map[].class)
-                    .readValue(connection.getInputStream()).toString();
+            HttpEntity entity = response.getEntity();
+            instream = entity.getContent();
+
+            // Exception if unable to parse object from input stream.
+            new ObjectMapper().reader(Map[].class).readValue(instream).toString();
+
+            EntityUtils.consume(entity);
 
             return Result.healthy();
         } catch (Exception e) {
             return Result.unhealthy(e);
+        } finally {
+            if (instream != null) {
+                instream.close();
+            }
+            httpGet.releaseConnection();
         }
     }
 }
