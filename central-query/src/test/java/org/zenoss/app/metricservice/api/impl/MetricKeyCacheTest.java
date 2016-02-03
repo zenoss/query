@@ -41,12 +41,8 @@ public class MetricKeyCacheTest {
     public void testMetricKeyCachePutsAndGets() {
         MetricKeyCache subject = new MetricKeyCache();
         MetricKey key1 = MetricKey.fromValue(basicName, basicMetric,basicTag);
-        MetricKey retrievedKey = subject.get(key1);
-        assertTrue("Get on an uninitialized cache should return null.", null == retrievedKey);
         subject.put(key1);
-        retrievedKey = subject.get(key1);
-        assertTrue("After put, Get by key should retrieve the same key.", retrievedKey.equals(key1));
-        retrievedKey = subject.get(key1.getMetric(), key1.getTags());
+        MetricKey retrievedKey = subject.get(key1.getMetric(), key1.getName(), key1.getId(), key1.getTags());
         assertTrue("After put, Get by metric name and tags should retrieve the same key.", retrievedKey.equals(key1));
 
     }
