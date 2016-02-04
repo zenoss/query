@@ -61,13 +61,30 @@ public class  MetricKeyCache {
      */
     public MetricKey put(MetricKey key) {
         keys.add(key);
-        List<MetricKey> list = map.get(key.getMetric());
+
+        String cacheKey = getCacheKey(key);
+
+        List<MetricKey> list = map.get(cacheKey);
         if (list == null) {
             list = new ArrayList<>();
-            map.put(key.getMetric(), list);
+            map.put(cacheKey, list);
         }
         list.add(key);
         return key;
+    }
+
+    private String makeCacheKey(String metric,  String name, String id){
+        if (name == null){
+            name = "DEFAULT_NAME";
+        }
+        if (id == null){
+            id = "DEFAULT_ID";
+        }
+        return metric + "<>" + name + "<>" + id;
+
+    }
+    private String getCacheKey(MetricKey key) {
+        return makeCacheKey(key.getMetric(), key.getName(), key.getId());
     }
 
     /**
@@ -81,8 +98,9 @@ public class  MetricKeyCache {
      *            tags to search for
      * @return matching metric key or null.
      */
-    public MetricKey get(String metric, Tags tags) {
-        List<MetricKey> list = map.get(metric);
+    public MetricKey get(String metric, String name, String id, Tags tags) {
+        String cacheKey = makeCacheKey(metric, name, id);
+        List<MetricKey> list = map.get(cacheKey);
         if (list != null) {
             for (MetricKey key : list) {
                 if (null != tags && tags.equals(key.getTags()) || key.getTags() == null || key.getTags().match(tags)) {
@@ -91,24 +109,5 @@ public class  MetricKeyCache {
             }
         }
         return null;
-    }
-
-    /**
-     * Fetches a metric key that matches the given metric key. A key matches if
-     * it has the correct metric name and if the keys tags map to the given
-     * tags. Thus the keys tags may contain wild cards and pipes.
-     * 
-     * @param key
-     *            the key to match
-     * @return matched key or null
-     */
-    public MetricKey get(MetricKey key) {
-        // Check to see if it is in our key set and if so just return it
-        if (keys.contains(key)) {
-            return key;
-        }
-
-        // Now the harder / longer check
-        return get(key.getMetric(), key.getTags());
     }
 }

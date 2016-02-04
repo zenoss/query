@@ -17,7 +17,7 @@ import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.skyscreamer.jsonassert.JSONCompareResult;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.configs.MetricServiceConfig;
-import org.zenoss.app.metricservice.api.impl.OpenTSDBPMetricStorage;
+import org.zenoss.app.metricservice.api.impl.OpenTSDBMetricStorage;
 import org.zenoss.app.metricservice.api.impl.OpenTSDBQuery;
 import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryResult;
 import org.zenoss.app.metricservice.api.impl.Utils;
@@ -60,8 +60,9 @@ public class ResourcesTest extends ResourceTest {
 
         security = mock(ZappSecurity.class);
 
-        OpenTSDBPMetricStorage otsdb = new OpenTSDBPMetricStorage();
+        OpenTSDBMetricStorage otsdb = new OpenTSDBMetricStorage();
         otsdb.config = configuration;
+        otsdb.startup();
 
         QueryServiceImpl backend = new QueryServiceImpl();
         backend.config = configuration;

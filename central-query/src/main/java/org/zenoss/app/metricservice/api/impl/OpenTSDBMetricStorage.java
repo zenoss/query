@@ -67,20 +67,17 @@ import java.util.concurrent.TimeUnit;
 @API
 @Configuration
 @Profile({"default", "prod"})
-public class OpenTSDBPMetricStorage implements MetricStorageAPI {
+public class OpenTSDBMetricStorage implements MetricStorageAPI {
     @Autowired
     public MetricServiceAppConfiguration config;
 
-    private static final Logger log = LoggerFactory.getLogger(OpenTSDBPMetricStorage.class);
+    private static final Logger log = LoggerFactory.getLogger(OpenTSDBMetricStorage.class);
 
     private static final String SOURCE_ID = "OpenTSDB";
 
-    // mutex for synchronizing executor service creation.
-    private static Object mutex = new Object();
-
     private static ExecutorService executorServiceInstance = null;
 
-    protected static final String SPACE_REPLACEMENT = "//-";
+    static final String SPACE_REPLACEMENT = "//-";
     private DefaultHttpClient httpClient = null;
 
 
@@ -125,15 +122,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
                                                  String id, String startTime, String endTime, ReturnSet returnset,
                                                  String downsample, double downsampleMultiplier,
                                                  Map<String, List<String>> globalTags,
-                                                 List<MetricSpecification> queries, boolean allowWildCard) throws IOException {
-
-        OpenTSDBQuery query = new OpenTSDBQuery();
-
-        // This could maybe be better - for now, it works : end time defaults to 'now', start time does not default.
-        query.start = startTime;
-        if (!Utils.NOW.equals(endTime)) {
-            query.end = endTime;
-        }
+                                                 List<MetricSpecification> queries) throws IOException {
 
         String appliedDownsample = createModifiedDownsampleRequest(downsample, downsampleMultiplier);
         log.debug("Specified Downsample = {}, Specified Multiplier = {}, Applied Downsample = {}.", downsample, downsampleMultiplier, appliedDownsample);
@@ -144,10 +133,9 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
                 log.info("Overriding specified series downsample ({}) with global specification of {}", oldDownsample, appliedDownsample);
             }
             metricSpecification.setDownsample(appliedDownsample);
-            query.addSubQuery(openTSDBSubQueryFromMetricSpecification(metricSpecification, allowWildCard));
         }
 
-        List<OpenTSDBQueryResult> responses = runQueries(query.asSeparateQueries());
+        List<OpenTSDBQueryResult> responses = runQueries(startTime, endTime, queries);
         for (OpenTSDBQueryResult result : responses) {
             result.metric = result.metric.replace(SPACE_REPLACEMENT, " ");
         }
@@ -156,12 +144,11 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
 
     private String getOpenTSDBApiQueryUrl() {
-        String result = String.format("%s/api/query", config.getMetricServiceConfig().getOpenTsdbUrl());
-        return result;
+        return String.format("%s/api/query", config.getMetricServiceConfig().getOpenTsdbUrl());
     }
 
     private static OpenTSDBSubQuery createOTSDBQuery(MetricQuery mq) {
-        boolean allowWildCard = true;
+        final boolean allowWildCard = true;
         OpenTSDBSubQuery result = null;
         if (null != mq) {
             result = new OpenTSDBSubQuery();
@@ -188,36 +175,6 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         }
         return result;
     }
-
-
-    private static OpenTSDBSubQuery openTSDBSubQueryFromMetricSpecification(MetricSpecification metricSpecification, boolean allowWildCard) {
-        OpenTSDBSubQuery result = null;
-        if (null != metricSpecification) {
-            result = new OpenTSDBSubQuery();
-            result.aggregator = metricSpecification.getAggregator();
-            result.downsample = metricSpecification.getDownsample();
-
-            // escape the name of the metric since OpenTSDB doesn't like spaces
-            String metricName = metricSpecification.getMetric();
-            metricName = metricName.replace(" ", SPACE_REPLACEMENT);
-            result.metric = metricName;
-
-
-            result.rate = metricSpecification.getRate();
-            result.rateOptions = new OpenTSDBRateOption(metricSpecification.getRateOptions());
-            Map<String, List<String>> tags = metricSpecification.getTags();
-            if (null != tags) {
-                for (Map.Entry<String, List<String>> tagEntry : tags.entrySet()) {
-                    for (String tagValue : tagEntry.getValue()) {
-                        //apply metric-consumer sanitization to tags in query
-                        result.addTag(Tags.sanitizeKey(tagEntry.getKey()), Tags.sanitizeValue(tagValue, allowWildCard));
-                    }
-                }
-            }
-        }
-        return result;
-    }
-
 
     /*
      * (non-Javadoc)
@@ -253,28 +210,27 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         return String.format("%ds-%s", newDuration, aggregation);
     }
 
-    private List<OpenTSDBQueryResult> runQueries(List<OpenTSDBQuery> queries) {
-        List<OpenTSDBQueryResult> results = new ArrayList<>();
-
-        if (null == queries) {
-            log.warn("Null query list passed to runQueries. Returning empty results list.");
-            return results;
+    private List<OpenTSDBQueryResult> runQueries(String start, String end, List<MetricSpecification> queries) {
+        List<Callable<OpenTSDBQueryResult>> callables = new ArrayList<>(queries.size());
+        DefaultHttpClient httpClient = getHttpClient();
+        for (MetricSpecification mSpec : queries) {
+            MetricSpecCallable callable = new MetricSpecCallable(httpClient, start, end, mSpec, getOpenTSDBApiQueryUrl());
+            callables.add(callable);
         }
-
-        List<Callable<OpenTSDBQueryResult>> executors = getExecutors(queries);
-        List<Future<OpenTSDBQueryResult>> futures = invokeExecutors(executors);
+        List<Future<OpenTSDBQueryResult>> futures = invokeCallables(callables);
         log.debug("{} futures returned.", futures.size());
+        List<OpenTSDBQueryResult> results = new ArrayList<>();
         getResultsFromFutures(results, futures);
         log.debug("{} results returned.", results.size());
         return results;
     }
 
-    private List<Future<OpenTSDBQueryResult>> invokeExecutors(List<Callable<OpenTSDBQueryResult>> executors) {
+    private List<Future<OpenTSDBQueryResult>> invokeCallables(List<Callable<OpenTSDBQueryResult>> callables) {
         ExecutorService executorService = getExecutorService();
         List<Future<OpenTSDBQueryResult>> futures = new ArrayList<>();
         try {
-            log.debug("invoking {} executors...", executors.size());
-            futures = executorService.invokeAll(executors); // throws: InterruptedException (checked), NullPointerException/RejectedExecutionException (unchecked)
+            log.debug("invoking {} callables...", callables.size());
+            futures = executorService.invokeAll(callables); // throws: InterruptedException (checked), NullPointerException/RejectedExecutionException (unchecked)
         } catch (InterruptedException | NullPointerException | RejectedExecutionException e) {
             log.error("Query execution was unsuccessful: {}", e.getMessage());
         }
@@ -282,26 +238,6 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
     }
 
     private ExecutorService getExecutorService() {
-        if (null == executorServiceInstance) {
-            int executorThreadPoolMaxSize = config.getMetricServiceConfig().getExecutorThreadPoolMaxSize();
-            int executorThreadPoolCoreSize = config.getMetricServiceConfig().getExecutorThreadPoolCoreSize();
-            if (executorThreadPoolCoreSize > executorThreadPoolMaxSize) {
-                log.warn("executorThreadPool max size ({}) is less than core size ({}). Using specified max ({}) for both values.", executorThreadPoolMaxSize, executorThreadPoolCoreSize, executorThreadPoolMaxSize);
-                executorThreadPoolCoreSize = executorThreadPoolMaxSize;
-            }
-
-            log.info("Setting up executor pool with {}-{} threads.", executorThreadPoolCoreSize, executorThreadPoolMaxSize);
-            ThreadFactory namedThreadFactory = new ThreadFactoryBuilder().setNameFormat("TSDB-query-thread-%d").build();
-            synchronized (mutex) {
-                if (null == executorServiceInstance) {
-                    executorServiceInstance = new ThreadPoolExecutor(executorThreadPoolCoreSize, executorThreadPoolMaxSize, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
-                }
-            }
-            if (null == executorServiceInstance) {
-                log.error("Failed to create executor service for querying OpenTSDB.");
-                throw new NullPointerException("Executor service is null. Executor service creation failed.");
-            }
-        }
         return executorServiceInstance;
     }
 
@@ -320,27 +256,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         }
     }
 
-    private List<Callable<OpenTSDBQueryResult>> getExecutors(List<OpenTSDBQuery> queries) {
-        DefaultHttpClient httpClient = getHttpClient();
-
-        List<Callable<OpenTSDBQueryResult>> executors = new ArrayList<>();
-
-        for (OpenTSDBQuery query : queries) {
-            try {
-                CallableQueryExecutor executor = new CallableQueryExecutor(httpClient, query, getOpenTSDBApiQueryUrl());
-                executors.add(executor);
-            } catch (IllegalArgumentException e) {
-                log.warn("Unable to create request from query", e);
-            }
-        }
-        return executors;
-    }
-
     private DefaultHttpClient getHttpClient() {
-        if (null == httpClient) {
-            log.warn("httpClient was not created by PostConstruct method, as was expected. Creating it now.");
-            makeHttpClient();
-        }
         return httpClient;
     }
 
@@ -348,6 +264,15 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
     public void startup() {
         log.debug("**************** PostConstruct method called. ***********");
         makeHttpClient();
+        int executorThreadPoolMaxSize = config.getMetricServiceConfig().getExecutorThreadPoolMaxSize();
+        int executorThreadPoolCoreSize = config.getMetricServiceConfig().getExecutorThreadPoolCoreSize();
+        if (executorThreadPoolCoreSize > executorThreadPoolMaxSize) {
+            log.warn("executorThreadPool max size ({}) is less than core size ({}). Using specified max ({}) for both values.", executorThreadPoolMaxSize, executorThreadPoolCoreSize, executorThreadPoolMaxSize);
+            executorThreadPoolCoreSize = executorThreadPoolMaxSize;
+        }
+        log.info("Setting up executor pool with {}-{} threads.", executorThreadPoolCoreSize, executorThreadPoolMaxSize);
+        ThreadFactory namedThreadFactory = new ThreadFactoryBuilder().setNameFormat("TSDB-query-thread-%d").build();
+        executorServiceInstance = new ThreadPoolExecutor(executorThreadPoolCoreSize, executorThreadPoolMaxSize, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(), namedThreadFactory);
     }
 
     private void makeHttpClient() {

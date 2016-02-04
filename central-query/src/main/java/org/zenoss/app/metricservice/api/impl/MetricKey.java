@@ -150,7 +150,7 @@ public class MetricKey implements IHasShortcut {
 
     /**
      * Constructs an instance from given parameters
-     * 
+     *
      * @param name
      *            name
      * @param metric

@@ -228,7 +228,7 @@ public class MetricService implements MetricServiceAPI {
             try {
                 // The getReader call queries the datastore (e.g. openTSDB) and returns a otsdbResponse for streaming the results.
                 otsdbResponse = api.getResponse(config, id, convertedStartTime, convertedEndTime, returnset,
-                        downsample, downsampleMultiplier, tags, metricFilter(queries), false);
+                        downsample, downsampleMultiplier, tags, metricFilter(queries));
                 if (null == otsdbResponse) {
                     throw new IOException("Unable to get otsdbResponse from api.");
                 }
