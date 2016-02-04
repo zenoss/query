@@ -48,6 +48,8 @@ public class DataReaderGenerator {
 
     private OpenTSDBQueryResult makeQueryResult(MetricSpecification specification, SeriesGenerator dataGen, long start, long end, long step) {
         OpenTSDBQueryResult result = new OpenTSDBQueryResult();
+        result.metricSpecId = specification.getId();
+        result.metricSpecName = specification.getNameOrMetric();
         result.addTags(specification.getTags());
         Map<Long, Double> generatedValues = dataGen.generateValues(start, end, step);
         SortedMap<Long, Double> dataPoints = new TreeMap<>();

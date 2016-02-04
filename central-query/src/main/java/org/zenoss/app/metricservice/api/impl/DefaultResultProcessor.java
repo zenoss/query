@@ -135,9 +135,8 @@ public class DefaultResultProcessor implements ResultProcessor,
 
         // iterate over results (a result is a data series - with metric name, collection of points, tags, etc.
         for (OpenTSDBQueryResult result : this.results) {
-            String metricName = result.metric;
             curTags = Tags.fromOpenTsdbTags(result.tags);
-            MetricKey key = keyCache.get(metricName, curTags);
+            MetricKey key = keyCache.get(result.metric, result.metricSpecName, result.metricSpecId, curTags);
             QueryStatus status = result.getStatus();
             log.debug(String.format("Adding QueryStatus %s for key %s (hashcode: %d)", status.getMessage(), key.toString(), key.hashCode()));
             buckets.addQueryStatus(key, status);
@@ -177,7 +176,7 @@ public class DefaultResultProcessor implements ResultProcessor,
     private void calculateValues(List<MetricSpecification> calculatedValues, Buckets<IHasShortcut> buckets) {
         for (MetricSpecification metricSpecification : calculatedValues) {
             Tags tags = Tags.fromValue(metricSpecification.getTags());
-            MetricKey key = keyCache.get(metricSpecification.getName(), tags);
+            MetricKey key = keyCache.get(metricSpecification.getMetricOrName(), metricSpecification.getNameOrMetric(), metricSpecification.getId(), tags);
             MetricCalculator calculator = calculatorMap.get(key);
             if (null != calculator) {
                 for (Long timestamp : buckets.getTimestamps()) {
