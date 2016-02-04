@@ -38,7 +38,7 @@ import org.springframework.context.annotation.Profile;
 import org.zenoss.app.annotations.API;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.impl.MetricStorageAPI;
-import org.zenoss.app.metricservice.api.impl.OpenTSDBPMetricStorage;
+import org.zenoss.app.metricservice.api.impl.OpenTSDBMetricStorage;
 import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryResult;
 import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryReturn;
 import org.zenoss.app.metricservice.api.impl.Utils;
@@ -62,7 +62,7 @@ import java.util.Map;
 public class MockMetricStorage implements MetricStorageAPI {
 
     private static final Logger log = LoggerFactory
-            .getLogger(OpenTSDBPMetricStorage.class);
+            .getLogger(OpenTSDBMetricStorage.class);
 
     private static final String SOURCE_ID = "mock";
     private static final String MOCK_VALUE = "mock-value";

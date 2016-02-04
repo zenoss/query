@@ -31,7 +31,6 @@
 package org.zenoss.app.metricservice.api.impl;
 
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.slf4j.LoggerFactory;
 import org.zenoss.app.metricservice.api.impl.QueryStatus.QueryStatusEnum;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 
@@ -40,7 +39,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 class MetricSpecCallable implements Callable<OpenTSDBQueryResult> {
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(MetricSpecCallable.class);
     private final MetricSpecification mSpec;
     private final OpenTSDBClient client;
     private final String start;
@@ -92,7 +90,7 @@ class MetricSpecCallable implements Callable<OpenTSDBQueryResult> {
 
             // escape the name of the metric since OpenTSDB doesn't like spaces
             String metricName = metricSpecification.getMetric();
-            metricName = metricName.replace(" ", OpenTSDBPMetricStorage.SPACE_REPLACEMENT);
+            metricName = metricName.replace(" ", OpenTSDBMetricStorage.SPACE_REPLACEMENT);
             result.metric = metricName;
 
 

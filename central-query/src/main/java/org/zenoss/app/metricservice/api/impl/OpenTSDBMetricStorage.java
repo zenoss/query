@@ -67,16 +67,13 @@ import java.util.concurrent.TimeUnit;
 @API
 @Configuration
 @Profile({"default", "prod"})
-public class OpenTSDBPMetricStorage implements MetricStorageAPI {
+public class OpenTSDBMetricStorage implements MetricStorageAPI {
     @Autowired
     public MetricServiceAppConfiguration config;
 
-    private static final Logger log = LoggerFactory.getLogger(OpenTSDBPMetricStorage.class);
+    private static final Logger log = LoggerFactory.getLogger(OpenTSDBMetricStorage.class);
 
     private static final String SOURCE_ID = "OpenTSDB";
-
-    // mutex for synchronizing executor service creation.
-    private static Object mutex = new Object();
 
     private static ExecutorService executorServiceInstance = null;
 
@@ -147,12 +144,11 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
 
     private String getOpenTSDBApiQueryUrl() {
-        String result = String.format("%s/api/query", config.getMetricServiceConfig().getOpenTsdbUrl());
-        return result;
+        return String.format("%s/api/query", config.getMetricServiceConfig().getOpenTsdbUrl());
     }
 
     private static OpenTSDBSubQuery createOTSDBQuery(MetricQuery mq) {
-        boolean allowWildCard = true;
+        final boolean allowWildCard = true;
         OpenTSDBSubQuery result = null;
         if (null != mq) {
             result = new OpenTSDBSubQuery();
@@ -214,10 +210,10 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         return String.format("%ds-%s", newDuration, aggregation);
     }
 
-    private List<OpenTSDBQueryResult> runQueries(String start, String end,  List<MetricSpecification> queries) {
+    private List<OpenTSDBQueryResult> runQueries(String start, String end, List<MetricSpecification> queries) {
         List<Callable<OpenTSDBQueryResult>> callables = new ArrayList<>(queries.size());
         DefaultHttpClient httpClient = getHttpClient();
-        for (MetricSpecification  mSpec:queries){
+        for (MetricSpecification mSpec : queries) {
             MetricSpecCallable callable = new MetricSpecCallable(httpClient, start, end, mSpec, getOpenTSDBApiQueryUrl());
             callables.add(callable);
         }
@@ -242,26 +238,6 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
     }
 
     private ExecutorService getExecutorService() {
-        if (null == executorServiceInstance) {
-            int executorThreadPoolMaxSize = config.getMetricServiceConfig().getExecutorThreadPoolMaxSize();
-            int executorThreadPoolCoreSize = config.getMetricServiceConfig().getExecutorThreadPoolCoreSize();
-            if (executorThreadPoolCoreSize > executorThreadPoolMaxSize) {
-                log.warn("executorThreadPool max size ({}) is less than core size ({}). Using specified max ({}) for both values.", executorThreadPoolMaxSize, executorThreadPoolCoreSize, executorThreadPoolMaxSize);
-                executorThreadPoolCoreSize = executorThreadPoolMaxSize;
-            }
-
-            log.info("Setting up executor pool with {}-{} threads.", executorThreadPoolCoreSize, executorThreadPoolMaxSize);
-            ThreadFactory namedThreadFactory = new ThreadFactoryBuilder().setNameFormat("TSDB-query-thread-%d").build();
-            synchronized (mutex) {
-                if (null == executorServiceInstance) {
-                    executorServiceInstance = new ThreadPoolExecutor(executorThreadPoolCoreSize, executorThreadPoolMaxSize, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
-                }
-            }
-            if (null == executorServiceInstance) {
-                log.error("Failed to create executor service for querying OpenTSDB.");
-                throw new NullPointerException("Executor service is null. Executor service creation failed.");
-            }
-        }
         return executorServiceInstance;
     }
 
@@ -280,27 +256,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
         }
     }
 
-    private List<Callable<OpenTSDBQueryResult>> getExecutors(List<OpenTSDBQuery> queries) {
-        DefaultHttpClient httpClient = getHttpClient();
-
-        List<Callable<OpenTSDBQueryResult>> executors = new ArrayList<>();
-
-        for (OpenTSDBQuery query : queries) {
-            try {
-                CallableQueryExecutor executor = new CallableQueryExecutor(httpClient, query, getOpenTSDBApiQueryUrl());
-                executors.add(executor);
-            } catch (IllegalArgumentException e) {
-                log.warn("Unable to create request from query", e);
-            }
-        }
-        return executors;
-    }
-
     private DefaultHttpClient getHttpClient() {
-        if (null == httpClient) {
-            log.warn("httpClient was not created by PostConstruct method, as was expected. Creating it now.");
-            makeHttpClient();
-        }
         return httpClient;
     }
 
@@ -308,6 +264,15 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
     public void startup() {
         log.debug("**************** PostConstruct method called. ***********");
         makeHttpClient();
+        int executorThreadPoolMaxSize = config.getMetricServiceConfig().getExecutorThreadPoolMaxSize();
+        int executorThreadPoolCoreSize = config.getMetricServiceConfig().getExecutorThreadPoolCoreSize();
+        if (executorThreadPoolCoreSize > executorThreadPoolMaxSize) {
+            log.warn("executorThreadPool max size ({}) is less than core size ({}). Using specified max ({}) for both values.", executorThreadPoolMaxSize, executorThreadPoolCoreSize, executorThreadPoolMaxSize);
+            executorThreadPoolCoreSize = executorThreadPoolMaxSize;
+        }
+        log.info("Setting up executor pool with {}-{} threads.", executorThreadPoolCoreSize, executorThreadPoolMaxSize);
+        ThreadFactory namedThreadFactory = new ThreadFactoryBuilder().setNameFormat("TSDB-query-thread-%d").build();
+        executorServiceInstance = new ThreadPoolExecutor(executorThreadPoolCoreSize, executorThreadPoolMaxSize, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(), namedThreadFactory);
     }
 
     private void makeHttpClient() {

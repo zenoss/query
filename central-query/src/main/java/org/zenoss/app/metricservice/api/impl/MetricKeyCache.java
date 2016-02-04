@@ -110,23 +110,4 @@ public class  MetricKeyCache {
         }
         return null;
     }
-
-//    /**
-//     * Fetches a metric key that matches the given metric key. A key matches if
-//     * it has the correct metric name and if the keys tags map to the given
-//     * tags. Thus the keys tags may contain wild cards and pipes.
-//     *
-//     * @param key
-//     *            the key to match
-//     * @return matched key or null
-//     */
-//    public MetricKey get(MetricKey key) {
-//        // Check to see if it is in our key set and if so just return it
-//        if (keys.contains(key)) {
-//            return key;
-//        }
-//
-//        // Now the harder / longer check
-//        return get(this.getCacheKey(key), key.getTags());
-//    }
 }
