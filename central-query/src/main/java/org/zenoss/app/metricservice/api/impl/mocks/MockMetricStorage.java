@@ -38,7 +38,7 @@ import org.springframework.context.annotation.Profile;
 import org.zenoss.app.annotations.API;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.impl.MetricStorageAPI;
-import org.zenoss.app.metricservice.api.impl.OpenTSDBPMetricStorage;
+import org.zenoss.app.metricservice.api.impl.OpenTSDBMetricStorage;
 import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryResult;
 import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryReturn;
 import org.zenoss.app.metricservice.api.impl.Utils;
@@ -62,7 +62,7 @@ import java.util.Map;
 public class MockMetricStorage implements MetricStorageAPI {
 
     private static final Logger log = LoggerFactory
-            .getLogger(OpenTSDBPMetricStorage.class);
+            .getLogger(OpenTSDBMetricStorage.class);
 
     private static final String SOURCE_ID = "mock";
     private static final String MOCK_VALUE = "mock-value";
@@ -116,6 +116,9 @@ public class MockMetricStorage implements MetricStorageAPI {
         //StringBuilder buf = new StringBuilder();
         for (MetricSpecification query : queries) {
             OpenTSDBQueryResult result = new OpenTSDBQueryResult();
+            result.metricSpecName = query.getNameOrMetric();
+            result.metricSpecId = query.getId();
+
             // Need to join the global tags with the per metric tags,
             // overriding any global tag with that specified per metric
             if (tags != null || query.getTags() != null) {
@@ -180,7 +183,7 @@ public class MockMetricStorage implements MetricStorageAPI {
          * java.lang.String, java.lang.Boolean, java.lang.Boolean, java.util.List)
          */
     @Override
-    public List<OpenTSDBQueryResult> getResponse(MetricServiceAppConfiguration config, String id, String startTime, String endTime, ReturnSet returnset, String downsample, double downsampleMultiplier, Map<String, List<String>> tags, List<MetricSpecification> queries, boolean allowWildCard) throws IOException {
+    public List<OpenTSDBQueryResult> getResponse(MetricServiceAppConfiguration config, String id, String startTime, String endTime, ReturnSet returnset, String downsample, double downsampleMultiplier, Map<String, List<String>> tags, List<MetricSpecification> queries) throws IOException {
         return generateData(config, id, startTime, endTime, returnset,
                 downsample, tags, queries);
     }

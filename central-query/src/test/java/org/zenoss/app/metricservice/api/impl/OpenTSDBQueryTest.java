@@ -46,30 +46,6 @@ public class OpenTSDBQueryTest {
         assertTrue("tags missing from json", json.contains("tags"));
         assertTrue("metric missing from json",json.contains("metric"));
     }
-
-    @Test
-    public void testAsSeparateQueries() {
-        OpenTSDBQuery subject = makeTestQuery();
-        List<OpenTSDBQuery> queryList = subject.asSeparateQueries();
-        assertTrue("One query should be generated for each sub-query in the original.", TEST_METRICS.length == queryList.size());
-        List<String> metricsFound = new ArrayList<>();
-        for (OpenTSDBQuery query : queryList) {
-            assertTrue("globalAnnotations in query should match original query", subject.globalAnnotations == query.globalAnnotations);
-            assertTrue("msResolution in query should match original query", subject.msResolution == query.msResolution);
-            assertTrue("showTSUIDs in query should match original query", subject.showTSUIDs == query.showTSUIDs);
-            assertTrue("noAnnotations in query should match original query", subject.noAnnotations == query.noAnnotations);
-            assertTrue("End in query should match original query", subject.end.equals(query.end));
-            assertTrue("start in query should match original query", subject.start.equals(query.start));
-            assertTrue("There should be exactly one sub-query in the generated query", query.queries.size() == 1);
-            metricsFound.add(query.queries.get(0).metric);
-        }
-        assertTrue("Size of found metrics list should match size of original metrics list.", metricsFound.size() == TEST_METRICS.length);
-        for (String metric : TEST_METRICS) {
-            assertTrue("All test metrics should be in the list of found metrics", metricsFound.contains(metric));
-        }
-    }
-
-
     private OpenTSDBQuery makeTestQuery() {
         OpenTSDBQuery result = new OpenTSDBQuery();
         result.start = "1h-ago";
