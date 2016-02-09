@@ -47,7 +47,9 @@
             // so that graph will preserve series
             // toggle state
             chart.plots.forEach(function(plot, i){
-                plot.disabled = model.legendState[i];
+                if(model.legendState){
+                    plot.disabled = model.legendState[i];
+                }
             });
 
             chart.svg.datum(chart.plots)
@@ -90,9 +92,7 @@
             // overlays disabled state so they
             // can persist through graph refresh
             model.dispatch.on("stateChange", function(state){
-                if(model.legendState){
-                    model.legendState = state.disabled;
-                }
+                model.legendState = state.disabled;
             });
 
             chart.updateXLabels(data.startTimeActual * 1000, data.endTimeActual * 1000, _chart.model().xAxis);
