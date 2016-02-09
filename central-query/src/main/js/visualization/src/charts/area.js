@@ -43,14 +43,17 @@
                 model.yDomain(chart.calculateYDomain(chart.miny, chart.maxy, data));
             }
 
-            // copy series disabled flags to plots
+            // if we have a legendState stored,
+            // use it to mark if a plot is disabled
             // so that graph will preserve series
             // toggle state
-            chart.plots.forEach(function(plot, i){
-                if(model.legendState){
+            if(model.legendState){
+                // NOTE: legendState is an array of bools
+                // that maps to the array of plots
+                chart.plots.forEach(function(plot, i){
                     plot.disabled = model.legendState[i];
-                }
-            });
+                });
+            }
 
             chart.svg.datum(chart.plots)
                 .transition()
@@ -92,6 +95,8 @@
             // overlays disabled state so they
             // can persist through graph refresh
             model.dispatch.on("stateChange", function(state){
+                // state.disabled is an array of bools indicating
+                // if a series is enabled or disabled.
                 model.legendState = state.disabled;
             });
 
