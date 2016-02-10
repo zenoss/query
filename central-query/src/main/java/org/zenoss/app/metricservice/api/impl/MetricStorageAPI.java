@@ -15,7 +15,7 @@ public interface MetricStorageAPI {
     List<OpenTSDBQueryResult> getResponse(MetricServiceAppConfiguration config,
                                           String id, String startTime, String endTime,
                                           ReturnSet returnset, String downsample, double downsampleMultiplier,
-                                          Map<String, List<String>> tags, List<MetricSpecification> queries, boolean allowWildCard)
+                                          Map<String, List<String>> tags, List<MetricSpecification> queries)
             throws IOException;
 
 

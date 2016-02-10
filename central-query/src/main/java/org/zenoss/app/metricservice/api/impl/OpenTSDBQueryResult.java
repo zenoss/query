@@ -42,6 +42,9 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 public class OpenTSDBQueryResult {
+    public String metricSpecName;
+    public String metricSpecId;
+
     public List<String> aggregateTags;
 
     public SortedMap<Long,Double> dps = new TreeMap<>();
