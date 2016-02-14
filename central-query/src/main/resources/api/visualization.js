@@ -2473,9 +2473,14 @@ if (typeof exports !== 'undefined') {
          *          chart library.
          */
         __processResult: function (request, data) {
-            var plots, i, overlay, minDate, maxDate, plot, k, firstMetric;
+            var plots, firstMetric, minDate, maxDate;
 
             plots = this.__processResultAsSeries(request, data);
+
+            // get the date range
+            firstMetric = plots[0];
+            minDate = firstMetric.values[0].x;
+            maxDate = firstMetric.values[firstMetric.values.length - 1].x;
 
             // add overlays
             if (this.overlays.length && plots.length && plots[0].values.length) {
@@ -2483,33 +2488,46 @@ if (typeof exports !== 'undefined') {
                     // if disabled is undefined, default to true, otherwise
                     // use the disabled value
                     var isDisabled = "disabled" in overlay ? overlay.disabled : true;
-                    // get the date range
-                    firstMetric = plots[0];
-                    plot = {
-                        'key': overlay.legend + "*",
-                        'disabled': isDisabled,
-                        'values': [],
-                        'color': overlay.color,
-                        // store original overlay object
-                        // on this plot
-                        'overlay': overlay
-                    };
-                    minDate = firstMetric.values[0].x;
-                    maxDate = firstMetric.values[firstMetric.values.length - 1].x;
-                    for (k = 0; k < overlay.values.length; k += 1) {
+
+                    // if the overlay includes 2 values, we assume
+                    // it is a minmax threshold
+                    var isMinMax = overlay.values.length === 2 ? true: false;
+
+                    // NOTE: each value in an overlay is used to draw a horizontal
+                    // line at that y coordinate.
+                    overlay.values.sort().forEach(function(value, k){
+                        var plot = {
+                            'key': overlay.legend + "*",
+                            'disabled': isDisabled,
+                            'values': [],
+                            'color': overlay.color,
+                            // store original overlay object
+                            // on this plot
+                            'overlay': overlay
+                        };
 
                         // create a line by putting a point at the start and a point
                         // at the end
                         plot.values.push({
                             x: minDate,
-                            y: overlay.values[k]
+                            y: value
                         });
                         plot.values.push({
                             x: maxDate,
-                            y: overlay.values[k]
+                            y: value
                         });
-                    }
-                    plots.push(plot);
+
+                        // if this is a minmax threshold, we want
+                        // to label the key as such
+                        if(isMinMax){
+                            if(k === 0){
+                                plot.key = overlay.legend +" min*";
+                            } else if(k === 1){
+                                plot.key = overlay.legend +" max*";
+                            }
+                        }
+                        plots.push(plot);
+                    });
                 });
             }
 
