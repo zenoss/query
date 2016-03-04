@@ -17,7 +17,7 @@ import javax.ws.rs.HEAD;
 import javax.ws.rs.Path;
 
 @Resource(name = "status")
-@Path("/api/performance/status")
+@Path("/ping/status")
 public class StatusResource {
 
     @HEAD
