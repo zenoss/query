@@ -32,8 +32,10 @@ package org.zenoss.app.metricservice.api.impl;
 
 import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.PoolingClientConnectionManager;
+import io.dropwizard.client.HttpClientBuilder;
+import io.dropwizard.client.HttpClientConfiguration;
+import io.dropwizard.setup.Environment;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,11 +59,8 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 
 @API
@@ -71,6 +70,9 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
     @Autowired
     public MetricServiceAppConfiguration config;
 
+    @Autowired
+    public Environment environment;
+
     private static final Logger log = LoggerFactory.getLogger(OpenTSDBMetricStorage.class);
 
     private static final String SOURCE_ID = "OpenTSDB";
@@ -78,7 +80,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
     private static ExecutorService executorServiceInstance = null;
 
     static final String SPACE_REPLACEMENT = "//-";
-    private DefaultHttpClient httpClient = null;
+    private CloseableHttpClient  httpClient = null;
 
 
     @Override
@@ -212,7 +214,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
     private List<OpenTSDBQueryResult> runQueries(String start, String end, List<MetricSpecification> queries) {
         List<Callable<OpenTSDBQueryResult>> callables = new ArrayList<>(queries.size());
-        DefaultHttpClient httpClient = getHttpClient();
+        CloseableHttpClient httpClient = getHttpClient();
         for (MetricSpecification mSpec : queries) {
             MetricSpecCallable callable = new MetricSpecCallable(httpClient, start, end, mSpec, getOpenTSDBApiQueryUrl());
             callables.add(callable);
@@ -256,7 +258,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         }
     }
 
-    private DefaultHttpClient getHttpClient() {
+    private CloseableHttpClient getHttpClient() {
         return httpClient;
     }
 
@@ -272,18 +274,20 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         }
         log.info("Setting up executor pool with {}-{} threads.", executorThreadPoolCoreSize, executorThreadPoolMaxSize);
         ThreadFactory namedThreadFactory = new ThreadFactoryBuilder().setNameFormat("TSDB-query-thread-%d").build();
-        executorServiceInstance = new ThreadPoolExecutor(executorThreadPoolCoreSize, executorThreadPoolMaxSize, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(), namedThreadFactory);
+        executorServiceInstance = environment.lifecycle().executorService("OpenTSDBMetricQuery")
+                .threadFactory(namedThreadFactory)
+                .maxThreads(executorThreadPoolMaxSize)
+                .minThreads(executorThreadPoolCoreSize)
+                .build();
     }
 
     private void makeHttpClient() {
         log.info("Creating new PoolingClientConnectionManager.");
-        PoolingClientConnectionManager cm = new PoolingClientConnectionManager();
-        int maxTotalPoolConnections = config.getMetricServiceConfig().getMaxTotalPoolConnections();
-        int maxPoolConnectionsPerRoute = config.getMetricServiceConfig().getMaxPoolConnectionsPerRoute();
-        log.debug("Setting up pool with {} total connections and {} max connections per route.", maxTotalPoolConnections, maxPoolConnectionsPerRoute);
-        cm.setMaxTotal(maxTotalPoolConnections);
-        cm.setDefaultMaxPerRoute(maxPoolConnectionsPerRoute);
-        httpClient = new DefaultHttpClient(cm);
+        HttpClientConfiguration httpClientConfig = config.getMetricServiceConfig().getHttpClientConfiguration();
+        httpClient = new HttpClientBuilder(environment)
+                .using(httpClientConfig)
+                .build("otsdbquery-client");
+
     }
 
     @PreDestroy

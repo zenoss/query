@@ -3,7 +3,14 @@ logging:
   level: INFO
   loggers:
     "org.zenoss": INFO
-metrics:
+queryApp:
+  httpClient:
+    # parameters to configure connection pool for querying OpenTsdb:
+    # Total connections allowed per pool
+    maxConnections: 100
+    # Max number of connections for a given route
+    maxConnectionsPerRoute: 100
+
   defaultReturnSet: EXACT
   defaultStartTime: 1h-ago
   defaultEndTime: now
@@ -13,11 +20,6 @@ metrics:
   connectionTimeoutMs: 20000
   sendRateOptions: false
 
-  # parameters to configure connection pool for querying OpenTsdb:
-  # Total connections allowed per pool
-  maxTotalPoolConnections: 100
-  # Max number of connections for a given route
-  maxPoolConnectionsPerRoute: 100
 
   # parameters to configure thread pool for querying OpenTsdb:
   # Core number of threads in thread pool
@@ -28,20 +30,16 @@ metrics:
 proxyConfiguration:
   hostname: 127.0.0.1
   port: 8080
-http:
-  connectorType: nonblocking
-  port: 8888
-  adminPort: 58888
-  ssl:
-      #Example is using a java keystore in the target directory.
-      keyStore: ${ssl.cert.dir}/ssl.pfx
-      keyStorePassword: zapp_pass
-      keyStoreType: pkcs12
-  requestLog:
-    console:
-      enabled: false
 
-managedReporter:
-    metricReporters:
-      - {posterType: http, username: "$env[CONTROLPLANE_CONSUMER_USERNAME]", password: "$env[CONTROLPLANE_CONSUMER_PASSWORD]", urlEnvironment: "CONTROLPLANE_CONSUMER_URL"}
-      - {posterType: http, username: "$zcreds[]", password: "$zcreds[]", protocol: http, host: localhost, port: 8080, apiPath: /api/metrics/store}
+server:
+  applicationConnectors:
+    - type: http
+      port: 8888
+  adminConnectors:
+    - type: http
+      port: 58888
+
+#managedReporter:
+#    metricReporters:
+#      - {posterType: http, username: "$env[CONTROLPLANE_CONSUMER_USERNAME]", password: "$env[CONTROLPLANE_CONSUMER_PASSWORD]", urlEnvironment: "CONTROLPLANE_CONSUMER_URL"}
+#      - {posterType: http, username: "$zcreds[]", password: "$zcreds[]", protocol: http, host: localhost, port: 8080, apiPath: /api/metrics/store}

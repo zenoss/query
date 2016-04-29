@@ -31,12 +31,20 @@
 package org.zenoss.app.metricservice.api.configs;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dropwizard.client.HttpClientConfiguration;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
+
+import javax.validation.Valid;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
  */
 public class MetricServiceConfig {
+
+    @Valid
+    @JsonProperty("httpClient")
+    private final HttpClientConfiguration httpClientConfiguration= new HttpClientConfiguration();
+
     @JsonProperty
     private ReturnSet defaultReturnSet = ReturnSet.EXACT;
 
@@ -62,32 +70,13 @@ public class MetricServiceConfig {
     private Boolean sendRateOptions = Boolean.FALSE;
 
     @JsonProperty
-    private int maxTotalPoolConnections = 50;
-
-    @JsonProperty
-    private int maxPoolConnectionsPerRoute = 20;
-
-    @JsonProperty
     private int executorThreadPoolCoreSize = 20;
 
     @JsonProperty
     private int executorThreadPoolMaxSize = 250;
 
-
-    public int getMaxTotalPoolConnections() {
-        return maxTotalPoolConnections;
-    }
-
-    public void setMaxTotalPoolConnections(int maxTotalPoolConnections) {
-        this.maxTotalPoolConnections = maxTotalPoolConnections;
-    }
-
-    public int getMaxPoolConnectionsPerRoute() {
-        return maxPoolConnectionsPerRoute;
-    }
-
-    public void setMaxPoolConnectionsPerRoute(int maxPoolConnectionsPerRoute) {
-        this.maxPoolConnectionsPerRoute = maxPoolConnectionsPerRoute;
+    public HttpClientConfiguration getHttpClientConfiguration() {
+        return httpClientConfiguration;
     }
 
     public int getExecutorThreadPoolCoreSize() {

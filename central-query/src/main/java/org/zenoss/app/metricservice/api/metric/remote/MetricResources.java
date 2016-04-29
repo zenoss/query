@@ -30,10 +30,10 @@
  */
 package org.zenoss.app.metricservice.api.metric.remote;
 
+import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.yammer.metrics.annotation.Timed;
 import org.apache.shiro.subject.PrincipalCollection;
 import org.apache.shiro.subject.Subject;
 import org.slf4j.Logger;
@@ -104,12 +104,12 @@ public class MetricResources {
         Optional<Boolean> series = Optional.fromNullable(query.getSeries());
         Optional<String> downsample = Optional.fromNullable(query.getDownsample());
         double downsampleMultiplier = query.getDownsampleMultiplier();
-        Optional<Map<String, List<String>>> tags = getTags( query.getTags());
+        Optional<Map<String, List<String>>> tags = getTags(query.getTags());
         return api.query(id, start, end, returnset, series, downsample, downsampleMultiplier, tags, query.getMetrics());
     }
 
     @OPTIONS
-    public Response handleOptions(@HeaderParam("Access-Control-Request-Headers")  String request) {
+    public Response handleOptions(@HeaderParam("Access-Control-Request-Headers") String request) {
         return api.options(request);
     }
 

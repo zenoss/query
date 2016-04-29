@@ -30,47 +30,49 @@
  */
 package org.zenoss.app.metricservice.health;
 
+import com.codahale.metrics.health.HealthCheck;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
-import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
-import org.zenoss.dropwizardspring.annotations.HealthCheck;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
+import io.dropwizard.client.HttpClientBuilder;
+import io.dropwizard.setup.Environment;
 import org.apache.http.HttpEntity;
-import org.apache.http.util.EntityUtils;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 
+import javax.annotation.PostConstruct;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.util.Map;
 
-@Configuration
-@HealthCheck
-public class OpenTsdbHealthCheck extends com.yammer.metrics.core.HealthCheck {
+@org.zenoss.dropwizardspring.annotations.HealthCheck
+public class OpenTsdbHealthCheck extends HealthCheck {
     @Autowired
     MetricServiceAppConfiguration config;
 
-    private static DefaultHttpClient httpclient = new DefaultHttpClient();
+    @Autowired
+    Environment environment;
 
-    protected OpenTsdbHealthCheck() {
-        super("OpenTSDB");
+    private CloseableHttpClient httpClient;
+
+    @PostConstruct
+    public void init() {
+        httpClient = new HttpClientBuilder(environment).build("OpenTsdbHealthCheck-client");
+
     }
 
     @Override
     protected Result check() throws Exception {
 
-        HttpGet httpGet = null;
-        InputStream instream = null;
-        HttpEntity entity = null;
-
+        CloseableHttpResponse response = null;
         try {
 
             HttpGet httpget = new HttpGet(config.getMetricServiceConfig().getOpenTsdbUrl() + "/api/stats");
-            HttpResponse response = httpclient.execute(httpget);
+            response = httpClient.execute(httpget);
 
-            entity = response.getEntity();
-            instream = entity.getContent();
+            HttpEntity entity = response.getEntity();
+            InputStream instream = entity.getContent();
 
             int code = response.getStatusLine().getStatusCode();
             if (code != Response.Status.OK.getStatusCode()) {
@@ -78,7 +80,7 @@ public class OpenTsdbHealthCheck extends com.yammer.metrics.core.HealthCheck {
             }
 
             // Exception if unable to parse object from input stream.
-            new ObjectMapper().reader(Map[].class).readValue(instream).toString();
+            new ObjectMapper().readerFor(Map[].class).readValue(instream).toString();
 
             return Result.healthy();
 
@@ -87,15 +89,9 @@ public class OpenTsdbHealthCheck extends com.yammer.metrics.core.HealthCheck {
             return Result.unhealthy(e);
 
         } finally {
-
-            if (instream != null) {
-                instream.close();
+            if (response != null) {
+                response.close();
             }
-
-            if (entity != null) {
-                EntityUtils.consume(entity);
-            }
-
         }
     }
 }

@@ -13,12 +13,9 @@
     <properties>
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
-        <zapp.version>0.0.16</zapp.version>
+        <zapp.version>0.1.0-SNAPSHOT</zapp.version>
         <metric-consumer.version>0.1.0</metric-consumer.version>
-        <jersey.version>1.15</jersey.version>
-        <junit.version>4.11</junit.version>
-        <spring.version>3.2.1.RELEASE</spring.version>
-        <dropwizard.version>0.6.2</dropwizard.version>
+        <junit.version>4.12</junit.version>
         <jsdoc3.version>1.0.4</jsdoc3.version>
         <ssl.cert.dir>target/cert</ssl.cert.dir>
         <assembly.skipAssembly>true</assembly.skipAssembly>
@@ -33,26 +30,21 @@
             <version>${zapp.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-assets</artifactId>
+            <version>0.9.2</version>
+        </dependency>
+        <dependency>
             <groupId>org.zenoss.zapp</groupId>
             <artifactId>zauth-bundle</artifactId>
             <version>${zapp.version}</version>
         </dependency>
         <dependency>
             <groupId>org.zenoss</groupId>
-            <artifactId>metric-zapp-reporter</artifactId>
-            <version>${metric-consumer.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zenoss</groupId>
             <artifactId>central-query-lib</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!-- Used for storage of chart definitions -->
-        <dependency>
-            <groupId>redis.clients</groupId>
-            <artifactId>jedis</artifactId>
-            <version>2.1.0</version>
-        </dependency>
+        <!--&lt;!&ndash; Used for storage of chart definitions &ndash;&gt;-->
 
         <!--test scope -->
         <dependency>
@@ -64,46 +56,8 @@
         <dependency>
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock</artifactId>
-            <version>1.38</version>
+            <version>1.58</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yammer.dropwizard</groupId>
-            <artifactId>dropwizard-testing</artifactId>
-            <version>${dropwizard.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-test</artifactId>
-            <version>${spring.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.github.tomakehurst</groupId>
-            <artifactId>wiremock</artifactId>
-            <version>1.33</version>
-            <!-- Include this if you have dependency conflicts for Guava,
-                 Jetty, Jackson or Apache HTTP Client -->
-            <classifier>standalone</classifier>
-            <scope>test</scope>
-        </dependency>
-        <!--runtime -->
-        <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-server</artifactId>
-            <version>${jersey.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>aopalliance</groupId>
-            <artifactId>aopalliance</artifactId>
-            <version>1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.1.4</version>
         </dependency>
     </dependencies>
 

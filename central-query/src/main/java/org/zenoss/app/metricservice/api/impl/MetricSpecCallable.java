@@ -30,7 +30,7 @@
  */
 package org.zenoss.app.metricservice.api.impl;
 
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.zenoss.app.metricservice.api.impl.QueryStatus.QueryStatusEnum;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 
@@ -44,7 +44,7 @@ class MetricSpecCallable implements Callable<OpenTSDBQueryResult> {
     private final String start;
     private final String end;
 
-    public MetricSpecCallable(DefaultHttpClient httpClient, String start, String end, MetricSpecification mSpec, String queryURL) {
+    public MetricSpecCallable(CloseableHttpClient httpClient, String start, String end, MetricSpecification mSpec, String queryURL) {
         this.start = start;
         this.end = end;
         client = new OpenTSDBClient(httpClient, queryURL);

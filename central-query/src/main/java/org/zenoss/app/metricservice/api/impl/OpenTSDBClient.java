@@ -11,12 +11,12 @@
 package org.zenoss.app.metricservice.api.impl;
 
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.LoggerFactory;
@@ -29,11 +29,11 @@ public class OpenTSDBClient {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(OpenTSDBClient.class);
 
 
-    private final DefaultHttpClient httpClient;
+    private final CloseableHttpClient httpClient;
     private final String queryURL;
 
 
-    public OpenTSDBClient(DefaultHttpClient httpClient, String url) {
+    public OpenTSDBClient(CloseableHttpClient httpClient, String url) {
         this.httpClient = httpClient;
         this.queryURL = url;
     }
@@ -53,11 +53,12 @@ public class OpenTSDBClient {
         httpPost.setEntity(input);
 
         QueryStatus queryStatus = null;
-        HttpEntity entity = null;
         OpenTSDBQueryResult[] resultArray = new OpenTSDBQueryResult[]{};
+        CloseableHttpResponse response = null;
         try {
-            HttpResponse response = httpClient.execute(httpPost, context);
+            response = httpClient.execute(httpPost, context);
             StatusLine status = response.getStatusLine();
+            HttpEntity entity;
             if (status.getStatusCode() != Response.Status.OK.getStatusCode()) {
                 String message = status.getReasonPhrase();
                 entity = response.getEntity();
@@ -67,7 +68,7 @@ public class OpenTSDBClient {
                     log.info("Response code {}, message: {}", tsdbResponse.error.code, tsdbResponse.error.message);
                     log.debug("Response object: {}", Utils.jsonStringFromObject(tsdbResponse));
                     message = tsdbResponse.error.message;
-                }else{
+                } else {
                     log.info("HTTP Execute returned status {}. Reason: {}", status.getStatusCode(), status.getReasonPhrase());
                 }
                 queryStatus = new QueryStatus(QueryStatus.QueryStatusEnum.ERROR, message);
@@ -103,9 +104,16 @@ public class OpenTSDBClient {
             queryStatus = new QueryStatus(QueryStatus.QueryStatusEnum.ERROR,
                     String.format("%s executing and processing query: %s", e.getClass().getName(), e.getMessage()));
         } finally {
-            EntityUtils.consumeQuietly(entity);
-            log.debug("releasing connection.");
-            httpPost.releaseConnection();
+            try {
+                if (response != null) {
+                    log.debug("releasing connection.");
+                    response.close();
+                }
+            } catch (IOException e) {
+                if (log.isDebugEnabled()) {
+                    log.debug("IOException stack trace: {}", e.getStackTrace());
+                }
+            }
         }
 
         return new OpenTSDBQueryReturn(resultArray, queryStatus);
