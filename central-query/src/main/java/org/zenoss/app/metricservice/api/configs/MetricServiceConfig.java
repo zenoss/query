@@ -74,6 +74,13 @@ public class MetricServiceConfig {
     private int executorThreadPoolMaxSize = 250;
 
 
+    @JsonProperty
+    private int httpSocketTimeoutMs = 30000;
+
+    @JsonProperty
+    private int connectionManagerTimeoutMs= 5000;
+
+
     public int getMaxTotalPoolConnections() {
         return maxTotalPoolConnections;
     }
@@ -222,5 +229,19 @@ public class MetricServiceConfig {
      */
     public void setSendRateOptions(Boolean sendRateOptions) {
         this.sendRateOptions = sendRateOptions;
+    }
+
+    /**
+     * Timeout to wait for data
+     */
+    public int getHttpSocketTimeoutMs() {
+        return httpSocketTimeoutMs;
+    }
+
+    /**
+     * Timeout to wait for connection from pool
+     */
+    public int getConnectionManagerTimeoutMs() {
+        return connectionManagerTimeoutMs;
     }
 }
