@@ -32,8 +32,11 @@ package org.zenoss.app.metricservice.api.impl;
 
 import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.http.client.params.ClientPNames;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +44,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.zenoss.app.annotations.API;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
+import org.zenoss.app.metricservice.api.configs.MetricServiceConfig;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.app.metricservice.api.model.v2.MetricQuery;
@@ -277,13 +281,18 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
     private void makeHttpClient() {
         log.info("Creating new PoolingClientConnectionManager.");
+        MetricServiceConfig conf = config.getMetricServiceConfig();
         PoolingClientConnectionManager cm = new PoolingClientConnectionManager();
-        int maxTotalPoolConnections = config.getMetricServiceConfig().getMaxTotalPoolConnections();
-        int maxPoolConnectionsPerRoute = config.getMetricServiceConfig().getMaxPoolConnectionsPerRoute();
+        int maxTotalPoolConnections = conf.getMaxTotalPoolConnections();
+        int maxPoolConnectionsPerRoute = conf.getMaxPoolConnectionsPerRoute();
         log.debug("Setting up pool with {} total connections and {} max connections per route.", maxTotalPoolConnections, maxPoolConnectionsPerRoute);
         cm.setMaxTotal(maxTotalPoolConnections);
         cm.setDefaultMaxPerRoute(maxPoolConnectionsPerRoute);
         httpClient = new DefaultHttpClient(cm);
+        HttpParams httpParams = httpClient.getParams();
+        HttpConnectionParams.setSoTimeout(httpParams, conf.getHttpSocketTimeoutMs());
+        HttpConnectionParams.setConnectionTimeout(httpParams, conf.getConnectionTimeoutMs());
+        httpParams.setParameter(ClientPNames.CONN_MANAGER_TIMEOUT, new Long(conf.getConnectionManagerTimeoutMs()));
     }
 
     @PreDestroy

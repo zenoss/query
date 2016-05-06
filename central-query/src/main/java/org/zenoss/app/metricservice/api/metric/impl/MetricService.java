@@ -113,7 +113,7 @@ public class MetricService implements MetricServiceAPI {
     }
 
     /**
-     * It is a calculated value if it has a name, but no metric value
+     * It is a calculated value if it has a name, but no metric value, or if it has an expression
      *
      * @param list
      * @return
@@ -123,7 +123,7 @@ public class MetricService implements MetricServiceAPI {
         List<MetricSpecification> result = new ArrayList<>();
         if (list != null) {
             for (MetricSpecification spec : list) {
-                if (spec.getName() != null && spec.getMetric() == null) {
+                if (spec.getName() != null && spec.getMetric() == null || spec.getExpression() != null) {
                     result.add(spec);
                 }
             }
