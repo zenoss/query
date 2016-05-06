@@ -1498,16 +1498,15 @@ if (typeof exports !== 'undefined') {
          * @access private
          */
         __buildPlotInfo: function () {
-            var i, info, dp, nameOrMetric, key;
+            var i, info, dp, key;
             var plotInfo = {};
 
             for (i in this.config.datapoints) {
                 dp = this.config.datapoints[i];
                 key = utils.shortId();
                 dp.id = key;
-                nameOrMetric = dp.name || dp.metric;
                 info = {
-                    'legend': dp.legend || nameOrMetric,
+                    'legend': dp.legend || dp.metric,
                     'color': dp.color,
                     'fill': dp.fill
                 };
@@ -2337,7 +2336,7 @@ if (typeof exports !== 'undefined') {
                     metric.aggregator = projection.aggregateFunction || "max";
                     metric.emit = true;
                     if (self.getPlotInfo(metric)) {
-                        projection.legend = "Projected " + self.getPlotInfo(metric).legend + " - " + projection.id;
+                        projection.legend = "Projected " + self.getPlotInfo(metric).legend;
                     }
                     request.metrics.push(metric);
                 }

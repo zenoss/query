@@ -230,16 +230,15 @@
          * @access private
          */
         __buildPlotInfo: function () {
-            var i, info, dp, nameOrMetric, key;
+            var i, info, dp, key;
             var plotInfo = {};
 
             for (i in this.config.datapoints) {
                 dp = this.config.datapoints[i];
                 key = utils.shortId();
                 dp.id = key;
-                nameOrMetric = dp.name || dp.metric;
                 info = {
-                    'legend': dp.legend || nameOrMetric,
+                    'legend': dp.legend || dp.metric,
                     'color': dp.color,
                     'fill': dp.fill
                 };
