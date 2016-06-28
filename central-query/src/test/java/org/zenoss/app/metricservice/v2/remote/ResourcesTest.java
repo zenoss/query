@@ -196,7 +196,7 @@ public class ResourcesTest extends ResourceTest {
         PrincipalCollection collection = mock(PrincipalCollection.class);
         when(subject.getPrincipals()).thenReturn(collection);
 
-        tenant = new ZenossTenant("1");
+        tenant = ZenossTenant.get("1");
         when(collection.oneByType(ZenossTenant.class)).thenReturn(tenant);
 
     }
