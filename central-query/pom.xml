@@ -17,7 +17,7 @@
         <metric-consumer.version>0.1.0</metric-consumer.version>
         <jersey.version>1.15</jersey.version>
         <junit.version>4.11</junit.version>
-        <spring.version>3.2.1.RELEASE</spring.version>
+        <spring.version>3.2.17.RELEASE</spring.version>
         <dropwizard.version>0.6.2</dropwizard.version>
         <jsdoc3.version>1.0.4</jsdoc3.version>
         <ssl.cert.dir>target/cert</ssl.cert.dir>
@@ -166,7 +166,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.6.3.201306030806</version>
+                <version>0.7.7.201606060606</version>
                 <executions>
                     <execution>
                         <id>prepare-agent</id>

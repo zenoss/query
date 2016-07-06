@@ -344,7 +344,7 @@ public class MetricSpecificationTest {
 
     @Test
     public void tagRenderingTest() {
-        String testString = "sum:10s-ago:rate:laLoadInt{tag2=thing|other thing,tag3=bar,tag1=value1|value2|value3}";
+        String testString = "sum:10s-ago:rate:laLoadInt{tag1=value1|value2|value3,tag2=thing|other thing,tag3=bar}";
         MetricSpecification subject = MetricSpecification.fromString(testString);
         String generatedString = subject.toString();
         Assert.assertEquals(testString, generatedString);
@@ -352,7 +352,7 @@ public class MetricSpecificationTest {
 
     @Test
     public void testValidateGoodObjectWithErrorHandling() {
-        String testString = "sum:10s-ago:rate:laLoadInt{tag2=thing|other thing,tag3=bar,tag1=value1|value2|value3}";
+        String testString = "sum:10s-ago:rate:laLoadInt{tag1=value1|value2|value3,tag2=thing|other thing,tag3=bar}";
         MetricSpecification subject = MetricSpecification.fromString(testString);
         List<Object> errorList = new ArrayList<>();
         subject.validateWithErrorHandling(errorList);
@@ -361,7 +361,7 @@ public class MetricSpecificationTest {
 
     @Test
     public void testValidateBadObjectWithErrorHandling() {
-        String testString = "sum:10s-ago:rate:laLoadInt{tag2=thing|other thing,tag3=ba*r,tag1=value1|value2|value3}";
+        String testString = "sum:10s-ago:rate:laLoadInt{tag1=value1|value2|value3,tag2=thing|other thing,tag3=ba*r}";
         MetricSpecification subject = MetricSpecification.fromString(testString);
         List<Object> errorList = new ArrayList<>();
         subject.validateWithErrorHandling(errorList);
