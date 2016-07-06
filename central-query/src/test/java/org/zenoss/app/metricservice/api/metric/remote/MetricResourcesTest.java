@@ -43,7 +43,7 @@ public class MetricResourcesTest {
         PrincipalCollection collection = mock(PrincipalCollection.class);
         when(subject.getPrincipals()).thenReturn( collection);
 
-        ZenossTenant tenant = new ZenossTenant( "1");
+        ZenossTenant tenant = ZenossTenant.get( "1");
         when(collection.oneByType( ZenossTenant.class)).thenReturn(tenant);
 
         Map<String, List<String>> _tags = Maps.newHashMap();
