@@ -7,17 +7,17 @@
         <relativePath>../pom.xml</relativePath>
         <groupId>org.zenoss</groupId>
         <artifactId>central-query-parent</artifactId>
-        <version>0.1.11</version>
+        <version>0.1.12</version>
     </parent>
 
     <properties>
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
-        <zapp.version>0.0.16</zapp.version>
+        <zapp.version>0.0.22</zapp.version>
         <metric-consumer.version>0.1.0</metric-consumer.version>
         <jersey.version>1.15</jersey.version>
         <junit.version>4.11</junit.version>
-        <spring.version>3.2.1.RELEASE</spring.version>
+        <spring.version>3.2.17.RELEASE</spring.version>
         <dropwizard.version>0.6.2</dropwizard.version>
         <jsdoc3.version>1.0.4</jsdoc3.version>
         <ssl.cert.dir>target/cert</ssl.cert.dir>
@@ -166,7 +166,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.6.3.201306030806</version>
+                <version>0.7.7.201606060606</version>
                 <executions>
                     <execution>
                         <id>prepare-agent</id>

@@ -10,10 +10,11 @@
  */
 package org.zenoss.app.metricservice.api.impl;
 
-import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class OpenTSDBQueryReturn {
@@ -23,7 +24,7 @@ public class OpenTSDBQueryReturn {
     final private QueryStatus status;
 
     public OpenTSDBQueryReturn(OpenTSDBQueryResult[] results, QueryStatus status) {
-        this.results = ImmutableList.copyOf(results);
+        this.results = Collections.unmodifiableList(Arrays.asList(results));
         if (null == status) {
             log.warn("OpenTSDBQueryReturn constructor was called with null status. Defaulting to 'UNKNOWN'");
             this.status = new QueryStatus();
@@ -35,6 +36,7 @@ public class OpenTSDBQueryReturn {
     public List<OpenTSDBQueryResult> getResults() {
         return results;
     }
+
     public QueryStatus getStatus() {
         return status;
     }

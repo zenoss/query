@@ -39,7 +39,10 @@ import org.zenoss.app.metricservice.api.impl.Utils;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -328,7 +331,14 @@ public class MetricSpecification {
                 joined.putAll(getTags());
             buf.append('{');
             boolean comma = false;
-            for (Map.Entry<String, List<String>> tag : joined.entrySet()) {
+            List<Map.Entry<String, List<String>>> sortedEntries = new LinkedList<>(joined.entrySet());
+            Collections.sort(sortedEntries, new Comparator<Map.Entry<String, List<String>>>(){
+                @Override
+                public int compare(Map.Entry<String, List<String>>a, Map.Entry<String, List<String>>b) {
+                    return (a.getKey().compareTo(b.getKey()));
+                }});
+
+            for (Map.Entry<String, List<String>> tag : sortedEntries) {
                 if (comma) {
                     buf.append(',');
                 }
