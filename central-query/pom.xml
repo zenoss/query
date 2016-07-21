@@ -13,7 +13,7 @@
     <properties>
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
-        <zapp.version>0.0.21</zapp.version>
+        <zapp.version>0.0.22</zapp.version>
         <metric-consumer.version>0.1.0</metric-consumer.version>
         <jersey.version>1.15</jersey.version>
         <junit.version>4.11</junit.version>
