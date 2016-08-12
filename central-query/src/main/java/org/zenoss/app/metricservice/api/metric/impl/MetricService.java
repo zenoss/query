@@ -58,6 +58,7 @@ import org.zenoss.app.metricservice.buckets.Buckets;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -133,6 +134,7 @@ public class MetricService implements MetricServiceAPI {
 
     private static Response makeCORS(Response.ResponseBuilder responseBuilder, String returnMethod) {
         Response.ResponseBuilder rb = responseBuilder //Response.ok()
+                .type(MediaType.APPLICATION_JSON)
                 .header("Access-Control-Allow-Origin", "*")
                 .header("Access-Control-Allow-Methods", "POST, OPTIONS");
 
@@ -163,7 +165,7 @@ public class MetricService implements MetricServiceAPI {
 
                         downsample.orNull(), downsampleMultiplier,
                         tags.orNull(),
-                        metrics)));
+                        metrics), MediaType.APPLICATION_JSON));
     }
 
     @Override
