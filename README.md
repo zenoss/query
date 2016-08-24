@@ -310,4 +310,4 @@ The artifact version number is defined in the [pom.xml](./pom.xml) files, but yo
 
 For Zenoss employees, the details on using git-flow to release a new version is documented on the Zenoss Engineering 
 web site [here](https://sites.google.com/a/zenoss.com/engineering/home/faq/developer-patterns/using-git-flow).
-After the git flow release process is complete, a jenkins job must be triggered manually to build and publish the images to docker hub. 
+After the git flow release process is complete, a jenkins job must be triggered manually to build and publish the artifact. 
