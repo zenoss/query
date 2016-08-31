@@ -15,14 +15,15 @@ import org.zenoss.dropwizardspring.annotations.Resource;
 
 import javax.ws.rs.HEAD;
 import javax.ws.rs.Path;
+import javax.ws.rs.core.Response;
 
 @Resource(name = "status")
 @Path("/ping/status")
 public class StatusResource {
 
     @HEAD
-    public boolean status() {
-        return true;
+    public Response status() {
+        return Response.ok().entity(String.valueOf(true)).build();
     }
 
 }
