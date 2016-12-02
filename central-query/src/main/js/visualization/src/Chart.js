@@ -29,6 +29,7 @@
 
     var DEFAULT_NUMBER_FORMAT = "%4.2f";
     var MAX_Y_AXIS_LABEL_LENGTH = 5;
+    var DATE_FORMAT = Zenoss.USER_DATE_FORMAT || "MM/DD/YY";
 
     // data for formatting time ranges
     var TIME_DATA = [
@@ -55,7 +56,7 @@
             ticks: 3,
             breakpoint: 7,
             format: function (tz, d) {
-                return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss");
+                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
             }
         }, {
             name: "week",
@@ -63,7 +64,7 @@
             ticks: 3,
             breakpoint: 4,
             format: function (tz, d) {
-                return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss");
+            return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
             }
         }, {
             name: "month",
@@ -71,7 +72,7 @@
             ticks: 3,
             breakpoint: 13,
             format: function (tz, d) {
-                return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss");
+                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
             }
         }, {
             name: "year",
@@ -80,7 +81,7 @@
             ticks: 3,
             breakpoint: 1000,
             format: function (tz, d) {
-                return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss");
+                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
             }
         }
     ];
@@ -1463,9 +1464,9 @@
          * It must be a valid moment.js date format.
          * http://momentjs.com/docs/#/parsing/string-format/
          * @access public
-         * @default "MM/DD/YY HH:mm:ss a"
+         * @default "MM/DD/YY HH:mm:ss"
          */
-        dateFormat: "MM/DD/YY HH:mm:ss",
+        dateFormat: DATE_FORMAT + " HH:mm:ss",
 
         // uses TIME_DATA to determine which time range we care about
         // and format labels representative of that time range
