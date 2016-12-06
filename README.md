@@ -26,7 +26,7 @@ from a stored chart or even create a complete chart from within the HTML page.
             "series" : true,
             "type" : "line",
             "returnset" : "exact",
-            "downsample" : "1m-avg",
+            "downsample" : "1m-mimmax",
             "grouping" : "5m",
             "autoscale" : {
                 "ceiling" : 5,
@@ -60,7 +60,7 @@ from a stored chart or even create a complete chart from within the HTML page.
             }, {
                 "metric" : "laLoadInt5",
                 "aggregator" : "sum",
-                "downsample" : "5m-avg"
+                "downsample" : "5m-mimmax"
             }, {
                 "metric" : "laLoadInt15",
             } ]
@@ -137,7 +137,7 @@ Resources
 
         `AGG = min | max | sum | avg`
 
-        `downsample = _like_ 10m-avg`
+        `downsample = _like_ 10m-mimmax`
 
         `tags = name=tag-value`
 
@@ -236,7 +236,7 @@ Also note the __client id__ attribute in the response object. This is the value 
   
   **DOWNSAMPLE**
   
-  Combination of a time and aggregator. e.g 5min-avg.  See opentsdb for downsample values.
+  Combination of a time and aggregator. e.g 5min-mimmax.  See opentsdb for downsample values.
   
   **TIMESTAMP** 
   
