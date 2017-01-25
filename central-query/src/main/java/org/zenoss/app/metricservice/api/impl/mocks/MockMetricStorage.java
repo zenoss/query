@@ -44,7 +44,6 @@ import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryReturn;
 import org.zenoss.app.metricservice.api.impl.Utils;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
-import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -170,7 +169,20 @@ public class MockMetricStorage implements MetricStorageAPI {
     }
 
     @Override
-    public OpenTSDBQueryReturn query(MetricRequest query) {
+    public OpenTSDBQueryReturn query(org.zenoss.app.metricservice.api.model.v2.MetricRequest query) {
+        return null;
+    }
+
+    /*
+         * (non-Javadoc)
+         *
+         * @see
+         * org.zenoss.app.query.api.impl.MetricStorageAPI#getReader(org.zenoss.app
+         * .query.QueryAppConfiguration, java.lang.String, java.lang.String,
+         * java.lang.String, java.lang.Boolean, java.lang.Boolean, java.util.List)
+         */
+    @Override
+    public OpenTSDBQueryReturn query(org.zenoss.app.metricservice.api.model.v3.MetricRequest query) {
         return null;
     }
 

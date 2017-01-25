@@ -3,14 +3,14 @@ package org.zenoss.app.metricservice.api.impl;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
-import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 public interface MetricStorageAPI {
-    OpenTSDBQueryReturn query(MetricRequest query);
+    OpenTSDBQueryReturn query(org.zenoss.app.metricservice.api.model.v2.MetricRequest query);
+    OpenTSDBQueryReturn query(org.zenoss.app.metricservice.api.model.v3.MetricRequest query);
 
     List<OpenTSDBQueryResult> getResponse(MetricServiceAppConfiguration config,
                                           String id, String startTime, String endTime,

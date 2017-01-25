@@ -47,8 +47,6 @@ import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.configs.MetricServiceConfig;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
-import org.zenoss.app.metricservice.api.model.v2.MetricQuery;
-import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -86,7 +84,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
 
     @Override
-    public OpenTSDBQueryReturn query(MetricRequest query) {
+    public OpenTSDBQueryReturn query(org.zenoss.app.metricservice.api.model.v2.MetricRequest query) {
         Optional<String> start = Optional.fromNullable(query.getStart());
         Optional<String> end = Optional.fromNullable(query.getEnd());
         //provide defaults
@@ -100,7 +98,34 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
             otsdbQuery.end = endTime;
         }
 
-        for (MetricQuery mq : query.getQueries()) {
+        for (org.zenoss.app.metricservice.api.model.v2.MetricQuery mq : query.getQueries()) {
+            otsdbQuery.addSubQuery(createOTSDBQuery(mq));
+        }
+
+        OpenTSDBClient client = new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiQueryUrl());
+        OpenTSDBQueryReturn result = client.query(otsdbQuery);
+        for (OpenTSDBQueryResult series : result.getResults()) {
+            series.metric = series.metric.replace(SPACE_REPLACEMENT, " ");
+        }
+        return result;
+    }
+
+    @Override
+    public OpenTSDBQueryReturn query(org.zenoss.app.metricservice.api.model.v3.MetricRequest query) {
+        Optional<String> start = Optional.fromNullable(query.getStart());
+        Optional<String> end = Optional.fromNullable(query.getEnd());
+        //provide defaults
+        String startTime = start.or(config.getMetricServiceConfig().getDefaultStartTime());
+        String endTime = end.or(config.getMetricServiceConfig().getDefaultEndTime());
+
+        OpenTSDBQuery otsdbQuery = new OpenTSDBQuery();
+        // This could maybe be better - for now, it works : end time defaults to 'now', start time does not default.
+        otsdbQuery.start = startTime;
+        if (!Utils.NOW.equals(endTime)) {
+            otsdbQuery.end = endTime;
+        }
+
+        for (org.zenoss.app.metricservice.api.model.v3.MetricQuery mq : query.getQueries()) {
             otsdbQuery.addSubQuery(createOTSDBQuery(mq));
         }
 
@@ -151,7 +176,36 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         return String.format("%s/api/query", config.getMetricServiceConfig().getOpenTsdbUrl());
     }
 
-    private static OpenTSDBSubQuery createOTSDBQuery(MetricQuery mq) {
+    private static OpenTSDBSubQuery createOTSDBQuery(org.zenoss.app.metricservice.api.model.v2.MetricQuery mq) {
+        final boolean allowWildCard = true;
+        OpenTSDBSubQuery result = null;
+        if (null != mq) {
+            result = new OpenTSDBSubQuery();
+            result.aggregator = mq.getAggregator();
+            result.downsample = mq.getDownsample();
+
+            // escape the name of the metric since OpenTSDB doesn't like spaces
+            String metricName = mq.getMetric();
+            metricName = metricName.replace(" ", SPACE_REPLACEMENT);
+            result.metric = metricName;
+
+
+            result.rate = mq.getRate();
+            result.rateOptions = new OpenTSDBRateOption(mq.getRateOptions());
+            Map<String, List<String>> tags = mq.getTags();
+            if (null != tags) {
+                for (Map.Entry<String, List<String>> tagEntry : tags.entrySet()) {
+                    for (String tagValue : tagEntry.getValue()) {
+                        //apply metric-consumer sanitization to tags in query
+                        result.addTag(Tags.sanitizeKey(tagEntry.getKey()), Tags.sanitizeValue(tagValue, allowWildCard));
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    private static OpenTSDBSubQuery createOTSDBQuery(org.zenoss.app.metricservice.api.model.v3.MetricQuery mq) {
         final boolean allowWildCard = true;
         OpenTSDBSubQuery result = null;
         if (null != mq) {
