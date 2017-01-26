@@ -1297,6 +1297,7 @@ if (typeof exports !== 'undefined') {
 
     var DEFAULT_NUMBER_FORMAT = "%4.2f";
     var MAX_Y_AXIS_LABEL_LENGTH = 5;
+    var DATE_FORMAT = Zenoss.USER_DATE_FORMAT || "MM/DD/YY";
 
     // data for formatting time ranges
     var TIME_DATA = [
@@ -1323,7 +1324,7 @@ if (typeof exports !== 'undefined') {
             ticks: 3,
             breakpoint: 7,
             format: function (tz, d) {
-                return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss");
+                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
             }
         }, {
             name: "week",
@@ -1331,7 +1332,7 @@ if (typeof exports !== 'undefined') {
             ticks: 3,
             breakpoint: 4,
             format: function (tz, d) {
-                return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss");
+                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
             }
         }, {
             name: "month",
@@ -1339,7 +1340,7 @@ if (typeof exports !== 'undefined') {
             ticks: 3,
             breakpoint: 13,
             format: function (tz, d) {
-                return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss");
+                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
             }
         }, {
             name: "year",
@@ -1348,7 +1349,7 @@ if (typeof exports !== 'undefined') {
             ticks: 3,
             breakpoint: 1000,
             format: function (tz, d) {
-                return moment.utc(d).tz(tz).format("MM/DD/YY HH:mm:ss");
+                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
             }
         }
     ];
@@ -1428,7 +1429,10 @@ if (typeof exports !== 'undefined') {
 
         this.__renderCapacityFooter = config.renderCapacityFooter;
         this.__renderForecastingTimeHorizonFooter = config.renderForecastingTimeHorizonFooter;
-
+        
+	this.maxResult = undefined;
+        this.minResult = undefined;
+	    
         this.svg = d3.select(this.svgwrapper).append('svg');
         try {
             this.request = this.__buildDataRequest(this.config);
@@ -1733,6 +1737,12 @@ if (typeof exports !== 'undefined') {
                                 vals[cur] = v.y;
                             }
                             vals[avg] = vals[avg] / plot.values.length;
+                            if (isFinite(this.maxResult[row])) {
+                                vals[max] = this.maxResult[row];
+                            };
+                            if (isFinite(this.minResult[row])) {
+                                vals[min] = this.minResult[row];
+                            };
                             for (v = 0; v < vals.length; v += 1) {
                                 $(cols[2 + v]).html(this.formatValue(vals[v]));
                             }
@@ -1925,7 +1935,70 @@ if (typeof exports !== 'undefined') {
             // Fill in the stats table
             this.__updateFooter(data);
         },
-
+	/**
+        * Update this.maxResult array that will be using in building the legend.
+        * @access private
+	* @param {object}
+	*     arr(ay) of max values 
+	* return this.maxResult
+	*/
+        __updateMaxResult: function (arr) {
+            this.maxResult = arr;
+            return this.maxResult;
+        },
+	/**
+        * Update this.minResult array that will be using in building the legend.
+        * @access private
+	* @param {object}
+	*     arr(ay) of min values 
+	* return this.minResult
+	*/
+        __updateMinResult: function (arr) {
+            this.minResult = arr;
+            return this.minResult;
+        },
+	/**
+        * Get max values for the period and pass them to the __updateMaxResult
+        * @access private
+	* @param {object}
+	*     data from the maxValueRequest
+	*/
+        __maxValues: function (data) {
+            var i, j, maxDataResults, maxValues = [];
+            var maxResult = [];
+            for (i = 0; i < data.results.length; i++) {
+                 maxDataResults = data.results[i].datapoints;
+                 if (maxDataResults !== undefined){
+                     for (j = 0; j < maxDataResults.length; j++) {
+                         maxValues.push(maxDataResults[j].value)
+                     };
+                 maxResult.push(Math.max.apply(null, maxValues));
+                 maxValues = [];
+                }
+	    }
+            this.__updateMaxResult(maxResult);
+        },
+	/**
+        * Get min values for the period and pass them to the __updateMinResult
+        * @access private
+	* @param {object}
+	*     data from the minValueRequest
+	*/
+        __minValues: function (data) {
+                var i, j, minDataResults, minValues = [];
+                var minResult = [];
+                for (i = 0; i < data.results.length; i++) {
+                     minDataResults = data.results[i].datapoints;
+                     if (minDataResults !== undefined){
+                         for (j = 0; j < minDataResults.length; j++) {
+                             minValues.push(minDataResults[j].value)
+                         };
+		     }
+                     minResult.push(Math.min.apply(null, minValues));
+                     minValues = [];
+                }
+                this.__updateMinResult(minResult);
+       },
         /**
          * Updates a graph with the changes specified in the given change set. To
          * remove a value from the configuration its value should be set to a
@@ -1964,13 +2037,40 @@ if (typeof exports !== 'undefined') {
 
             try {
                 this.request = this.__buildDataRequest(this.config);
-                $.ajax({
+                this.maxRequest = jQuery.extend({}, this.request)
+                if (this.maxRequest.downsample !== null){
+                    this.maxRequest.downsample = this.maxRequest.downsample.replace("avg", "max");
+                };
+                var maxValueRequest = $.ajax({
+                    'url': visualization.url + visualization.urlPerformance,
+                    'type': 'POST',
+                    'data': JSON.stringify(this.maxRequest),
+                    'dataType': 'json',
+                    'contentType': 'application/json'
+                });
+                this.minRequest = jQuery.extend({}, this.request)
+                if (this.maxRequest.downsample !== null){
+                    this.minRequest.downsample = this.minRequest.downsample.replace("avg", "min");
+                };
+                var minValueRequest = $.ajax({
+                    'url': visualization.url + visualization.urlPerformance,
+                    'type': 'POST',
+                    'data': JSON.stringify(this.minRequest),
+                    'dataType': 'json',
+                    'contentType': 'application/json'
+                });
+                var mainRequest = $.ajax({
                     'url': visualization.url + visualization.urlPerformance,
                     'type': 'POST',
                     'data': JSON.stringify(this.request),
                     'dataType': 'json',
-                    'contentType': 'application/json',
-                    'success': function (data) {
+                    'contentType': 'application/json'
+                });
+                $.when(maxValueRequest, minValueRequest, mainRequest)
+                    .then(function(response1, response2, response3){
+                        self.__maxValues(response1[0]);
+                        self.__minValues(response2[0]);
+                        var data = response3[0];
                         self.plots = self.__processResult(self.request, data);
 
                         // setPreffered y unit (k, G, M, etc)
@@ -1991,7 +2091,6 @@ if (typeof exports !== 'undefined') {
                                 self.__updateData(data);
                             }
                         }
-
                         // Update the footer
                         if (self.__updateFooter(data)) {
                             self.resize();
@@ -2043,8 +2142,7 @@ if (typeof exports !== 'undefined') {
                                 }
                             });
                         });
-                    },
-                    'error': function () {
+                    },function (err) {
                         self.plots = undefined;
 
                         self.__showNoData();
@@ -2060,9 +2158,7 @@ if (typeof exports !== 'undefined') {
                                 }
                             }
                         }
-                    }
-                });
-
+                    });
             } catch (x) {
                 this.plots = undefined;
                 if (self.__updateFooter()) {
@@ -2731,9 +2827,9 @@ if (typeof exports !== 'undefined') {
          * It must be a valid moment.js date format.
          * http://momentjs.com/docs/#/parsing/string-format/
          * @access public
-         * @default "MM/DD/YY HH:mm:ss a"
+         * @default "MM/DD/YY HH:mm:ss"
          */
-        dateFormat: "MM/DD/YY HH:mm:ss",
+        dateFormat: DATE_FORMAT + " HH:mm:ss",
 
         // uses TIME_DATA to determine which time range we care about
         // and format labels representative of that time range
