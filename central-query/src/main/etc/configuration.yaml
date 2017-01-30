@@ -1,4 +1,4 @@
-authEnabled: true
+authEnabled: false
 logging:
   level: INFO
   loggers:
