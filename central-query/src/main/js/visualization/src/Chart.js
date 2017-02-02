@@ -214,7 +214,7 @@
          *            If toEng function should ignore the preferred unit
          *            and calculate a unit based on `value`
          */
-        formatValue: function (value, ignorePreferred) {
+        formatValue: function (value, ignorePreferred, skipCalc) {
             /*
              * If we were given a undefined value, Infinity, of NaN (all things that
              * can't be formatted, then just return the value.
@@ -223,7 +223,7 @@
                 return value;
             }
 
-            return toEng(value, ignorePreferred ? undefined : this.preferredYUnit, this.format, this.base);
+            return toEng(value, ignorePreferred ? undefined : this.preferredYUnit, this.format, this.base, skipCalc);
         },
         /**
          * Iterates over the list of data plots and sets up display information
@@ -475,7 +475,7 @@
                                 vals[min] = this.minResult[row];
                             };
                             for (v = 0; v < vals.length; v += 1) {
-                                $(cols[2 + v]).html(this.formatValue(vals[v]));
+                                $(cols[2 + v]).html(this.formatValue(vals[v], undefined, dp.displayFullValue));
                             }
                         }
                         row += 1;
@@ -887,8 +887,7 @@
                                 }
                             }
                         }
-                    }
-                });
+                    });
 
             } catch (x) {
                 this.plots = undefined;
@@ -1755,25 +1754,34 @@
         "8": "Y"
     };
 
-    function toEng(val, preferredUnit, format, base) {
+    function toEng(val, preferredUnit, format, base, skipCalc) {
         var result,
             unit,
             formatted,
-            symbol;
+            symbol,
+            targetLength;
 
-        // if preferredUnit is provided, target that value
-        if (preferredUnit !== undefined) {
-            unit = preferredUnit;
-        } else if (val === 0) {
-            unit = 0;
+        // check if we want to provide magnitude calculation
+        if (!skipCalc) {
+            // if preferredUnit is provided, target that value
+            if (preferredUnit !== undefined) {
+                unit = preferredUnit;
+            } else if (val === 0) {
+                unit = 0;
+            } else {
+                unit = Math.floor(Math.log(Math.abs(val)) / Math.log(base));
+            }
+
+            symbol = SYMBOLS[unit];
+            targetLength = MAX_Y_AXIS_LABEL_LENGTH;
+
+            // TODO - if Math.abs(unit) > 8, return value in scientific notation
+            result = val / Math.pow(base, unit);
         } else {
-            unit = Math.floor(Math.log(Math.abs(val)) / Math.log(base));
+            result = val;
+            symbol = "";
+            targetLength = String(val).length;    
         }
-
-        symbol = SYMBOLS[unit];
-
-        // TODO - if Math.abs(unit) > 8, return value in scientific notation
-        result = val / Math.pow(base, unit);
 
         try {
             // if sprintf is passed a format it doesn't understand an exception is thrown
@@ -1785,7 +1793,7 @@
 
         // TODO - make graph y axis capable of expanding to
         // accommodate long numbers
-        return shortenNumber(formatted, MAX_Y_AXIS_LABEL_LENGTH) + symbol;
+        return shortenNumber(formatted, targetLength) + symbol;
     }
 
     // attempts to make a long floating point number
