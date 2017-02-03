@@ -91,14 +91,14 @@ public class OpenTSDBClient {
         } catch (ClientProtocolException e) {
             log.error("ClientProtocolException executing and processing query: {}", e.getMessage());
             if (log.isDebugEnabled()) {
-                log.debug("IOException stack trace: {}", e.getStackTrace());
+                log.debug("IOException stack trace: {}", (Object)e.getStackTrace());
             }
             queryStatus = new QueryStatus(QueryStatus.QueryStatusEnum.ERROR,
                     String.format("%s executing and processing query: %s", e.getClass().getName(), e.getMessage()));
         } catch (IOException e) {
             log.error("IOException executing and processing query: {}", e.getMessage());
             if (log.isDebugEnabled()) {
-                log.debug("IOException stack trace: {}", e.getStackTrace());
+                log.debug("IOException stack trace: {}", (Object)e.getStackTrace());
             }
             queryStatus = new QueryStatus(QueryStatus.QueryStatusEnum.ERROR,
                     String.format("%s executing and processing query: %s", e.getClass().getName(), e.getMessage()));
