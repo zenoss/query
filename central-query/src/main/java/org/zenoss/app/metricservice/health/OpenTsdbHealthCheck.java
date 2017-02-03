@@ -47,14 +47,14 @@ import java.util.Map;
 
 @Configuration
 @HealthCheck
-public class OpenTsdbHealthCheck extends com.yammer.metrics.core.HealthCheck {
+public class OpenTsdbHealthCheck extends com.codahale.metrics.health.HealthCheck {
     @Autowired
     MetricServiceAppConfiguration config;
 
     private static DefaultHttpClient httpclient = new DefaultHttpClient();
 
     protected OpenTsdbHealthCheck() {
-        super("OpenTSDB");
+        super();
     }
 
     @Override

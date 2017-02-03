@@ -43,7 +43,7 @@ import javax.validation.Valid;
  */
 public class MetricServiceAppConfiguration extends AppConfiguration {
     @Valid
-    @JsonProperty("metrics")
+    @JsonProperty("metricService")
     private final MetricServiceConfig metricServiceConfig = new MetricServiceConfig();
 
     @Valid

@@ -31,7 +31,7 @@
 package org.zenoss.app.metricservice;
 
 import com.google.common.base.Optional;
-import com.yammer.dropwizard.assets.AssetsBundle;
+import io.dropwizard.assets.AssetsBundle;
 import org.zenoss.app.AutowiredApp;
 import org.zenoss.app.annotations.Bundle;
 import org.zenoss.app.autobundle.AutoBundle;
@@ -66,7 +66,7 @@ public class MetricServiceApp extends
      * @see org.zenoss.app.autobundle.AutoBundle#getBundle()
      */
     @Override
-    public com.yammer.dropwizard.Bundle getBundle() {
+    public io.dropwizard.Bundle getBundle() {
         return new AssetsBundle("/api/", "/static/performance/query/");
     }
 

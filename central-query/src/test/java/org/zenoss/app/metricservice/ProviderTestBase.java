@@ -32,11 +32,14 @@ package org.zenoss.app.metricservice;
 
 import com.google.common.base.Optional;
 import com.google.common.io.CharStreams;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.WebResource.Builder;
-import com.yammer.dropwizard.testing.ResourceTest;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.core.Response;
+//import com.sun.jersey.api.client.ClientResponse;
+import javax.ws.rs.client.WebTarget;
+//import javax.ws.rs.client.WebTarget.Builder;
+import io.dropwizard.testing.junit.ResourceTestRule;
+import io.dropwizard.client.JerseyClientBuilder;
 import org.eclipse.jetty.util.ajax.JSON;
 import org.junit.Assert;
 import org.junit.Test;
@@ -61,7 +64,8 @@ import java.util.*;
  * @author David Bainbridge <dbainbridge@zenoss.com>
  *
  */
-public abstract class ProviderTestBase extends ResourceTest {
+public abstract class ProviderTestBase extends ResourceTestRule {
+
     private static final Logger log = LoggerFactory.getLogger(ProviderTestBase.class);
 
     @Autowired
@@ -71,7 +75,7 @@ public abstract class ProviderTestBase extends ResourceTest {
     /*
      * (non-Javadoc)
      * 
-     * @see com.yammer.dropwizard.testing.ResourceTest#setUpResources()
+     * @see io.dropwizard.testing.ResourceTest#setUpResources()
      */
     @Override
     protected void setUpResources() throws Exception {
@@ -115,7 +119,7 @@ public abstract class ProviderTestBase extends ResourceTest {
     protected Map<?, ?> parseAndVerifyResponse(Optional<String> id,
                                                Optional<String> start, Optional<String> end,
                                                Optional<ReturnSet> returnset, Optional<Boolean> series,
-                                               String[] queries, ClientResponse response) throws Exception {
+                                               String[] queries, Response response) throws Exception {
         Object o;
         try (InputStreamReader reader = new InputStreamReader(
             response.getEntityInputStream())) {
@@ -263,10 +267,10 @@ public abstract class ProviderTestBase extends ResourceTest {
             list.add(MetricSpecification.fromString(s));
         }
         performanceQuery.setMetrics(list);
-        Client client = client();
-        client.setConnectTimeout(1000000);
-        client.setReadTimeout(1000000);
-        WebResource wr = client.resource("/api/performance/query");
+        Client client = new JerseyClientBuilder(DW_RULE.getEnvironment())
+                .withProperty("jersey.config.client.connectTimeout", 100)
+                .withProperty("jersey.config.client.readTimeout", 10000).build();
+        WebTarget wr = client.target("/api/performance/query");
         Assert.assertNotNull("WebResource for /api/performance/query was null.", wr);
         wr.accept(MediaType.APPLICATION_JSON);
         Builder request = wr.type(MediaType.APPLICATION_JSON);
