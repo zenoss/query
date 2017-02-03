@@ -1314,7 +1314,7 @@
                 this.overlays.forEach(function (overlay) {
                     // if disabled is undefined, default to true, otherwise
                     // use the disabled value
-                    var isDisabled = "disabled" in overlay ? overlay.disabled : true;
+                    var isDisabled = "disabled" in overlay ? overlay.disabled : false;
 
                     // if the overlay includes 2 values, we assume
                     // it is a minmax threshold
