@@ -670,7 +670,7 @@
         * Update this.maxResult array that will be using in building the legend.
         * @access private
         * @param {object}
-        *     arr(ay) of max values 
+        *     arr(ay) of max values
         * return this.maxResult
         */
         __updateMaxResult: function (arr) {
@@ -681,7 +681,7 @@
         * Update this.minResult array that will be using in building the legend.
         * @access private
         * @param {object}
-        *     arr(ay) of min values 
+        *     arr(ay) of min values
         * return this.minResult
         */
         __updateMinResult: function (arr) {
@@ -768,8 +768,10 @@
 
             try {
                 this.request = this.__buildDataRequest(this.config);
-                this.maxRequest = jQuery.extend({}, this.request)
-                this.maxRequest.downsample = this.maxRequest.downsample.replace("avg", "max");
+                this.maxRequest = jQuery.extend({}, this.request);
+                if (this.maxRequest.downsample !== null) {
+                    this.maxRequest.downsample = this.maxRequest.downsample.replace("avg", "max");
+                };
                 var maxValueRequest = $.ajax({
                     'url': visualization.url + visualization.urlPerformance,
                     'type': 'POST',
@@ -777,8 +779,10 @@
                     'dataType': 'json',
                     'contentType': 'application/json'
                 });
-                this.minRequest = jQuery.extend({}, this.request)
-                this.minRequest.downsample = this.minRequest.downsample.replace("avg", "min");
+                this.minRequest = jQuery.extend({}, this.request);
+                if (this.minRequest.downsample !== null) {
+                    this.minRequest.downsample = this.minRequest.downsample.replace("avg", "min");
+                };
                 var minValueRequest = $.ajax({
                     'url': visualization.url + visualization.urlPerformance,
                     'type': 'POST',
@@ -1780,7 +1784,7 @@
         } else {
             result = val;
             symbol = "";
-            targetLength = String(val).length;    
+            targetLength = String(val).length;
         }
 
         try {
