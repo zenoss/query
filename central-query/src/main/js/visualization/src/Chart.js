@@ -1167,7 +1167,7 @@
                     metric.aggregator = projection.aggregateFunction || "max";
                     metric.emit = true;
                     if (self.getPlotInfo(metric)) {
-                        projection.legend = "Projected " + self.getPlotInfo(metric).legend;
+                        projection.legend = "Projected " + self.getPlotInfo(metric).legend + " - " + projection.id;
                     }
                     request.metrics.push(metric);
                 }

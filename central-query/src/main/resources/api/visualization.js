@@ -1332,7 +1332,7 @@ if (typeof exports !== 'undefined') {
             ticks: 3,
             breakpoint: 4,
             format: function (tz, d) {
-                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
+            return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
             }
         }, {
             name: "month",
@@ -1429,10 +1429,10 @@ if (typeof exports !== 'undefined') {
 
         this.__renderCapacityFooter = config.renderCapacityFooter;
         this.__renderForecastingTimeHorizonFooter = config.renderForecastingTimeHorizonFooter;
-        
-	this.maxResult = undefined;
+
+        this.maxResult = undefined;
         this.minResult = undefined;
-	    
+
         this.svg = d3.select(this.svgwrapper).append('svg');
         try {
             this.request = this.__buildDataRequest(this.config);
@@ -1482,7 +1482,7 @@ if (typeof exports !== 'undefined') {
          *            If toEng function should ignore the preferred unit
          *            and calculate a unit based on `value`
          */
-        formatValue: function (value, ignorePreferred) {
+        formatValue: function (value, ignorePreferred, skipCalc) {
             /*
              * If we were given a undefined value, Infinity, of NaN (all things that
              * can't be formatted, then just return the value.
@@ -1491,9 +1491,8 @@ if (typeof exports !== 'undefined') {
                 return value;
             }
 
-            return toEng(value, ignorePreferred ? undefined : this.preferredYUnit, this.format, this.base);
+            return toEng(value, ignorePreferred ? undefined : this.preferredYUnit, this.format, this.base, skipCalc);
         },
-
         /**
          * Iterates over the list of data plots and sets up display information
          * about each plot, including its legend label, color, and if it is filled
@@ -1744,7 +1743,7 @@ if (typeof exports !== 'undefined') {
                                 vals[min] = this.minResult[row];
                             };
                             for (v = 0; v < vals.length; v += 1) {
-                                $(cols[2 + v]).html(this.formatValue(vals[v]));
+                                $(cols[2 + v]).html(this.formatValue(vals[v], undefined, dp.displayFullValue));
                             }
                         }
                         row += 1;
@@ -1935,34 +1934,34 @@ if (typeof exports !== 'undefined') {
             // Fill in the stats table
             this.__updateFooter(data);
         },
-	/**
+        /**
         * Update this.maxResult array that will be using in building the legend.
         * @access private
-	* @param {object}
-	*     arr(ay) of max values 
-	* return this.maxResult
-	*/
+        * @param {object}
+        *     arr(ay) of max values
+        * return this.maxResult
+        */
         __updateMaxResult: function (arr) {
             this.maxResult = arr;
             return this.maxResult;
         },
-	/**
+        /**
         * Update this.minResult array that will be using in building the legend.
         * @access private
-	* @param {object}
-	*     arr(ay) of min values 
-	* return this.minResult
-	*/
+        * @param {object}
+        *     arr(ay) of min values
+        * return this.minResult
+        */
         __updateMinResult: function (arr) {
             this.minResult = arr;
             return this.minResult;
         },
-	/**
+        /**
         * Get max values for the period and pass them to the __updateMaxResult
         * @access private
-	* @param {object}
-	*     data from the maxValueRequest
-	*/
+        * @param {object}
+        *     data from the maxValueRequest
+        */
         __maxValues: function (data) {
             var i, j, maxDataResults, maxValues = [];
             var maxResult = [];
@@ -1971,34 +1970,34 @@ if (typeof exports !== 'undefined') {
                  if (maxDataResults !== undefined){
                      for (j = 0; j < maxDataResults.length; j++) {
                          maxValues.push(maxDataResults[j].value)
-                     };
-                 maxResult.push(Math.max.apply(null, maxValues));
-                 maxValues = [];
-                }
-	    }
+                      };
+                      maxResult.push(Math.max.apply(null, maxValues));
+                      maxValues = [];
+                 }
+            }
             this.__updateMaxResult(maxResult);
         },
-	/**
+        /**
         * Get min values for the period and pass them to the __updateMinResult
         * @access private
-	* @param {object}
-	*     data from the minValueRequest
-	*/
+        * @param {object}
+        *     data from the minValueRequest
+        */
         __minValues: function (data) {
-                var i, j, minDataResults, minValues = [];
-                var minResult = [];
-                for (i = 0; i < data.results.length; i++) {
-                     minDataResults = data.results[i].datapoints;
-                     if (minDataResults !== undefined){
-                         for (j = 0; j < minDataResults.length; j++) {
-                             minValues.push(minDataResults[j].value)
-                         };
-		     }
-                     minResult.push(Math.min.apply(null, minValues));
-                     minValues = [];
+            var i, j, minDataResults, minValues = [];
+            var minResult = [];
+            for (i = 0; i < data.results.length; i++) {
+                minDataResults = data.results[i].datapoints;
+                if (minDataResults !== undefined){
+                    for (j = 0; j < minDataResults.length; j++) {
+                        minValues.push(minDataResults[j].value)
+                    };
+                    minResult.push(Math.min.apply(null, minValues));
+                    minValues = [];
                 }
-                this.__updateMinResult(minResult);
-       },
+            }
+            this.__updateMinResult(minResult);
+        },
         /**
          * Updates a graph with the changes specified in the given change set. To
          * remove a value from the configuration its value should be set to a
@@ -2037,8 +2036,8 @@ if (typeof exports !== 'undefined') {
 
             try {
                 this.request = this.__buildDataRequest(this.config);
-                this.maxRequest = jQuery.extend({}, this.request)
-                if (this.maxRequest.downsample !== null){
+                this.maxRequest = jQuery.extend({}, this.request);
+                if (this.maxRequest.downsample !== null) {
                     this.maxRequest.downsample = this.maxRequest.downsample.replace("avg", "max");
                 };
                 var maxValueRequest = $.ajax({
@@ -2048,8 +2047,8 @@ if (typeof exports !== 'undefined') {
                     'dataType': 'json',
                     'contentType': 'application/json'
                 });
-                this.minRequest = jQuery.extend({}, this.request)
-                if (this.maxRequest.downsample !== null){
+                this.minRequest = jQuery.extend({}, this.request);
+                if (this.minRequest.downsample !== null) {
                     this.minRequest.downsample = this.minRequest.downsample.replace("avg", "min");
                 };
                 var minValueRequest = $.ajax({
@@ -2091,6 +2090,7 @@ if (typeof exports !== 'undefined') {
                                 self.__updateData(data);
                             }
                         }
+
                         // Update the footer
                         if (self.__updateFooter(data)) {
                             self.resize();
@@ -2142,7 +2142,8 @@ if (typeof exports !== 'undefined') {
                                 }
                             });
                         });
-                    },function (err) {
+                    },
+                    function (err) {
                         self.plots = undefined;
 
                         self.__showNoData();
@@ -2159,6 +2160,7 @@ if (typeof exports !== 'undefined') {
                             }
                         }
                     });
+
             } catch (x) {
                 this.plots = undefined;
                 if (self.__updateFooter()) {
@@ -3024,25 +3026,34 @@ if (typeof exports !== 'undefined') {
         "8": "Y"
     };
 
-    function toEng(val, preferredUnit, format, base) {
+    function toEng(val, preferredUnit, format, base, skipCalc) {
         var result,
             unit,
             formatted,
-            symbol;
+            symbol,
+            targetLength;
 
-        // if preferredUnit is provided, target that value
-        if (preferredUnit !== undefined) {
-            unit = preferredUnit;
-        } else if (val === 0) {
-            unit = 0;
+        // check if we want to provide magnitude calculation
+        if (!skipCalc) {
+            // if preferredUnit is provided, target that value
+            if (preferredUnit !== undefined) {
+                unit = preferredUnit;
+            } else if (val === 0) {
+                unit = 0;
+            } else {
+                unit = Math.floor(Math.log(Math.abs(val)) / Math.log(base));
+            }
+
+            symbol = SYMBOLS[unit];
+            targetLength = MAX_Y_AXIS_LABEL_LENGTH;
+
+            // TODO - if Math.abs(unit) > 8, return value in scientific notation
+            result = val / Math.pow(base, unit);
         } else {
-            unit = Math.floor(Math.log(Math.abs(val)) / Math.log(base));
+            result = val;
+            symbol = "";
+            targetLength = String(val).length;
         }
-
-        symbol = SYMBOLS[unit];
-
-        // TODO - if Math.abs(unit) > 8, return value in scientific notation
-        result = val / Math.pow(base, unit);
 
         try {
             // if sprintf is passed a format it doesn't understand an exception is thrown
@@ -3054,7 +3065,7 @@ if (typeof exports !== 'undefined') {
 
         // TODO - make graph y axis capable of expanding to
         // accommodate long numbers
-        return shortenNumber(formatted, MAX_Y_AXIS_LABEL_LENGTH) + symbol;
+        return shortenNumber(formatted, targetLength) + symbol;
     }
 
     // attempts to make a long floating point number
