@@ -60,7 +60,7 @@
                 .duration(0)
                 .call(model);
 
-            this.styleThresholds(chart.div);
+            this.styleThresholds(chart.$div);
         },
 
         resize : function(chart) {
