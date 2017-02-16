@@ -81,7 +81,7 @@
                 .transition().duration(0)
                 .call(_chart.model());
 
-            this.styleThresholds(chart.div);
+            this.styleThresholds(chart.$div);
             this.styleProjections(chart);
             addHovers(chart);
         },
@@ -146,11 +146,11 @@
 
             nv.addGraph(function() {
                 chart.svg.transition().duration(0).call(model);
-                this.styleThresholds(chart.div);
+                this.styleThresholds(chart.$div);
                 this.styleProjections(chart);
                 nv.utils.windowResize(function() {
                     chart.svg.call(model);
-                    this.styleThresholds(chart.div);
+                    this.styleThresholds(chart.$div);
                     this.styleProjections(chart);
                 }.bind(this));
                 addHovers(chart);
