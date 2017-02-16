@@ -278,7 +278,7 @@ var visualization,
 *
 * Regression.JS - Regression functions for javascript
 * http://tom-alexander.github.com/regression-js/
-*
+* 
 * copyright(c) 2013 Tom Alexander
 * Licensed under the MIT license.
 *
@@ -508,7 +508,7 @@ if (typeof exports !== 'undefined') {
     "use strict";
 
     debug = {
-
+        
         /**
          * Used to enable (true) or disable (false) debug output to the
          * browser console
@@ -517,7 +517,7 @@ if (typeof exports !== 'undefined') {
          * @default false
          */
         debug: false,
-
+        
         /**
          * Wrapper around the console group function. This wrapper protects
          * the client from those browsers that don't support the group
@@ -1333,7 +1333,7 @@ if (typeof exports !== 'undefined') {
             ticks: 3,
             breakpoint: 4,
             format: function (tz, d) {
-                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
+            return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
             }
         }, {
             name: "month",
