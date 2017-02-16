@@ -278,7 +278,7 @@ var visualization,
 *
 * Regression.JS - Regression functions for javascript
 * http://tom-alexander.github.com/regression-js/
-* 
+*
 * copyright(c) 2013 Tom Alexander
 * Licensed under the MIT license.
 *
@@ -508,7 +508,7 @@ if (typeof exports !== 'undefined') {
     "use strict";
 
     debug = {
-        
+
         /**
          * Used to enable (true) or disable (false) debug output to the
          * browser console
@@ -517,7 +517,7 @@ if (typeof exports !== 'undefined') {
          * @default false
          */
         debug: false,
-        
+
         /**
          * Wrapper around the console group function. This wrapper protects
          * the client from those browsers that don't support the group
@@ -1044,13 +1044,13 @@ if (typeof exports !== 'undefined') {
 
 })();
 
+
 /**
  * visualization.js
  * create main visualization config object
  */
 (function(){
     "use strict";
-
     // indicates if the base dependencies (stuff like
     // jquery, d3, etc) have been loaded
     var depsLoaded = false;
@@ -1298,6 +1298,7 @@ if (typeof exports !== 'undefined') {
     var DEFAULT_NUMBER_FORMAT = "%4.2f";
     var MAX_Y_AXIS_LABEL_LENGTH = 5;
     var DATE_FORMAT = Zenoss.USER_DATE_FORMAT || "MM/DD/YY";
+    var UPDATE_TIMEOUT = 30000;
 
     // data for formatting time ranges
     var TIME_DATA = [
@@ -1429,10 +1430,10 @@ if (typeof exports !== 'undefined') {
 
         this.__renderCapacityFooter = config.renderCapacityFooter;
         this.__renderForecastingTimeHorizonFooter = config.renderForecastingTimeHorizonFooter;
-        
-	this.maxResult = undefined;
+
+        this.maxResult = undefined;
         this.minResult = undefined;
-	    
+
         this.svg = d3.select(this.svgwrapper).append('svg');
         try {
             this.request = this.__buildDataRequest(this.config);
@@ -1493,7 +1494,6 @@ if (typeof exports !== 'undefined') {
 
             return toEng(value, ignorePreferred ? undefined : this.preferredYUnit, this.format, this.base);
         },
-
         /**
          * Iterates over the list of data plots and sets up display information
          * about each plot, including its legend label, color, and if it is filled
@@ -1935,34 +1935,34 @@ if (typeof exports !== 'undefined') {
             // Fill in the stats table
             this.__updateFooter(data);
         },
-	/**
+        /**
         * Update this.maxResult array that will be using in building the legend.
         * @access private
-	* @param {object}
-	*     arr(ay) of max values 
-	* return this.maxResult
-	*/
+        * @param {object}
+        *     arr(ay) of max values
+        * return this.maxResult
+        */
         __updateMaxResult: function (arr) {
             this.maxResult = arr;
             return this.maxResult;
         },
-	/**
+        /**
         * Update this.minResult array that will be using in building the legend.
         * @access private
-	* @param {object}
-	*     arr(ay) of min values 
-	* return this.minResult
-	*/
+        * @param {object}
+        *     arr(ay) of min values
+        * return this.minResult
+        */
         __updateMinResult: function (arr) {
             this.minResult = arr;
             return this.minResult;
         },
-	/**
+        /**
         * Get max values for the period and pass them to the __updateMaxResult
         * @access private
-	* @param {object}
-	*     data from the maxValueRequest
-	*/
+        * @param {object}
+        *     data from the maxValueRequest
+        */
         __maxValues: function (data) {
             var i, j, maxDataResults, maxValues = [];
             var maxResult = [];
@@ -1970,35 +1970,50 @@ if (typeof exports !== 'undefined') {
                  maxDataResults = data.results[i].datapoints;
                  if (maxDataResults !== undefined){
                      for (j = 0; j < maxDataResults.length; j++) {
-                         maxValues.push(maxDataResults[j].value)
-                     };
-                 maxResult.push(Math.max.apply(null, maxValues));
-                 maxValues = [];
-                }
-	    }
+                         maxValues.push(maxDataResults[j].value);
+                      }
+                      maxResult.push(Math.max.apply(null, maxValues));
+                      maxValues = [];
+                 }
+            }
             this.__updateMaxResult(maxResult);
         },
-	/**
+        /**
         * Get min values for the period and pass them to the __updateMinResult
         * @access private
-	* @param {object}
-	*     data from the minValueRequest
-	*/
+        * @param {object}
+        *     data from the minValueRequest
+        */
         __minValues: function (data) {
-                var i, j, minDataResults, minValues = [];
-                var minResult = [];
-                for (i = 0; i < data.results.length; i++) {
-                     minDataResults = data.results[i].datapoints;
-                     if (minDataResults !== undefined){
-                         for (j = 0; j < minDataResults.length; j++) {
-                             minValues.push(minDataResults[j].value)
-                         };
-		     }
-                     minResult.push(Math.min.apply(null, minValues));
-                     minValues = [];
+            var i, j, minDataResults, minValues = [];
+            var minResult = [];
+            for (i = 0; i < data.results.length; i++) {
+                minDataResults = data.results[i].datapoints;
+                if (minDataResults !== undefined){
+                    for (j = 0; j < minDataResults.length; j++) {
+                        minValues.push(minDataResults[j].value);
+                    }
+                    minResult.push(Math.min.apply(null, minValues));
+                    minValues = [];
                 }
-                this.__updateMinResult(minResult);
-       },
+            }
+            this.__updateMinResult(minResult);
+        },
+
+        hasPendingRequests: function() {
+            return this.updatePromise && this.updatePromise.state() == "pending";
+        },
+        cancelUpdate: function() {
+            // cancel ajax request (async req)
+            this.maxValueRequest.abort();
+            this.minValueRequest.abort();
+            this.mainRequest.abort();
+            this.cleanupDataReq();
+        },
+        cleanupDataReq: function() {
+            clearInterval(this.updateTimeout);
+            this.updateTimeout = null;
+        },
         /**
          * Updates a graph with the changes specified in the given change set. To
          * remove a value from the configuration its value should be set to a
@@ -2008,6 +2023,11 @@ if (typeof exports !== 'undefined') {
          *            changeset updates to the existing graph's configuration.
          */
         update: function (changeset) {
+            if(this.hasPendingRequests()) {
+                // do nothing, waiting for results
+                return;
+            }
+
             var self = this, kill = [], property;
 
             // This function is really meant to only handle given types of changes,
@@ -2037,130 +2057,140 @@ if (typeof exports !== 'undefined') {
 
             try {
                 this.request = this.__buildDataRequest(this.config);
-                this.maxRequest = jQuery.extend({}, this.request)
-                if (this.maxRequest.downsample !== null){
-                    this.maxRequest.downsample = this.maxRequest.downsample.replace("avg", "max");
-                };
-                var maxValueRequest = $.ajax({
+                this.maxRequest = jQuery.extend({}, this.request);
+                this.maxRequest.downsample = this.maxRequest.downsample.replace("avg", "max");
+                this.maxValueRequest = $.ajax({
                     'url': visualization.url + visualization.urlPerformance,
                     'type': 'POST',
                     'data': JSON.stringify(this.maxRequest),
                     'dataType': 'json',
                     'contentType': 'application/json'
                 });
-                this.minRequest = jQuery.extend({}, this.request)
-                if (this.maxRequest.downsample !== null){
-                    this.minRequest.downsample = this.minRequest.downsample.replace("avg", "min");
-                };
-                var minValueRequest = $.ajax({
+                this.minRequest = jQuery.extend({}, this.request);
+                this.minRequest.downsample = this.minRequest.downsample.replace("avg", "min");
+                this.minValueRequest = $.ajax({
                     'url': visualization.url + visualization.urlPerformance,
                     'type': 'POST',
                     'data': JSON.stringify(this.minRequest),
                     'dataType': 'json',
                     'contentType': 'application/json'
                 });
-                var mainRequest = $.ajax({
+                this.mainRequest = $.ajax({
                     'url': visualization.url + visualization.urlPerformance,
                     'type': 'POST',
                     'data': JSON.stringify(this.request),
                     'dataType': 'json',
                     'contentType': 'application/json'
                 });
-                $.when(maxValueRequest, minValueRequest, mainRequest)
-                    .then(function(response1, response2, response3){
-                        self.__maxValues(response1[0]);
-                        self.__minValues(response2[0]);
-                        var data = response3[0];
-                        self.plots = self.__processResult(self.request, data);
+                this.updatePromise = $.when(this.maxValueRequest, this.minValueRequest, this.mainRequest);
+                if(this.onUpdate){
+                    this.onUpdate(this.updatePromise);
+                }
+                // set timeout for update promise
+                this.updateTimeout = setTimeout(this.cancelUpdate.bind(this), UPDATE_TIMEOUT);
+                this.updatePromise.then(function(response1, response2, response3){
+                    self.cleanupDataReq();
+                    self.__maxValues(response1[0]);
+                    self.__minValues(response2[0]);
+                    var data = response3[0];
+                    self.plots = self.__processResult(self.request, data);
 
-                        // setPreffered y unit (k, G, M, etc)
-                        self.setPreferredYUnit(data.results);
+                    // setPreferred y unit (k, G, M, etc)
+                    self.setPreferredYUnit(data.results);
 
-                        /*
-                         * If the chart has not been created yet, then
-                         * create it, else just update the data.
-                         */
-                        if (!self.closure) {
-                            if (self.config.type === undefined) {
-                                self.config.type = 'line';
-                            }
-                            self.__render(data);
-                        } else {
-                            // if we have projections wait to render so the chart doesn't jump around
-                            if (self.projections === undefined || self.projections.length === 0) {
-                                self.__updateData(data);
-                            }
+                    /*
+                     * If the chart has not been created yet, then
+                     * create it, else just update the data.
+                     */
+                    if (!self.closure) {
+                        if (self.config.type === undefined) {
+                            self.config.type = 'line';
                         }
-                        // Update the footer
-                        if (self.__updateFooter(data)) {
-                            self.resize();
+                        self.__render(data);
+                    } else {
+                        // if we have projections wait to render so the chart doesn't jump around
+                        if (self.projections === undefined || self.projections.length === 0) {
+                            self.__updateData(data);
                         }
-                        // send a separate request for the projection data since it has a different time span
+                    }
 
-                        var projectionColors = ["#EBEBEF", "#FDDFE7", "#FCF1C0", "#DAFBEB"], projectionIndex = 0;
-                        self.projections.forEach(function (projection) {
-                            var projectionRequest = self.__buildProjectionRequest(self.config, self.request, projection);
-                            // can fail if the projection is requesting a metric not present
-                            if (!projectionRequest) {
-                                return;
-                            }
-                            $.ajax({
-                                'url': visualization.url + visualization.urlPerformance,
-                                'type': 'POST',
-                                'data': JSON.stringify(projectionRequest),
-                                'dataType': 'json',
-                                'contentType': 'application/json',
-                                'success': function (projectionData) {
+                    // Update the footer
+                    if (self.__updateFooter(data)) {
+                        self.resize();
+                    }
+                    // send a separate request for the projection data since it has a different time span
 
-                                    if (projectionData.results) {
-                                        var values = projectionData.results[projectionData.results.length - 1].datapoints || [],
-                                            start = utils.createDate(self.request.start || "1h-ago").unix(),
-                                            end = utils.createDate(self.request.end || "0s-ago").unix(),
-                                        // use strategy to create a return  function that will convert projected X values into Y's
-                                            valueFn = self.createRegressionFunction(projection, values),
-                                        // get the visible x, y values
-                                            projectedSet = self.createRegressionData(valueFn, start, end);
-                                        self.plots.push({
-                                            color: projectionColors[projectionIndex++ % projectionColors.length],
-                                            fill: false,
-                                            projection: true,
-                                            projectionFn: valueFn,
-                                            key: projection.legend,
-                                            values: projectedSet
-                                        });
-                                        // self.closure isn't set because we are still loading dependencies
-                                        // wait until the regular chart build is called
-                                        if (self.closure) {
-                                            self.impl.update(self, data);
-                                        }
-                                        self.__renderProjectionFooter();
+                    var projectionColors = ["#EBEBEF", "#FDDFE7", "#FCF1C0", "#DAFBEB"], projectionIndex = 0;
+                    self.projections.forEach(function (projection) {
+                        var projectionRequest = self.__buildProjectionRequest(self.config, self.request, projection);
+                        // can fail if the projection is requesting a metric not present
+                        if (!projectionRequest) {
+                            return;
+                        }
+                        $.ajax({
+                            'url': visualization.url + visualization.urlPerformance,
+                            'type': 'POST',
+                            'data': JSON.stringify(projectionRequest),
+                            'dataType': 'json',
+                            'contentType': 'application/json',
+                            'success': function (projectionData) {
+
+                                if (projectionData.results) {
+                                    var values = projectionData.results[projectionData.results.length - 1].datapoints || [],
+                                        start = utils.createDate(self.request.start || "1h-ago").unix(),
+                                        end = utils.createDate(self.request.end || "0s-ago").unix(),
+                                    // use strategy to create a return  function that will convert projected X values into Y's
+                                        valueFn = self.createRegressionFunction(projection, values),
+                                    // get the visible x, y values
+                                        projectedSet = self.createRegressionData(valueFn, start, end);
+                                    self.plots.push({
+                                        color: projectionColors[projectionIndex++ % projectionColors.length],
+                                        fill: false,
+                                        projection: true,
+                                        projectionFn: valueFn,
+                                        key: projection.legend,
+                                        values: projectedSet
+                                    });
+                                    // self.closure isn't set because we are still loading dependencies
+                                    // wait until the regular chart build is called
+                                    if (self.closure) {
+                                        self.impl.update(self, data);
                                     }
-                                },
-                                'error': function () {
-                                    // the trendline isn't critical to the graph so
-                                    // do nothing in the case of errors
+                                    self.__renderProjectionFooter();
                                 }
-                            });
+                            },
+                            'error': function () {
+                                // the trendline isn't critical to the graph so
+                                // do nothing in the case of errors
+                            }
                         });
-                    },function (err) {
-                        self.plots = undefined;
-
+                    });
+                },
+                function (err) {
+                    if(err.statusText == "abort"){
+                        self.__showTimeout();
+                    } else {
                         self.__showNoData();
-                        // upon errors still show the footer
-                        if (self.showLegendOnNoData && self.__hasFooter()) {
-                            // if this is the first request that errored we will need to build
-                            // the table
-                            if (!self.table) {
-                                self.__buildFooter(self.config);
-                            } else {
-                                if (self.__updateFooter()) {
-                                    self.resize();
-                                }
+                    }
+                    self.plots = [];
+                    self.cleanupDataReq();
+
+                    // upon errors still show the footer
+                    if (self.showLegendOnNoData && self.__hasFooter()) {
+                        // if this is the first request that errored we will need to build
+                        // the table
+                        if (!self.table) {
+                            self.__buildFooter(self.config);
+                        } else {
+                            if (self.__updateFooter()) {
+                                self.resize();
                             }
                         }
-                    });
+                    }
+            });
+
             } catch (x) {
-                this.plots = undefined;
+                this.plots = [];
                 if (self.__updateFooter()) {
                     self.resize();
                 }
@@ -2433,7 +2463,7 @@ if (typeof exports !== 'undefined') {
                     metric.aggregator = projection.aggregateFunction || "max";
                     metric.emit = true;
                     if (self.getPlotInfo(metric)) {
-                        projection.legend = "Projected " + self.getPlotInfo(metric).legend + " - " + projection.id;
+                        projection.legend = "Projected " + self.getPlotInfo(metric).legend;
                     }
                     request.metrics.push(metric);
                 }
@@ -2768,7 +2798,9 @@ if (typeof exports !== 'undefined') {
         __showNoData: function () {
             this.__showMessage('<span class="nodata"></span>');
         },
-
+        __showTimeout: function () {
+            this.__showMessage('<span class="timeout"></span>');
+        },
         __hideMessage: function () {
             this.$div.find(".message").css('display', 'none');
         },
