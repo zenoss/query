@@ -715,6 +715,7 @@
                     'contentType': 'application/json'
                 });
                 if(this.onUpdate){
+                    // if we have access to the onUpdate function of a graph, send it the ajax request promise
                     this.onUpdate(this.updatePromise);
                 }
                 // set timeout for update promise
@@ -794,6 +795,7 @@
                 },
                 function (err) {
                     if(err.statusText == "abort"){
+                        // if the status text reads "abort" we have cancelled a request that took too long
                         self.__showTimeout();
                     } else {
                         self.__showNoData();
@@ -803,8 +805,7 @@
 
                     // upon errors still show the footer
                     if (self.showLegendOnNoData && self.__hasFooter()) {
-                        // if this is the first request that errored we will need to build
-                        // the table
+                        // if this is the first request that errored we will need to build the table
                         if (!self.table) {
                             self.__buildFooter(self.config);
                         } else {
@@ -816,6 +817,7 @@
                 });
 
             } catch (x) {
+                // set plots to an empty array so we can append to it later
                 this.plots = [];
                 if (self.__updateFooter()) {
                     self.resize();

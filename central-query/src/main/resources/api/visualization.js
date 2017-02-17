@@ -278,7 +278,7 @@ var visualization,
 *
 * Regression.JS - Regression functions for javascript
 * http://tom-alexander.github.com/regression-js/
-* 
+*
 * copyright(c) 2013 Tom Alexander
 * Licensed under the MIT license.
 *
@@ -508,7 +508,7 @@ if (typeof exports !== 'undefined') {
     "use strict";
 
     debug = {
-        
+
         /**
          * Used to enable (true) or disable (false) debug output to the
          * browser console
@@ -517,7 +517,7 @@ if (typeof exports !== 'undefined') {
          * @default false
          */
         debug: false,
-        
+
         /**
          * Wrapper around the console group function. This wrapper protects
          * the client from those browsers that don't support the group
@@ -1928,11 +1928,12 @@ if (typeof exports !== 'undefined') {
             this.__updateFooter(data);
         },
         cancelUpdate: function() {
-            // cancel ajax request (async req)
+            // cancel async ajax request
             this.updatePromise.abort();
             this.cleanupDataReq();
         },
         cleanupDataReq: function() {
+            // called if the request succeeded or was cancelled
             clearInterval(this.updateTimeout);
             this.updateTimeout = null;
         },
@@ -2062,6 +2063,7 @@ if (typeof exports !== 'undefined') {
                 },
                 function (err) {
                     if(err.statusText == "abort"){
+                        // if the status text reads "abort" we have cancelled a request that took too long
                         self.__showTimeout();
                     } else {
                         self.__showNoData();
@@ -2084,6 +2086,7 @@ if (typeof exports !== 'undefined') {
                 });
 
             } catch (x) {
+                // set plots to an empty array so we can append to it later
                 this.plots = [];
                 if (self.__updateFooter()) {
                     self.resize();
