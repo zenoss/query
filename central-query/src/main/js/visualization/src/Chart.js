@@ -661,9 +661,7 @@
         },
         cancelUpdate: function() {
             // cancel ajax request (async req)
-            this.maxValueRequest.abort();
-            this.minValueRequest.abort();
-            this.mainRequest.abort();
+            this.updatePromise.abort();
             this.cleanupDataReq();
         },
         cleanupDataReq: function() {
