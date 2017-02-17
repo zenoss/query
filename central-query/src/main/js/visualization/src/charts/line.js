@@ -95,6 +95,13 @@
             model.useInteractiveGuideline(true);
             model.duration(0);
 
+            model.interactiveLayer.tooltip.keyFormatter(function(d) {
+                var maxLength = 35;
+                if (d.length > maxLength) {
+                    d = d.substring(0,30) + "...";
+                }
+                return d;
+            });
             // on legend state change, update any
             // overlays disabled state so they
             // can persist through graph refresh
