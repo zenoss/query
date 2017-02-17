@@ -65,7 +65,7 @@
             ticks: 3,
             breakpoint: 4,
             format: function (tz, d) {
-            return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
+                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
             }
         }, {
             name: "month",
@@ -163,9 +163,6 @@
         this.__renderCapacityFooter = config.renderCapacityFooter;
         this.__renderForecastingTimeHorizonFooter = config.renderForecastingTimeHorizonFooter;
 
-        this.maxResult = undefined;
-        this.minResult = undefined;
-
         this.svg = d3.select(this.svgwrapper).append('svg');
         try {
             this.request = this.__buildDataRequest(this.config);
@@ -215,7 +212,7 @@
          *            If toEng function should ignore the preferred unit
          *            and calculate a unit based on `value`
          */
-        formatValue: function (value, ignorePreferred) {
+        formatValue: function (value, ignorePreferred, skipCalc) {
             /*
              * If we were given a undefined value, Infinity, of NaN (all things that
              * can't be formatted, then just return the value.
@@ -224,8 +221,9 @@
                 return value;
             }
 
-            return toEng(value, ignorePreferred ? undefined : this.preferredYUnit, this.format, this.base);
+            return toEng(value, ignorePreferred ? undefined : this.preferredYUnit, this.format, this.base, skipCalc);
         },
+
         /**
          * Iterates over the list of data plots and sets up display information
          * about each plot, including its legend label, color, and if it is filled
@@ -469,14 +467,8 @@
                                 vals[cur] = v.y;
                             }
                             vals[avg] = vals[avg] / plot.values.length;
-                            if (isFinite(this.maxResult[row])) {
-                                vals[max] = this.maxResult[row];
-                            };
-                            if (isFinite(this.minResult[row])) {
-                                vals[min] = this.minResult[row];
-                            };
                             for (v = 0; v < vals.length; v += 1) {
-                                $(cols[2 + v]).html(this.formatValue(vals[v]));
+                                $(cols[2 + v]).html(this.formatValue(vals[v], undefined, dp.displayFullValue));
                             }
                         }
                         row += 1;
@@ -667,74 +659,6 @@
             // Fill in the stats table
             this.__updateFooter(data);
         },
-        /**
-        * Update this.maxResult array that will be using in building the legend.
-        * @access private
-        * @param {object}
-        *     arr(ay) of max values
-        * return this.maxResult
-        */
-        __updateMaxResult: function (arr) {
-            this.maxResult = arr;
-            return this.maxResult;
-        },
-        /**
-        * Update this.minResult array that will be using in building the legend.
-        * @access private
-        * @param {object}
-        *     arr(ay) of min values
-        * return this.minResult
-        */
-        __updateMinResult: function (arr) {
-            this.minResult = arr;
-            return this.minResult;
-        },
-        /**
-        * Get max values for the period and pass them to the __updateMaxResult
-        * @access private
-        * @param {object}
-        *     data from the maxValueRequest
-        */
-        __maxValues: function (data) {
-            var i, j, maxDataResults, maxValues = [];
-            var maxResult = [];
-            for (i = 0; i < data.results.length; i++) {
-                 maxDataResults = data.results[i].datapoints;
-                 if (maxDataResults !== undefined){
-                     for (j = 0; j < maxDataResults.length; j++) {
-                         maxValues.push(maxDataResults[j].value);
-                      }
-                      maxResult.push(Math.max.apply(null, maxValues));
-                      maxValues = [];
-                 }
-            }
-            this.__updateMaxResult(maxResult);
-        },
-        /**
-        * Get min values for the period and pass them to the __updateMinResult
-        * @access private
-        * @param {object}
-        *     data from the minValueRequest
-        */
-        __minValues: function (data) {
-            var i, j, minDataResults, minValues = [];
-            var minResult = [];
-            for (i = 0; i < data.results.length; i++) {
-                minDataResults = data.results[i].datapoints;
-                if (minDataResults !== undefined){
-                    for (j = 0; j < minDataResults.length; j++) {
-                        minValues.push(minDataResults[j].value);
-                    }
-                    minResult.push(Math.min.apply(null, minValues));
-                    minValues = [];
-                }
-            }
-            this.__updateMinResult(minResult);
-        },
-
-        hasPendingRequests: function() {
-            return this.updatePromise && this.updatePromise.state() == "pending";
-        },
         cancelUpdate: function() {
             // cancel ajax request (async req)
             this.maxValueRequest.abort();
@@ -746,6 +670,7 @@
             clearInterval(this.updateTimeout);
             this.updateTimeout = null;
         },
+
         /**
          * Updates a graph with the changes specified in the given change set. To
          * remove a value from the configuration its value should be set to a
@@ -755,11 +680,6 @@
          *            changeset updates to the existing graph's configuration.
          */
         update: function (changeset) {
-            if(this.hasPendingRequests()) {
-                // do nothing, waiting for results
-                return;
-            }
-
             var self = this, kill = [], property;
 
             // This function is really meant to only handle given types of changes,
@@ -789,45 +709,21 @@
 
             try {
                 this.request = this.__buildDataRequest(this.config);
-                this.maxRequest = jQuery.extend({}, this.request);
-                this.maxRequest.downsample = this.maxRequest.downsample.replace("avg", "max");
-                this.maxValueRequest = $.ajax({
-                    'url': visualization.url + visualization.urlPerformance,
-                    'type': 'POST',
-                    'data': JSON.stringify(this.maxRequest),
-                    'dataType': 'json',
-                    'contentType': 'application/json'
-                });
-                this.minRequest = jQuery.extend({}, this.request);
-                this.minRequest.downsample = this.minRequest.downsample.replace("avg", "min");
-                this.minValueRequest = $.ajax({
-                    'url': visualization.url + visualization.urlPerformance,
-                    'type': 'POST',
-                    'data': JSON.stringify(this.minRequest),
-                    'dataType': 'json',
-                    'contentType': 'application/json'
-                });
-                this.mainRequest = $.ajax({
+                this.updatePromise = $.ajax({
                     'url': visualization.url + visualization.urlPerformance,
                     'type': 'POST',
                     'data': JSON.stringify(this.request),
                     'dataType': 'json',
                     'contentType': 'application/json'
                 });
-                this.updatePromise = $.when(this.maxValueRequest, this.minValueRequest, this.mainRequest);
                 if(this.onUpdate){
                     this.onUpdate(this.updatePromise);
                 }
                 // set timeout for update promise
                 this.updateTimeout = setTimeout(this.cancelUpdate.bind(this), UPDATE_TIMEOUT);
-                this.updatePromise.then(function(response1, response2, response3){
+                this.updatePromise.then(function(data){
                     self.cleanupDataReq();
-                    self.__maxValues(response1[0]);
-                    self.__minValues(response2[0]);
-                    var data = response3[0];
-                    self.plots = self.__processResult(self.request, data);
-
-                    // setPreferred y unit (k, G, M, etc)
+                    // setPreffered y unit (k, G, M, etc)
                     self.setPreferredYUnit(data.results);
 
                     /*
@@ -850,8 +746,8 @@
                     if (self.__updateFooter(data)) {
                         self.resize();
                     }
-                    // send a separate request for the projection data since it has a different time span
 
+                    // send a separate request for the projection data since it has a different time span
                     var projectionColors = ["#EBEBEF", "#FDDFE7", "#FCF1C0", "#DAFBEB"], projectionIndex = 0;
                     self.projections.forEach(function (projection) {
                         var projectionRequest = self.__buildProjectionRequest(self.config, self.request, projection);
@@ -919,7 +815,7 @@
                             }
                         }
                     }
-            });
+                });
 
             } catch (x) {
                 this.plots = [];
@@ -1195,7 +1091,7 @@
                     metric.aggregator = projection.aggregateFunction || "max";
                     metric.emit = true;
                     if (self.getPlotInfo(metric)) {
-                        projection.legend = "Projected " + self.getPlotInfo(metric).legend;
+                        projection.legend = "Projected " + self.getPlotInfo(metric).legend + " - " + projection.id;
                     }
                     request.metrics.push(metric);
                 }
@@ -1345,7 +1241,7 @@
                 this.overlays.forEach(function (overlay) {
                     // if disabled is undefined, default to true, otherwise
                     // use the disabled value
-                    var isDisabled = "disabled" in overlay ? overlay.disabled : true;
+                    var isDisabled = "disabled" in overlay ? overlay.disabled : false;
 
                     // if the overlay includes 2 values, we assume
                     // it is a minmax threshold
@@ -1788,25 +1684,34 @@
         "8": "Y"
     };
 
-    function toEng(val, preferredUnit, format, base) {
+    function toEng(val, preferredUnit, format, base, skipCalc) {
         var result,
             unit,
             formatted,
-            symbol;
+            symbol,
+            targetLength;
 
-        // if preferredUnit is provided, target that value
-        if (preferredUnit !== undefined) {
-            unit = preferredUnit;
-        } else if (val === 0) {
-            unit = 0;
+        // check if we want to provide magnitude calculation
+        if (!skipCalc) {
+            // if preferredUnit is provided, target that value
+            if (preferredUnit !== undefined) {
+                unit = preferredUnit;
+            } else if (val === 0) {
+                unit = 0;
+            } else {
+                unit = Math.floor(Math.log(Math.abs(val)) / Math.log(base));
+            }
+
+            symbol = SYMBOLS[unit];
+            targetLength = MAX_Y_AXIS_LABEL_LENGTH;
+
+            // TODO - if Math.abs(unit) > 8, return value in scientific notation
+            result = val / Math.pow(base, unit);
         } else {
-            unit = Math.floor(Math.log(Math.abs(val)) / Math.log(base));
+            result = val;
+            symbol = "";
+            targetLength = String(val).length;
         }
-
-        symbol = SYMBOLS[unit];
-
-        // TODO - if Math.abs(unit) > 8, return value in scientific notation
-        result = val / Math.pow(base, unit);
 
         try {
             // if sprintf is passed a format it doesn't understand an exception is thrown
@@ -1818,7 +1723,7 @@
 
         // TODO - make graph y axis capable of expanding to
         // accommodate long numbers
-        return shortenNumber(formatted, MAX_Y_AXIS_LABEL_LENGTH) + symbol;
+        return shortenNumber(formatted, targetLength) + symbol;
     }
 
     // attempts to make a long floating point number

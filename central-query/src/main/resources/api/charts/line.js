@@ -81,7 +81,7 @@
                 .transition().duration(0)
                 .call(_chart.model());
 
-            this.styleThresholds(chart.div);
+            this.styleThresholds(chart.$div);
             this.styleProjections(chart);
             addHovers(chart);
         },
@@ -95,6 +95,13 @@
             model.useInteractiveGuideline(true);
             model.duration(0);
 
+            model.interactiveLayer.tooltip.keyFormatter(function(d) {
+                var maxLength = 35;
+                if (d.length > maxLength) {
+                    d = d.substring(0,30) + "...";
+                }
+                return d;
+            });
             // on legend state change, update any
             // overlays disabled state so they
             // can persist through graph refresh
@@ -146,11 +153,11 @@
 
             nv.addGraph(function() {
                 chart.svg.transition().duration(0).call(model);
-                this.styleThresholds(chart.div);
+                this.styleThresholds(chart.$div);
                 this.styleProjections(chart);
                 nv.utils.windowResize(function() {
                     chart.svg.call(model);
-                    this.styleThresholds(chart.div);
+                    this.styleThresholds(chart.$div);
                     this.styleProjections(chart);
                 }.bind(this));
                 addHovers(chart);
