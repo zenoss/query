@@ -278,7 +278,7 @@ var visualization,
 *
 * Regression.JS - Regression functions for javascript
 * http://tom-alexander.github.com/regression-js/
-*
+* 
 * copyright(c) 2013 Tom Alexander
 * Licensed under the MIT license.
 *
@@ -508,7 +508,7 @@ if (typeof exports !== 'undefined') {
     "use strict";
 
     debug = {
-
+        
         /**
          * Used to enable (true) or disable (false) debug output to the
          * browser console
@@ -517,7 +517,7 @@ if (typeof exports !== 'undefined') {
          * @default false
          */
         debug: false,
-
+        
         /**
          * Wrapper around the console group function. This wrapper protects
          * the client from those browsers that don't support the group
@@ -1928,12 +1928,11 @@ if (typeof exports !== 'undefined') {
             this.__updateFooter(data);
         },
         cancelUpdate: function() {
-            // cancel async ajax request
+            // cancel ajax request (async req)
             this.updatePromise.abort();
             this.cleanupDataReq();
         },
         cleanupDataReq: function() {
-            // called if the request succeeded or was cancelled
             clearInterval(this.updateTimeout);
             this.updateTimeout = null;
         },
@@ -1984,6 +1983,7 @@ if (typeof exports !== 'undefined') {
                     'contentType': 'application/json'
                 });
                 if(this.onUpdate){
+                    // if we have access to the onUpdate function of a graph, send it the ajax request promise
                     this.onUpdate(this.updatePromise);
                 }
                 // set timeout for update promise
@@ -2073,8 +2073,7 @@ if (typeof exports !== 'undefined') {
 
                     // upon errors still show the footer
                     if (self.showLegendOnNoData && self.__hasFooter()) {
-                        // if this is the first request that errored we will need to build
-                        // the table
+                        // if this is the first request that errored we will need to build the table
                         if (!self.table) {
                             self.__buildFooter(self.config);
                         } else {
