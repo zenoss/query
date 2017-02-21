@@ -659,9 +659,12 @@
             // Fill in the stats table
             this.__updateFooter(data);
         },
+        hasPendingRequests: function(){
+            return this.updatePromise && this.updatePromise.state() == "pending";
+        },
         cancelUpdate: function() {
             // cancel ajax request (async req)
-            this.updatePromise.abort();
+            this.updateRequest.abort();
             this.cleanupDataReq();
         },
         cleanupDataReq: function() {
@@ -678,6 +681,10 @@
          *            changeset updates to the existing graph's configuration.
          */
         update: function (changeset) {
+            if(this.hasPendingRequests()){
+                // do nothing, waiting for the results
+                return;
+            }
             var self = this, kill = [], property;
 
             // This function is really meant to only handle given types of changes,
@@ -707,13 +714,88 @@
 
             try {
                 this.request = this.__buildDataRequest(this.config);
-                this.updatePromise = $.ajax({
+                this.updateRequest = $.ajax({
                     'url': visualization.url + visualization.urlPerformance,
                     'type': 'POST',
                     'data': JSON.stringify(this.request),
                     'dataType': 'json',
-                    'contentType': 'application/json'
+                    'contentType': 'application/json',
+                    'success': function(data){
+                        self.plots = self.__processResult(self.request, data);
+
+                        // setPreferred y unit (k, G, M, etc)
+                        self.setPreferredYUnit(data.results);
+
+                        /*
+                         * If the chart has not been created yet, then
+                         * create it, else just update the data.
+                         */
+                        if (!self.closure) {
+                            if (self.config.type === undefined) {
+                                self.config.type = 'line';
+                            }
+                            self.__render(data);
+                        } else {
+                            // if we have projections wait to render so the chart doesn't jump around
+                            if (self.projections === undefined || self.projections.length === 0) {
+                                self.__updateData(data);
+                            }
+                        }
+
+                        // Update the footer
+                        if (self.__updateFooter(data)) {
+                            self.resize();
+                        }
+
+                        // send a separate request for the projection data since it has a different time span
+                        var projectionColors = ["#EBEBEF", "#FDDFE7", "#FCF1C0", "#DAFBEB"], projectionIndex = 0;
+                        self.projections.forEach(function (projection) {
+                            var projectionRequest = self.__buildProjectionRequest(self.config, self.request, projection);
+                            // can fail if the projection is requesting a metric not present
+                            if (!projectionRequest) {
+                                return;
+                            }
+                            $.ajax({
+                                'url': visualization.url + visualization.urlPerformance,
+                                'type': 'POST',
+                                'data': JSON.stringify(projectionRequest),
+                                'dataType': 'json',
+                                'contentType': 'application/json',
+                                'success': function (projectionData) {
+
+                                    if (projectionData.results) {
+                                        var values = projectionData.results[projectionData.results.length - 1].datapoints || [],
+                                            start = utils.createDate(self.request.start || "1h-ago").unix(),
+                                            end = utils.createDate(self.request.end || "0s-ago").unix(),
+                                        // use strategy to create a return  function that will convert projected X values into Y's
+                                            valueFn = self.createRegressionFunction(projection, values),
+                                        // get the visible x, y values
+                                            projectedSet = self.createRegressionData(valueFn, start, end);
+                                        self.plots.push({
+                                            color: projectionColors[projectionIndex++ % projectionColors.length],
+                                            fill: false,
+                                            projection: true,
+                                            projectionFn: valueFn,
+                                            key: projection.legend,
+                                            values: projectedSet
+                                        });
+                                        // self.closure isn't set because we are still loading dependencies
+                                        // wait until the regular chart build is called
+                                        if (self.closure) {
+                                            self.impl.update(self, data);
+                                        }
+                                        self.__renderProjectionFooter();
+                                    }
+                                },
+                                'error': function () {
+                                    // the trendline isn't critical to the graph so
+                                    // do nothing in the case of errors
+                                }
+                            });
+                        });
+                    }
                 });
+                this.updatePromise = $.when(this.updateRequest)
                 if(this.onUpdate){
                     // if we have access to the onUpdate function of a graph, send it the ajax request promise
                     this.onUpdate(this.updatePromise);
@@ -722,76 +804,6 @@
                 this.updateTimeout = setTimeout(this.cancelUpdate.bind(this), UPDATE_TIMEOUT);
                 this.updatePromise.then(function(data){
                     self.cleanupDataReq();
-                    // setPreffered y unit (k, G, M, etc)
-                    self.setPreferredYUnit(data.results);
-
-                    /*
-                     * If the chart has not been created yet, then
-                     * create it, else just update the data.
-                     */
-                    if (!self.closure) {
-                        if (self.config.type === undefined) {
-                            self.config.type = 'line';
-                        }
-                        self.__render(data);
-                    } else {
-                        // if we have projections wait to render so the chart doesn't jump around
-                        if (self.projections === undefined || self.projections.length === 0) {
-                            self.__updateData(data);
-                        }
-                    }
-
-                    // Update the footer
-                    if (self.__updateFooter(data)) {
-                        self.resize();
-                    }
-
-                    // send a separate request for the projection data since it has a different time span
-                    var projectionColors = ["#EBEBEF", "#FDDFE7", "#FCF1C0", "#DAFBEB"], projectionIndex = 0;
-                    self.projections.forEach(function (projection) {
-                        var projectionRequest = self.__buildProjectionRequest(self.config, self.request, projection);
-                        // can fail if the projection is requesting a metric not present
-                        if (!projectionRequest) {
-                            return;
-                        }
-                        $.ajax({
-                            'url': visualization.url + visualization.urlPerformance,
-                            'type': 'POST',
-                            'data': JSON.stringify(projectionRequest),
-                            'dataType': 'json',
-                            'contentType': 'application/json',
-                            'success': function (projectionData) {
-
-                                if (projectionData.results) {
-                                    var values = projectionData.results[projectionData.results.length - 1].datapoints || [],
-                                        start = utils.createDate(self.request.start || "1h-ago").unix(),
-                                        end = utils.createDate(self.request.end || "0s-ago").unix(),
-                                    // use strategy to create a return  function that will convert projected X values into Y's
-                                        valueFn = self.createRegressionFunction(projection, values),
-                                    // get the visible x, y values
-                                        projectedSet = self.createRegressionData(valueFn, start, end);
-                                    self.plots.push({
-                                        color: projectionColors[projectionIndex++ % projectionColors.length],
-                                        fill: false,
-                                        projection: true,
-                                        projectionFn: valueFn,
-                                        key: projection.legend,
-                                        values: projectedSet
-                                    });
-                                    // self.closure isn't set because we are still loading dependencies
-                                    // wait until the regular chart build is called
-                                    if (self.closure) {
-                                        self.impl.update(self, data);
-                                    }
-                                    self.__renderProjectionFooter();
-                                }
-                            },
-                            'error': function () {
-                                // the trendline isn't critical to the graph so
-                                // do nothing in the case of errors
-                            }
-                        });
-                    });
                 },
                 function (err) {
                     if(err.statusText == "abort"){
