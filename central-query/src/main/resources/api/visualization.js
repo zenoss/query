@@ -1044,13 +1044,13 @@ if (typeof exports !== 'undefined') {
 
 })();
 
+
 /**
  * visualization.js
  * create main visualization config object
  */
 (function(){
     "use strict";
-
     // indicates if the base dependencies (stuff like
     // jquery, d3, etc) have been loaded
     var depsLoaded = false;
@@ -1298,6 +1298,7 @@ if (typeof exports !== 'undefined') {
     var DEFAULT_NUMBER_FORMAT = "%4.2f";
     var MAX_Y_AXIS_LABEL_LENGTH = 5;
     var DATE_FORMAT = Zenoss.USER_DATE_FORMAT || "MM/DD/YY";
+    var UPDATE_TIMEOUT = 30000;
 
     // data for formatting time ranges
     var TIME_DATA = [
@@ -1926,6 +1927,18 @@ if (typeof exports !== 'undefined') {
             // Fill in the stats table
             this.__updateFooter(data);
         },
+        hasPendingRequests: function(){
+            return this.updatePromise && this.updatePromise.state() == "pending";
+        },
+        cancelUpdate: function() {
+            // cancel ajax request (async req)
+            this.updateRequest.abort();
+            this.cleanupDataReq();
+        },
+        cleanupDataReq: function() {
+            clearTimeout(this.updateTimeout);
+            this.updateTimeout = null;
+        },
 
         /**
          * Updates a graph with the changes specified in the given change set. To
@@ -1936,6 +1949,10 @@ if (typeof exports !== 'undefined') {
          *            changeset updates to the existing graph's configuration.
          */
         update: function (changeset) {
+            if(this.hasPendingRequests()){
+                // do nothing, waiting for the results
+                return;
+            }
             var self = this, kill = [], property;
 
             // This function is really meant to only handle given types of changes,
@@ -1965,16 +1982,16 @@ if (typeof exports !== 'undefined') {
 
             try {
                 this.request = this.__buildDataRequest(this.config);
-                $.ajax({
+                this.updateRequest = $.ajax({
                     'url': visualization.url + visualization.urlPerformance,
                     'type': 'POST',
                     'data': JSON.stringify(this.request),
                     'dataType': 'json',
                     'contentType': 'application/json',
-                    'success': function (data) {
+                    'success': function(data){
                         self.plots = self.__processResult(self.request, data);
 
-                        // setPreffered y unit (k, G, M, etc)
+                        // setPreferred y unit (k, G, M, etc)
                         self.setPreferredYUnit(data.results);
 
                         /*
@@ -1997,8 +2014,8 @@ if (typeof exports !== 'undefined') {
                         if (self.__updateFooter(data)) {
                             self.resize();
                         }
-                        // send a separate request for the projection data since it has a different time span
 
+                        // send a separate request for the projection data since it has a different time span
                         var projectionColors = ["#EBEBEF", "#FDDFE7", "#FCF1C0", "#DAFBEB"], projectionIndex = 0;
                         self.projections.forEach(function (projection) {
                             var projectionRequest = self.__buildProjectionRequest(self.config, self.request, projection);
@@ -2044,28 +2061,44 @@ if (typeof exports !== 'undefined') {
                                 }
                             });
                         });
-                    },
-                    'error': function () {
-                        self.plots = undefined;
-
+                    }
+                });
+                this.updatePromise = $.when(this.updateRequest)
+                if(this.onUpdate){
+                    // if we have access to the onUpdate function of a graph, send it the ajax request promise
+                    this.onUpdate(this.updatePromise);
+                }
+                // set timeout for update promise
+                this.updateTimeout = setTimeout(this.cancelUpdate.bind(this), UPDATE_TIMEOUT);
+                this.updatePromise.then(function(data){
+                    self.cleanupDataReq();
+                },
+                function (err) {
+                    if(err.statusText == "abort"){
+                        // if the status text reads "abort" we have cancelled a request that took too long
+                        self.__showTimeout();
+                    } else {
                         self.__showNoData();
-                        // upon errors still show the footer
-                        if (self.showLegendOnNoData && self.__hasFooter()) {
-                            // if this is the first request that errored we will need to build
-                            // the table
-                            if (!self.table) {
-                                self.__buildFooter(self.config);
-                            } else {
-                                if (self.__updateFooter()) {
-                                    self.resize();
-                                }
+                    }
+                    self.plots = [];
+                    self.cleanupDataReq();
+
+                    // upon errors still show the footer
+                    if (self.showLegendOnNoData && self.__hasFooter()) {
+                        // if this is the first request that errored we will need to build the table
+                        if (!self.table) {
+                            self.__buildFooter(self.config);
+                        } else {
+                            if (self.__updateFooter()) {
+                                self.resize();
                             }
                         }
                     }
                 });
 
             } catch (x) {
-                this.plots = undefined;
+                // set plots to an empty array so we can append to it later
+                this.plots = [];
                 if (self.__updateFooter()) {
                     self.resize();
                 }
@@ -2673,7 +2706,9 @@ if (typeof exports !== 'undefined') {
         __showNoData: function () {
             this.__showMessage('<span class="nodata"></span>');
         },
-
+        __showTimeout: function () {
+            this.__showMessage('<span class="timeout"></span>');
+        },
         __hideMessage: function () {
             this.$div.find(".message").css('display', 'none');
         },
