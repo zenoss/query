@@ -1,10 +1,10 @@
-
 /**
  * visualization.js
  * create main visualization config object
  */
 (function(){
     "use strict";
+
     // indicates if the base dependencies (stuff like
     // jquery, d3, etc) have been loaded
     var depsLoaded = false;
