@@ -60,7 +60,7 @@
                 .duration(0)
                 .call(model);
 
-            this.styleThresholds(chart.div);
+            this.styleThresholds(chart.$div);
         },
 
         resize : function(chart) {
@@ -90,6 +90,14 @@
             model.useInteractiveGuideline(true);
             model.showControls(false);
             model.duration(0);
+
+            model.interactiveLayer.tooltip.keyFormatter(function(d) {
+                var maxLength = 35;
+                if (d.length > maxLength) {
+                    d = d.substring(0,30) + "...";
+                }
+                return d;
+            });
 
             // on legend state change, update any
             // overlays disabled state so they
