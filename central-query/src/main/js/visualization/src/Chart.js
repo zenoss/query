@@ -668,7 +668,7 @@
             this.cleanupDataReq();
         },
         cleanupDataReq: function() {
-            clearInterval(this.updateTimeout);
+            clearTimeout(this.updateTimeout);
             this.updateTimeout = null;
         },
 
