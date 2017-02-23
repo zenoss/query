@@ -1,6 +1,6 @@
 Zenoss Central Query Service and JavaScript Library
 ====
-This project provides a HTTP/JSON based metric service capability for the information 
+This project provides a HTTP/JSON based metric service capability for the information
 that Zenoss stores in its central repository as well as a JavaScript library that allows
 a user to easily embed standard graphs in their own web page.
 
@@ -33,7 +33,7 @@ from a stored chart or even create a complete chart from within the HTML page.
                 "factor" : 1024
             },
             "tags" {
-                "tagk1" : [ "tagv1", "tagv2" ], 
+                "tagk1" : [ "tagv1", "tagv2" ],
                 "tagk2" : [ "tagv1", "tagv2" ]
             },            
             "range" : {
@@ -64,7 +64,7 @@ from a stored chart or even create a complete chart from within the HTML page.
             }, {
                 "metric" : "laLoadInt15",
             } ]
-        }); 
+        });
 
 The complete documentation for the for the public API can be found by accessing
 the `doc/index.html` from a running instance. The complete API documentation,
@@ -96,7 +96,7 @@ Resources
                                     "expression" below)
                     "id"          : a caller-defined tag for the series,
                     "aggregator"  : Aggregator to be used by OpenTSDB to combine values when downsampling.
-                                    valid values are "avg", "min", "max", and "sum".
+                                    valid values are "min", "max", "avg", "sum", "count", "dev", "mimmin", "mimmax", and "zimsum".
                                     If not specified, will default to "avg".
                     "interpolator": The type of interpolator to be used to fill in missing data points for the series.
                                     Valid values are: "linear", "none".
@@ -111,7 +111,7 @@ Resources
                     "expression"  : RPN expression to perform on the raw value to get the returned value
                     "tags"        : {
                         "tag-name" : "tag-value", ...
-                    } 
+                    }
                 }, ...
             ]
         }
@@ -135,13 +135,13 @@ Resources
       Determines is the results are grouped as individual series based on the results based on metric name and tag values not based on the number of queries specified.
     - `query=<_AGG:[rate:][downsample:]metric[{tags}]_>`
 
-        `AGG = min | max | sum | avg`
+        `AGG = min | max | avg, sum | count | dev | mimmin | mimmax | zimsum`
 
         `downsample = _like_ 10m-avg`
 
         `tags = name=tag-value`
 
-        `tag-value = \* __or__ partial\* __or__ tag-value | tag-value` 
+        `tag-value = \* __or__ partial\* __or__ tag-value | tag-value`
 
         _Multiple "query" parameters can be specified in which case all query results will be generated from a single HTTP/JSON connection._
 
@@ -184,11 +184,11 @@ This response object contains the information which was given as part of the que
 Also note the __client id__ attribute in the response object. This is the value that was specified as the __id__ as the query parameter.
 
 
-  - `POST /api/v2/performance/query` - 
-  
-  New endpoint for retrieving metrics, does not support all features for the original query endpoint.  This endpoint 
+  - `POST /api/v2/performance/query` -
+
+  New endpoint for retrieving metrics, does not support all features for the original query endpoint.  This endpoint
   supports adds support for wildcard, "*", in tag values.
-  
+
   **Request**
 
   | Name | type | Required | Description | default |
@@ -199,7 +199,7 @@ Also note the __client id__ attribute in the response object. This is the value 
   |returnset|string|n|For each time series return all metrics (some may be outside timerange), strictly metrics in the time range or the last metric. See RETURNSET|exact|
 
   **METRIC_QUERY**
-  
+
   |Name|type|Required|Description|default|
   |---|---|---|---|---|---|
   |aggregator|string|n|Name of aggregator. See AGGREGATOR|avg|
@@ -219,29 +219,29 @@ Also note the __client id__ attribute in the response object. This is the value 
   |resetThreshold|integer|n|An optional value that, when exceeded, will cause the aggregator to return a 0 instead of the calculated rate. Useful when data sources are frequently reset to avoid spurious spikes.|0|
 
   **RETURNSET**
-  
-  Valid values are “all”, “exact” and “last”. Return values can contain some values that fall right outside the given 
-  time range, the “all” setting returns them all. The “exact” setting strictly returns values in the given time range. 
+
+  Valid values are “all”, “exact” and “last”. Return values can contain some values that fall right outside the given
+  time range, the “all” setting returns them all. The “exact” setting strictly returns values in the given time range.
   The “last” setting returns the last value in the time ranges.  See the “last” api for returning the last datapoint.
-  
+
   **AGGREGATOR**
-  
-  One of `min, max, avg, sum`
-  
+
+  One of `min, max, avg, sum, count, dev, mimmin, mimmax, zimsum`
+
   **EXPRESSION**
-  
+
   An expression to run a calculation on a metric, supported expressions are RPN.
-  
+
   Example: `rpn:cgroup.cpuacct.user,2,*`
-  
+
   **DOWNSAMPLE**
-  
+
   Combination of a time and aggregator. e.g 5min-avg.  See opentsdb for downsample values.
-  
-  **TIMESTAMP** 
-  
+
+  **TIMESTAMP**
+
    - Timestamp string, acceptable values:
-     - timestamp in seconds or millis 
+     - timestamp in seconds or millis
      - `2015/01/31-18:17:25 GMT+0`    
      - `2015/1/31-13:17:25-0500`      
      - `<N><UNIT>-ago`
@@ -255,11 +255,11 @@ Also note the __client id__ attribute in the response object. This is the value 
          - `w` - Weeks (7 days)             
          - `n` - Months (30 days)           
          - `y` - Years (365 days)           
-          
+
   **Examples**
-  
+
   Example request:
-  
+
         {
           "start": "1437520683",
           "end": "1437521231",
@@ -275,9 +275,9 @@ Also note the __client id__ attribute in the response object. This is the value 
             }
           ]
         }
-                                                                                             
+
   Example Response:
-    
+
         {  
           "series":[  
             {  
@@ -308,6 +308,6 @@ Use git flow to release a version to the `master` branch.
 
 The artifact version number is defined in the [pom.xml](./pom.xml) files, but you should use `mvn versions:set` to modify the version number rather than editting the POM files by hand.
 
-For Zenoss employees, the details on using git-flow to release a new version is documented on the Zenoss Engineering 
+For Zenoss employees, the details on using git-flow to release a new version is documented on the Zenoss Engineering
 web site [here](https://sites.google.com/a/zenoss.com/engineering/home/faq/developer-patterns/using-git-flow).
-After the git flow release process is complete, a jenkins job must be triggered manually to build and publish the artifact. 
+After the git flow release process is complete, a jenkins job must be triggered manually to build and publish the artifact.
