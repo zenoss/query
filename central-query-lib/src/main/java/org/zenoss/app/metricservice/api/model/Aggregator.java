@@ -35,5 +35,6 @@ package org.zenoss.app.metricservice.api.model;
  *
  */
 public enum Aggregator {
-    min, max, avg, sum, count, dev, mimmin, mimmax, zimsum
+    min, max, avg, sum, count, dev, mimmin, mimmax, zimsum,
+    p50, p75, p90, p95, p99, p999
 }

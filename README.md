@@ -96,7 +96,8 @@ Resources
                                     "expression" below)
                     "id"          : a caller-defined tag for the series,
                     "aggregator"  : Aggregator to be used by OpenTSDB to combine values when downsampling.
-                                    valid values are "min", "max", "avg", "sum", "count", "dev", "mimmin", "mimmax", and "zimsum".
+                                    Valid values are "min", "max", "avg", "sum", "count", "dev", "mimmin",
+                                      "mimmax", "zimsum", "p50", "p75", "p90", "p95", "p99", and "p999".
                                     If not specified, will default to "avg".
                     "interpolator": The type of interpolator to be used to fill in missing data points for the series.
                                     Valid values are: "linear", "none".
@@ -135,7 +136,7 @@ Resources
       Determines is the results are grouped as individual series based on the results based on metric name and tag values not based on the number of queries specified.
     - `query=<_AGG:[rate:][downsample:]metric[{tags}]_>`
 
-        `AGG = min | max | avg, sum | count | dev | mimmin | mimmax | zimsum`
+        `AGG = min | max | avg | sum | count | dev | mimmin | mimmax | zimsum | p50 | p75 | p90 | p95 | p99 | p999`
 
         `downsample = _like_ 10m-avg`
 
@@ -226,7 +227,7 @@ Also note the __client id__ attribute in the response object. This is the value 
 
   **AGGREGATOR**
 
-  One of `min, max, avg, sum, count, dev, mimmin, mimmax, zimsum`
+  One of `min, max, avg, sum, count, dev, mimmin, mimmax, zimsum, p50, p75, p90, p95, p99, p999`
 
   **EXPRESSION**
 
