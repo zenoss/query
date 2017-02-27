@@ -32,8 +32,9 @@ package org.zenoss.app.metricservice.api.model;
 
 /**
  * @author David Bainbridge <dbainbridge@zenoss.com>
- * 
+ *
  */
 public enum Aggregator {
-    min, max, avg, sum
+    min, max, avg, sum, count, dev, mimmin, mimmax, zimsum,
+    p50, p75, p90, p95, p99, p999
 }
