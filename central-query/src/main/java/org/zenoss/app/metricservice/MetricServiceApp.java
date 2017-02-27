@@ -67,7 +67,7 @@ public class MetricServiceApp extends
      */
     @Override
     public io.dropwizard.Bundle getBundle() {
-        return new AssetsBundle("/api/", "/static/performance/query/");
+        return new AssetsBundle("/api/", "/static/performance/query/", "index.html", "metric-service-app");
     }
 
     /*
