@@ -29,7 +29,7 @@
 
     var DEFAULT_NUMBER_FORMAT = "%4.2f";
     var MAX_Y_AXIS_LABEL_LENGTH = 5;
-    var DATE_FORMAT = (Zenoss && Zenoss.USER_DATE_FORMAT) || "MM/DD/YY";
+    var DATE_FORMAT = (typeof Zenoss !== "undefined" && Zenoss.USER_DATE_FORMAT) || "MM/DD/YY";
 
     // data for formatting time ranges
     var TIME_DATA = [
