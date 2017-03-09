@@ -1624,7 +1624,7 @@
             // extract array of value arrays
             var seriesVals = data.map(function (series) {
                 return series.datapoints.map(function (datapt) { 
-                    return datapt.value === "NaN" ? 0 : datapt.value; });
+                    return datapt.value === "NaN" ? 0 : +datapt.value; });
             });
             // flatten array and calculate max value
             return Math.max.apply(null, [].concat.apply([], seriesVals));
