@@ -2869,7 +2869,7 @@ if (typeof exports !== 'undefined') {
             result = data.reduce(function (acc, series) {
                 return Math.min(acc, series.datapoints.reduce(function (acc, dp) {
                     // if the value is the string "NaN", ignore this dp
-                    if (dp.value === "NaN") return acc;
+                    if (dp.value === "NaN" || dp.value === null) return acc;
                     if (nonZero && dp.value === 0) return acc;
                     return Math.min(acc, +dp.value);
                 }, minStartValue));
@@ -2889,18 +2889,13 @@ if (typeof exports !== 'undefined') {
          * value of all series datapoints in that response
          */
         calculateResultsMax: function (data) {
-
-            var seriesCalc = function (a, b) {
-                return a + b;
-            };
-
-            return data.reduce(function (acc, series) {
-                return seriesCalc(acc, series.datapoints.reduce(function (acc, dp) {
-                    // if the value is the string "NaN", ignore this dp
-                    if (dp.value === "NaN") return acc;
-                    return Math.max(acc, +dp.value);
-                }, 0));
-            }, 0);
+            // extract array of value arrays
+            var seriesVals = data.map(function (series) {
+                return series.datapoints.map(function (datapt) { 
+                    return datapt.value === "NaN" ? 0 : +datapt.value; });
+            });
+            // flatten array and calculate max value
+            return Math.max.apply(null, [].concat.apply([], seriesVals));
         },
 
         setPreferredYUnit: function (data) {
