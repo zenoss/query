@@ -1661,15 +1661,13 @@
          * Create y domain based on options and calculated data range
          */
         calculateYDomain: function (miny, maxy, data) {
-            // if max is not provided, calcuate max
-            if (maxy === undefined) {
-                maxy = this.calculateResultsMax(data.results);
-            }
+            // use provided max; data max if larger
+            var datamax = this.calculateResultsMax(data.results);
+            maxy = maxy === undefined ? datamax : Math.max(datamax, maxy);
 
-            // if min is not provided, calculate min
-            if (miny === undefined) {
-                miny = this.calculateResultsMin(data.results);
-            }
+            // use provided min; data min if smaller
+            var datamin = this.calculateResultsMin(data.results);
+            miny = miny === undefined ? datamin : Math.min(datamin, miny);
 
             // if min and max are the same, add a bit to
             // max to separate them
