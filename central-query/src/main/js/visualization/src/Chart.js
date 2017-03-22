@@ -565,7 +565,7 @@
             projections.forEach(function (projection) {
                 var i, futureTime, rawProjectedValue, projectedValue
                 // append row spacer
-                var rowKey = projection.key.replace("Projected ", "");
+                var rowKey = projection.key.replace("Projected ", "").split(" - ")[0];
 
                 // forecasting plot data comes in the same order as the graph footer data
                 // we need to keep track of seen row names because duplicate names are possible
