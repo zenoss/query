@@ -1679,7 +1679,7 @@
 
             // if min and max are zero, force a
             // 0,1 domain
-            if (miny + maxy === 0) {
+            if (miny === 0 && maxy === 0) {
                 maxy = 1;
             }
 
