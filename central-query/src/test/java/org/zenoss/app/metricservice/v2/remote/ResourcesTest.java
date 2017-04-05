@@ -44,8 +44,8 @@ public class ResourcesTest extends ResourceTest {
     private static final String URL_PATH = "/api/v2/performance/query";
     private static final String OTSDB_QUERY_PATH = "/api/query";
 
-    MetricServiceAppConfiguration configuration;
-    ZappSecurity security;
+    private MetricServiceAppConfiguration configuration;
+    private ZappSecurity security;
     private Resources qsr;
     private ZenossTenant tenant;
 
@@ -82,8 +82,7 @@ public class ResourcesTest extends ResourceTest {
 
         Map<String, List<String>> _tags = Maps.newHashMap();
         _tags.put("zenoss_tenant_id", Lists.newArrayList("1"));
-        assertEquals(_tags, qsr.addTentanId(null));
-
+        assertEquals(_tags, qsr.addTenantId(null));
     }
 
     @Test
@@ -144,17 +143,16 @@ public class ResourcesTest extends ResourceTest {
     /**
      * posts a metric query and verifies results.  OpenTSDB interaction needs to "mocked" out in infiles
      *
-     * @param expectedResultFile    file that contains the expected json
-     * @param metricRequestFile     file that contains the metric request to make
-     * @param otsdbInteractionFiles File(s) that contains the opentsdb request that is expected to be made and the mock result
-     *                              see OtsdbInteraction class
-     * @throws IOException
-     * @throws JSONException
+     * @param expectedResultFile    File that contains the expected json
+     * @param metricRequestFile     File that contains the metric request to make
+     * @param otsdbInteractionFiles File(s) that contains the opentsdb request that is expected to be made and the mock result.
+     *                              See {@link OtsdbInteraction} class.
+     * @throws IOException          Thrown by CharStreams.toString() and Utils.getObjectMapper()
+     * @throws JSONException        Thrown by JSONCompare
      */
     private void testQuery(String expectedResultFile, String metricRequestFile, String... otsdbInteractionFiles) throws IOException, JSONException {
         InputStream input = this.getClass().getResourceAsStream(expectedResultFile);
         String expectedJSON = CharStreams.toString(new InputStreamReader(input));
-
 
         input = this.getClass().getResourceAsStream(metricRequestFile);
         String metricRequest = CharStreams.toString(new InputStreamReader(input));

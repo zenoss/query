@@ -18,7 +18,6 @@ import org.zenoss.app.metricservice.api.model.Aggregator;
 import org.zenoss.app.metricservice.api.model.RateOptions;
 
 import javax.validation.constraints.NotNull;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +49,9 @@ public class MetricQuery {
 
     @JsonProperty
     private Map<String, List<String>> tags = new HashMap<>();
+
+    @JsonProperty
+    private Map<String, List<String>> filters = new HashMap<>();
 
 
     /**
@@ -154,4 +156,18 @@ public class MetricQuery {
         }
     }
 
+    /**
+     * @return the filters
+     */
+    public final Map<String, List<String>> getFilters() {
+        return filters;
+    }
+
+    public final void setFilters(Map<String, List<String>> filters) {
+        if (null == filters) {
+            this.filters.clear();
+        } else {
+            this.filters = filters;
+        }
+    }
 }
