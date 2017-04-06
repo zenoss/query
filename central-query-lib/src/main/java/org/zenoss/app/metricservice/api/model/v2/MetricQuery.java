@@ -14,6 +14,7 @@ package org.zenoss.app.metricservice.api.model.v2;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.ArrayList;
 import org.zenoss.app.metricservice.api.model.Aggregator;
 import org.zenoss.app.metricservice.api.model.RateOptions;
 
@@ -51,7 +52,7 @@ public class MetricQuery {
     private Map<String, List<String>> tags = new HashMap<>();
 
     @JsonProperty
-    private Map<String, List<String>> filters = new HashMap<>();
+    private List<Filter> filters = new ArrayList<>();
 
 
     /**
@@ -159,11 +160,14 @@ public class MetricQuery {
     /**
      * @return the filters
      */
-    public final Map<String, List<String>> getFilters() {
+    public final List<Filter> getFilters() {
         return filters;
     }
 
-    public final void setFilters(Map<String, List<String>> filters) {
+    /**
+     * @param filters the filters to set
+     */
+    public final void setFilters(List<Filter> filters) {
         if (null == filters) {
             this.filters.clear();
         } else {

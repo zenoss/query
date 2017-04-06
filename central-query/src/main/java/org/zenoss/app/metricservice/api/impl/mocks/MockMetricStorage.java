@@ -183,7 +183,15 @@ public class MockMetricStorage implements MetricStorageAPI {
          * java.lang.String, java.lang.Boolean, java.lang.Boolean, java.util.List)
          */
     @Override
-    public List<OpenTSDBQueryResult> getResponse(MetricServiceAppConfiguration config, String id, String startTime, String endTime, ReturnSet returnset, String downsample, double downsampleMultiplier, Map<String, List<String>> tags, List<MetricSpecification> queries) throws IOException {
+    public List<OpenTSDBQueryResult> getResponse(MetricServiceAppConfiguration config,
+                                                 String id,
+                                                 String startTime,
+                                                 String endTime,
+                                                 ReturnSet returnset,
+                                                 String downsample,
+                                                 double downsampleMultiplier,
+                                                 Map<String, List<String>> tags,
+                                                 List<MetricSpecification> queries) throws IOException {
         return generateData(config, id, startTime, endTime, returnset,
                 downsample, tags, queries);
     }

@@ -92,7 +92,7 @@ public class QueryServiceImpl implements QueryService {
             }
         }
         if (!expressionQueries.isEmpty()) {
-            //group by expression so we can query apply the same expression to all results of a qery
+            //group by expression so we can query apply the same expression to all results of a query
             ImmutableMap<String, Collection<MetricQuery>> grouped = Multimaps.index(expressionQueries, new Function<MetricQuery, String>() {
                 @Nullable
                 @Override
