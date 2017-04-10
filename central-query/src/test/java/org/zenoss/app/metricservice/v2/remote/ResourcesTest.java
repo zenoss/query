@@ -139,6 +139,15 @@ public class ResourcesTest extends ResourceTest {
         testQuery(expectedResultFile, metricRequestFile, otsdbRequestFile);
     }
 
+    @Test
+    public void testFilterQuery() throws IOException, JSONException {
+        String expectedResultFile = "/filterquery/result.json";
+        String metricRequestFile = "/filterquery/request.json";
+        String otsdbInteraction = "/filterquery/otsdbInteraction.json";
+
+        testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
+    }
+
 
     /**
      * posts a metric query and verifies results.  OpenTSDB interaction needs to "mocked" out in infiles
@@ -183,7 +192,6 @@ public class ResourcesTest extends ResourceTest {
             Assert.fail("test for " + metricRequestFile + " failed: " + result.getMessage());
         }
     }
-
 
     private void enableMockAuth() {
         when(configuration.isAuthEnabled()).thenReturn(true);
