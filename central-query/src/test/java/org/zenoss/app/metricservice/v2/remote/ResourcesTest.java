@@ -87,7 +87,6 @@ public class ResourcesTest extends ResourceTest {
 
     @Test
     public void testWildcardQuery() throws IOException, JSONException {
-
         String expectedResultFile = "/wildcardquery/query1Result.json";
         String metricRequestFile = "/wildcardquery/query1Request.json";
 
@@ -99,10 +98,8 @@ public class ResourcesTest extends ResourceTest {
 
     @Test
     public void testSimpleQuery() throws IOException, JSONException {
-
         String expectedResultFile = "/simplequery/result.json";
         String metricRequestFile = "/simplequery/request.json";
-
         String otsdbInteraction = "/simplequery/otsdbInteraction.json";
 
         testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
@@ -110,10 +107,8 @@ public class ResourcesTest extends ResourceTest {
 
     @Test
     public void testLastQuery() throws IOException, JSONException {
-
         String expectedResultFile = "/lastquery/result.json";
         String metricRequestFile = "/lastquery/request.json";
-
         String otsdbInteraction = "/lastquery/otsdbInteraction.json";
 
         testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
@@ -121,10 +116,8 @@ public class ResourcesTest extends ResourceTest {
 
     @Test
     public void testExpressionQuery() throws IOException, JSONException {
-
         String expectedResultFile = "/expressionquery/result.json";
         String metricRequestFile = "/expressionquery/request.json";
-
         String otsdbInteraction = "/expressionquery/otsdbInteraction.json";
 
         testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
