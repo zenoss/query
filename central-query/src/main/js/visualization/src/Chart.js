@@ -30,6 +30,7 @@
     var DEFAULT_NUMBER_FORMAT = "%4.2f";
     var MAX_Y_AXIS_LABEL_LENGTH = 5;
     var DATE_FORMAT = (typeof Zenoss !== "undefined" && Zenoss.USER_DATE_FORMAT) || "MM/DD/YY";
+    var UPDATE_TIMEOUT = 30000;
 
     // data for formatting time ranges
     var TIME_DATA = [
@@ -161,6 +162,9 @@
 
         this.__renderCapacityFooter = config.renderCapacityFooter;
         this.__renderForecastingTimeHorizonFooter = config.renderForecastingTimeHorizonFooter;
+
+        this.maxResult = undefined;
+        this.minResult = undefined;
 
         this.svg = d3.select(this.svgwrapper).append('svg');
         try {
@@ -466,6 +470,14 @@
                                 vals[cur] = v.y;
                             }
                             vals[avg] = vals[avg] / plot.values.length;
+
+                            if (isFinite(this.maxResult[row])) {
+                                vals[max] = this.maxResult[row];
+                            };
+                            if (isFinite(this.minResult[row])) {
+                                vals[min] = this.minResult[row];
+                            };
+
                             for (v = 0; v < vals.length; v += 1) {
                                 $(cols[2 + v]).html(this.formatValue(vals[v], undefined, dp.displayFullValue));
                             }
@@ -658,7 +670,83 @@
             // Fill in the stats table
             this.__updateFooter(data);
         },
+        hasPendingRequests: function(){
+            return this.updatePromise && this.updatePromise.state() == "pending";
+        },
+        cancelUpdate: function() {
+            // cancel ajax request (async req)
+            this.updateRequest.abort();
+            this.cleanupDataReq();
+        },
+        cleanupDataReq: function() {
+            clearTimeout(this.updateTimeout);
+            this.updateTimeout = null;
+        },
 
+        /**
+        * Update this.maxResult array that will be using in building the legend.
+        * @access private
+        * @param {object}
+        *     arr(ay) of max values
+        * return this.maxResult
+        */
+        __updateMaxResult: function (arr) {
+            this.maxResult = arr;
+            return this.maxResult;
+        },
+        /**
+        * Update this.minResult array that will be using in building the legend.
+        * @access private
+        * @param {object}
+        *     arr(ay) of min values
+        * return this.minResult
+        */
+        __updateMinResult: function (arr) {
+            this.minResult = arr;
+            return this.minResult;
+        },
+        /**
+        * Get max values for the period and pass them to the __updateMaxResult
+        * @access private
+        * @param {object}
+        *     data from the maxValueRequest
+        */
+        __maxValues: function (data) {
+            var i, j, maxDataResults, maxValues = [];
+            var maxResult = [];
+            for (i = 0; i < data.results.length; i++) {
+                 maxDataResults = data.results[i].datapoints;
+                 if (maxDataResults !== undefined){
+                     for (j = 0; j < maxDataResults.length; j++) {
+                         maxValues.push(maxDataResults[j].value)
+                      };
+                      maxResult.push(Math.max.apply(null, maxValues));
+                      maxValues = [];
+                 }
+            }
+            this.__updateMaxResult(maxResult);
+        },
+        /**
+        * Get min values for the period and pass them to the __updateMinResult
+        * @access private
+        * @param {object}
+        *     data from the minValueRequest
+        */
+        __minValues: function (data) {
+            var i, j, minDataResults, minValues = [];
+            var minResult = [];
+            for (i = 0; i < data.results.length; i++) {
+                minDataResults = data.results[i].datapoints;
+                if (minDataResults !== undefined){
+                    for (j = 0; j < minDataResults.length; j++) {
+                        minValues.push(minDataResults[j].value)
+                    };
+                    minResult.push(Math.min.apply(null, minValues));
+                    minValues = [];
+                }
+            }
+            this.__updateMinResult(minResult);
+        },
         /**
          * Updates a graph with the changes specified in the given change set. To
          * remove a value from the configuration its value should be set to a
@@ -668,6 +756,10 @@
          *            changeset updates to the existing graph's configuration.
          */
         update: function (changeset) {
+            if(this.hasPendingRequests()){
+                // do nothing, waiting for the results
+                return;
+            }
             var self = this, kill = [], property;
 
             // This function is really meant to only handle given types of changes,
@@ -697,16 +789,45 @@
 
             try {
                 this.request = this.__buildDataRequest(this.config);
-                $.ajax({
+                this.maxRequest = jQuery.extend({}, this.request)
+                if (this.maxRequest.downsample !== null) {
+                    this.maxRequest.downsample = this.maxRequest.downsample.replace("avg", "max");
+                }
+                var maxValueRequest = $.ajax({
+                    'url': visualization.url + visualization.urlPerformance,
+                    'type': 'POST',
+                    'data': JSON.stringify(this.maxRequest),
+                    'dataType': 'json',
+                    'contentType': 'application/json'
+                });
+                this.minRequest = jQuery.extend({}, this.request)
+                if (this.minRequest.downsample !== null) {
+                    this.minRequest.downsample = this.minRequest.downsample.replace("avg", "min");
+                }
+                var minValueRequest = $.ajax({
+                    'url': visualization.url + visualization.urlPerformance,
+                    'type': 'POST',
+                    'data': JSON.stringify(this.minRequest),
+                    'dataType': 'json',
+                    'contentType': 'application/json'
+                });
+                this.updateRequest = $.ajax({
                     'url': visualization.url + visualization.urlPerformance,
                     'type': 'POST',
                     'data': JSON.stringify(this.request),
                     'dataType': 'json',
-                    'contentType': 'application/json',
-                    'success': function (data) {
+                    'contentType': 'application/json'
+                });
+
+                $.when(maxValueRequest, minValueRequest, this.updateRequest)
+                    .then(function(response1, response2, response3) {
+                        var data = response3[0];
+                        self.__maxValues(response1[0]);
+                        self.__minValues(response2[0]);
+
                         self.plots = self.__processResult(self.request, data);
 
-                        // setPreffered y unit (k, G, M, etc)
+                        // setPreferred y unit (k, G, M, etc)
                         self.setPreferredYUnit(data.results);
 
                         /*
@@ -729,8 +850,8 @@
                         if (self.__updateFooter(data)) {
                             self.resize();
                         }
-                        // send a separate request for the projection data since it has a different time span
 
+                        // send a separate request for the projection data since it has a different time span
                         var projectionColors = ["#EBEBEF", "#FDDFE7", "#FCF1C0", "#DAFBEB"], projectionIndex = 0;
                         self.projections.forEach(function (projection) {
                             var projectionRequest = self.__buildProjectionRequest(self.config, self.request, projection);
@@ -776,28 +897,43 @@
                                 }
                             });
                         });
-                    },
-                    'error': function () {
-                        self.plots = undefined;
-
+                    });
+                this.updatePromise = $.when(this.updateRequest)
+                if(this.onUpdate){
+                    // if we have access to the onUpdate function of a graph, send it the ajax request promise
+                    this.onUpdate(this.updatePromise);
+                }
+                // set timeout for update promise
+                this.updateTimeout = setTimeout(this.cancelUpdate.bind(this), UPDATE_TIMEOUT);
+                this.updatePromise.then(function(data){
+                    self.cleanupDataReq();
+                },
+                function (err) {
+                    if(err.statusText == "abort"){
+                        // if the status text reads "abort" we have cancelled a request that took too long
+                        self.__showTimeout();
+                    } else {
                         self.__showNoData();
-                        // upon errors still show the footer
-                        if (self.showLegendOnNoData && self.__hasFooter()) {
-                            // if this is the first request that errored we will need to build
-                            // the table
-                            if (!self.table) {
-                                self.__buildFooter(self.config);
-                            } else {
-                                if (self.__updateFooter()) {
-                                    self.resize();
-                                }
+                    }
+                    self.plots = [];
+                    self.cleanupDataReq();
+
+                    // upon errors still show the footer
+                    if (self.showLegendOnNoData && self.__hasFooter()) {
+                        // if this is the first request that errored we will need to build the table
+                        if (!self.table) {
+                            self.__buildFooter(self.config);
+                        } else {
+                            if (self.__updateFooter()) {
+                                self.resize();
                             }
                         }
                     }
                 });
 
             } catch (x) {
-                this.plots = undefined;
+                // set plots to an empty array so we can append to it later
+                this.plots = [];
                 if (self.__updateFooter()) {
                     self.resize();
                 }
@@ -1406,6 +1542,10 @@
             this.__showMessage('<span class="nodata"></span>');
         },
 
+        __showTimeout: function () {
+            this.__showMessage('<span class="timeout"></span>');
+        },
+
         __hideMessage: function () {
             this.$div.find(".message").css('display', 'none');
         },
@@ -1543,7 +1683,7 @@
 
             // if min and max are zero, force a
             // 0,1 domain
-            if (miny + maxy === 0) {
+            if (miny === 0 && maxy === 0) {
                 maxy = 1;
             }
 
@@ -1564,7 +1704,7 @@
             result = data.reduce(function (acc, series) {
                 return Math.min(acc, series.datapoints.reduce(function (acc, dp) {
                     // if the value is the string "NaN", ignore this dp
-                    if (dp.value === "NaN") return acc;
+                    if (dp.value === "NaN" || dp.value === null) return acc;
                     if (nonZero && dp.value === 0) return acc;
                     return Math.min(acc, +dp.value);
                 }, minStartValue));
@@ -1584,18 +1724,13 @@
          * value of all series datapoints in that response
          */
         calculateResultsMax: function (data) {
-
-            var seriesCalc = function (a, b) {
-                return a + b;
-            };
-
-            return data.reduce(function (acc, series) {
-                return seriesCalc(acc, series.datapoints.reduce(function (acc, dp) {
-                    // if the value is the string "NaN", ignore this dp
-                    if (dp.value === "NaN") return acc;
-                    return Math.max(acc, +dp.value);
-                }, 0));
-            }, 0);
+            // extract array of value arrays
+            var seriesVals = data.map(function (series) {
+                return series.datapoints.map(function (datapt) { 
+                    return datapt.value === "NaN" ? 0 : +datapt.value; });
+            });
+            // flatten array and calculate max value
+            return Math.max.apply(null, [].concat.apply([], seriesVals));
         },
 
         setPreferredYUnit: function (data) {
