@@ -1,5 +1,7 @@
 package org.zenoss.app.metricservice.api.impl;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
@@ -10,7 +12,11 @@ public class OpenTSDBFilter {
     private String filter = null;
     private Boolean groupBy = false;
 
-    public OpenTSDBFilter(String type, String tagk, String filter, Boolean groupBy) {
+    @JsonCreator
+    public OpenTSDBFilter(@JsonProperty("type") String type,
+                          @JsonProperty("tagk") String tagk,
+                          @JsonProperty("filter") String filter,
+                          @JsonProperty("groupBy") Boolean groupBy) {
         this.type = type;
         this.tagk = tagk;
         this.filter = filter;

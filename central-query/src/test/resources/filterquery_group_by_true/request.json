@@ -1,0 +1,18 @@
+{
+    "start": "1491844709",
+    "end": "1491845299",
+    "queries": [
+        {
+            "aggregator": "sum",
+            "metric": "cpu.system",
+            "filters": [
+                {
+                    "type": "wildcard",
+                    "tagk": "controlplane_host_id",
+                    "filter": "*",
+                    "groupBy": true
+                }
+            ]
+        }
+    ]
+}

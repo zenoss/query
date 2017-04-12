@@ -1,5 +1,6 @@
 package org.zenoss.app.metricservice.api.model.v2;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.validation.constraints.NotNull;
 
@@ -25,6 +26,17 @@ public class Filter {
     @JsonProperty
     @NotNull
     private Boolean groupBy = false;
+
+    @JsonCreator
+    public Filter(@JsonProperty("type") String type,
+                  @JsonProperty("tagk") String tagk,
+                  @JsonProperty("filter") String filter,
+                  @JsonProperty("groupBy") Boolean groupBy) {
+        this.type = type;
+        this.tagk = tagk;
+        this.filter = filter;
+        this.groupBy = groupBy;
+    }
 
     public String getType() {
         return type;

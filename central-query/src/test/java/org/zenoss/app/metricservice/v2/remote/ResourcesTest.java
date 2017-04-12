@@ -1,6 +1,8 @@
 package org.zenoss.app.metricservice.v2.remote;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -40,6 +42,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class ResourcesTest extends ResourceTest {
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final int MOCK_PORT = 4242;
     private static final String URL_PATH = "/api/v2/performance/query";
     private static final String OTSDB_QUERY_PATH = "/api/query";
@@ -51,7 +54,6 @@ public class ResourcesTest extends ResourceTest {
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(MOCK_PORT);
-
 
     @Override
     protected void setUpResources() throws Exception {
@@ -133,14 +135,31 @@ public class ResourcesTest extends ResourceTest {
     }
 
     @Test
-    public void testFilterQuery() throws IOException, JSONException {
-        String expectedResultFile = "/filterquery/result.json";
-        String metricRequestFile = "/filterquery/request.json";
-        String otsdbInteraction = "/filterquery/otsdbInteraction.json";
+    public void testFilterQueryIgnoresTagsIfFiltersPresent() throws IOException, JSONException {
+        String expectedResultFile = "/filterquery_ignores_tags/result.json";
+        String metricRequestFile = "/filterquery_ignores_tags/request.json";
+        String otsdbInteraction = "/filterquery_ignores_tags/otsdbInteraction.json";
 
         testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
     }
 
+    @Test
+    public void testFilterQueryWithGroupByFalse() throws IOException, JSONException {
+        String expectedResultFile = "/filterquery_group_by_false/result.json";
+        String metricRequestFile = "/filterquery_group_by_false/request.json";
+        String otsdbInteraction = "/filterquery_group_by_false/otsdbInteraction.json";
+
+        testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
+    }
+
+    @Test
+    public void testFilterQueryWithGroupByTrue() throws IOException, JSONException {
+        String expectedResultFile = "/filterquery_group_by_true/result.json";
+        String metricRequestFile = "/filterquery_group_by_true/request.json";
+        String otsdbInteraction = "/filterquery_group_by_true/otsdbInteraction.json";
+
+        testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
+    }
 
     /**
      * posts a metric query and verifies results.  OpenTSDB interaction needs to "mocked" out in infiles
@@ -174,16 +193,13 @@ public class ResourcesTest extends ResourceTest {
                             .withBody(otsdbResponse)));
 
         }
+
         String qr = client().resource(URL_PATH)
                 .type(MediaType.APPLICATION_JSON_TYPE)
                 .post(String.class, metricRequest);
 
         assertNotNull(qr);
-
-        JSONCompareResult result = JSONCompare.compareJSON(expectedJSON, qr, JSONCompareMode.NON_EXTENSIBLE);
-        if (!result.passed()) {
-            Assert.fail("test for " + metricRequestFile + " failed: " + result.getMessage());
-        }
+        assertJsonEquals(expectedJSON, qr);
     }
 
     private void enableMockAuth() {
@@ -205,5 +221,13 @@ public class ResourcesTest extends ResourceTest {
         OpenTSDBQuery request;
         @JsonProperty
         List<OpenTSDBQueryResult> response;
+    }
+
+    private static void assertJsonEquals(String expectedJson, String actualJson) throws IOException {
+        // this json comparison method will provide information on expected and actual values
+        // if the respective JsonNodes are not equal.
+        JsonNode expectedNode = MAPPER.readTree(expectedJson);
+        JsonNode actualNode = MAPPER.readTree(actualJson);
+        assertEquals(expectedNode, actualNode);
     }
 }
