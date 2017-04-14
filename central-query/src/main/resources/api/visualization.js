@@ -2058,7 +2058,9 @@ if (typeof exports !== 'undefined') {
             try {
                 this.request = this.__buildDataRequest(this.config);
                 this.maxRequest = jQuery.extend({}, this.request)
-                this.maxRequest.downsample = this.maxRequest.downsample.replace("avg", "max");
+                if (this.maxRequest.downsample !== null) {
+                    this.maxRequest.downsample = this.maxRequest.downsample.replace("avg", "max");
+                }
                 var maxValueRequest = $.ajax({
                     'url': visualization.url + visualization.urlPerformance,
                     'type': 'POST',
@@ -2067,7 +2069,9 @@ if (typeof exports !== 'undefined') {
                     'contentType': 'application/json'
                 });
                 this.minRequest = jQuery.extend({}, this.request)
-                this.minRequest.downsample = this.minRequest.downsample.replace("avg", "min");
+                if (this.minRequest.downsample !== null) {
+                    this.minRequest.downsample = this.minRequest.downsample.replace("avg", "min");
+                }
                 var minValueRequest = $.ajax({
                     'url': visualization.url + visualization.urlPerformance,
                     'type': 'POST',
@@ -2947,7 +2951,7 @@ if (typeof exports !== 'undefined') {
 
             // if min and max are zero, force a
             // 0,1 domain
-            if (miny + maxy === 0) {
+            if (miny === 0 && maxy === 0) {
                 maxy = 1;
             }
 
