@@ -51,6 +51,9 @@ public class MetricQuery {
     @JsonProperty
     private Map<String, List<String>> tags = new HashMap<>();
 
+    @JsonProperty
+    private List<Filter> filters = new ArrayList<>();
+
 
     /**
      * @return the expression
@@ -154,4 +157,21 @@ public class MetricQuery {
         }
     }
 
+    /**
+     * @return the filters
+     */
+    public final List<Filter> getFilters() {
+        return filters;
+    }
+
+    /**
+     * @param filters the filters to set
+     */
+    public final void setFilters(List<Filter> filters) {
+        if (null == filters) {
+            this.filters.clear();
+        } else {
+            this.filters = filters;
+        }
+    }
 }

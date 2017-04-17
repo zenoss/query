@@ -47,6 +47,7 @@ import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.configs.MetricServiceConfig;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
+import org.zenoss.app.metricservice.api.model.v2.Filter;
 import org.zenoss.app.metricservice.api.model.v2.MetricQuery;
 import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
 
@@ -164,15 +165,33 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
             metricName = metricName.replace(" ", SPACE_REPLACEMENT);
             result.metric = metricName;
 
-
             result.rate = mq.getRate();
             result.rateOptions = new OpenTSDBRateOption(mq.getRateOptions());
-            Map<String, List<String>> tags = mq.getTags();
-            if (null != tags) {
-                for (Map.Entry<String, List<String>> tagEntry : tags.entrySet()) {
-                    for (String tagValue : tagEntry.getValue()) {
-                        //apply metric-consumer sanitization to tags in query
-                        result.addTag(Tags.sanitizeKey(tagEntry.getKey()), Tags.sanitizeValue(tagValue, allowWildCard));
+
+            // Filters are new in OpenTSDB 2.2.  They now take precedence over tags.
+            // If filters exist in the provided MetricQuery we process them and
+            // ignore any tags.  Otherwise we process the tags.
+            List<Filter> filters = mq.getFilters();
+            if (null != filters && !filters.isEmpty()) {
+                for(Filter filter : filters) {
+                    result.addFilter(
+                        new OpenTSDBFilter(
+                            filter.getType(),
+                            Tags.sanitizeKey(filter.getTagk()),
+                            filter.getFilter(),
+                            filter.getGroupBy()
+                        )
+                    );
+                }
+            }
+            else {
+                Map<String, List<String>> tags = mq.getTags();
+                if (null != tags) {
+                    for (Map.Entry<String, List<String>> tagEntry : tags.entrySet()) {
+                        for (String tagValue : tagEntry.getValue()) {
+                            //apply metric-consumer sanitization to tags in query
+                            result.addTag(Tags.sanitizeKey(tagEntry.getKey()), Tags.sanitizeValue(tagValue, allowWildCard));
+                        }
                     }
                 }
             }

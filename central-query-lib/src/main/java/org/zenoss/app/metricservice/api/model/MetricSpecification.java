@@ -82,6 +82,9 @@ public class MetricSpecification {
     private Map<String, List<String>> tags = new HashMap<>();
 
     @JsonProperty
+    private Map<String, List<String>> filters = new HashMap<>();
+
+    @JsonProperty
     private boolean emit = true;
 
     /**
@@ -255,6 +258,51 @@ public class MetricSpecification {
         }
     }
 
+    /**
+     * @return the filters
+     */
+    public final Map<String, List<String>> getFilters() {
+        if (null == filters) {
+            initializeFilters();
+        }
+        return filters;
+    }
+
+    private void initializeFilters() {
+        filters = new HashMap<>();
+    }
+
+    /**
+     * @param filters
+     *            the filters to set
+     */
+    public final void setFilters(Map<String, List<String>> filters) {
+        if (null == filters) {
+            initializeFilters();
+        } else {
+            this.filters = filters;
+        }
+    }
+
+    /**
+     * @param newFilters
+     *            the filters to merge with the existing filters.
+     */
+    public final void mergeFilters(Map<String, List<String>> newFilters) {
+        if (null == newFilters) {
+            return;
+        }
+
+        for (Map.Entry<String, List<String>> filterEntry : newFilters.entrySet()) {
+            if (filters.containsKey(filterEntry.getKey())) {
+                List<String> filterList = filters.get(filterEntry.getKey());
+                filterList.addAll(filterEntry.getValue());
+            } else {
+                filters.put(filterEntry.getKey(), filterEntry.getValue());
+            }
+        }
+    }
+
     public String getMetricOrName() {
         if (metric != null) {
             return metric;
@@ -268,7 +316,6 @@ public class MetricSpecification {
         }
         return metric;
     }
-
 
     public boolean getEmit() {
         return emit;
