@@ -1,0 +1,23 @@
+{
+  "start": "1491845159",
+  "end": "1491845749",
+  "queries": [
+    {
+      "aggregator": "sum",
+      "metric": "cpu.system",
+      "tags": {
+        "isvcname": [
+          "elasticsearch-serviced"
+        ]
+      },
+      "filters": [
+        {
+          "type": "wildcard",
+          "tagk": "controlplane_host_id",
+          "filter": "*",
+          "groupBy": false
+        }
+      ]
+    }
+  ]
+}

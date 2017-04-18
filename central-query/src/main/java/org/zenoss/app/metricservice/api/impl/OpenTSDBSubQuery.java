@@ -1,5 +1,7 @@
 package org.zenoss.app.metricservice.api.impl;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.zenoss.app.metricservice.api.model.Aggregator;
 
 import java.util.HashMap;
@@ -12,6 +14,7 @@ public class OpenTSDBSubQuery {
     public OpenTSDBRateOption rateOptions = null;
     public String downsample = null;
     public Map<String, String> tags = null;
+    public List<OpenTSDBFilter> filters = null;
 
     public void addTag(String key, String value) {
         if (null == tags) {
@@ -25,6 +28,20 @@ public class OpenTSDBSubQuery {
         newValue.append(value);
 
         tags.put(key, newValue.toString());
+    }
+
+    public void setFilters(List<OpenTSDBFilter> filters) {
+        this.filters = filters;
+    }
+
+    public void addFilter(OpenTSDBFilter filter) {
+        if (null == filters) {
+            filters = new ArrayList<>();
+        }
+
+        if(!filters.contains(filter)) {
+            filters.add(filter);
+        }
     }
 }
 

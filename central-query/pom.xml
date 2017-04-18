@@ -7,7 +7,7 @@
         <relativePath>../pom.xml</relativePath>
         <groupId>org.zenoss</groupId>
         <artifactId>central-query-parent</artifactId>
-        <version>0.1.19</version>
+        <version>0.1.20</version>
     </parent>
 
     <properties>
@@ -104,6 +104,11 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>2.1.4</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <version>2.6</version>
         </dependency>
     </dependencies>
 

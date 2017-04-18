@@ -77,7 +77,7 @@ public class MetricRequest {
     }
 
     /**
-	 * @return the resturnset
+	 * @return the returnset
 	 */
 	public ReturnSet getReturnset() {
 		return returnset;

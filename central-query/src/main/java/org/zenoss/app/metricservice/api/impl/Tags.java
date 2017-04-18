@@ -75,7 +75,7 @@ public class Tags {
     }
 
     /**
-     * Constructs a Tags representation from a string representation of of a
+     * Constructs a Tags representation from a string representation of a
      * tags list. Useful when dealing with the results from OpenTSDB.
      *
      * @param value string representation of a tags list

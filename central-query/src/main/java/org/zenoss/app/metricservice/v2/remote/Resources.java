@@ -64,7 +64,7 @@ public class Resources {
     public QueryResult query(@Valid MetricRequest metricRequest) {
 
         for (MetricQuery mq : metricRequest.getQueries()) {
-            Map<String, List<String>> tags = addTentanId(mq.getTags());
+            Map<String, List<String>> tags = addTenantId(mq.getTags());
             mq.setTags(tags);
         }
         QueryResult result = api.query(metricRequest);
@@ -79,7 +79,7 @@ public class Resources {
         return tenant.id();
     }
 
-    Map<String, List<String>> addTentanId(Map<String, List<String>> tags) {
+    Map<String, List<String>> addTenantId(Map<String, List<String>> tags) {
         if (tags == null) {
             tags = Maps.newHashMap();
         }
