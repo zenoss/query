@@ -1627,6 +1627,123 @@ if (typeof exports !== 'undefined') {
             return undefined;
         },
 
+        __redrawLowerLegend: function() {
+            // Set the CSS based on the disabled property for the legend boxes.
+            var rows, ll, cols, box, color, plot;
+            rows = $(this.table).find('tr.zenfooter_value_row');
+            ll = this.plots.length;
+            for (i = 0; i < ll; i += 1) {
+                cols = $(rows[i]).find('td');
+                box = $(cols[0]).find('div.zenfooter_box');
+                if (this.impl) {
+                    color = this.impl.color(this, this.closure, i);
+                } else {
+                    // unable to determine color
+                    color = {
+                        color: "white",
+                        opacity: 1
+                    };
+                }
+                plot = this.plots[i];
+                if (plot.color) {
+                    color.color = plot.color;
+                }
+                box.css('background-color', plot.disabled ? '#FFFFFF' : color.color);
+                box.css('opacity', color.opacity);
+            }
+
+            // Refresh the graph.
+            this.impl.resize(this);
+        },
+
+        /**
+         * Called when a lower Legend on the graph is clicked.
+         */
+        __lowerLegendClicked: function (dp) {
+            // Get the associated plot and toggle the enabled flag.
+            var plot = this.__getAssociatedPlot(dp);
+            plot.disabled = !plot.disabled;
+
+            // If all elements are disabled, enable them all.
+            if (this.plots.every(function(p) { return p.disabled; })) {
+                this.plots.forEach(function(p) { p.disabled = false; });
+            }
+
+            this.__redrawLowerLegend();
+        },
+
+        /**
+         * Called when a lower Legend on the graph is double-clicked.
+         */
+        __lowerLegendDblClicked: function(dp) {
+            // Double click on a datapoint causes it to be enabled
+            // and all others to be disabled.
+            var plot = this.__getAssociatedPlot(dp);
+            this.plots.forEach(function(p) {
+                p.disabled = (p !== plot);
+            });
+
+            this.__redrawLowerLegend();
+        },
+
+        /**
+         * Called when the mouse hovers over a lower Legend item.
+         */
+        __lowerLegendMouseOver: function(dp) {
+            var d = this.__getAssociatedPlot(dp);
+            var key = d.key;
+
+            this.svg.selectAll('.nv-group').style('opacity', function(d) {
+                if (d.key === key) {
+                    return 1;
+                }
+                return 0.15;
+            });
+            this.svg.selectAll('.nv-group').style('stroke-width', function(d) {
+                if (d.key === key) {
+                    return 4;
+                }
+                return 1.5;
+            });
+        },
+
+        /**
+         * Called when the mouse leaves a lower Legend item.
+         */
+        __lowerLegendMouseOut: function() {
+            /**
+            * Restore the opacity/stroke-width from the mouseover for all series.
+            */
+            this.svg.selectAll('.nv-group').style('opacity', 1);
+            this.svg.selectAll('.nv-group').style('stroke-width', 1.5);
+        },
+
+        /**
+         * Add the events to the table row.
+         */
+        __setLegendEvents: function(tr, dp) {
+            (function(chart) {
+                tr.addEventListener('click', function() {
+                    chart.__lowerLegendClicked(dp);
+                }, false);
+                tr.addEventListener('dblclick', function() {
+                    chart.__lowerLegendDblClicked(dp);
+                }, false);
+                tr.addEventListener('mouseover', function() {
+                    chart.__lowerLegendMouseOver(dp);
+                }, false);
+                tr.addEventListener('mouseout', function() {
+                    chart.__lowerLegendMouseOut(dp);
+                }, false);
+                // Prevent highlighting on the double-click event.
+                tr.addEventListener('mousedown', function (event) {
+                    if (event.detail > 1) {
+                        event.preventDefault();
+                    }
+                }, false);
+            })(this);
+        },
+
         /**
          * Updates the chart footer based on updated data. This includes adding or
          * removing footer rows as well as filling in colors and data.
@@ -1671,8 +1788,10 @@ if (typeof exports !== 'undefined') {
                     if (!this.__isOverlay(dp.legend || dp.metric) &&
                         (dp.emit === undefined || dp.emit)) {
                         if (row >= rows.length) {
-                            rows.push(this.__appendFooterRow());
+                            var tr = this.__appendFooterRow();
+                            rows.push(tr);
                             resize = true;
+                            this.__setLegendEvents(tr[0], dp);
                         }
 
                         // The first column is the color, the second is the metric
@@ -1696,6 +1815,8 @@ if (typeof exports !== 'undefined') {
                         }
                         box = $(cols[0]).find('div.zenfooter_box');
                         box.css('background-color', color.color);
+                        box.css('border-color', color.color);
+                        box.css('border-width', '1.5px');
                         box.css('opacity', color.opacity);
 
                         // Metric name
@@ -1755,7 +1876,7 @@ if (typeof exports !== 'undefined') {
                 }
             }
 
-            // Extra rows exit in the table and need to be remove
+            // Extra rows exist in the table and need to be remove
             if (row < rows.length - 1) {
                 for (i = rows.length - 1; i >= row; i -= 1) {
                     rows[i].remove();
