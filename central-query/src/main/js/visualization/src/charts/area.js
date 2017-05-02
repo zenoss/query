@@ -90,6 +90,7 @@
             model.useInteractiveGuideline(true);
             model.showControls(false);
             model.duration(0);
+            model.showLegend(!chart.config.supressLegend);
 
             model.interactiveLayer.tooltip.keyFormatter(function(d) {
                 var maxLength = 35;

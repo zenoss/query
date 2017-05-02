@@ -131,6 +131,7 @@
         // Build up a map of metric name to legend label.
         this.__buildPlotInfo();
 
+        // Thresholds
         this.overlays = config.overlays || [];
         this.overlays.sort(utils.compareASC('legend'));
 
@@ -322,7 +323,7 @@
             $(td).addClass('zenfooter_box_column');
             d = document.createElement('div');
             $(d).addClass('zenfooter_box');
-            $(d).css('backgroundColor', 'white');
+            $(d).css('backgroundColor', 'transparent');
             $(td).append($(d));
             $(tr).append($(td));
 
@@ -485,7 +486,7 @@
          *         chart, else false.
          */
         __updateFooter: function (data) {
-            var sta, eta, plot, dp, vals, cur, min, max, avg, cols, init, label, ll, i, v, vIdx, k, rows, row, box, color, resize = false,
+            var sta, eta, plot, dp, vals, cur, min, max, avg, cols, init, label, ll, i, v, vIdx, k, rows, row, trow, box, color, resize = false,
                 timezone = this.timezone;
             if (!this.table) {
                 return false;
@@ -537,7 +538,7 @@
                         } else {
                             // unable to determine color
                             color = {
-                                color: "white",
+                                color: "transparent",
                                 opacity: 1
                             };
                         }
@@ -608,12 +609,55 @@
                 }
             }
 
-            // Extra rows exist in the table and need to be remove
-            if (row < rows.length - 1) {
-                for (i = rows.length - 1; i >= row; i -= 1) {
-                    rows[i].remove();
+            // remove any extra rows
+            if (row < rows.length) {
+                // includes overlay header row
+                for (i = rows.length-1; i >= row-1; i--) {
+                    rows.splice(-1,1);
+                    $(this.table).find("tr:last").remove();
                 }
                 resize = true;
+            }
+
+            // Add thresholds
+            if (this.config.overlays && this.config.overlays.length) {
+                // One row for the stats table header
+                var tr = document.createElement('tr');
+                $(tr).addClass("zenfooter_tablerow_header");
+                tr.innerHTML = '<th class="footer_header zenfooter_box_column"></th>' +
+                    '<th class="footer_header zenfooter_data_text" colspan="5">Thresholds</th>';
+                $(this.table).append($(tr));
+                rows.push($(tr));
+
+                for (i in this.config.overlays) {
+                    dp = this.config.overlays[i];
+                    row = rows.length;
+                    rows.push(this.__appendFooterRow());
+                    cols = $(rows[row]).find('td');
+
+                    // footer color
+                    if (dp.color) {
+                        color.color = dp.color;
+                    } else if (this.impl) {
+                        color = this.impl.color(this, this.closure, i);
+                    } else {
+                        // unable to determine color
+                        color = {
+                            color: "transparent",
+                            opacity: 1
+                        };
+                    }
+
+                    box = $(cols[0]).find('div.zenfooter_box');
+                    box.css('background-color', color.color);
+                    box.css('border-color', color.color);
+                    box.css('border-width', '1.5px');
+                    box.css('opacity', color.opacity);
+
+                    // Threshold name
+                    label = dp.legend + '*';
+                    $(cols[1]).html(label).addClass('zenfooter_threshold');
+                }
             }
 
             if (this.__renderCapacityFooter !== undefined) {
@@ -779,6 +823,7 @@
 
                 // One row for the stats table header
                 tr = document.createElement('tr');
+                $(tr).addClass("zenfooter_tablerow_header");
                 tr.innerHTML = '<th class="footer_header zenfooter_box_column"></th>' +
                     '<th class="footer_header zenfooter_data_text">Metric</th>' +
                     '<th class="footer_header zenfooter_data_number">Last</th>' +
