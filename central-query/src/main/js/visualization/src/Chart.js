@@ -632,7 +632,12 @@
                 for (i = 0; i < this.config.overlays.length; i++) {
                     dp = this.config.overlays[i];
                     row = rows.length;
-                    rows.push(this.__appendFooterRow());
+
+                    tr = this.__appendFooterRow();
+                    rows.push(tr);
+                    resize = true;
+                    this.__setLegendEvents(tr[0], dp);
+
                     cols = $(rows[row]).find('td');
 
                     // footer color
