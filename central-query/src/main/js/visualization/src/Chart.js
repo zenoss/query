@@ -239,7 +239,7 @@
             var i, info, dp, nameOrMetric, key;
             var plotInfo = {};
 
-            for (i in this.config.datapoints) {
+            for (i = 0; i < this.config.datapoints.length; i++) {
                 dp = this.config.datapoints[i];
                 key = utils.shortId();
                 dp.id = key;
@@ -486,8 +486,8 @@
          *         chart, else false.
          */
         __updateFooter: function (data) {
-            var sta, eta, plot, dp, vals, cur, min, max, avg, cols, init, label, ll, i, v, vIdx, k, rows, row, trow, box, color, resize = false,
-                timezone = this.timezone;
+            var sta, eta, plot, dp, vals, cur, min, max, avg, cols, init, label, ll, i, v, vIdx, k, rows, row, box, color, resize = false,
+                timezone = this.timezone, tr;
             if (!this.table) {
                 return false;
             }
@@ -515,13 +515,13 @@
             ll = this.config.datapoints.length;
             row = 0;
             if (!this.__footerRangeOnly()) {
-                for (i in this.config.datapoints) {
+                for (i = 0; i < this.config.datapoints.length; i++) {
                     dp = this.config.datapoints[i];
                     plot = this.__getAssociatedPlot(dp);
                     if (!this.__isOverlay(dp.legend || dp.metric) &&
                         (dp.emit === undefined || dp.emit)) {
                         if (row >= rows.length) {
-                            var tr = this.__appendFooterRow();
+                            tr = this.__appendFooterRow();
                             rows.push(tr);
                             resize = true;
                             this.__setLegendEvents(tr[0], dp);
@@ -574,7 +574,7 @@
                             avg = 3;
                             init = false;
 
-                            for (vIdx in plot.values) {
+                            for (vIdx = 0; vIdx < plot.values.length; vIdx++) {
                                 v = plot.values[vIdx];
                                 // don't attempt to calculate nulls
                                 if (v.y === null) {
@@ -595,10 +595,10 @@
 
                             if (isFinite(this.maxResult[row])) {
                                 vals[max] = this.maxResult[row];
-                            };
+                            }
                             if (isFinite(this.minResult[row])) {
                                 vals[min] = this.minResult[row];
-                            };
+                            }
 
                             for (v = 0; v < vals.length; v += 1) {
                                 $(cols[2 + v]).html(this.formatValue(vals[v], undefined, dp.displayFullValue));
@@ -622,14 +622,14 @@
             // Add thresholds
             if (this.config.overlays && this.config.overlays.length) {
                 // One row for the stats table header
-                var tr = document.createElement('tr');
+                tr = document.createElement('tr');
                 $(tr).addClass("zenfooter_tablerow_header");
                 tr.innerHTML = '<th class="footer_header zenfooter_box_column"></th>' +
                     '<th class="footer_header zenfooter_data_text" colspan="5">Thresholds</th>';
                 $(this.table).append($(tr));
                 rows.push($(tr));
 
-                for (i in this.config.overlays) {
+                for (i = 0; i < this.config.overlays.length; i++) {
                     dp = this.config.overlays[i];
                     row = rows.length;
                     rows.push(this.__appendFooterRow());
@@ -728,14 +728,14 @@
             // append column data
             var duplicateRowKeys = {};
             projections.forEach(function (projection) {
-                var i, futureTime, rawProjectedValue, projectedValue
+                var i, futureTime, rawProjectedValue, projectedValue;
                 // append row spacer
                 var rowKey = projection.key.replace("Projected ", "").split(" - ")[0];
 
                 // forecasting plot data comes in the same order as the graph footer data
                 // we need to keep track of seen row names because duplicate names are possible
                 // in that case, we rely on the order that we've seen the data
-                if(duplicateRowKeys[rowKey] != undefined) {
+                if(duplicateRowKeys[rowKey] !== undefined) {
                     duplicateRowKeys[rowKey]++;
                 }else{
                     duplicateRowKeys[rowKey] = 0;
@@ -749,9 +749,9 @@
                 }));
 
                 for (i = 0; i < futureTimes.length; i++) {
-                    var futureTime = moment().add(futureTimes[i], 'days'),
-                        rawProjectedValue = Number(projection.projectionFn(futureTime.unix()).toFixed(2)),
-                        projectedValue = (rawProjectedValue > 0) ? this.formatValue(rawProjectedValue) : 0;
+                    futureTime = moment().add(futureTimes[i], 'days');
+                    rawProjectedValue = Number(projection.projectionFn(futureTime.unix()).toFixed(2));
+                    projectedValue = rawProjectedValue > 0 ? this.formatValue(rawProjectedValue) : 0;
 
                     var projectionColumn = $("<td/>", {
                         text: projectedValue,
@@ -801,7 +801,7 @@
          *            the data to be charted
          */
         __buildFooter: function (config, data) {
-            var tr, td, dates, th;
+            var tr, td, dates;
             this.table = document.createElement('table');
             $(this.table).addClass('zenfooter_content');
             $(this.table).addClass('zenfooter_text');
@@ -884,8 +884,8 @@
                  maxDataResults = data.results[i].datapoints;
                  if (maxDataResults !== undefined){
                      for (j = 0; j < maxDataResults.length; j++) {
-                         maxValues.push(maxDataResults[j].value)
-                      };
+                         maxValues.push(maxDataResults[j].value);
+                      }
                       maxResult.push(Math.max.apply(null, maxValues));
                       maxValues = [];
                  }
@@ -905,8 +905,8 @@
                 minDataResults = data.results[i].datapoints;
                 if (minDataResults !== undefined){
                     for (j = 0; j < minDataResults.length; j++) {
-                        minValues.push(minDataResults[j].value)
-                    };
+                        minValues.push(minDataResults[j].value);
+                    }
                     minResult.push(Math.min.apply(null, minValues));
                     minValues = [];
                 }
@@ -955,7 +955,7 @@
 
             try {
                 this.request = this.__buildDataRequest(this.config);
-                this.maxRequest = jQuery.extend({}, this.request)
+                this.maxRequest = jQuery.extend({}, this.request);
                 if (this.maxRequest.downsample !== null) {
                     this.maxRequest.downsample = this.maxRequest.downsample.replace("avg", "max");
                 }
@@ -966,7 +966,7 @@
                     'dataType': 'json',
                     'contentType': 'application/json'
                 });
-                this.minRequest = jQuery.extend({}, this.request)
+                this.minRequest = jQuery.extend({}, this.request);
                 if (this.minRequest.downsample !== null) {
                     this.minRequest.downsample = this.minRequest.downsample.replace("avg", "min");
                 }
@@ -1064,14 +1064,14 @@
                             });
                         });
                     });
-                this.updatePromise = $.when(this.updateRequest)
+                this.updatePromise = $.when(this.updateRequest);
                 if(this.onUpdate){
                     // if we have access to the onUpdate function of a graph, send it the ajax request promise
                     this.onUpdate(this.updatePromise);
                 }
                 // set timeout for update promise
                 this.updateTimeout = setTimeout(this.cancelUpdate.bind(this), UPDATE_TIMEOUT);
-                this.updatePromise.then(function(data){
+                this.updatePromise.then(function(){
                     self.cleanupDataReq();
                 },
                 function (err) {
@@ -1144,18 +1144,18 @@
             var regression = [],
                 downsample = this.request.downsample,
                 config = this.config,
-                i, y, skipThisPoint = false,
+                y, skipThisPoint = false,
                 step = this.__convertDownsampletoStep(downsample), t = start;
             while (t < end) {
                 y = projectionFn(t);
                 // make sure it is always visible in the graph (does not go below miny)
-                if (config.miny !== undefined && config.miny != null && y <= config.miny) {
+                if (config.miny !== undefined && config.miny !== null && y <= config.miny) {
                     y = config.miny;
                     skipThisPoint = true;
                 }
 
                 // make sure it doesn't go above maxy
-                if (config.maxy !== undefined && config.maxy != null && y >= config.maxy) {
+                if (config.maxy !== undefined && config.maxy !== null && y >= config.maxy) {
                     y = config.maxy;
                     skipThisPoint = true;
                 }
@@ -1187,10 +1187,10 @@
         createRegressionFunction: function (projection, values) {
             // get the implementation based on the projection "type" (or projectionAlgorithm property)
             var xValues = $.map(values, function (o) {
-                    return o["timestamp"];
+                    return o.timestamp;
                 }),
                 yValues = $.map(values, function (o) {
-                    return o["value"];
+                    return o.value;
                 });
 
             return zenoss.visualization.projections[projection.projectionAlgorithm](projection, xValues, yValues);
@@ -1437,7 +1437,7 @@
 
             data.results.forEach(function (series) {
 
-                var dp, info, key, plot;
+                var info, key, plot;
 
                 // if series.datapoints is not defined, or there are no points
                 if (!series.datapoints || (series.datapoints && !series.datapoints.length)) {
@@ -1718,8 +1718,8 @@
 
         __showMessage: function (message) {
             // cache some commonly used selectors
-            var $message = this.$div.find(".message"),
-                $messageSpan = $message.find("span");
+            var $message = this.$div.find(".message");
+            //var $messageSpan = $message.find("span");
 
             if (message) {
                 $message.html(message);
