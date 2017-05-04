@@ -1634,7 +1634,7 @@ if (typeof exports !== 'undefined') {
             var rows, ll, cols, box, color, plot;
             rows = $(this.table).find('tr.zenfooter_value_row');
             ll = this.plots.length;
-            for (i = 0; i < ll; i += 1) {
+            for (var i = 0; i < ll; i++) {
                 cols = $(rows[i]).find('td');
                 box = $(cols[0]).find('div.zenfooter_box');
                 if (this.impl) {
@@ -1697,9 +1697,10 @@ if (typeof exports !== 'undefined') {
         /**
          * Called when the mouse hovers over a lower Legend item.
          */
-        __lowerLegendMouseOver: function(dp) {
+        __lowerLegendMouseOver: function(evt, dp) {
             var plot = this.__getAssociatedPlot(dp);
 
+            evt.currentTarget.style.setProperty('background-color', '#DDD');
             this.svg.selectAll('.nv-group').style('opacity', function(d) {
                 if (d === plot) {
                     return 1;
@@ -1717,10 +1718,11 @@ if (typeof exports !== 'undefined') {
         /**
          * Called when the mouse leaves a lower Legend item.
          */
-        __lowerLegendMouseOut: function() {
+        __lowerLegendMouseOut: function(evt) {
             /**
             * Restore the opacity/stroke-width from the mouseover for all series.
             */
+            evt.currentTarget.style.setProperty('background-color', 'transparent');
             this.svg.selectAll('.nv-group').style('opacity', 1);
             this.svg.selectAll('.nv-group').style('stroke-width', 1.5);
         },
@@ -1736,11 +1738,11 @@ if (typeof exports !== 'undefined') {
                 tr.addEventListener('dblclick', function() {
                     chart.__lowerLegendDblClicked(dp);
                 }, false);
-                tr.addEventListener('mouseover', function() {
-                    chart.__lowerLegendMouseOver(dp);
+                tr.addEventListener('mouseover', function(evt) {
+                    chart.__lowerLegendMouseOver(evt, dp);
                 }, false);
-                tr.addEventListener('mouseout', function() {
-                    chart.__lowerLegendMouseOut(dp);
+                tr.addEventListener('mouseout', function(evt) {
+                    chart.__lowerLegendMouseOut(evt);
                 }, false);
                 // Prevent highlighting on the double-click event.
                 tr.addEventListener('mousedown', function (event) {
