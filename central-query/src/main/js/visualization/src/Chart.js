@@ -366,7 +366,7 @@
             var rows, ll, cols, box, color, plot;
             rows = $(this.table).find('tr.zenfooter_value_row');
             ll = this.plots.length;
-            for (i = 0; i < ll; i += 1) {
+            for (var i = 0; i < ll; i++) {
                 cols = $(rows[i]).find('td');
                 box = $(cols[0]).find('div.zenfooter_box');
                 if (this.impl) {
