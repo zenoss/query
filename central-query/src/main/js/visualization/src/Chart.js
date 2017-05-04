@@ -353,7 +353,8 @@
 
             ll = this.plots.length;
             for (i = 0; i < ll; i += 1) {
-                if (this.plots[i].key === (dp.legend || dp.metric)) {
+                if (this.plots[i].key === (dp.legend || dp.metric) ||
+                    this.plots[i].key === dp.legend + '*') { // thresholds.
                     return this.plots[i];
                 }
             }
@@ -381,7 +382,7 @@
                 if (plot.color) {
                     color.color = plot.color;
                 }
-                box.css('background-color', plot.disabled ? '#FFFFFF' : color.color);
+                box.css('background-color', plot.disabled ? 'transparent' : color.color);
                 box.css('opacity', color.opacity);
             }
 
@@ -403,6 +404,9 @@
             }
 
             this.__redrawLowerLegend();
+            if (!plot.disabled) {
+                this.__lowerLegendMouseOver(dp);
+            }
         },
 
         /**
@@ -415,6 +419,9 @@
             this.plots.forEach(function(p) {
                 p.disabled = (p !== plot);
             });
+            this.overlays.forEach(function(o) {
+                o.disabled = (o !== plot);
+            });
 
             this.__redrawLowerLegend();
         },
@@ -423,17 +430,16 @@
          * Called when the mouse hovers over a lower Legend item.
          */
         __lowerLegendMouseOver: function(dp) {
-            var d = this.__getAssociatedPlot(dp);
-            var key = d.key;
+            var plot = this.__getAssociatedPlot(dp);
 
             this.svg.selectAll('.nv-group').style('opacity', function(d) {
-                if (d.key === key) {
+                if (d === plot) {
                     return 1;
                 }
                 return 0.15;
             });
             this.svg.selectAll('.nv-group').style('stroke-width', function(d) {
-                if (d.key === key) {
+                if (d === plot) {
                     return 4;
                 }
                 return 1.5;
@@ -549,7 +555,6 @@
                         box = $(cols[0]).find('div.zenfooter_box');
                         box.css('background-color', color.color);
                         box.css('border-color', color.color);
-                        box.css('border-width', '1.5px');
                         box.css('opacity', color.opacity);
 
                         // Metric name
@@ -633,10 +638,12 @@
                     dp = this.config.overlays[i];
                     row = rows.length;
 
-                    tr = this.__appendFooterRow();
-                    rows.push(tr);
-                    resize = true;
-                    this.__setLegendEvents(tr[0], dp);
+                    if (row >= rows.length) {
+                        tr = this.__appendFooterRow();
+                        rows.push(tr);
+                        resize = true;
+                        this.__setLegendEvents(tr[0], dp);
+                    }
 
                     cols = $(rows[row]).find('td');
 
@@ -644,7 +651,7 @@
                     if (dp.color) {
                         color.color = dp.color;
                     } else if (this.impl) {
-                        color = this.impl.color(this, this.closure, i);
+                        color = this.impl.color(this, this.closure, i + ll);
                     } else {
                         // unable to determine color
                         color = {
@@ -656,7 +663,6 @@
                     box = $(cols[0]).find('div.zenfooter_box');
                     box.css('background-color', color.color);
                     box.css('border-color', color.color);
-                    box.css('border-width', '1.5px');
                     box.css('opacity', color.opacity);
 
                     // Threshold name
