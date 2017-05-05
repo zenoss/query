@@ -662,14 +662,19 @@
                         };
                     }
 
-                    box = $(cols[0]).find('div.zenfooter_box');
-                    box.css('background-color', color.color);
-                    box.css('border-color', color.color);
-                    box.css('opacity', color.opacity);
+                    // color box
+                    $(cols[0])
+                        .find('div.zenfooter_box')
+                        .css('background-color', color.color)
+                        .css('border-color', color.color)
+                        .css('opacity', color.opacity);
 
-                    // Threshold name
+                    // Threshold
                     label = dp.legend + '*';
-                    $(cols[1]).html(label).addClass('zenfooter_threshold');
+                    $(cols[1])
+                        .html(label)
+                        .attr('colspan','8') // 5 + 3 projection cells
+                        .addClass('zenfooter_threshold');
                 }
             }
 
