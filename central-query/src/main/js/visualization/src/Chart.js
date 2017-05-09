@@ -353,8 +353,10 @@
 
             ll = this.plots.length;
             for (i = 0; i < ll; i += 1) {
-                if (this.plots[i].key === (dp.legend || dp.metric) ||
-                    this.plots[i].key === dp.legend + '*') { // thresholds.
+                if (dp.legend && (
+                    this.plots[i].key === (dp.legend || dp.metric) ||
+                    this.plots[i].key === dp.legend + '*' // thresholds
+                    )) {
                     return this.plots[i];
                 }
             }
@@ -404,9 +406,6 @@
             }
 
             this.__redrawLowerLegend();
-            if (!plot.disabled) {
-                this.__lowerLegendMouseOver(dp);
-            }
         },
 
         /**
@@ -432,18 +431,13 @@
         __lowerLegendMouseOver: function(evt, dp) {
             var plot = this.__getAssociatedPlot(dp);
 
-            evt.currentTarget.style.setProperty('background-color', '#DDD');
-            this.svg.selectAll('.nv-group').style('opacity', function(d) {
-                if (d === plot) {
-                    return 1;
+            this.svg.selectAll('.nv-group').classed( {
+                'zenchart_lowlight':  function(d) {
+                    return (d !== plot);
+                },
+                'zenchart_spotlight': function(d) {
+                    return (d === plot);
                 }
-                return 0.15;
-            });
-            this.svg.selectAll('.nv-group').style('stroke-width', function(d) {
-                if (d === plot) {
-                    return 4;
-                }
-                return 1.5;
             });
         },
 
@@ -454,9 +448,7 @@
             /**
             * Restore the opacity/stroke-width from the mouseover for all series.
             */
-            evt.currentTarget.style.setProperty('background-color', 'transparent');
-            this.svg.selectAll('.nv-group').style('opacity', 1);
-            this.svg.selectAll('.nv-group').style('stroke-width', 1.5);
+            this.svg.selectAll('.nv-group').classed({'zenchart_lowlight': false, 'zenchart_spotlight': false});
         },
 
         /**
