@@ -428,7 +428,7 @@
         /**
          * Called when the mouse hovers over a lower Legend item.
          */
-        __lowerLegendMouseOver: function(evt, dp) {
+        __lowerLegendMouseOver: function(dp) {
             var plot = this.__getAssociatedPlot(dp);
 
             this.svg.selectAll('.nv-group').classed( {
@@ -444,7 +444,7 @@
         /**
          * Called when the mouse leaves a lower Legend item.
          */
-        __lowerLegendMouseOut: function(evt) {
+        __lowerLegendMouseOut: function() {
             /**
             * Restore the opacity/stroke-width from the mouseover for all series.
             */
@@ -462,11 +462,11 @@
                 tr.addEventListener('dblclick', function() {
                     chart.__lowerLegendDblClicked(dp);
                 }, false);
-                tr.addEventListener('mouseover', function(evt) {
-                    chart.__lowerLegendMouseOver(evt, dp);
+                tr.addEventListener('mouseover', function() {
+                    chart.__lowerLegendMouseOver(dp);
                 }, false);
-                tr.addEventListener('mouseout', function(evt) {
-                    chart.__lowerLegendMouseOut(evt);
+                tr.addEventListener('mouseout', function() {
+                    chart.__lowerLegendMouseOut();
                 }, false);
                 // Prevent highlighting on the double-click event.
                 tr.addEventListener('mousedown', function (event) {

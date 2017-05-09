@@ -18,26 +18,22 @@
      * and increase the stroke width of the hovered series to draw attention to it.
      **/
     function addHovers(chart) {
-        // add hovers
+        // Change the line styles when you hover over a line on the chart.
         chart.svg.selectAll('g.nv-series').on('mouseenter', function(d){
             var key = d.key;
-
-            chart.svg.selectAll('.nv-group').style('opacity', function(d) {
-                if (d.key === key) {
-                    return 1;
+            chart.svg.selectAll('.nv-group').classed( {
+                'zenchart_lowlight':  function(d) {
+                    return (d.key !== key);
+                },
+                'zenchart_spotlight': function(d) {
+                    return (d.key === key);
                 }
-                return 0.15;
-            });
-            chart.svg.selectAll('.nv-group').style('stroke-width', function(d) {
-                if (d.key === key) {
-                    return 4;
-                }
-                return 1.5;
             });
         });
-        chart.svg.selectAll('g.nv-series').on('mouseleave', function(d) {
-            chart.svg.selectAll('.nv-group').style('opacity', 1);
-            chart.svg.selectAll('.nv-group').style('stroke-width', 1.5);
+
+        // Remove the hover effects when you stop hovering over a series.
+        chart.svg.selectAll('g.nv-series').on('mouseleave', function() {
+            chart.svg.selectAll('.nv-group').classed({'zenchart_lowlight': false, 'zenchart_spotlight': false});
         });
 
     }

@@ -1621,8 +1621,10 @@ if (typeof exports !== 'undefined') {
 
             ll = this.plots.length;
             for (i = 0; i < ll; i += 1) {
-                if (this.plots[i].key === (dp.legend || dp.metric) ||
-                    this.plots[i].key === dp.legend + '*') { // thresholds.
+                if (dp.legend && (
+                    this.plots[i].key === (dp.legend || dp.metric) ||
+                    this.plots[i].key === dp.legend + '*' // thresholds
+                    )) {
                     return this.plots[i];
                 }
             }
@@ -1672,9 +1674,6 @@ if (typeof exports !== 'undefined') {
             }
 
             this.__redrawLowerLegend();
-            if (!plot.disabled) {
-                this.__lowerLegendMouseOver(dp);
-            }
         },
 
         /**
@@ -1697,34 +1696,27 @@ if (typeof exports !== 'undefined') {
         /**
          * Called when the mouse hovers over a lower Legend item.
          */
-        __lowerLegendMouseOver: function(evt, dp) {
+        __lowerLegendMouseOver: function(dp) {
             var plot = this.__getAssociatedPlot(dp);
 
-            evt.currentTarget.style.setProperty('background-color', '#DDD');
-            this.svg.selectAll('.nv-group').style('opacity', function(d) {
-                if (d === plot) {
-                    return 1;
+            this.svg.selectAll('.nv-group').classed( {
+                'zenchart_lowlight':  function(d) {
+                    return (d !== plot);
+                },
+                'zenchart_spotlight': function(d) {
+                    return (d === plot);
                 }
-                return 0.15;
-            });
-            this.svg.selectAll('.nv-group').style('stroke-width', function(d) {
-                if (d === plot) {
-                    return 4;
-                }
-                return 1.5;
             });
         },
 
         /**
          * Called when the mouse leaves a lower Legend item.
          */
-        __lowerLegendMouseOut: function(evt) {
+        __lowerLegendMouseOut: function() {
             /**
             * Restore the opacity/stroke-width from the mouseover for all series.
             */
-            evt.currentTarget.style.setProperty('background-color', 'transparent');
-            this.svg.selectAll('.nv-group').style('opacity', 1);
-            this.svg.selectAll('.nv-group').style('stroke-width', 1.5);
+            this.svg.selectAll('.nv-group').classed({'zenchart_lowlight': false, 'zenchart_spotlight': false});
         },
 
         /**
@@ -1738,11 +1730,11 @@ if (typeof exports !== 'undefined') {
                 tr.addEventListener('dblclick', function() {
                     chart.__lowerLegendDblClicked(dp);
                 }, false);
-                tr.addEventListener('mouseover', function(evt) {
-                    chart.__lowerLegendMouseOver(evt, dp);
+                tr.addEventListener('mouseover', function() {
+                    chart.__lowerLegendMouseOver(dp);
                 }, false);
-                tr.addEventListener('mouseout', function(evt) {
-                    chart.__lowerLegendMouseOut(evt);
+                tr.addEventListener('mouseout', function() {
+                    chart.__lowerLegendMouseOut();
                 }, false);
                 // Prevent highlighting on the double-click event.
                 tr.addEventListener('mousedown', function (event) {
@@ -1930,14 +1922,19 @@ if (typeof exports !== 'undefined') {
                         };
                     }
 
-                    box = $(cols[0]).find('div.zenfooter_box');
-                    box.css('background-color', color.color);
-                    box.css('border-color', color.color);
-                    box.css('opacity', color.opacity);
+                    // color box
+                    $(cols[0])
+                        .find('div.zenfooter_box')
+                        .css('background-color', color.color)
+                        .css('border-color', color.color)
+                        .css('opacity', color.opacity);
 
-                    // Threshold name
+                    // Threshold
                     label = dp.legend + '*';
-                    $(cols[1]).html(label).addClass('zenfooter_threshold');
+                    $(cols[1])
+                        .html(label)
+                        .attr('colspan','8') // 5 + 3 projection cells
+                        .addClass('zenfooter_threshold');
                 }
             }
 
