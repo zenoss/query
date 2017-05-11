@@ -122,8 +122,10 @@
         if (!this.$div.length) {
             throw new utils.Error('SelectorError', 'unknown selector specified, "' + this.name + '"');
         }
-
         this.printOptimized = config.printOptimized;
+        if (this.printOptimized) {
+            this.$div.addClass('print-optimized');
+        }
 
         // base should be something like 1000 or 1024
         this.base = config.base || 1000;
@@ -149,6 +151,7 @@
         this.timezone = config.timezone || jstz.determine().name();
         this.svgwrapper = document.createElement('div');
         $(this.svgwrapper).addClass('zenchart');
+
         this.$div.append($(this.svgwrapper));
         this.containerSelector = '#' + name + ' .zenchart';
 
