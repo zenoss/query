@@ -42,6 +42,7 @@ import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
 import org.zenoss.app.metricservice.api.model.v2.RenameRequest;
+import org.zenoss.app.metricservice.api.model.v2.RenameResult;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -204,5 +205,5 @@ public class MockMetricStorage implements MetricStorageAPI {
     }
 
     @Override
-    public OpenTSDBRenameReturn rename(OpenTSDBRename renameRequest) { return null; }
+    public RenameResult rename(OpenTSDBRename renameRequest) { return null; }
 }

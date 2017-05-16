@@ -71,7 +71,6 @@ public class Resources {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public RenameResult rename(@Valid RenameRequest renameRequest){
-        log.warn("RENAMING SOMETHING");
         RenameResult result = api.rename(renameRequest);
         return result;
     }

@@ -5,7 +5,6 @@ package org.zenoss.app.metricservice.api.model.v2;
  */
 public class RenameResult {
     public RenameResult(){
-
     }
 
     public String reason;

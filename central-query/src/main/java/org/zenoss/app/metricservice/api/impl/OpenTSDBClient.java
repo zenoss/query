@@ -14,6 +14,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -40,7 +41,7 @@ public class OpenTSDBClient {
         this.queryURL = url;
     }
 
-    public OpenTSDBRenameReturn rename(OpenTSDBRename rename) {
+    public RenameResult rename(OpenTSDBRename rename, String dropCacheUrl) {
         final BasicHttpContext context = new BasicHttpContext();
         final HttpPost httpPost = new HttpPost(queryURL);
         final String jsonQueryString = Utils.jsonStringFromObject(rename);
@@ -53,20 +54,26 @@ public class OpenTSDBClient {
         }
         input.setContentType("application/json");
         httpPost.setEntity(input);
-        OpenTSDBRenameResult result = new OpenTSDBRenameResult();
+        RenameResult result = new RenameResult();
         try {
             HttpResponse response = httpClient.execute(httpPost, context);
             StatusLine status = response.getStatusLine();
-
-            ///XXX
             result.reason = status.getReasonPhrase();
             result.code = status.getStatusCode();
-            ///XXX
 
+            if(result.code == Response.Status.OK.getStatusCode()) {
+                HttpGet httpDrop = new HttpGet(dropCacheUrl);
+                HttpResponse dropResponse = httpClient.execute(httpDrop, context);
+                status = dropResponse.getStatusLine();
+                log.warn("Dropping OpenTSDB cache.. %s, %i", status.getReasonPhrase(), status.getStatusCode());
+                // TODO: Check for error status codes from the cache drop
+            } else {
+                // TODO: do something for bad status returns from the rename
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return new OpenTSDBRenameReturn(result);
+        return result;
     }
 
     public OpenTSDBQueryReturn query(OpenTSDBQuery query) {

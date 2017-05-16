@@ -119,17 +119,11 @@ public class QueryServiceImpl implements QueryService {
 
     @Override
     public RenameResult rename(RenameRequest renameRequest) {
-        log.warn("++ RENAMING ++ " + renameRequest.getOldId() + " TO " + renameRequest.getNewId());
-        OpenTSDBRename rename = new OpenTSDBRename();
-        rename.name = renameRequest.getNewId();
-        rename.tagv = renameRequest.getOldId();
-        OpenTSDBRenameReturn ret = metricStorage.rename(rename);
-        OpenTSDBRenameResult result = new OpenTSDBRenameResult();
-        // XXX Needed??
-        RenameResult res = new RenameResult();
-        res.reason = result.reason;
-        res.code = result.code;
-        return res;
+        log.warn("RENAMING TAGV " + renameRequest.getOldId() + " TO " + renameRequest.getNewId());
+        OpenTSDBRename otsdbRenameRequest = new OpenTSDBRename();
+        otsdbRenameRequest.name = renameRequest.getNewId();
+        otsdbRenameRequest.tagv = renameRequest.getOldId();
+        return metricStorage.rename(otsdbRenameRequest);
     }
 
     private OpenTSDBQueryReturn getOpenTSDBQueryResults(Collection<MetricQuery> metricQueries, MetricRequest query) {

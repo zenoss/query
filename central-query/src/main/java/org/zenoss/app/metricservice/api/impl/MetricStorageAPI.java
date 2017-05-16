@@ -22,5 +22,5 @@ public interface MetricStorageAPI {
 
     String getSourceId();
 
-    OpenTSDBRenameReturn rename(OpenTSDBRename renameRequest);
+    RenameResult rename(OpenTSDBRename renameRequest);
 }

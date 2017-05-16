@@ -85,13 +85,12 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
 
     @Override
-    public OpenTSDBRenameReturn rename(OpenTSDBRename renameRequest) {
-        // form the url
+    public RenameResult rename(OpenTSDBRename renameRequest) {
+        // XXX: This probably isn't the most elegant solution to including the rename url
         OpenTSDBClient client = new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiRenameUrl());
-        // execute
-        OpenTSDBRenameReturn r = client.rename(renameRequest);
-        // check return code
-        // return
+        RenameResult r = client.rename(renameRequest, getOpenTSDBApiDropCacheUrl());
+        // TODO: Check return status
+        // TODO: flush OTSDB cache
         return r;
     }
 
@@ -162,6 +161,9 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
     }
     private String getOpenTSDBApiRenameUrl() {
         return String.format("%s/api/uid/rename", config.getMetricServiceConfig().getOpenTsdbUrl());
+    }
+    private String getOpenTSDBApiDropCacheUrl(){
+        return String.format("%s/api/dropcaches", config.getMetricServiceConfig().getOpenTsdbUrl());
     }
 
     private static OpenTSDBSubQuery createOTSDBQuery(MetricQuery mq) {
