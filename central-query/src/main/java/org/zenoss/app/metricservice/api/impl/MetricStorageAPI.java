@@ -4,6 +4,8 @@ import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
+import org.zenoss.app.metricservice.api.model.v2.RenameRequest;
+import org.zenoss.app.metricservice.api.model.v2.RenameResult;
 
 import java.io.IOException;
 import java.util.List;
@@ -18,7 +20,7 @@ public interface MetricStorageAPI {
                                           Map<String, List<String>> tags, List<MetricSpecification> queries)
             throws IOException;
 
-
     String getSourceId();
 
+    OpenTSDBRenameReturn rename(OpenTSDBRename renameRequest);
 }

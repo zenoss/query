@@ -20,19 +20,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zenoss.app.AppConfiguration;
-import org.zenoss.app.metricservice.api.model.v2.MetricQuery;
-import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
-import org.zenoss.app.metricservice.api.model.v2.QueryResult;
+import org.zenoss.app.metricservice.api.model.v2.*;
 import org.zenoss.app.metricservice.v2.QueryService;
 import org.zenoss.app.security.ZenossTenant;
 import org.zenoss.app.zauthbundle.ZappSecurity;
 import org.zenoss.dropwizardspring.annotations.Resource;
 
 import javax.validation.Valid;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +63,16 @@ public class Resources {
             mq.setTags(tags);
         }
         QueryResult result = api.query(metricRequest);
+        return result;
+    }
+    @POST
+    @Path("/rename")
+    @Timed
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public RenameResult rename(@Valid RenameRequest renameRequest){
+        log.warn("RENAMING SOMETHING");
+        RenameResult result = api.rename(renameRequest);
         return result;
     }
 

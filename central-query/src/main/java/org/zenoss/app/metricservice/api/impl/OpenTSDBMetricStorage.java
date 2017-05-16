@@ -47,9 +47,7 @@ import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.configs.MetricServiceConfig;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
-import org.zenoss.app.metricservice.api.model.v2.Filter;
-import org.zenoss.app.metricservice.api.model.v2.MetricQuery;
-import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
+import org.zenoss.app.metricservice.api.model.v2.*;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -85,6 +83,17 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
     static final String SPACE_REPLACEMENT = "//-";
     private DefaultHttpClient httpClient = null;
 
+
+    @Override
+    public OpenTSDBRenameReturn rename(OpenTSDBRename renameRequest) {
+        // form the url
+        OpenTSDBClient client = new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiRenameUrl());
+        // execute
+        OpenTSDBRenameReturn r = client.rename(renameRequest);
+        // check return code
+        // return
+        return r;
+    }
 
     @Override
     public OpenTSDBQueryReturn query(MetricRequest query) {
@@ -150,6 +159,9 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
     private String getOpenTSDBApiQueryUrl() {
         return String.format("%s/api/query", config.getMetricServiceConfig().getOpenTsdbUrl());
+    }
+    private String getOpenTSDBApiRenameUrl() {
+        return String.format("%s/api/uid/rename", config.getMetricServiceConfig().getOpenTsdbUrl());
     }
 
     private static OpenTSDBSubQuery createOTSDBQuery(MetricQuery mq) {

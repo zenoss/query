@@ -12,9 +12,12 @@ package org.zenoss.app.metricservice.v2;
 
 import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
 import org.zenoss.app.metricservice.api.model.v2.QueryResult;
+import org.zenoss.app.metricservice.api.model.v2.RenameRequest;
+import org.zenoss.app.metricservice.api.model.v2.RenameResult;
 
 public interface QueryService {
 
     QueryResult query(MetricRequest query);
 
+    RenameResult rename(RenameRequest renameRequest);
 }

@@ -20,6 +20,8 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.LoggerFactory;
+import org.zenoss.app.metricservice.api.model.v2.RenameRequest;
+import org.zenoss.app.metricservice.api.model.v2.RenameResult;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -36,6 +38,35 @@ public class OpenTSDBClient {
     public OpenTSDBClient(DefaultHttpClient httpClient, String url) {
         this.httpClient = httpClient;
         this.queryURL = url;
+    }
+
+    public OpenTSDBRenameReturn rename(OpenTSDBRename rename) {
+        final BasicHttpContext context = new BasicHttpContext();
+        final HttpPost httpPost = new HttpPost(queryURL);
+        final String jsonQueryString = Utils.jsonStringFromObject(rename);
+        StringEntity input;
+        try {
+            input = new StringEntity(jsonQueryString);
+        } catch (UnsupportedEncodingException e) {
+            log.error("UnsupportedEncodingException converting json string {} to StringEntity: {}", jsonQueryString, e.getMessage());
+            throw new IllegalArgumentException("Could not create StringEntity from query.", e);
+        }
+        input.setContentType("application/json");
+        httpPost.setEntity(input);
+        OpenTSDBRenameResult result = new OpenTSDBRenameResult();
+        try {
+            HttpResponse response = httpClient.execute(httpPost, context);
+            StatusLine status = response.getStatusLine();
+
+            ///XXX
+            result.reason = status.getReasonPhrase();
+            result.code = status.getStatusCode();
+            ///XXX
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return new OpenTSDBRenameReturn(result);
     }
 
     public OpenTSDBQueryReturn query(OpenTSDBQuery query) {
