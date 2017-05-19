@@ -59,6 +59,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
@@ -86,12 +88,51 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
     @Override
     public RenameResult rename(OpenTSDBRename renameRequest) {
-        // XXX: This probably isn't the most elegant solution to including the rename url
-        OpenTSDBClient client = new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiRenameUrl());
-        RenameResult r = client.rename(renameRequest, getOpenTSDBApiDropCacheUrl());
-        // TODO: Check return status
-        // TODO: flush OTSDB cache
-        return r;
+        ExecutorService executorService = getExecutorService();
+        CompletionService<RenameResult> renameCompletionService =
+            new ExecutorCompletionService<RenameResult>(executorService);
+
+        try {
+            List<Callable<RenameResult>> callables = createRenameCallableList();
+
+            for (Callable<RenameResult> callable: callables) {
+                renameCompletionService.submit(callable);
+            }
+
+            for (int i = 0; i < callables.size(); i++) {
+                Future<RenameResult> result = renameCompletionService.take();
+            }
+        } catch (InterruptedException e) {
+            //TODO: handle exception
+            e.printStackTrace();
+        }
+
+        // Temporarily return a dummy object
+        RenameResult result = new RenameResult();
+        return result;
+    }
+
+    public List<Callable<RenameResult>> createRenameCallableList() {
+        final OpenTSDBClient client =
+            new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiRenameUrl());
+        List<Callable<RenameResult>> callables = new ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            final OpenTSDBRename request = new OpenTSDBRename();
+            request.metric = "newb" + String.valueOf(i);
+            request.name = "newc" + String.valueOf(i);
+            Callable<RenameResult> renameTask = new Callable<RenameResult>() {
+                @Override
+                public RenameResult call() {
+                        RenameResult result = null;
+                        result =
+                            client.rename(request, getOpenTSDBApiDropCacheUrl());
+                        return result;
+                }
+            };
+
+            callables.add(renameTask);
+        }
+        return callables;
     }
 
     @Override

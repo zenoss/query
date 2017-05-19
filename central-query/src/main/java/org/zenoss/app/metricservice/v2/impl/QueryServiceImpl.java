@@ -121,8 +121,6 @@ public class QueryServiceImpl implements QueryService {
     public RenameResult rename(RenameRequest renameRequest) {
         log.warn("RENAMING TAGV " + renameRequest.getOldId() + " TO " + renameRequest.getNewId());
         OpenTSDBRename otsdbRenameRequest = new OpenTSDBRename();
-        otsdbRenameRequest.name = renameRequest.getNewId();
-        otsdbRenameRequest.tagv = renameRequest.getOldId();
         return metricStorage.rename(otsdbRenameRequest);
     }
 
