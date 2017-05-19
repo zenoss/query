@@ -86,11 +86,9 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
     @Override
     public RenameResult rename(OpenTSDBRename renameRequest) {
-        // XXX: This probably isn't the most elegant solution to including the rename url
         OpenTSDBClient client = new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiRenameUrl());
+        // XXX This probably isn't the most elegant solution to including the cache drop url
         RenameResult r = client.rename(renameRequest, getOpenTSDBApiDropCacheUrl());
-        // TODO: Check return status
-        // TODO: flush OTSDB cache
         return r;
     }
 
