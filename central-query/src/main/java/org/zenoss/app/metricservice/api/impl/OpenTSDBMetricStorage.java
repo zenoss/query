@@ -85,11 +85,51 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
 
     @Override
-    public RenameResult rename(OpenTSDBRename renameRequest) {
-        OpenTSDBClient client = new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiRenameUrl());
-        // XXX This probably isn't the most elegant solution to including the cache drop url
-        RenameResult r = client.rename(renameRequest, getOpenTSDBApiDropCacheUrl());
-        return r;
+    public RenameResult rename(RenameRequest renameRequest) {
+    	// first we get the list of current metric references to the id
+    	OpenTSDBSuggest otsdbSuggestRequest = new OpenTSDBSuggest();
+    	otsdbSuggestRequest.type = OpenTSDBSuggest.TYPE_METRIC;
+    	otsdbSuggestRequest.q = renameRequest.getOldId();
+    	ArrayList<String> values = new ArrayList<String>();
+    	// TODO: Execute request, store results in 'values'
+    	
+    	for(String v: values){
+    		// each of these metrics will need to be renamed
+    		String replace = v.replace(renameRequest.getOldId(), renameRequest.getNewId());
+        	OpenTSDBRename renameReq = new OpenTSDBRename();
+        	renameReq.metric = v;
+        	renameReq.name = replace;
+        	// TODO: execute, drop cache
+    	}
+    	
+    	// base case tagv rename
+    	OpenTSDBRename otsdbRenameRequest = new OpenTSDBRename();
+    	otsdbRenameRequest.name = renameRequest.getNewId();
+    	otsdbRenameRequest.tagv = renameRequest.getOldId();
+    	// TODO: execute, drop cache
+
+    	// Get the list of tagv's similar to this one
+    	otsdbSuggestRequest = new OpenTSDBSuggest();
+    	otsdbSuggestRequest.type = OpenTSDBSuggest.TYPE_TAGV;
+    	otsdbSuggestRequest.q = "Devices/" + renameRequest.getOldId();
+    	values = new ArrayList<String>();
+    	// TODO: Execute request, store results in 'values'
+    	
+    	// rename the tagv's similar to how we renamed the metrics
+    	for(String v: values){
+    		// each of these metrics will need to be renamed
+    		String replace = v.replace(renameRequest.getOldId(), renameRequest.getNewId());
+        	OpenTSDBRename renameReq = new OpenTSDBRename();
+        	renameReq.tagv = v;
+        	renameReq.name = replace;
+        	// TODO execute, drop cache
+    	}
+    	
+    	// TODO: reconfigure results to show all rename results instead of just the last one
+//    	OpenTSDBClient client = new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiRenameUrl());
+//        RenameResult r = client.rename(renameRequest, getOpenTSDBApiSuggestUrl(), getOpenTSDBApiDropCacheUrl());
+//        return r;
+    	return null; // XXX
     }
 
     @Override
@@ -156,6 +196,9 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
     private String getOpenTSDBApiQueryUrl() {
         return String.format("%s/api/query", config.getMetricServiceConfig().getOpenTsdbUrl());
+    }
+    private String getOpenTSDBApiSuggestUrl(){
+    	return String.format("%s/api/suggest", config.getMetricServiceConfig().getOpenTsdbUrl());
     }
     private String getOpenTSDBApiRenameUrl() {
         return String.format("%s/api/uid/rename", config.getMetricServiceConfig().getOpenTsdbUrl());

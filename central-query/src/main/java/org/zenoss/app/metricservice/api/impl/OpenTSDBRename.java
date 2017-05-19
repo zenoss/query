@@ -5,5 +5,6 @@ package org.zenoss.app.metricservice.api.impl;
  */
 public class OpenTSDBRename {
     public String tagv;
+    public String metric;
     public String name;
 }
