@@ -1,4 +1,4 @@
-package org.zenoss.app.metricservice.api.metric.remote;
+package org.zenoss.app.metricservice.v2.remote;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -38,20 +38,14 @@ public class MetricRenameTest extends ResourceTest {
     private static final int MOCK_PORT = 4242;
     private static final String URL_PATH = "/api/v2/performance/rename";
 
-    AppConfiguration configuration;
-    ZappSecurity security;
-    MetricServiceAPI api;
+    private MetricServiceAppConfiguration configuration;
+    private ZappSecurity security;
+    private Resources qsr;
+    private ZenossTenant tenant;
+
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(MOCK_PORT);
-
-    @Before
-    public void setUp() {
-        configuration = mock(AppConfiguration.class);
-        security = mock(ZappSecurity.class);
-        api = mock(MetricServiceAPI.class);
-    }
-
 
     @Test
     public void testChangeName() {
