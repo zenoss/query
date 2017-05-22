@@ -10,6 +10,8 @@
  */
 package org.zenoss.app.metricservice.api.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
@@ -21,16 +23,17 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.LoggerFactory;
-import org.zenoss.app.metricservice.api.model.v2.RenameRequest;
+import org.zenoss.app.metricservice.api.model.v2.DropResult;
 import org.zenoss.app.metricservice.api.model.v2.RenameResult;
+import org.zenoss.app.metricservice.api.model.v2.SuggestResult;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 
 public class OpenTSDBClient {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(OpenTSDBClient.class);
-
 
     private final DefaultHttpClient httpClient;
     private final String queryURL;
@@ -41,7 +44,45 @@ public class OpenTSDBClient {
         this.queryURL = url;
     }
 
-    public RenameResult rename(OpenTSDBRename rename, String dropCacheUrl) {
+    public SuggestResult suggest(OpenTSDBSuggest suggest){
+        final BasicHttpContext context = new BasicHttpContext();
+        SuggestResult result = new SuggestResult();
+        // default max is too low (25)
+        String url = String.format("%s?type=%s&q=%s", queryURL, suggest.type, suggest.q);
+        url += "&max=1000000";
+        final HttpGet httpSuggest = new HttpGet(url);
+        try {
+            final HttpResponse suggestResponse = httpClient.execute(httpSuggest, context);
+            // process results and return a list of suggested Strings
+            String json = EntityUtils.toString(suggestResponse.getEntity());
+            ObjectMapper objectMapper = new ObjectMapper();
+            result.suggestions = objectMapper.readValue(json, ArrayList.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return result;
+    }
+
+    public DropResult dropCache(String dropCacheUrl){
+        final BasicHttpContext context = new BasicHttpContext();
+        final HttpGet httpDrop = new HttpGet(dropCacheUrl);
+        final HttpResponse dropResponse;
+        try {
+            dropResponse = httpClient.execute(httpDrop, context);
+            StatusLine status = dropResponse.getStatusLine();
+            DropResult result = new DropResult();
+            result.reasonPhrase = status.getReasonPhrase();
+            result.statusCode = status.getStatusCode();
+            log.debug("Dropping OpenTSDB cache.. %s, %i", status.getReasonPhrase(), status.getStatusCode());
+            return result;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public RenameResult rename(OpenTSDBRename rename) {
         final BasicHttpContext context = new BasicHttpContext();
         final HttpPost httpPost = new HttpPost(queryURL);
         final String jsonQueryString = Utils.jsonStringFromObject(rename);
@@ -56,20 +97,12 @@ public class OpenTSDBClient {
         httpPost.setEntity(input);
         RenameResult result = new RenameResult();
         try {
+            // TODO XXX: This should be changed to a GET with parameters in the uri to hide unneeded/null members
             HttpResponse response = httpClient.execute(httpPost, context);
             StatusLine status = response.getStatusLine();
             result.reason = status.getReasonPhrase();
             result.code = status.getStatusCode();
-
-//            if(result.code == Response.Status.OK.getStatusCode()) {
-//                HttpGet httpDrop = new HttpGet(dropCacheUrl);
-//                HttpResponse dropResponse = httpClient.execute(httpDrop, context);
-//                status = dropResponse.getStatusLine();
-//                log.warn("Dropping OpenTSDB cache.. %s, %i", status.getReasonPhrase(), status.getStatusCode());
-//                // TODO: Check for error status codes from the cache drop
-//            } else {
-//                // TODO: do something for bad status returns from the rename
-//            }
+            // TODO: do something for bad status returns from the rename
         } catch (IOException e) {
             e.printStackTrace();
         } finally {

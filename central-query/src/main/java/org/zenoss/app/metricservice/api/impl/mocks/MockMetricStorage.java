@@ -205,5 +205,7 @@ public class MockMetricStorage implements MetricStorageAPI {
     }
 
     @Override
-    public RenameResult rename(OpenTSDBRename renameRequest) { return null; }
+    public RenameResult rename(RenameRequest renameRequest) {
+        return null;
+    }
 }
