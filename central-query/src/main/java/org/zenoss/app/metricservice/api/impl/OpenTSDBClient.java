@@ -61,18 +61,21 @@ public class OpenTSDBClient {
             result.reason = status.getReasonPhrase();
             result.code = status.getStatusCode();
 
-            if(result.code == Response.Status.OK.getStatusCode()) {
-                HttpGet httpDrop = new HttpGet(dropCacheUrl);
-                HttpResponse dropResponse = httpClient.execute(httpDrop, context);
-                status = dropResponse.getStatusLine();
-                log.warn("Dropping OpenTSDB cache.. %s, %i", status.getReasonPhrase(), status.getStatusCode());
-                // TODO: Check for error status codes from the cache drop
-            } else {
-                // TODO: do something for bad status returns from the rename
-            }
+//            if(result.code == Response.Status.OK.getStatusCode()) {
+//                HttpGet httpDrop = new HttpGet(dropCacheUrl);
+//                HttpResponse dropResponse = httpClient.execute(httpDrop, context);
+//                status = dropResponse.getStatusLine();
+//                log.warn("Dropping OpenTSDB cache.. %s, %i", status.getReasonPhrase(), status.getStatusCode());
+//                // TODO: Check for error status codes from the cache drop
+//            } else {
+//                // TODO: do something for bad status returns from the rename
+//            }
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            httpPost.releaseConnection();
         }
+
         return result;
     }
 
