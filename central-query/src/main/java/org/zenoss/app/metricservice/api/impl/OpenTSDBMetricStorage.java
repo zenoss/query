@@ -151,6 +151,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
                     log.error("Error while renaming");
                 }
             }
+            log.warn("Dropping cache!!!!!");
             DropResult dropResult = client.dropCache(getOpenTSDBApiDropCacheUrl());
             // TODO: factor drop result into final return object
         } catch (InterruptedException e) {
