@@ -40,6 +40,7 @@ import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.HTTP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +55,7 @@ import org.zenoss.app.metricservice.api.model.v2.*;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -98,6 +100,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
             new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiRenameUrl());
         OpenTSDBClient suggestClient =
             new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiSuggestUrl());
+        RenameResult fullResult = new RenameResult();
 
         // Rename metrics from the device whose ID is about to change
         // For example, {"metric": "myDev/sysUpTime_sysUpTime"}
@@ -112,17 +115,15 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
             final OpenTSDBRename renameReq = new OpenTSDBRename();
             renameReq.metric = m;
             renameReq.name = replace;
-            log.info("Renaming " + renameReq.metric + " to " + renameReq.name);
             renameCompletionService.submit(new RenameTask(client, renameReq));
         }
 
-        // Rename the tag values of the tag key "device"
+        // Rename the tag value of the tag key "device"
         // {"tags": [{"device": "myDev"}, ...]}
         OpenTSDBRename otsdbRenameRequest = new OpenTSDBRename();
         otsdbRenameRequest.name = renameRequest.getNewId();
         otsdbRenameRequest.tagv = renameRequest.getOldId();
-        client.rename(otsdbRenameRequest);
-        // TODO: check return status from this single rename, error out if it failed.
+        renameCompletionService.submit(new RenameTask(client, otsdbRenameRequest));
 
         // Get the list of tagv's similar to this one
         otsdbSuggestRequest = new OpenTSDBSuggest();
@@ -134,27 +135,26 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         // Rename the tag values of the tag key "key"
         // {"tags": [{"key": "Devices/myDev/filesystems/boot"}, ...]}
         for(String k: keys){
-            // each of these metrics will need to be renamed
+            // each of these tags will need to be renamed
             String replace = k.replace(renameRequest.getOldId(), renameRequest.getNewId());
             final OpenTSDBRename renameReq = new OpenTSDBRename();
             renameReq.tagv = k;
             renameReq.name = replace;
-            log.info("Renaming " + renameReq.tagv + " to " + renameReq.name);
             renameCompletionService.submit(new RenameTask(client, renameReq));
         }
 
         // Process the result from each rename task.
+        ArrayList<String> failures = new ArrayList<>();
         try {
             for (int i = 0; i < metrics.size() + keys.size(); i++) {
                 final Future<RenameResult> result = renameCompletionService.take();
                 if (result.get().code >= 400) {
                     log.error("Error while renaming");
                     log.error(result.get().reason);
+                    failures.add(result.get().reason);
                 }
             }
-            log.warn("Dropping cache!!!!!");
-            DropResult dropResult = client.dropCache(getOpenTSDBApiDropCacheUrl());
-            // TODO: factor drop result into final return object
+            client.dropCache(getOpenTSDBApiDropCacheUrl());
         } catch (InterruptedException e) {
             //TODO: handle exception
             e.printStackTrace();
@@ -163,12 +163,14 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
             e.printStackTrace();
         }
 
-        // TODO: reconfigure results to show all rename results instead of just the last one
-        // XXX: Temporarily return a dummy result.
-        RenameResult result = new RenameResult();
-        result.code = 200;
-        result.reason = "OK";
-        return result;
+        if(failures.size() > 0){
+            String s = "Renaming complete, but the following issues were encountered: " + failures.toString();
+            fullResult.reason = s;
+        } else {
+            fullResult.reason = "OK";
+        }
+        fullResult.code = Response.Status.OK.getStatusCode();
+        return fullResult;
     }
 
     class RenameTask implements Callable<RenameResult> {
