@@ -10,7 +10,6 @@
  */
 package org.zenoss.app.metricservice.api.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -36,19 +35,19 @@ public class OpenTSDBClient {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(OpenTSDBClient.class);
 
     private final DefaultHttpClient httpClient;
-    private final String queryURL;
+    private final String providedURL;
 
 
     public OpenTSDBClient(DefaultHttpClient httpClient, String url) {
         this.httpClient = httpClient;
-        this.queryURL = url;
+        this.providedURL = url;
     }
 
     public SuggestResult suggest(OpenTSDBSuggest suggest){
         final BasicHttpContext context = new BasicHttpContext();
         SuggestResult result = new SuggestResult();
         // default max is too low (25)
-        String url = String.format("%s?type=%s&q=%s", queryURL, suggest.type, suggest.q);
+        String url = String.format("%s?type=%s&q=%s", providedURL, suggest.type, suggest.q);
         url += "&max=1000000";
         final HttpGet httpSuggest = new HttpGet(url);
         try {
@@ -59,6 +58,8 @@ public class OpenTSDBClient {
             result.suggestions = objectMapper.readValue(json, ArrayList.class);
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            httpSuggest.releaseConnection();
         }
 
         return result;
@@ -78,18 +79,20 @@ public class OpenTSDBClient {
             return result;
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            httpDrop.releaseConnection();
         }
         return null;
     }
 
     public RenameResult rename(OpenTSDBRename rename) {
         final BasicHttpContext context = new BasicHttpContext();
-        final HttpPost httpPost = new HttpPost(queryURL);
+        final HttpPost httpPost = new HttpPost(providedURL);
         final String jsonQueryString = Utils.jsonStringFromObject(rename);
         StringEntity input;
-        try {
+        try{
             input = new StringEntity(jsonQueryString);
-        } catch (UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException e){
             log.error("UnsupportedEncodingException converting json string {} to StringEntity: {}", jsonQueryString, e.getMessage());
             throw new IllegalArgumentException("Could not create StringEntity from query.", e);
         }
@@ -97,7 +100,6 @@ public class OpenTSDBClient {
         httpPost.setEntity(input);
         RenameResult result = new RenameResult();
         try {
-            // TODO XXX: This should be changed to a GET with parameters in the uri to hide unneeded/null members
             HttpResponse response = httpClient.execute(httpPost, context);
             StatusLine status = response.getStatusLine();
             result.reason = status.getReasonPhrase();
@@ -114,7 +116,7 @@ public class OpenTSDBClient {
 
     public OpenTSDBQueryReturn query(OpenTSDBQuery query) {
         final BasicHttpContext context = new BasicHttpContext();
-        final HttpPost httpPost = new HttpPost(queryURL);
+        final HttpPost httpPost = new HttpPost(providedURL);
         final String jsonQueryString = Utils.jsonStringFromObject(query);
         StringEntity input;
         try {

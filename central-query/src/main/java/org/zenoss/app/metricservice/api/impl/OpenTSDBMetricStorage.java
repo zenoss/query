@@ -112,7 +112,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
             final OpenTSDBRename renameReq = new OpenTSDBRename();
             renameReq.metric = m;
             renameReq.name = replace;
-            log.debug("Renaming " + renameReq.metric + " to " + renameReq.name);
+            log.info("Renaming " + renameReq.metric + " to " + renameReq.name);
             renameCompletionService.submit(new RenameTask(client, renameReq));
         }
 
@@ -139,7 +139,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
             final OpenTSDBRename renameReq = new OpenTSDBRename();
             renameReq.tagv = k;
             renameReq.name = replace;
-            log.debug("Renaming " + renameReq.tagv + " to " + renameReq.name);
+            log.info("Renaming " + renameReq.tagv + " to " + renameReq.name);
             renameCompletionService.submit(new RenameTask(client, renameReq));
         }
 
@@ -149,6 +149,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
                 final Future<RenameResult> result = renameCompletionService.take();
                 if (result.get().code >= 400) {
                     log.error("Error while renaming");
+                    log.error(result.get().reason);
                 }
             }
             log.warn("Dropping cache!!!!!");
