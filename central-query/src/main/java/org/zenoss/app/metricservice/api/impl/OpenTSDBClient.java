@@ -45,21 +45,29 @@ public class OpenTSDBClient {
 
     public SuggestResult suggest(OpenTSDBSuggest suggest){
         final BasicHttpContext context = new BasicHttpContext();
+        final HttpPost httpPost = new HttpPost(providedURL);
+        final String jsonQueryString = Utils.jsonStringFromObject(suggest);
+        StringEntity input;
+        try{
+            input = new StringEntity(jsonQueryString);
+        } catch (UnsupportedEncodingException e){
+            log.error("UnsupportedEncodingException converting json string {} to StringEntity: {}", jsonQueryString, e.getMessage());
+            throw new IllegalArgumentException("Could not create StringEntity from query.", e);
+        }
+        input.setContentType("application/json");
+        httpPost.setEntity(input);
         SuggestResult result = new SuggestResult();
-        // default max is too low (25)
-        String url = String.format("%s?type=%s&q=%s", providedURL, suggest.type, suggest.q);
-        url += "&max=1000000";
-        final HttpGet httpSuggest = new HttpGet(url);
         try {
-            final HttpResponse suggestResponse = httpClient.execute(httpSuggest, context);
-            // process results and return a list of suggested Strings
-            String json = EntityUtils.toString(suggestResponse.getEntity());
+            HttpResponse response = httpClient.execute(httpPost, context);
+            String json = EntityUtils.toString(response.getEntity());
+            log.info("Suggest {}", json);
             ObjectMapper objectMapper = new ObjectMapper();
             result.suggestions = objectMapper.readValue(json, ArrayList.class);
+            // TODO: do something for bad status returns from the rename
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            httpSuggest.releaseConnection();
+            httpPost.releaseConnection();
         }
 
         return result;

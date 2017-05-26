@@ -100,6 +100,8 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
             new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiRenameUrl());
         OpenTSDBClient suggestClient =
             new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiSuggestUrl());
+        OpenTSDBClient dropCacheClient =
+            new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropCacheUrl());
         RenameResult fullResult = new RenameResult();
 
         // Rename metrics from the device whose ID is about to change
@@ -146,7 +148,9 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         // Process the result from each rename task.
         ArrayList<String> failures = new ArrayList<>();
         try {
-            for (int i = 0; i < metrics.size() + keys.size(); i++) {
+            // The no. of requests submitted to the completion service is equal
+            // to no. of metrics + no. of key tagv's + 1 for device tagv.
+            for (int i = 0; i < metrics.size() + keys.size() + 1; i++) {
                 final Future<RenameResult> result = renameCompletionService.take();
                 if (result.get().code >= 400) {
                     log.error("Error while renaming");
@@ -154,7 +158,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
                     failures.add(result.get().reason);
                 }
             }
-            client.dropCache(getOpenTSDBApiDropCacheUrl());
+            dropCacheClient.dropCache(getOpenTSDBApiDropCacheUrl());
         } catch (InterruptedException e) {
             //TODO: handle exception
             e.printStackTrace();
@@ -184,6 +188,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
         @Override
         public RenameResult call() {
+            log.info("Rename {} {} {}", renameReq.metric, renameReq.tagv, renameReq.name);
             return client.rename(renameReq);
         }
     }
