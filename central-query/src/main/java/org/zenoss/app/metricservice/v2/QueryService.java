@@ -15,9 +15,11 @@ import org.zenoss.app.metricservice.api.model.v2.QueryResult;
 import org.zenoss.app.metricservice.api.model.v2.RenameRequest;
 import org.zenoss.app.metricservice.api.model.v2.RenameResult;
 
+import java.io.Writer;
+
 public interface QueryService {
 
     QueryResult query(MetricRequest query);
 
-    RenameResult rename(RenameRequest renameRequest);
+    RenameResult rename(RenameRequest renameRequest, Writer writer);
 }

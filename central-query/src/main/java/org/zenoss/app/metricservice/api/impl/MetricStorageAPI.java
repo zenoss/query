@@ -7,6 +7,7 @@ import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
 import org.zenoss.app.metricservice.api.model.v2.RenameRequest;
 import org.zenoss.app.metricservice.api.model.v2.RenameResult;
 
+import java.io.Writer;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -22,5 +23,5 @@ public interface MetricStorageAPI {
 
     String getSourceId();
 
-    RenameResult rename(RenameRequest renameRequest);
+    RenameResult rename(RenameRequest renameRequest, Writer writer);
 }

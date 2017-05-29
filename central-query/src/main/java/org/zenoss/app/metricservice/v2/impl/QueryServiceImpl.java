@@ -20,6 +20,7 @@ import com.google.common.collect.Multimaps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+
 import org.zenoss.app.annotations.API;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.impl.*;
@@ -47,6 +48,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.io.Writer;
 
 @API
 public class QueryServiceImpl implements QueryService {
@@ -118,8 +120,8 @@ public class QueryServiceImpl implements QueryService {
     }
 
     @Override
-    public RenameResult rename(RenameRequest renameRequest) {
-        return metricStorage.rename(renameRequest);
+    public RenameResult rename(RenameRequest renameRequest, Writer writer) {
+        return metricStorage.rename(renameRequest, writer);
     }
 
     private OpenTSDBQueryReturn getOpenTSDBQueryResults(Collection<MetricQuery> metricQueries, MetricRequest query) {

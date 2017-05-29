@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+
 import org.zenoss.app.annotations.API;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.configs.MetricServiceConfig;
@@ -57,6 +58,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -92,7 +94,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
 
     @Override
-    public RenameResult rename(RenameRequest renameRequest) {
+    public RenameResult rename(RenameRequest renameRequest, Writer writer) {
         ExecutorService executorService = getExecutorService();
         CompletionService<RenameResult> renameCompletionService =
             new ExecutorCompletionService<>(executorService);
@@ -104,16 +106,19 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
             new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropCacheUrl());
         RenameResult fullResult = new RenameResult();
 
+        String oldId = renameRequest.getOldId();
+        String newId = renameRequest.getNewId();
+
         // Rename metrics from the device whose ID is about to change
         // For example, {"metric": "myDev/sysUpTime_sysUpTime"}
         OpenTSDBSuggest otsdbSuggestRequest = new OpenTSDBSuggest();
         otsdbSuggestRequest.type = OpenTSDBSuggest.TYPE_METRIC;
-        otsdbSuggestRequest.q = renameRequest.getOldId();
+        otsdbSuggestRequest.q = oldId;
         SuggestResult suggestResult = suggestClient.suggest(otsdbSuggestRequest);
         ArrayList<String> metrics = suggestResult.suggestions;
         for(String m: metrics){
             // each of these metrics will need to be renamed
-            String replace = m.replace(renameRequest.getOldId(), renameRequest.getNewId());
+            String replace = m.replace(oldId, newId);
             final OpenTSDBRename renameReq = new OpenTSDBRename();
             renameReq.metric = m;
             renameReq.name = replace;
@@ -123,14 +128,14 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         // Rename the tag value of the tag key "device"
         // {"tags": [{"device": "myDev"}, ...]}
         OpenTSDBRename otsdbRenameRequest = new OpenTSDBRename();
-        otsdbRenameRequest.name = renameRequest.getNewId();
-        otsdbRenameRequest.tagv = renameRequest.getOldId();
+        otsdbRenameRequest.name = newId;
+        otsdbRenameRequest.tagv = oldId;
         renameCompletionService.submit(new RenameTask(client, otsdbRenameRequest));
 
         // Get the list of tagv's similar to this one
         otsdbSuggestRequest = new OpenTSDBSuggest();
         otsdbSuggestRequest.type = OpenTSDBSuggest.TYPE_TAGV;
-        otsdbSuggestRequest.q = "Devices/" + renameRequest.getOldId();
+        otsdbSuggestRequest.q = "Devices/" + oldId;
         suggestResult = suggestClient.suggest(otsdbSuggestRequest);
         ArrayList<String> keys = suggestResult.suggestions;
 
@@ -138,7 +143,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         // {"tags": [{"key": "Devices/myDev/filesystems/boot"}, ...]}
         for(String k: keys){
             // each of these tags will need to be renamed
-            String replace = k.replace(renameRequest.getOldId(), renameRequest.getNewId());
+            String replace = k.replace(oldId, newId);
             final OpenTSDBRename renameReq = new OpenTSDBRename();
             renameReq.tagv = k;
             renameReq.name = replace;
@@ -147,25 +152,44 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
         // Process the result from each rename task.
         ArrayList<String> failures = new ArrayList<>();
-        try {
-            // The no. of requests submitted to the completion service is equal
-            // to no. of metrics + no. of key tagv's + 1 for device tagv.
-            for (int i = 0; i < metrics.size() + keys.size() + 1; i++) {
+        // The no. of requests submitted to the completion service is equal
+        // to (no. of metrics) + (no. of key tagv's) + (1 for device tagv).
+        int nTasks = metrics.size() + keys.size() + 1;
+        for (int i = 0; i < nTasks; i++) {
+            try {
                 final Future<RenameResult> result = renameCompletionService.take();
+
+                // Write progress every once in a while.
+                if (i % 5 == 0) {
+                    writer.write(
+                        String.format(
+                            "Renaming device %s to %s: %d out of %d tasks completed.%n",
+                            oldId,
+                            newId,
+                            i,
+                            nTasks
+                        )
+                    );
+                }
+
                 if (result.get().code >= 400) {
                     log.error("Error while renaming");
                     log.error(result.get().reason);
                     failures.add(result.get().reason);
                 }
+            } catch (InterruptedException e) {
+                //TODO: handle exception
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                //TODO: handle exception
+                e.printStackTrace();
+            } catch (IOException e) {
+                //TODO: handle exception
+                e.printStackTrace();
             }
-            dropCacheClient.dropCache(getOpenTSDBApiDropCacheUrl());
-        } catch (InterruptedException e) {
-            //TODO: handle exception
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            //TODO: handle exception
-            e.printStackTrace();
         }
+
+        dropCacheClient.dropCache(getOpenTSDBApiDropCacheUrl());
 
         if(failures.size() > 0){
             String s = "Renaming complete, but the following issues were encountered: " + failures.toString();

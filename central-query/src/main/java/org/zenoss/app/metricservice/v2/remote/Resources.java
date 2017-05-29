@@ -19,7 +19,11 @@ import org.apache.shiro.subject.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonEncoding;
+
 import org.zenoss.app.AppConfiguration;
+import org.zenoss.app.metricservice.api.impl.Utils;
 import org.zenoss.app.metricservice.api.model.v2.*;
 import org.zenoss.app.metricservice.v2.QueryService;
 import org.zenoss.app.security.ZenossTenant;
@@ -29,8 +33,15 @@ import org.zenoss.dropwizardspring.annotations.Resource;
 import javax.validation.Valid;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import java.util.List;
 import java.util.Map;
+import java.io.OutputStream;
+import java.io.Writer;
+import java.io.OutputStreamWriter;
+import java.io.BufferedWriter;
+import java.io.IOException;
 
 @Resource(name = "v2query")
 @Path("/api/v2/performance")
@@ -70,9 +81,18 @@ public class Resources {
     @Timed
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public RenameResult rename(@Valid RenameRequest renameRequest){
-        RenameResult result = api.rename(renameRequest);
-        return result;
+    public Response rename(@Valid final RenameRequest renameRequest){
+        StreamingOutput stream = new StreamingOutput() {
+            @Override
+            public void write(OutputStream out)
+                throws IOException, WebApplicationException {
+
+                Writer writer = new BufferedWriter(new OutputStreamWriter(out));
+                RenameResult result = api.rename(renameRequest, writer);
+                writer.flush();
+            }
+        };
+        return Response.ok(stream).build();
     }
 
 
