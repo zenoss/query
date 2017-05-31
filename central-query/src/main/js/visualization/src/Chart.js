@@ -107,7 +107,6 @@
         [31536000000, '10d-avg']  // 1 Year
     ];
 
-    var PROJECTIONCOLORS = ["#EBEBEF", "#FDDFE7", "#FCF1C0", "#DAFBEB"];
 
     Chart = function (name, config) {
         this.name = name;
@@ -361,6 +360,9 @@
                     this.plots[i].key === (dp.legend || dp.metric) ||
                     this.plots[i].key === dp.legend + '*' // thresholds
                     )) {
+                    return this.plots[i];
+                }
+                if (this.plots[i] === dp) { // projections
                     return this.plots[i];
                 }
             }
@@ -677,51 +679,6 @@
                 }
             }
 
-            // Add Projections.
-            if (this.projections && this.projections.length) {
-                // One row for the stats table header
-                tr = document.createElement('tr');
-                $(tr).addClass("zenfooter_tablerow_header");
-                tr.innerHTML = '<th class="footer_header zenfooter_box_column"></th>' +
-                    '<th class="footer_header zenfooter_data_text" colspan="5">Projections</th>';
-                $(this.table).append($(tr));
-                rows.push($(tr));
-
-                for (i = 0; i < this.projections.length; i++) {
-                    dp = this.projections[i];
-                    row = rows.length;
-
-                    if (row >= rows.length) {
-                        tr = this.__appendFooterRow();
-                        rows.push(tr);
-                        resize = true;
-                        this.__setLegendEvents(tr[0], dp);
-                    }
-
-                    cols = $(rows[row]).find('td');
-
-                    // footer color
-                    color = {
-                        color: PROJECTIONCOLORS[i % PROJECTIONCOLORS.length],
-                        opacity: 1
-                    };
-
-                    // color box
-                    $(cols[0])
-                        .find('div.zenfooter_box')
-                        .css('background-color', color.color)
-                        .css('border-color', color.color)
-                        .css('opacity', color.opacity);
-
-                    // Threshold
-                    label = dp.legend;
-                    $(cols[1])
-                        .html(label)
-                        .attr('colspan','8') // 5 + 3 projection cells
-                        .addClass('zenfooter_threshold');
-                }
-            }
-
             if (this.__renderCapacityFooter !== undefined) {
                 this.__renderCapacityFooter(this);
             }
@@ -823,6 +780,53 @@
                     $(row).append(projectionColumn);
                 }
             }.bind(this));
+
+            // Add Projections to the lower legend.
+            // Only add projections if we've gotten all of the projection data.
+            if (projections && projections.length && projections.length == this.projections.length) {
+                // One row for the stats table header
+                var rows = $(this.table).find('tr.zenfooter_value_row');
+                var tr = $(this.table).find('tr.zenfooter_tablerow_projections');
+                if (tr.length === 0) {
+                    tr = document.createElement('tr');
+                    $(tr).addClass("zenfooter_tablerow_header zenfooter_tablerow_projections");
+                    tr.innerHTML = '<th class="footer_header zenfooter_box_column"></th>' +
+                        '<th class="footer_header zenfooter_data_text" colspan="5">Projections</th>';
+                    $(this.table).append($(tr));
+                    rows.push($(tr));
+                }
+
+                for (i = 0; i < projections.length; i++) {
+                    var projection = projections[i];
+
+                    var row = rows.length;
+                    tr = this.__appendFooterRow();
+                    rows.push(tr);
+                    this.__setLegendEvents(tr[0], projection);
+
+                    var cols = $(rows[row]).find('td');
+
+                    // footer color
+                    var color = {
+                        color: projection.color,
+                        opacity: 1
+                    };
+
+                    // color box
+                    $(cols[0])
+                        .find('div.zenfooter_box')
+                        .css('background-color', color.color)
+                        .css('border-color', color.color)
+                        .css('opacity', color.opacity);
+
+                    // Threshold
+                    var label = projection.key;
+                    $(cols[1])
+                        .html(label)
+                        .attr('colspan','8') // 5 + 3 projection cells
+                        .addClass('zenfooter_threshold');
+                }
+            }
 
             this.resize();
         },
@@ -1080,7 +1084,7 @@
                         }
 
                         // send a separate request for the projection data since it has a different time span
-                        var projectionIndex = 0;
+                        var projectionColors = ["#EBEBEF", "#FDDFE7", "#FCF1C0", "#DAFBEB"], projectionIndex = 0;
                         self.projections.forEach(function (projection) {
                             var projectionRequest = self.__buildProjectionRequest(self.config, self.request, projection);
                             // can fail if the projection is requesting a metric not present
@@ -1104,7 +1108,7 @@
                                         // get the visible x, y values
                                             projectedSet = self.createRegressionData(valueFn, start, end);
                                         self.plots.push({
-                                            color: PROJECTIONCOLORS[projectionIndex++ % PROJECTIONCOLORS.length],
+                                            color: projectionColors[projectionIndex++ % projectionColors.length],
                                             fill: false,
                                             projection: true,
                                             projectionFn: valueFn,
