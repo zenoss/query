@@ -155,6 +155,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         // The no. of requests submitted to the completion service is equal
         // to (no. of metrics) + (no. of key tagv's) + (1 for device tagv).
         int nTasks = metrics.size() + keys.size() + 1;
+        int nFailures = 0;
         for (int i = 0; i < nTasks; i++) {
             try {
                 final Future<RenameResult> result = renameCompletionService.take();
@@ -175,33 +176,46 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
                 }
 
                 if (result.get().code >= 400) {
-                    log.error("Error while renaming");
-                    log.error(result.get().reason);
+                    log.error(
+                        "Error while renaming in OpenTSDB: {}",
+                        result.get().reason
+                    );
+                    nFailures++;
                     failures.add(result.get().reason);
                 }
             } catch (InterruptedException e) {
-                //TODO: handle exception
-                e.printStackTrace();
+                log.error(
+                    "Error while processing a renaming task result: {}",
+                    e.getMessage()
+                );
             } catch (ExecutionException e) {
-                //TODO: handle exception
-                e.printStackTrace();
+                log.error(
+                    "Error while processing a renaming task result: {}",
+                    e.getMessage()
+                );
             } catch (IOException e) {
-                //TODO: handle exception
-                e.printStackTrace();
+                log.error(
+                    "Error while sending the progress of renaming tasks to Zenoss: {}",
+                    e.getMessage()
+                );
             }
         }
 
         try {
             writer.write(
                 String.format(
-                    "Renaming device %s to %s in performance data was completed.",
+                    "Renaming device %s to %s completed. %d out of %d tasks failed.",
                     oldId,
-                    newId
+                    newId,
+                    nFailures,
+                    nTasks
                 )
             );
         } catch (IOException e) {
-            //TODO: handle exception
-            e.printStackTrace();
+            log.error(
+                "Error while streaming the renaming tasks progress to Zenoss: {}",
+                e.getMessage()
+            );
         }
 
         dropCacheClient.dropCache(getOpenTSDBApiDropCacheUrl());
