@@ -175,7 +175,8 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
                     );
                 }
 
-                if (result.get().code >= 400) {
+                int code = result.get().code;
+                if (!(code >= 200 && code <= 299)) {
                     log.error(
                         "Error while renaming in OpenTSDB: {}",
                         result.get().reason
