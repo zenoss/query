@@ -161,13 +161,15 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
                 // Write progress every once in a while.
                 if (i % 5 == 0) {
+                    int percent = (int) ((float) i/nTasks*100);
                     writer.write(
                         String.format(
-                            "Renaming device %s to %s: %d out of %d tasks completed.%n",
+                            "Renaming device %s to %s: %d out of %d tasks completed (%d%%).%n",
                             oldId,
                             newId,
                             i,
-                            nTasks
+                            nTasks,
+                            percent
                         )
                     );
                 }
@@ -187,6 +189,19 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
                 //TODO: handle exception
                 e.printStackTrace();
             }
+        }
+
+        try {
+            writer.write(
+                String.format(
+                    "Renaming device %s to %s in performance data was completed.",
+                    oldId,
+                    newId
+                )
+            );
+        } catch (IOException e) {
+            //TODO: handle exception
+            e.printStackTrace();
         }
 
         dropCacheClient.dropCache(getOpenTSDBApiDropCacheUrl());
