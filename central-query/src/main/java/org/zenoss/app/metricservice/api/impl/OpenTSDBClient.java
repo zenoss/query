@@ -107,6 +107,7 @@ public class OpenTSDBClient {
         input.setContentType("application/json");
         httpPost.setEntity(input);
         RenameResult result = new RenameResult();
+        result.request = jsonQueryString;
         try {
             HttpResponse response = httpClient.execute(httpPost, context);
             StatusLine status = response.getStatusLine();

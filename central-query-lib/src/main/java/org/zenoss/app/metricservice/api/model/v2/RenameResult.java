@@ -9,4 +9,5 @@ public class RenameResult {
 
     public String reason;
     public int code;
+    public String request;
 }

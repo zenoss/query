@@ -161,6 +161,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
                 final Future<RenameResult> result = renameCompletionService.take();
 
                 // Write progress every once in a while.
+                // TODO: Print out less frequently.
                 if (i % 5 == 0) {
                     int percent = (int) ((float) i/nTasks*100);
                     writer.write(
@@ -175,11 +176,12 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
                     );
                 }
 
-                int code = result.get().code;
-                if (!(code >= 200 && code <= 299)) {
+                RenameResult r = result.get();
+                if (!(r.code >= 200 && r.code <= 299)) {
                     log.error(
-                        "Error while renaming in OpenTSDB: {}",
-                        result.get().reason
+                        "Error while processing a renaming request {} in OpenTSDB: {}",
+                        r.request,
+                        r.reason
                     );
                     nFailures++;
                     failures.add(result.get().reason);
@@ -205,13 +207,16 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         try {
             writer.write(
                 String.format(
-                    "Renaming device %s to %s completed. %d out of %d tasks failed.",
-                    oldId,
-                    newId,
-                    nFailures,
-                    nTasks
+                    "Renaming device %s to %s completed.%n", oldId, newId
                 )
             );
+            if (nFailures > 0) {
+                writer.write(
+                    String.format(
+                        "%d out of %d tasks failed.", nFailures, nTasks
+                    )
+                );
+            }
         } catch (IOException e) {
             log.error(
                 "Error while streaming the renaming tasks progress to Zenoss: {}",
