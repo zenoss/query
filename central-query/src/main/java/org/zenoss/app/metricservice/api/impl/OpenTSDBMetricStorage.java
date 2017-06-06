@@ -152,7 +152,6 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         }
 
         // Process the result from each rename task.
-        ArrayList<String> failures = new ArrayList<>();
         // The no. of requests submitted to the completion service is equal
         // to (no. of metrics) + (no. of key tagv's) + (1 for device tagv).
         int nTasks = metrics.size() + keys.size() + 1;
@@ -179,15 +178,27 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
                 RenameResult r = result.get();
                 if (!(r.code >= 200 && r.code <= 299)) {
+                    String type = "";
+                    String oldName = "";
+                    String newName = r.request.name;
+                    if (r.request.metric == null) {
+                        type =  "tagv";
+                        oldName = r.request.tagv;
+                    } else {
+                        type = "metric";
+                        oldName = r.request.metric;
+                    }
+
                     String msg = String.format(
-                        "Error while processing a renaming request %s in OpenTSDB: %s%n",
-                        r.request,
+                        "Error while renaming %s %s to %s in OpenTSDB: %s%n",
+                        type,
+                        oldName,
+                        newName,
                         r.reason
                     );
                     log.error(msg);
                     writer.write(msg);
                     nFailures++;
-                    failures.add(result.get().reason);
                 }
             } catch (InterruptedException e) {
                 log.error(

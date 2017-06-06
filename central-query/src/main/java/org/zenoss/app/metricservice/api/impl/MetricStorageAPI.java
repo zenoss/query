@@ -5,7 +5,6 @@ import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
 import org.zenoss.app.metricservice.api.model.v2.RenameRequest;
-import org.zenoss.app.metricservice.api.model.v2.RenameResult;
 
 import java.io.Writer;
 import java.io.IOException;

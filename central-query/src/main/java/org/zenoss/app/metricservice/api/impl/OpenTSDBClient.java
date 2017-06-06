@@ -23,7 +23,7 @@ import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.LoggerFactory;
 import org.zenoss.app.metricservice.api.model.v2.DropResult;
-import org.zenoss.app.metricservice.api.model.v2.RenameResult;
+//import org.zenoss.app.metricservice.api.model.v2.RenameResult;
 import org.zenoss.app.metricservice.api.model.v2.SuggestResult;
 
 import javax.ws.rs.core.Response;
@@ -107,7 +107,7 @@ public class OpenTSDBClient {
         input.setContentType("application/json");
         httpPost.setEntity(input);
         RenameResult result = new RenameResult();
-        result.request = jsonQueryString;
+        result.request = rename;
         try {
             HttpResponse response = httpClient.execute(httpPost, context);
             StatusLine status = response.getStatusLine();

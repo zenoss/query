@@ -1,4 +1,4 @@
-package org.zenoss.app.metricservice.api.model.v2;
+package org.zenoss.app.metricservice.api.impl;
 
 /**
  * Created by maya on 5/12/17.
@@ -10,5 +10,5 @@ public class RenameResult {
 
     public String reason;
     public int code;
-    public String request;
+    public OpenTSDBRename request;
 }
