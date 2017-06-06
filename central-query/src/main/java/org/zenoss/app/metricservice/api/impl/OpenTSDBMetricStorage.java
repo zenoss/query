@@ -178,11 +178,13 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
                 RenameResult r = result.get();
                 if (!(r.code >= 200 && r.code <= 299)) {
-                    log.error(
+                    String msg = String.format(
                         "Error while processing a renaming request {} in OpenTSDB: {}",
                         r.request,
                         r.reason
                     );
+                    log.error(msg);
+                    writer.write(msg);
                     nFailures++;
                     failures.add(result.get().reason);
                 }
