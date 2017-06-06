@@ -86,6 +86,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
     private static final Logger log = LoggerFactory.getLogger(OpenTSDBMetricStorage.class);
 
     private static final String SOURCE_ID = "OpenTSDB";
+    private static final int RETRY_CT = 2;
 
     private static ExecutorService executorServiceInstance = null;
 
@@ -241,7 +242,16 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         @Override
         public RenameResult call() {
             log.info("Rename {} {} {}", renameReq.metric, renameReq.tagv, renameReq.name);
-            return client.rename(renameReq);
+            RenameResult renameResult = new RenameResult();
+            for(int x = 0; x < RETRY_CT; x++){
+                renameResult = client.rename(renameReq);
+                if(renameResult.code == 200){
+                    break;
+                } else if(renameResult.code < 500){
+                    break; // shouldn't retry on 400-level statuses
+                }
+            }
+            return renameResult;
         }
     }
 

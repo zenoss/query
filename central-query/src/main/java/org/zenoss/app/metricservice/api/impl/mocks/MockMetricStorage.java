@@ -45,6 +45,7 @@ import org.zenoss.app.metricservice.api.model.v2.RenameRequest;
 import org.zenoss.app.metricservice.api.model.v2.RenameResult;
 
 import java.io.IOException;
+import java.io.Writer;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -205,7 +206,8 @@ public class MockMetricStorage implements MetricStorageAPI {
     }
 
     @Override
-    public RenameResult rename(RenameRequest renameRequest) {
+    public RenameResult rename(RenameRequest renameRequest, Writer writer) {
         return null;
     }
+
 }
