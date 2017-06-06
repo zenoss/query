@@ -88,7 +88,7 @@ public class Resources {
                 throws IOException, WebApplicationException {
 
                 Writer writer = new BufferedWriter(new OutputStreamWriter(out));
-                RenameResult result = api.rename(renameRequest, writer);
+                api.rename(renameRequest, writer);
                 writer.flush();
             }
         };

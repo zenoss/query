@@ -21,5 +21,5 @@ public interface QueryService {
 
     QueryResult query(MetricRequest query);
 
-    RenameResult rename(RenameRequest renameRequest, Writer writer);
+    void rename(RenameRequest renameRequest, Writer writer);
 }

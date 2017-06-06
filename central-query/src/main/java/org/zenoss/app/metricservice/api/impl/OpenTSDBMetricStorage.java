@@ -94,7 +94,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
 
     @Override
-    public RenameResult rename(RenameRequest renameRequest, Writer writer) {
+    public void rename(RenameRequest renameRequest, Writer writer) {
         ExecutorService executorService = getExecutorService();
         CompletionService<RenameResult> renameCompletionService =
             new ExecutorCompletionService<>(executorService);
@@ -227,15 +227,6 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         }
 
         dropCacheClient.dropCache(getOpenTSDBApiDropCacheUrl());
-
-        if(failures.size() > 0){
-            String s = "Renaming complete, but the following issues were encountered: " + failures.toString();
-            fullResult.reason = s;
-        } else {
-            fullResult.reason = "OK";
-        }
-        fullResult.code = Response.Status.OK.getStatusCode();
-        return fullResult;
     }
 
     class RenameTask implements Callable<RenameResult> {

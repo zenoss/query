@@ -120,8 +120,8 @@ public class QueryServiceImpl implements QueryService {
     }
 
     @Override
-    public RenameResult rename(RenameRequest renameRequest, Writer writer) {
-        return metricStorage.rename(renameRequest, writer);
+    public void rename(RenameRequest renameRequest, Writer writer) {
+        metricStorage.rename(renameRequest, writer);
     }
 
     private OpenTSDBQueryReturn getOpenTSDBQueryResults(Collection<MetricQuery> metricQueries, MetricRequest query) {
