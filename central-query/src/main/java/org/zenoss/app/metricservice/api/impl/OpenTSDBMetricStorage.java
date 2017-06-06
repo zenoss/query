@@ -230,6 +230,8 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
                         "%d out of %d tasks failed.", nFailures, nTasks
                     )
                 );
+            } else {
+                writer.write("Success");
             }
         } catch (IOException e) {
             log.error(
