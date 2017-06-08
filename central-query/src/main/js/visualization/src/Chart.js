@@ -553,9 +553,11 @@
                             color.color = dp.color;
                         }
                         box = $(cols[0]).find('div.zenfooter_box');
-                        box.css('background-color', color.color);
-                        box.css('border-color', color.color);
-                        box.css('opacity', color.opacity);
+                        box.css({
+                            'background-color': color.color,
+                            'border-color': color.color,
+                            'opacity': color.opacity
+                        });
 
                         // Metric name
                         label = dp.legend || dp.metric;
@@ -666,9 +668,11 @@
                     // color box
                     $(cols[0])
                         .find('div.zenfooter_box')
-                        .css('background-color', color.color)
-                        .css('border-color', color.color)
-                        .css('opacity', color.opacity);
+                        .css({
+                            'background-color': color.color,
+                            'border-color': color.color,
+                            'opacity': color.opacity
+                        });
 
                     // Threshold
                     label = dp.legend + '*';
@@ -815,9 +819,11 @@
                     // color box
                     $(cols[0])
                         .find('div.zenfooter_box')
-                        .css('background-color', color.color)
-                        .css('border-color', color.color)
-                        .css('opacity', color.opacity);
+                        .css({
+                            'background-color': color.color,
+                            'border-color': color.color,
+                            'opacity': color.opacity
+                        });
 
                     // Threshold
                     var label = projection.key;
