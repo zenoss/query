@@ -160,21 +160,18 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
             try {
                 final Future<RenameResult> result = renameCompletionService.take();
 
-                // Write the progress every once in a while.
-                // TODO: Print out less frequently.
-                if (i % 5 == 0) {
-                    int percent = (int) ((float) i/nTasks*100);
-                    writer.write(
-                        String.format(
-                            "Renaming device %s to %s: %d out of %d tasks completed (%d%%).%n",
-                            oldId,
-                            newId,
-                            i,
-                            nTasks,
-                            percent
-                        )
-                    );
-                }
+                // Write the progress.
+                int percent = (int) ((float) i/nTasks*100);
+                writer.write(
+                    String.format(
+                        "Renaming device %s to %s: %d out of %d tasks completed (%d%%).%n",
+                        oldId,
+                        newId,
+                        i,
+                        nTasks,
+                        percent
+                    )
+                );
 
                 RenameResult r = result.get();
                 if (!(r.code >= 200 && r.code <= 299)) {

@@ -92,7 +92,7 @@ public class Resources {
                 writer.flush();
             }
         };
-        return Response.ok(stream).build();
+        return  Response.ok(stream).header("X-Accel-Buffering","no").build();
     }
 
 
