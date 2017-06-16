@@ -60,10 +60,8 @@ public class OpenTSDBClient {
         try {
             HttpResponse response = httpClient.execute(httpPost, context);
             String json = EntityUtils.toString(response.getEntity());
-            log.info("Suggest {}", json);
             ObjectMapper objectMapper = new ObjectMapper();
             result.suggestions = objectMapper.readValue(json, ArrayList.class);
-            // TODO: do something for bad status returns from the rename
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
