@@ -122,8 +122,10 @@
         if (!this.$div.length) {
             throw new utils.Error('SelectorError', 'unknown selector specified, "' + this.name + '"');
         }
-
         this.printOptimized = config.printOptimized;
+        if (this.printOptimized) {
+            this.$div.addClass('print-optimized');
+        }
 
         // base should be something like 1000 or 1024
         this.base = config.base || 1000;
@@ -131,6 +133,7 @@
         // Build up a map of metric name to legend label.
         this.__buildPlotInfo();
 
+        // Thresholds
         this.overlays = config.overlays || [];
         this.overlays.sort(utils.compareASC('legend'));
 
@@ -148,6 +151,7 @@
         this.timezone = config.timezone || jstz.determine().name();
         this.svgwrapper = document.createElement('div');
         $(this.svgwrapper).addClass('zenchart');
+
         this.$div.append($(this.svgwrapper));
         this.containerSelector = '#' + name + ' .zenchart';
 
@@ -238,7 +242,7 @@
             var i, info, dp, nameOrMetric, key;
             var plotInfo = {};
 
-            for (i in this.config.datapoints) {
+            for (i = 0; i < this.config.datapoints.length; i++) {
                 dp = this.config.datapoints[i];
                 key = utils.shortId();
                 dp.id = key;
@@ -322,7 +326,7 @@
             $(td).addClass('zenfooter_box_column');
             d = document.createElement('div');
             $(d).addClass('zenfooter_box');
-            $(d).css('backgroundColor', 'white');
+            $(d).css('backgroundColor', 'transparent');
             $(td).append($(d));
             $(tr).append($(td));
 
@@ -352,11 +356,131 @@
 
             ll = this.plots.length;
             for (i = 0; i < ll; i += 1) {
-                if (this.plots[i].key === (dp.legend || dp.metric)) {
+                if (dp.legend && (
+                    this.plots[i].key === (dp.legend || dp.metric) ||
+                    this.plots[i].key === dp.legend + '*' // thresholds
+                    )) {
+                    return this.plots[i];
+                }
+                if (this.plots[i] === dp) { // projections
                     return this.plots[i];
                 }
             }
             return undefined;
+        },
+
+        __redrawLowerLegend: function() {
+            // Set the CSS based on the disabled property for the legend boxes.
+            var rows, ll, cols, box, color, plot;
+            rows = $(this.table).find('tr.zenfooter_value_row');
+            ll = this.plots.length;
+            for (var i = 0; i < ll; i++) {
+                cols = $(rows[i]).find('td');
+                box = $(cols[0]).find('div.zenfooter_box');
+                if (this.impl) {
+                    color = this.impl.color(this, this.closure, i);
+                } else {
+                    // unable to determine color
+                    color = {
+                        color: "white",
+                        opacity: 1
+                    };
+                }
+                plot = this.plots[i];
+                if (plot.color) {
+                    color.color = plot.color;
+                }
+                box.css('background-color', plot.disabled ? 'transparent' : color.color);
+                box.css('opacity', color.opacity);
+            }
+
+            // Refresh the graph.
+            this.impl.resize(this);
+        },
+
+        /**
+         * Called when a lower Legend on the graph is clicked.
+         */
+        __lowerLegendClicked: function (dp) {
+            // Get the associated plot and toggle the enabled flag.
+            var plot = this.__getAssociatedPlot(dp);
+            plot.disabled = !plot.disabled;
+
+            // If all elements are disabled, enable them all.
+            if (this.plots.every(function(p) { return p.disabled; })) {
+                this.plots.forEach(function(p) { p.disabled = false; });
+            }
+
+            this.__redrawLowerLegend();
+        },
+
+        /**
+         * Called when a lower Legend on the graph is double-clicked.
+         */
+        __lowerLegendDblClicked: function(dp) {
+            // Double click on a datapoint causes it to be enabled
+            // and all others to be disabled.
+            var plot = this.__getAssociatedPlot(dp);
+            this.plots.forEach(function(p) {
+                p.disabled = (p !== plot);
+            });
+            this.overlays.forEach(function(o) {
+                o.disabled = (o !== plot);
+            });
+
+            this.__redrawLowerLegend();
+        },
+
+        /**
+         * Called when the mouse hovers over a lower Legend item.
+         */
+        __lowerLegendMouseOver: function(dp) {
+            var plot = this.__getAssociatedPlot(dp);
+
+            this.svg.selectAll('.nv-group').classed( {
+                'zenchart_lowlight':  function(d) {
+                    return (d !== plot);
+                },
+                'zenchart_spotlight': function(d) {
+                    return (d === plot);
+                }
+            });
+        },
+
+        /**
+         * Called when the mouse leaves a lower Legend item.
+         */
+        __lowerLegendMouseOut: function() {
+            /**
+            * Restore the opacity/stroke-width from the mouseover for all series.
+            */
+            this.svg.selectAll('.nv-group').classed({'zenchart_lowlight': false, 'zenchart_spotlight': false});
+        },
+
+        /**
+         * Add the events to the table row.
+         */
+        __setLegendEvents: function(tr, dp) {
+            (function(chart) {
+                tr.addEventListener('click', function() {
+                    chart.__lowerLegendClicked(dp);
+                }, false);
+                tr.addEventListener('dblclick', function() {
+                    chart.__lowerLegendDblClicked(dp);
+                }, false);
+                tr.addEventListener('mouseover', function() {
+                    chart.__lowerLegendMouseOver(dp);
+                }, false);
+                tr.addEventListener('mouseout', function() {
+                    chart.__lowerLegendMouseOut();
+                }, false);
+                // Prevent highlighting on the double-click event.
+                tr.addEventListener('mousedown', function (event) {
+                    if (event.detail > 1) {
+                        event.preventDefault();
+                    }
+                }, false);
+            })(this);
         },
 
         /**
@@ -369,7 +493,7 @@
          */
         __updateFooter: function (data) {
             var sta, eta, plot, dp, vals, cur, min, max, avg, cols, init, label, ll, i, v, vIdx, k, rows, row, box, color, resize = false,
-                timezone = this.timezone;
+                timezone = this.timezone, tr;
             if (!this.table) {
                 return false;
             }
@@ -397,14 +521,16 @@
             ll = this.config.datapoints.length;
             row = 0;
             if (!this.__footerRangeOnly()) {
-                for (i in this.config.datapoints) {
+                for (i = 0; i < this.config.datapoints.length; i++) {
                     dp = this.config.datapoints[i];
                     plot = this.__getAssociatedPlot(dp);
                     if (!this.__isOverlay(dp.legend || dp.metric) &&
                         (dp.emit === undefined || dp.emit)) {
                         if (row >= rows.length) {
-                            rows.push(this.__appendFooterRow());
+                            tr = this.__appendFooterRow();
+                            rows.push(tr);
                             resize = true;
+                            this.__setLegendEvents(tr[0], dp);
                         }
 
                         // The first column is the color, the second is the metric
@@ -418,7 +544,7 @@
                         } else {
                             // unable to determine color
                             color = {
-                                color: "white",
+                                color: "transparent",
                                 opacity: 1
                             };
                         }
@@ -427,8 +553,11 @@
                             color.color = dp.color;
                         }
                         box = $(cols[0]).find('div.zenfooter_box');
-                        box.css('background-color', color.color);
-                        box.css('opacity', color.opacity);
+                        box.css({
+                            'background-color': color.color,
+                            'border-color': color.color,
+                            'opacity': color.opacity
+                        });
 
                         // Metric name
                         label = dp.legend || dp.metric;
@@ -452,7 +581,7 @@
                             avg = 3;
                             init = false;
 
-                            for (vIdx in plot.values) {
+                            for (vIdx = 0; vIdx < plot.values.length; vIdx++) {
                                 v = plot.values[vIdx];
                                 // don't attempt to calculate nulls
                                 if (v.y === null) {
@@ -473,10 +602,10 @@
 
                             if (isFinite(this.maxResult[row])) {
                                 vals[max] = this.maxResult[row];
-                            };
+                            }
                             if (isFinite(this.minResult[row])) {
                                 vals[min] = this.minResult[row];
-                            };
+                            }
 
                             for (v = 0; v < vals.length; v += 1) {
                                 $(cols[2 + v]).html(this.formatValue(vals[v], undefined, dp.displayFullValue));
@@ -487,12 +616,71 @@
                 }
             }
 
-            // Extra rows exit in the table and need to be remove
-            if (row < rows.length - 1) {
-                for (i = rows.length - 1; i >= row; i -= 1) {
-                    rows[i].remove();
+            // remove any extra rows
+            if (row < rows.length) {
+                // includes overlay header row
+                for (i = rows.length-1; i >= row-1; i--) {
+                    rows.splice(-1,1);
+                    $(this.table).find("tr:last").remove();
                 }
                 resize = true;
+            }
+
+            // Add thresholds
+            if (this.config.overlays && this.config.overlays.length) {
+                // One row for the stats table header
+                tr = $(this.table).find('tr.zenfooter_tablerow_thresholds');
+                if (tr.length === 0) {
+                    tr = document.createElement('tr');
+                    $(tr).addClass("zenfooter_tablerow_header zenfooter_tablerow_thresholds");
+                    tr.innerHTML = '<th class="footer_header zenfooter_box_column"></th>' +
+                        '<th class="footer_header zenfooter_data_text" colspan="5">Thresholds</th>';
+                    $(this.table).append($(tr));
+                    rows.push($(tr));
+                }
+
+                for (i = 0; i < this.config.overlays.length; i++) {
+                    dp = this.config.overlays[i];
+                    row = rows.length;
+
+                    if (row >= rows.length) {
+                        tr = this.__appendFooterRow();
+                        rows.push(tr);
+                        resize = true;
+                        this.__setLegendEvents(tr[0], dp);
+                    }
+
+                    cols = $(rows[row]).find('td');
+
+                    // footer color
+                    if (dp.color) {
+                        color.color = dp.color;
+                    } else if (this.impl) {
+                        color = this.impl.color(this, this.closure, i + ll);
+                    } else {
+                        // unable to determine color
+                        color = {
+                            color: "transparent",
+                            opacity: 1
+                        };
+                    }
+
+                    // color box
+                    $(cols[0])
+                        .find('div.zenfooter_box')
+                        .css({
+                            'background-color': color.color,
+                            'border-color': color.color,
+                            'opacity': color.opacity
+                        });
+
+                    // Threshold
+                    label = dp.legend + '*';
+                    $(cols[1])
+                        .html(label)
+                        .attr('colspan','8') // 5 + 3 projection cells
+                        .addClass('zenfooter_threshold');
+                }
             }
 
             if (this.__renderCapacityFooter !== undefined) {
@@ -563,14 +751,14 @@
             // append column data
             var duplicateRowKeys = {};
             projections.forEach(function (projection) {
-                var i, futureTime, rawProjectedValue, projectedValue
+                var i, futureTime, rawProjectedValue, projectedValue;
                 // append row spacer
                 var rowKey = projection.key.replace("Projected ", "").split(" - ")[0];
 
                 // forecasting plot data comes in the same order as the graph footer data
                 // we need to keep track of seen row names because duplicate names are possible
                 // in that case, we rely on the order that we've seen the data
-                if(duplicateRowKeys[rowKey] != undefined) {
+                if(duplicateRowKeys[rowKey] !== undefined) {
                     duplicateRowKeys[rowKey]++;
                 }else{
                     duplicateRowKeys[rowKey] = 0;
@@ -584,9 +772,9 @@
                 }));
 
                 for (i = 0; i < futureTimes.length; i++) {
-                    var futureTime = moment().add(futureTimes[i], 'days'),
-                        rawProjectedValue = Number(projection.projectionFn(futureTime.unix()).toFixed(2)),
-                        projectedValue = (rawProjectedValue > 0) ? this.formatValue(rawProjectedValue) : 0;
+                    futureTime = moment().add(futureTimes[i], 'days');
+                    rawProjectedValue = Number(projection.projectionFn(futureTime.unix()).toFixed(2));
+                    projectedValue = rawProjectedValue > 0 ? this.formatValue(rawProjectedValue) : 0;
 
                     var projectionColumn = $("<td/>", {
                         text: projectedValue,
@@ -596,6 +784,55 @@
                     $(row).append(projectionColumn);
                 }
             }.bind(this));
+
+            // Add Projections to the lower legend.
+            // Only add projections if we've gotten all of the projection data.
+            if (projections && projections.length && projections.length == this.projections.length) {
+                // One row for the stats table header
+                var rows = $(this.table).find('tr.zenfooter_value_row');
+                var tr = $(this.table).find('tr.zenfooter_tablerow_projections');
+                if (tr.length === 0) {
+                    tr = document.createElement('tr');
+                    $(tr).addClass("zenfooter_tablerow_header zenfooter_tablerow_projections");
+                    tr.innerHTML = '<th class="footer_header zenfooter_box_column"></th>' +
+                        '<th class="footer_header zenfooter_data_text" colspan="5">Projections</th>';
+                    $(this.table).append($(tr));
+                    rows.push($(tr));
+                }
+
+                for (i = 0; i < projections.length; i++) {
+                    var projection = projections[i];
+
+                    var row = rows.length;
+                    tr = this.__appendFooterRow();
+                    rows.push(tr);
+                    this.__setLegendEvents(tr[0], projection);
+
+                    var cols = $(rows[row]).find('td');
+
+                    // footer color
+                    var color = {
+                        color: projection.color,
+                        opacity: 1
+                    };
+
+                    // color box
+                    $(cols[0])
+                        .find('div.zenfooter_box')
+                        .css({
+                            'background-color': color.color,
+                            'border-color': color.color,
+                            'opacity': color.opacity
+                        });
+
+                    // Threshold
+                    var label = projection.key;
+                    $(cols[1])
+                        .html(label)
+                        .attr('colspan','8') // 5 + 3 projection cells
+                        .addClass('zenfooter_threshold');
+                }
+            }
 
             this.resize();
         },
@@ -636,7 +873,7 @@
          *            the data to be charted
          */
         __buildFooter: function (config, data) {
-            var tr, td, dates, th;
+            var tr, td, dates;
             this.table = document.createElement('table');
             $(this.table).addClass('zenfooter_content');
             $(this.table).addClass('zenfooter_text');
@@ -658,6 +895,7 @@
 
                 // One row for the stats table header
                 tr = document.createElement('tr');
+                $(tr).addClass("zenfooter_tablerow_header");
                 tr.innerHTML = '<th class="footer_header zenfooter_box_column"></th>' +
                     '<th class="footer_header zenfooter_data_text">Metric</th>' +
                     '<th class="footer_header zenfooter_data_number">Last</th>' +
@@ -718,8 +956,8 @@
                  maxDataResults = data.results[i].datapoints;
                  if (maxDataResults !== undefined){
                      for (j = 0; j < maxDataResults.length; j++) {
-                         maxValues.push(maxDataResults[j].value)
-                      };
+                         maxValues.push(maxDataResults[j].value);
+                      }
                       maxResult.push(Math.max.apply(null, maxValues));
                       maxValues = [];
                  }
@@ -739,8 +977,8 @@
                 minDataResults = data.results[i].datapoints;
                 if (minDataResults !== undefined){
                     for (j = 0; j < minDataResults.length; j++) {
-                        minValues.push(minDataResults[j].value)
-                    };
+                        minValues.push(minDataResults[j].value);
+                    }
                     minResult.push(Math.min.apply(null, minValues));
                     minValues = [];
                 }
@@ -789,7 +1027,7 @@
 
             try {
                 this.request = this.__buildDataRequest(this.config);
-                this.maxRequest = jQuery.extend({}, this.request)
+                this.maxRequest = jQuery.extend({}, this.request);
                 if (this.maxRequest.downsample !== null) {
                     this.maxRequest.downsample = this.maxRequest.downsample.replace("avg", "max");
                 }
@@ -800,7 +1038,7 @@
                     'dataType': 'json',
                     'contentType': 'application/json'
                 });
-                this.minRequest = jQuery.extend({}, this.request)
+                this.minRequest = jQuery.extend({}, this.request);
                 if (this.minRequest.downsample !== null) {
                     this.minRequest.downsample = this.minRequest.downsample.replace("avg", "min");
                 }
@@ -898,14 +1136,14 @@
                             });
                         });
                     });
-                this.updatePromise = $.when(this.updateRequest)
+                this.updatePromise = $.when(this.updateRequest);
                 if(this.onUpdate){
                     // if we have access to the onUpdate function of a graph, send it the ajax request promise
                     this.onUpdate(this.updatePromise);
                 }
                 // set timeout for update promise
                 this.updateTimeout = setTimeout(this.cancelUpdate.bind(this), UPDATE_TIMEOUT);
-                this.updatePromise.then(function(data){
+                this.updatePromise.then(function(){
                     self.cleanupDataReq();
                 },
                 function (err) {
@@ -978,18 +1216,18 @@
             var regression = [],
                 downsample = this.request.downsample,
                 config = this.config,
-                i, y, skipThisPoint = false,
+                y, skipThisPoint = false,
                 step = this.__convertDownsampletoStep(downsample), t = start;
             while (t < end) {
                 y = projectionFn(t);
                 // make sure it is always visible in the graph (does not go below miny)
-                if (config.miny !== undefined && config.miny != null && y <= config.miny) {
+                if (config.miny !== undefined && config.miny !== null && y <= config.miny) {
                     y = config.miny;
                     skipThisPoint = true;
                 }
 
                 // make sure it doesn't go above maxy
-                if (config.maxy !== undefined && config.maxy != null && y >= config.maxy) {
+                if (config.maxy !== undefined && config.maxy !== null && y >= config.maxy) {
                     y = config.maxy;
                     skipThisPoint = true;
                 }
@@ -1021,10 +1259,10 @@
         createRegressionFunction: function (projection, values) {
             // get the implementation based on the projection "type" (or projectionAlgorithm property)
             var xValues = $.map(values, function (o) {
-                    return o["timestamp"];
+                    return o.timestamp;
                 }),
                 yValues = $.map(values, function (o) {
-                    return o["value"];
+                    return o.value;
                 });
 
             return zenoss.visualization.projections[projection.projectionAlgorithm](projection, xValues, yValues);
@@ -1271,7 +1509,7 @@
 
             data.results.forEach(function (series) {
 
-                var dp, info, key, plot;
+                var info, key, plot;
 
                 // if series.datapoints is not defined, or there are no points
                 if (!series.datapoints || (series.datapoints && !series.datapoints.length)) {
@@ -1552,8 +1790,8 @@
 
         __showMessage: function (message) {
             // cache some commonly used selectors
-            var $message = this.$div.find(".message"),
-                $messageSpan = $message.find("span");
+            var $message = this.$div.find(".message");
+            //var $messageSpan = $message.find("span");
 
             if (message) {
                 $message.html(message);
