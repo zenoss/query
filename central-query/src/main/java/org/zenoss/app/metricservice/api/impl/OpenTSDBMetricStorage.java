@@ -218,20 +218,20 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         try {
             writer.write(
                 String.format(
-                    "Renaming device %s to %s completed.%n", oldId, newId
+                    "Renaming device %s to %s completed.", oldId, newId
                 )
             );
             if (nFailures > 0) {
                 writer.write(
                     String.format(
-                        "%d out of %d tasks failed.", nFailures, nTasks
+                        "%d out of %d tasks failed.%n", nFailures, nTasks
                     )
                 );
             } else {
                 // Do not change this msg and do not write more msgs after this
                 // because this msg may be used by whoever receives the msg,
                 // e.g., in order to indicate the status of the renaming request.
-                writer.write("Success");
+                writer.write("Success.%n");
             }
         } catch (IOException e) {
             log.error(
