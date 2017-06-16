@@ -151,6 +151,16 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
             renameCompletionService.submit(new RenameTask(client, renameReq));
         }
 
+        try {
+            writer.write(
+                String.format("Start renaming %s to %s...%n", oldId, newId));
+        } catch (IOException e) {
+            log.error(
+                "Error while writing the renaming tasks progress: {}",
+                e.getMessage()
+            );
+        }
+
         // Process the result from each rename task.
         // The no. of requests submitted to the completion service is equal
         // to (no. of metrics) + (no. of key tagv's) + (1 for device tagv).
@@ -164,7 +174,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
                 int percent = (int) ((float) i/nTasks*100);
                 writer.write(
                     String.format(
-                        "Renaming device %s to %s: %d out of %d tasks completed (%d%%).%n",
+                        "Renaming %s to %s: %d out of %d tasks completed (%d%%).%n",
                         oldId,
                         newId,
                         i,
@@ -218,20 +228,20 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         try {
             writer.write(
                 String.format(
-                    "Renaming device %s to %s completed.", oldId, newId
+                    "Renaming %s to %s completed. ", oldId, newId
                 )
             );
             if (nFailures > 0) {
                 writer.write(
                     String.format(
-                        "%d out of %d tasks failed.%n", nFailures, nTasks
+                        "%d out of %d tasks failed.", nFailures, nTasks
                     )
                 );
             } else {
                 // Do not change this msg and do not write more msgs after this
                 // because this msg may be used by whoever receives the msg,
                 // e.g., in order to indicate the status of the renaming request.
-                writer.write("Success.%n");
+                writer.write("Success.");
             }
         } catch (IOException e) {
             log.error(
@@ -240,8 +250,12 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
             );
         }
 
-        // Drop caches in OpenTSDB
-        dropCacheClient.dropCache(getOpenTSDBApiDropCacheUrl());
+        // Drop caches in OpenTSDB. Just in case there are multiple OpenTSDB
+        // servers, make several requests in order to hit all of them, although
+        // it does not gurantee that all of them will be hit.
+        for (int i = 0; i < 10; i++) {
+            dropCacheClient.dropCache(getOpenTSDBApiDropCacheUrl());
+        }
     }
 
     class RenameTask implements Callable<RenameResult> {
