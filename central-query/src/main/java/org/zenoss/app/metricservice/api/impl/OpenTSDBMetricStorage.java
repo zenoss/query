@@ -114,7 +114,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         // For example, {"metric": "myDev/sysUpTime_sysUpTime"}
         OpenTSDBSuggest otsdbSuggestRequest = new OpenTSDBSuggest();
         otsdbSuggestRequest.type = OpenTSDBSuggest.TYPE_METRIC;
-        otsdbSuggestRequest.q = oldId;
+        otsdbSuggestRequest.q = oldId + "/";
         SuggestResult suggestResult = suggestClient.suggest(otsdbSuggestRequest);
         ArrayList<String> metrics = suggestResult.suggestions;
 
@@ -138,7 +138,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         // {"tags": [{"key": "Devices/myDev/filesystems/boot"}, ...]}
         otsdbSuggestRequest = new OpenTSDBSuggest();
         otsdbSuggestRequest.type = OpenTSDBSuggest.TYPE_TAGV;
-        otsdbSuggestRequest.q = "Devices/" + oldId;
+        otsdbSuggestRequest.q = "Devices/" + oldId + "/";
         suggestResult = suggestClient.suggest(otsdbSuggestRequest);
         ArrayList<String> keys = suggestResult.suggestions;
 
