@@ -1,4 +1,4 @@
-package org.zenoss.app.metricservice.api.model.v2;
+package org.zenoss.app.metricservice.api.impl;
 
 /**
  * Created by maya on 5/22/17.

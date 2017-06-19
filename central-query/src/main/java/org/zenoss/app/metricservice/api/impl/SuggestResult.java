@@ -1,4 +1,4 @@
-package org.zenoss.app.metricservice.api.model.v2;
+package org.zenoss.app.metricservice.api.impl;
 
 import java.util.ArrayList;
 
