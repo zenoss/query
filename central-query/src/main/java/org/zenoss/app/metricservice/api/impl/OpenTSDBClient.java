@@ -22,8 +22,6 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.LoggerFactory;
-//import org.zenoss.app.metricservice.api.model.v2.DropResult;
-//import org.zenoss.app.metricservice.api.model.v2.SuggestResult;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;

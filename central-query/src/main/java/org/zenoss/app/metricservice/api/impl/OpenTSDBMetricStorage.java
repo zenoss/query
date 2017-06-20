@@ -32,15 +32,11 @@ package org.zenoss.app.metricservice.api.impl;
 
 import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.params.ClientPNames;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.HTTP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +52,6 @@ import org.zenoss.app.metricservice.api.model.v2.*;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -107,8 +102,8 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
             new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropCacheUrl());
         RenameResult fullResult = new RenameResult();
 
-        final String oldId = renameRequest.getOldId();
-        final String newId = renameRequest.getNewId();
+        final String oldId = renameRequest.getOldPrefix();
+        final String newId = renameRequest.getNewPrefix();
 
         // Rename metrics from the device whose ID is about to change
         // For example, {"metric": "myDev/sysUpTime_sysUpTime"}
