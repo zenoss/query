@@ -6,7 +6,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.validation.constraints.NotNull;
 
 /**
- * Created by maya on 5/12/17.
+ * This class contain the information neccessary to fulfil a rename operation.
+ *     oldName: A search word
+ *     newName: A word that will replace the search word.
+ *     type: Either metric or tagv.
+ *     patternType: Either prefix or whole. If prefix, a list of entities that
+ *                  shares oldName as a prefix will be renamed altogether.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class RenameRequest {
@@ -28,11 +33,7 @@ public class RenameRequest {
 
     public final String getOldName() { return oldName; }
 
-    public final void setOldName(String oldName) { this.oldName = oldName; }
-
     public final String getNewName() { return newName; }
-
-    public final void setNewName(String newName) { this.newName = newName; }
 
     public final String getType() { return type; }
 
