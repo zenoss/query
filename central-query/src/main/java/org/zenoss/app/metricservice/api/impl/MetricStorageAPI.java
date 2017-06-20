@@ -22,5 +22,6 @@ public interface MetricStorageAPI {
 
     String getSourceId();
 
-    void rename(RenameRequest renameRequest, Writer writer);
+    void renamePrefix(RenameRequest renameRequest, Writer writer);
+    void renameWhole(RenameRequest renameRequest, Writer writer);
 }

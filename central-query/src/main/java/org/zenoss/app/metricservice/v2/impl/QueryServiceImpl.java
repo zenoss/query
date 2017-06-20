@@ -121,7 +121,11 @@ public class QueryServiceImpl implements QueryService {
 
     @Override
     public void rename(RenameRequest renameRequest, Writer writer) {
-        metricStorage.rename(renameRequest, writer);
+        if (renameRequest.getPatternType().equals("prefix")) {
+            metricStorage.renamePrefix(renameRequest, writer);
+        } else {
+            metricStorage.renameWhole(renameRequest, writer);
+        }
     }
 
     private OpenTSDBQueryReturn getOpenTSDBQueryResults(Collection<MetricQuery> metricQueries, MetricRequest query) {

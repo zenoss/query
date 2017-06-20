@@ -12,17 +12,29 @@ import javax.validation.constraints.NotNull;
 public class RenameRequest {
     @JsonProperty(required=true)
     @NotNull
-    private String oldId;
+    private String oldName;
 
     @JsonProperty(required=true)
     @NotNull
-    private String newId;
+    private String newName;
 
-    public final String getOldId() { return oldId; }
+    @JsonProperty(required=true)
+    @NotNull
+    private String type;
 
-    public final void setOldId(String oldId) { this.oldId = oldId; }
+    @JsonProperty(required=true)
+    @NotNull
+    private String patternType;
 
-    public final String getNewId() { return newId; }
+    public final String getOldName() { return oldName; }
 
-    public final void setNewId(String newId) { this.newId = newId; }
+    public final void setOldName(String oldName) { this.oldName = oldName; }
+
+    public final String getNewName() { return newName; }
+
+    public final void setNewName(String newName) { this.newName = newName; }
+
+    public final String getType() { return type; }
+
+    public final String getPatternType() { return patternType; }
 }
