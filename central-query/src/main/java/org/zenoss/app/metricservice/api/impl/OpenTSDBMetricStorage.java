@@ -144,7 +144,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
         // Process the result from each rename task.
         int nTasks = suggestions.size();
-        for (int i = 0; i < nTasks; i++) {
+        for (int i = 1; i < nTasks + 1; i++) {
             try {
                 final Future<RenameResult> result = renameCompletionService.take();
 
