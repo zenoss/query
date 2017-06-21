@@ -107,7 +107,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
         OpenTSDBSuggest otsdbSuggestRequest = new OpenTSDBSuggest();
 
-        if (type.equals("metric")) {
+        if (type.equals(RenameRequest.TYPE_METRIC)) {
             otsdbSuggestRequest.type = OpenTSDBSuggest.TYPE_METRIC;
         } else {
             otsdbSuggestRequest.type = OpenTSDBSuggest.TYPE_TAGV;
@@ -121,7 +121,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
             String replace = s.replaceFirst(oldPrefix, newPrefix);
             final OpenTSDBRename renameReq = new OpenTSDBRename();
 
-            if (type.equals("metric")) {
+            if (type.equals(RenameRequest.TYPE_METRIC)) {
                 renameReq.metric = s;
             } else {
                 renameReq.tagv = s;
@@ -133,15 +133,18 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
         // Process the result from each rename task.
         int nTasks = suggestions.size();
+        RenameLogMsg msg = new RenameLogMsg();
         for (int i = 1; i < nTasks + 1; i++) {
             try {
                 final Future<RenameResult> result = renameCompletionService.take();
 
                 // Write the progress.
                 int percent = (int) ((float) i/nTasks*100);
-                writer.write(
+
+                msg.setType(RenameLogMsg.TYPE_PROGRESS);
+                msg.setContent(
                     String.format(
-                        "Renaming %s prefix %s to %s: %d out of %d tasks completed (%d%%).%n",
+                        "Renaming %s prefix %s to %s: %d out of %d tasks completed (%d%%).",
                         type,
                         oldPrefix,
                         newPrefix,
@@ -150,6 +153,8 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
                         percent
                     )
                 );
+
+                writer.write(Utils.jsonStringFromObject(msg) + "\n");
 
                 RenameResult r = result.get();
                 if (!(r.code >= 200 && r.code <= 299)) {
@@ -161,15 +166,19 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
                         oldName = r.request.metric;
                     }
 
-                    String msg = String.format(
-                        "Error while renaming %s prefix %s to %s in OpenTSDB: %s%n",
-                        type,
-                        oldName,
-                        newName,
-                        r.reason
+                    msg.setType(RenameLogMsg.TYPE_ERROR);
+                    msg.setContent(
+                        String.format(
+                            "Error while renaming %s prefix %s to %s in OpenTSDB: %s",
+                            type,
+                            oldName,
+                            newName,
+                            r.reason
+                        )
                     );
-                    log.error(msg);
-                    writer.write(msg);
+
+                    log.error(msg.getContent());
+                    writer.write(Utils.jsonStringFromObject(msg) + "\n");
                 }
             } catch (InterruptedException e) {
                 log.error(
@@ -211,25 +220,27 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
         OpenTSDBRename otsdbRenameRequest = new OpenTSDBRename();
         otsdbRenameRequest.name = newName;
-        if (type.equals("metric")) {
+        if (type.equals(RenameRequest.TYPE_METRIC)) {
             otsdbRenameRequest.metric = oldName;
         } else {
             otsdbRenameRequest.tagv = oldName;
         }
 
         RenameResult renameResult = new RenameResult();
+        RenameLogMsg msg = new RenameLogMsg();
         for(int x = 0; x < RETRY_CT; x++){
             renameResult = renameClient.rename(otsdbRenameRequest);
             if(renameResult.code == 200){
-                String msg = String.format(
-                    "Renaming %s %s to %s completed.%n",
+                msg.setType(RenameLogMsg.TYPE_INFO);
+                msg.setContent(String.format(
+                    "Renaming %s %s to %s completed.",
                     type,
                     oldName,
                     newName
-                );
-                log.info(msg);
+                ));
+                log.info(msg.getContent());
                 try {
-                    writer.write(msg);
+                    writer.write(Utils.jsonStringFromObject(msg));
                 } catch (IOException e) {
                     log.error("Error while handling IO after renaming in central query");
                 }
@@ -240,16 +251,17 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         }
 
         if (!(renameResult.code >= 200 && renameResult.code <= 299)) {
-            String msg = String.format(
-                "Error while renaming %s %s to %s in OpenTSDB: %s%n",
+            msg.setType(RenameLogMsg.TYPE_ERROR);
+            msg.setContent(String.format(
+                "Error while renaming %s %s to %s in OpenTSDB: %s",
                 type,
                 oldName,
                 newName,
                 renameResult.reason
-            );
-            log.error(msg);
+            ));
+            log.error(msg.getContent());
             try {
-                writer.write(msg);
+                writer.write(Utils.jsonStringFromObject(msg));
             } catch (IOException e) {
                 log.error(
                     "Error while handling IO after renaming in central query: {}",

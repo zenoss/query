@@ -19,8 +19,6 @@ import org.apache.shiro.subject.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonEncoding;
 
 import org.zenoss.app.AppConfiguration;
 import org.zenoss.app.metricservice.api.impl.Utils;

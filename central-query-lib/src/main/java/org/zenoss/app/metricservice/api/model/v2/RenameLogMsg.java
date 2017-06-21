@@ -23,6 +23,7 @@ public class RenameLogMsg {
     @NotNull
     private String content;
 
+    public static final String TYPE_INFO = "info";
     public static final String TYPE_ERROR = "error";
     public static final String TYPE_PROGRESS = "progress";
 

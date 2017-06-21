@@ -31,6 +31,9 @@ public class RenameRequest {
     @NotNull
     private String patternType;
 
+    public static final String TYPE_METRIC = "metric";
+    public static final String TYPE_TAGV = "tagv";
+
     public final String getOldName() { return oldName; }
 
     public final String getNewName() { return newName; }
