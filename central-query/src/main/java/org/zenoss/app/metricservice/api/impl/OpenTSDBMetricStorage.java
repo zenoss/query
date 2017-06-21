@@ -124,7 +124,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         ArrayList<String> suggestions = suggestResult.suggestions;
 
         for(String s: suggestions){
-            String replace = s.replace(oldPrefix, newPrefix);
+            String replace = s.replaceFirst(oldPrefix, newPrefix);
             final OpenTSDBRename renameReq = new OpenTSDBRename();
 
             if (type.equals("metric")) {
