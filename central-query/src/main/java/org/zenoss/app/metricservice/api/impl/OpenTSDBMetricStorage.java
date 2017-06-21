@@ -198,6 +198,13 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
             }
         }
 
+        log.info(
+            "Renaming {} prefix {} to {} completed.",
+            type,
+            oldPrefix,
+            newPrefix
+        );
+
         // No. of dropcache calls to make after renaming.
         // Just in case there are multiple OpenTSDB servers, make several requests
         // in order to hit all of them, although it does not gurantee that all of
