@@ -83,12 +83,6 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
     private static final String SOURCE_ID = "OpenTSDB";
     private static final int RETRY_CT = 2; // Retry count
 
-    // No. of dropcache calls to make after renaming.
-    // Just in case there are multiple OpenTSDB servers, make several requests
-    // in order to hit all of them, although it does not gurantee that all of
-    // them will be hit.
-    private static final int DROPCACHE_TRIES = 5;
-
     private static ExecutorService executorServiceInstance = null;
 
     static final String SPACE_REPLACEMENT = "//-";
@@ -195,7 +189,11 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
             }
         }
 
-        for (int i = 0; i < DROPCACHE_TRIES; i++) {
+        // No. of dropcache calls to make after renaming.
+        // Just in case there are multiple OpenTSDB servers, make several requests
+        // in order to hit all of them, although it does not gurantee that all of
+        // them will be hit.
+        for (int i = 0; i < config.getMetricServiceConfig().getDropCacheTries(); i++) {
             dropCacheClient.dropCache(getOpenTSDBApiDropCacheUrl());
         }
     }
@@ -259,7 +257,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
             }
         }
 
-        for (int i = 0; i < DROPCACHE_TRIES; i++) {
+        for (int i = 0; i < config.getMetricServiceConfig().getDropCacheTries(); i++) {
             dropCacheClient.dropCache(getOpenTSDBApiDropCacheUrl());
         }
     }
