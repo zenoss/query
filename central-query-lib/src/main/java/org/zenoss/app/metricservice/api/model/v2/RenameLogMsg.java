@@ -6,12 +6,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.validation.constraints.NotNull;
 
 /**
- * This class contain the information neccessary to fulfil a rename operation.
- *     oldName: A search word
- *     newName: A word that will replace the search word.
- *     type: Either metric or tagv.
- *     patternType: Either prefix or whole. If prefix, a list of entities that
- *                  shares oldName as a prefix will be renamed altogether.
+ * This class is for the log messages streamed back to the requester.
+ *     type: message type
+ *     content: the content of the message
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class RenameLogMsg {

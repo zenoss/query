@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.validation.constraints.NotNull;
 
 /**
- * This class contain the information neccessary to fulfil a rename operation.
+ * This class contains the information neccessary to fulfil a rename operation.
  *     oldName: A search word
  *     newName: A word that will replace the search word.
  *     type: Either metric or tagv.

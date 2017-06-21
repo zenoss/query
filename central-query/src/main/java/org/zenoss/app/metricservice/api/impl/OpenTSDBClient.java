@@ -108,7 +108,6 @@ public class OpenTSDBClient {
             StatusLine status = response.getStatusLine();
             result.reason = status.getReasonPhrase();
             result.code = status.getStatusCode();
-            // TODO: do something for bad status returns from the rename
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
