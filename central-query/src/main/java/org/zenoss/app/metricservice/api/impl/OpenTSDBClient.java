@@ -57,7 +57,7 @@ public class OpenTSDBClient {
         try {
             HttpResponse response = httpClient.execute(httpPost, context);
             String json = EntityUtils.toString(response.getEntity());
-            ObjectMapper objectMapper = new ObjectMapper();
+            ObjectMapper objectMapper = Utils.getObjectMapper();
             result.suggestions = objectMapper.readValue(json, ArrayList.class);
         } catch (IOException e) {
             e.printStackTrace();
