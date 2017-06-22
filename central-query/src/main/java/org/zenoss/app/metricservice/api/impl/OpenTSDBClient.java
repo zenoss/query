@@ -109,8 +109,8 @@ public class OpenTSDBClient {
             HttpResponse response = httpClient.execute(httpPost, context);
             StatusLine status = response.getStatusLine();
             InputStream in = response.getEntity().getContent();
-            Map<String, String> content = objectMapper.readValue(in, Map.class);
-            result.reason = content.get("error");
+            OpenTSDBRenameResult content = objectMapper.readValue(in, OpenTSDBRenameResult.class);
+            result.reason = content.getError();
             result.code = status.getStatusCode();
         } catch (IOException e) {
             e.printStackTrace();
