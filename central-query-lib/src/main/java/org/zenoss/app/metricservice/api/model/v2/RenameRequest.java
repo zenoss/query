@@ -34,6 +34,10 @@ public class RenameRequest {
     public static final String TYPE_METRIC = "metric";
     public static final String TYPE_TAGV = "tagv";
 
+    // Valid pattern types
+    public static final String PTYPE_PREFIX = "prefix";
+    public static final String PTYPE_WHOLE = "whole";
+
     public final String getOldName() { return oldName; }
 
     public final String getNewName() { return newName; }

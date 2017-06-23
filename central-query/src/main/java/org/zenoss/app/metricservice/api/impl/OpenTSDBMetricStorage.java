@@ -52,6 +52,7 @@ import org.zenoss.app.metricservice.api.model.v2.*;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.ws.rs.WebApplicationException;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -109,7 +110,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
         if (type.equals(RenameRequest.TYPE_METRIC)) {
             otsdbSuggestRequest.type = OpenTSDBSuggest.TYPE_METRIC;
-        } else {
+        } else if (type.equals(RenameRequest.TYPE_TAGV)) {
             otsdbSuggestRequest.type = OpenTSDBSuggest.TYPE_TAGV;
         }
 
@@ -123,7 +124,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
             if (type.equals(RenameRequest.TYPE_METRIC)) {
                 renameReq.metric = s;
-            } else {
+            } else if (type.equals(RenameRequest.TYPE_TAGV)) {
                 renameReq.tagv = s;
             }
 
@@ -227,9 +228,10 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
         OpenTSDBRename otsdbRenameRequest = new OpenTSDBRename();
         otsdbRenameRequest.name = newName;
+
         if (type.equals(RenameRequest.TYPE_METRIC)) {
             otsdbRenameRequest.metric = oldName;
-        } else {
+        } else if (type.equals(RenameRequest.TYPE_TAGV)) {
             otsdbRenameRequest.tagv = oldName;
         }
 
