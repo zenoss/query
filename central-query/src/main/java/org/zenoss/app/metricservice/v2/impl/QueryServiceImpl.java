@@ -49,6 +49,7 @@ import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.io.Writer;
+import java.io.IOException;
 
 @API
 public class QueryServiceImpl implements QueryService {
@@ -129,13 +130,20 @@ public class QueryServiceImpl implements QueryService {
                 metricStorage.renameWhole(renameRequest, writer);
             } else {
                 String msg = String.format(
-                    "Invalid pattern type in a rename request: {}",
+                    "Invalid pattern type in a rename request: %s",
                     patternType
                 );
                 throw new WebApplicationException(new Exception(msg));
             }
-        } catch (WebApplicationException e) {
-            e.printStackTrace();
+        } catch (WebApplicationException wae) {
+            try {
+                writer.write(wae.getMessage());
+            } catch (IOException ioe) {
+                log.error(
+                    "Error while writing an exception message to response {}",
+                    ioe.getMessage()
+                );
+            }
         }
     }
 
