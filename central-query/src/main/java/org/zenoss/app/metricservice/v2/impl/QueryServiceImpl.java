@@ -121,10 +121,21 @@ public class QueryServiceImpl implements QueryService {
 
     @Override
     public void rename(RenameRequest renameRequest, Writer writer) {
-        if (renameRequest.getPatternType().equals("prefix")) {
-            metricStorage.renamePrefix(renameRequest, writer);
-        } else {
-            metricStorage.renameWhole(renameRequest, writer);
+        String patternType = renameRequest.getPatternType();
+        try {
+            if (patternType.equals("prefix")) {
+                metricStorage.renamePrefix(renameRequest, writer);
+            } else if (patternType.equals("whole")) {
+                metricStorage.renameWhole(renameRequest, writer);
+            } else {
+                String msg = String.format(
+                    "Invalid pattern type in a rename request: {}",
+                    patternType
+                );
+                throw new WebApplicationException(new Exception(msg));
+            }
+        } catch (WebApplicationException e) {
+            e.printStackTrace();
         }
     }
 
