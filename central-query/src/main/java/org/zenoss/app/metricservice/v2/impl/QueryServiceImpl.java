@@ -40,6 +40,7 @@ import javax.annotation.Nullable;
 import javax.ws.rs.WebApplicationException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -49,6 +50,7 @@ import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.io.Writer;
+import java.io.IOException;
 
 @API
 public class QueryServiceImpl implements QueryService {
@@ -121,7 +123,59 @@ public class QueryServiceImpl implements QueryService {
 
     @Override
     public void rename(RenameRequest renameRequest, Writer writer) {
-        metricStorage.rename(renameRequest, writer);
+        if (ValidateRequest(renameRequest, writer)) {
+            String patternType = renameRequest.getPatternType();
+            if (patternType.equals("prefix")) {
+                metricStorage.renamePrefix(renameRequest, writer);
+            } else if (patternType.equals("whole")) {
+                metricStorage.renameWhole(renameRequest, writer);
+            }
+        } else {
+            log.error("Invalid rename request received: {}",
+                Utils.jsonStringFromObject(renameRequest));
+        }
+    }
+
+    private boolean ValidateRequest(RenameRequest renameRequest, Writer writer) {
+        boolean isValid = true;
+        final String type = renameRequest.getType();
+        final List<String> validTypes = Arrays.asList(
+            RenameRequest.TYPE_METRIC, RenameRequest.TYPE_TAGV);
+        isValid = isValid && ValidateRequestParamter(renameRequest, type, validTypes, writer);
+
+        final String patternType = renameRequest.getPatternType();
+        final List<String> validPatternTypes = Arrays.asList(
+            RenameRequest.PTYPE_PREFIX, RenameRequest.PTYPE_WHOLE);
+        isValid = isValid && ValidateRequestParamter(renameRequest, patternType, validPatternTypes, writer);
+        return isValid;
+    }
+
+    private boolean ValidateRequestParamter(
+        RenameRequest req, String input, List<String> validInputs, Writer writer) {
+
+        for (String s: validInputs) {
+            if (input.equals(s)) {
+                return true;
+            }
+        }
+
+        try {
+            String list = String.join(", ", validInputs);
+            list = "[" + list + "]";
+            RenameLogMsg msg = new RenameLogMsg();
+            msg.setType(RenameLogMsg.TYPE_ERROR);
+            String content = String.format(
+                "%s is not one of the valid inputs, %s", input, list);
+            msg.setContent(content);
+            writer.write(Utils.jsonStringFromObject(msg) + "\n");
+        } catch (IOException ioe) {
+            log.error(
+                "Error while writing an exception message to response {}",
+                ioe.getMessage()
+            );
+        }
+
+        return false;
     }
 
     private OpenTSDBQueryReturn getOpenTSDBQueryResults(Collection<MetricQuery> metricQueries, MetricRequest query) {

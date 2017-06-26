@@ -26,7 +26,9 @@ import org.slf4j.LoggerFactory;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Map;
 
 public class OpenTSDBClient {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(OpenTSDBClient.class);
@@ -34,6 +36,7 @@ public class OpenTSDBClient {
     private final DefaultHttpClient httpClient;
     private final String providedURL;
 
+    private static final ObjectMapper objectMapper = Utils.getObjectMapper();
 
     public OpenTSDBClient(DefaultHttpClient httpClient, String url) {
         this.httpClient = httpClient;
@@ -57,7 +60,6 @@ public class OpenTSDBClient {
         try {
             HttpResponse response = httpClient.execute(httpPost, context);
             String json = EntityUtils.toString(response.getEntity());
-            ObjectMapper objectMapper = new ObjectMapper();
             result.suggestions = objectMapper.readValue(json, ArrayList.class);
         } catch (IOException e) {
             e.printStackTrace();
@@ -106,9 +108,10 @@ public class OpenTSDBClient {
         try {
             HttpResponse response = httpClient.execute(httpPost, context);
             StatusLine status = response.getStatusLine();
-            result.reason = status.getReasonPhrase();
+            InputStream in = response.getEntity().getContent();
+            OpenTSDBRenameResult content = objectMapper.readValue(in, OpenTSDBRenameResult.class);
+            result.reason = content.getError();
             result.code = status.getStatusCode();
-            // TODO: do something for bad status returns from the rename
         } catch (IOException e) {
             e.printStackTrace();
         } finally {

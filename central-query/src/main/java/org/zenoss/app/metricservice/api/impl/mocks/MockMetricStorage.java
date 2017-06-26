@@ -205,7 +205,10 @@ public class MockMetricStorage implements MetricStorageAPI {
     }
 
     @Override
-    public void rename(RenameRequest renameRequest, Writer writer) {
+    public void renamePrefix(RenameRequest renameRequest, Writer writer) {
     }
 
+    @Override
+    public void renameWhole(RenameRequest renameRequest, Writer writer) {
+    }
 }

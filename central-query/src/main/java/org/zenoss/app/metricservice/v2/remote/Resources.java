@@ -19,8 +19,6 @@ import org.apache.shiro.subject.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonEncoding;
 
 import org.zenoss.app.AppConfiguration;
 import org.zenoss.app.metricservice.api.impl.Utils;
@@ -76,6 +74,18 @@ public class Resources {
         QueryResult result = api.query(metricRequest);
         return result;
     }
+
+    /**
+     * This method handles requests sent to the rename endpoint. The endpoint
+     * can be used for renaming metric names or tag values. It can rename not
+     * only an entity that matches wholly a word but also a list of entities
+     * that shares a common prefix.
+     * @param renameRequest The request includes information such as the names
+     * before and after rename, the type of the entity that is going to be
+     * renamed, the type of pattern search.
+     * @return Response The result of each rename task is streamed back to the
+     * requester.
+     */
     @POST
     @Path("/rename")
     @Timed

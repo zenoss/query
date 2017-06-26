@@ -6,36 +6,43 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.validation.constraints.NotNull;
 
 /**
- * Created by maya on 5/12/17.
- *
+ * This class contains the information neccessary to fulfil a rename operation.
+ *     oldName: A search word
+ *     newName: A word that will replace the search word.
+ *     type: Either metric or tagv.
+ *     patternType: Either prefix or whole. If prefix, a list of entities that
+ *                  shares oldName as a prefix will be renamed altogether.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class RenameRequest {
     @JsonProperty(required=true)
     @NotNull
-    private String oldPrefix;
+    private String oldName;
 
     @JsonProperty(required=true)
     @NotNull
-    private String newPrefix;
+    private String newName;
 
-    /**
-     * @return the old device id prefix
-     */
-    public final String getOldPrefix() { return oldPrefix; }
+    @JsonProperty(required=true)
+    @NotNull
+    private String type;
 
-    /**
-     * @param oldPrefix the prefix that will be overwritten
-     */
-    public final void setOldPrefix(String oldPrefix) { this.oldPrefix = oldPrefix; }
+    @JsonProperty(required=true)
+    @NotNull
+    private String patternType;
 
-    /**
-     * @return the new device id prefix
-     */
-    public final String getNewPrefix() { return newPrefix; }
+    public static final String TYPE_METRIC = "metric";
+    public static final String TYPE_TAGV = "tagv";
 
-    /**
-     * @param newPrefix the new prefix
-     */
-    public final void setNewPrefix(String newPrefix) { this.newPrefix = newPrefix; }
+    // Valid pattern types
+    public static final String PTYPE_PREFIX = "prefix";
+    public static final String PTYPE_WHOLE = "whole";
+
+    public final String getOldName() { return oldName; }
+
+    public final String getNewName() { return newName; }
+
+    public final String getType() { return type; }
+
+    public final String getPatternType() { return patternType; }
 }

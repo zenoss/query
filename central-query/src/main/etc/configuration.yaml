@@ -25,6 +25,10 @@ metrics:
   # Maximum number of threads in thread pool
   executorThreadPoolMaxSize: 250
 
+  # The number of requests sent to the opentsdb dropcaches endpoint after
+  # renaming metrics
+  dropCacheTries: 5
+
 proxyConfiguration:
   hostname: 127.0.0.1
   port: 8080

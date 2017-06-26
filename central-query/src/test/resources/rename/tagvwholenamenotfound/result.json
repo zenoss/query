@@ -1,0 +1,4 @@
+{
+  "type": "error",
+  "content": "Error while renaming tagv foo to bar in OpenTSDB: Name(\"foo\") does not exist"
+}

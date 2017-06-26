@@ -1,0 +1,6 @@
+{
+  "oldName": "foo",
+  "newName": "bar",
+  "type": "metric",
+  "patternType": "whole"
+}
