@@ -175,24 +175,20 @@ public class RenameResourceTest extends ResourceTest {
         );
     }
 
-    @Test
+    @Test(expected = InvalidEntityException.class)
     public void testBadPatternType() throws IOException, JSONException {
-        String expectedResultFile = "/rename/badpatterntype/result.json";
         String metricRequestFile = "/rename/badpatterntype/request.json";
 
-        testRename(
-            expectedResultFile,
+        testUnprocessableEntity(
             metricRequestFile
         );
     }
 
-    @Test
+    @Test(expected = InvalidEntityException.class)
     public void testBadType() throws IOException, JSONException {
-        String expectedResultFile = "/rename/badtype/result.json";
         String metricRequestFile = "/rename/badtype/request.json";
 
-        testRename(
-            expectedResultFile,
+        testUnprocessableEntity(
             metricRequestFile
         );
     }
