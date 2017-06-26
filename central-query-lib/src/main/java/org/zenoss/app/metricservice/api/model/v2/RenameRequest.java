@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 
 /**
  * This class contains the information neccessary to fulfil a rename operation.
@@ -23,10 +24,12 @@ public class RenameRequest {
     @NotNull
     private String newName;
 
+    @Pattern(regexp = "metric|tagv", flags = Pattern.Flag.CASE_INSENSITIVE)
     @JsonProperty(required=true)
     @NotNull
     private String type;
 
+    @Pattern(regexp = "prefix|whole", flags = Pattern.Flag.CASE_INSENSITIVE)
     @JsonProperty(required=true)
     @NotNull
     private String patternType;
