@@ -42,18 +42,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+
 import org.zenoss.app.annotations.API;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.configs.MetricServiceConfig;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
-import org.zenoss.app.metricservice.api.model.v2.Filter;
-import org.zenoss.app.metricservice.api.model.v2.MetricQuery;
-import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
+import org.zenoss.app.metricservice.api.model.v2.*;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.ws.rs.WebApplicationException;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +62,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
@@ -79,12 +82,230 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
     private static final Logger log = LoggerFactory.getLogger(OpenTSDBMetricStorage.class);
 
     private static final String SOURCE_ID = "OpenTSDB";
+    private static final int RETRY_CT = 2; // Retry count
 
     private static ExecutorService executorServiceInstance = null;
 
     static final String SPACE_REPLACEMENT = "//-";
     private DefaultHttpClient httpClient = null;
 
+    @Override
+    public void renamePrefix(RenameRequest renameRequest, Writer writer) {
+        OpenTSDBClient renameClient =
+            new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiRenameUrl());
+        OpenTSDBClient suggestClient =
+            new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiSuggestUrl());
+        OpenTSDBClient dropCacheClient =
+            new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropCacheUrl());
+
+        final String oldPrefix = renameRequest.getOldName();
+        final String newPrefix = renameRequest.getNewName();
+        final String type = renameRequest.getType();
+
+        ExecutorService executorService = getExecutorService();
+        CompletionService<RenameResult> renameCompletionService =
+            new ExecutorCompletionService<>(executorService);
+
+        OpenTSDBSuggest otsdbSuggestRequest = new OpenTSDBSuggest();
+
+        if (type.equals(RenameRequest.TYPE_METRIC)) {
+            otsdbSuggestRequest.type = OpenTSDBSuggest.TYPE_METRIC;
+        } else if (type.equals(RenameRequest.TYPE_TAGV)) {
+            otsdbSuggestRequest.type = OpenTSDBSuggest.TYPE_TAGV;
+        }
+
+        otsdbSuggestRequest.q = oldPrefix;
+        SuggestResult suggestResult = suggestClient.suggest(otsdbSuggestRequest);
+        ArrayList<String> suggestions = suggestResult.suggestions;
+
+        for(String s: suggestions){
+            String replace = s.replaceFirst(oldPrefix, newPrefix);
+            final OpenTSDBRename renameReq = new OpenTSDBRename();
+
+            if (type.equals(RenameRequest.TYPE_METRIC)) {
+                renameReq.metric = s;
+            } else if (type.equals(RenameRequest.TYPE_TAGV)) {
+                renameReq.tagv = s;
+            }
+
+            renameReq.name = replace;
+            renameCompletionService.submit(new RenameTask(renameClient, renameReq));
+        }
+
+        // Process the result from each rename task.
+        int nTasks = suggestions.size();
+        RenameLogMsg msg = new RenameLogMsg();
+        for (int i = 1; i < nTasks + 1; i++) {
+            try {
+                final Future<RenameResult> result = renameCompletionService.take();
+
+                // Write the progress.
+                int percent = (int) ((float) i/nTasks*100);
+
+                msg.setType(RenameLogMsg.TYPE_PROGRESS);
+                msg.setContent(
+                    String.format(
+                        "Renaming %s prefix %s to %s: %d out of %d tasks completed (%d%%).",
+                        type,
+                        oldPrefix,
+                        newPrefix,
+                        i,
+                        nTasks,
+                        percent
+                    )
+                );
+
+                writer.write(Utils.jsonStringFromObject(msg) + "\n");
+
+                RenameResult r = result.get();
+                if (!(r.code >= 200 && r.code <= 299)) {
+                    String oldName = "";
+                    String newName = r.request.name;
+                    if (r.request.metric == null) {
+                        oldName = r.request.tagv;
+                    } else {
+                        oldName = r.request.metric;
+                    }
+
+                    msg.setType(RenameLogMsg.TYPE_ERROR);
+                    msg.setContent(
+                        String.format(
+                            "Error while renaming %s prefix %s to %s in OpenTSDB: %s",
+                            type,
+                            oldName,
+                            newName,
+                            r.reason
+                        )
+                    );
+
+                    log.error(msg.getContent());
+                    writer.write(Utils.jsonStringFromObject(msg) + "\n");
+                }
+            } catch (InterruptedException e) {
+                log.error(
+                    "Error while processing a renaming task result: {}",
+                    e.getMessage()
+                );
+            } catch (ExecutionException e) {
+                log.error(
+                    "Error while processing a renaming task result: {}",
+                    e.getMessage()
+                );
+            } catch (IOException e) {
+                log.error(
+                    "Error while writing the progress of renaming tasks: {}",
+                    e.getMessage()
+                );
+            }
+        }
+
+        log.info(
+            "Renaming {} prefix {} to {} completed.",
+            type,
+            oldPrefix,
+            newPrefix
+        );
+
+        // No. of dropcache calls to make after renaming.
+        // Just in case there are multiple OpenTSDB servers, make several requests
+        // in order to hit all of them, although it does not gurantee that all of
+        // them will be hit.
+        for (int i = 0; i < config.getMetricServiceConfig().getDropCacheTries(); i++) {
+            dropCacheClient.dropCache(getOpenTSDBApiDropCacheUrl());
+        }
+    }
+
+    @Override
+    public void renameWhole(RenameRequest renameRequest, Writer writer) {
+        OpenTSDBClient renameClient =
+            new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiRenameUrl());
+        OpenTSDBClient dropCacheClient =
+            new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropCacheUrl());
+
+        final String type = renameRequest.getType();
+        final String oldName = renameRequest.getOldName();
+        final String newName = renameRequest.getNewName();
+
+        OpenTSDBRename otsdbRenameRequest = new OpenTSDBRename();
+        otsdbRenameRequest.name = newName;
+
+        if (type.equals(RenameRequest.TYPE_METRIC)) {
+            otsdbRenameRequest.metric = oldName;
+        } else if (type.equals(RenameRequest.TYPE_TAGV)) {
+            otsdbRenameRequest.tagv = oldName;
+        }
+
+        RenameResult renameResult = new RenameResult();
+        RenameLogMsg msg = new RenameLogMsg();
+        for(int x = 0; x < RETRY_CT; x++){
+            renameResult = renameClient.rename(otsdbRenameRequest);
+            if(renameResult.code == 200){
+                msg.setType(RenameLogMsg.TYPE_INFO);
+                msg.setContent(String.format(
+                    "Renaming %s %s to %s completed.",
+                    type,
+                    oldName,
+                    newName
+                ));
+                log.info(msg.getContent());
+                try {
+                    writer.write(Utils.jsonStringFromObject(msg));
+                } catch (IOException e) {
+                    log.error("Error while handling IO after renaming in central query");
+                }
+                break;
+            } else if(renameResult.code < 500){
+                break; // shouldn't retry on 400-level statuses
+            }
+        }
+
+        if (!(renameResult.code >= 200 && renameResult.code <= 299)) {
+            msg.setType(RenameLogMsg.TYPE_ERROR);
+            msg.setContent(String.format(
+                "Error while renaming %s %s to %s in OpenTSDB: %s",
+                type,
+                oldName,
+                newName,
+                renameResult.reason
+            ));
+            log.error(msg.getContent());
+            try {
+                writer.write(Utils.jsonStringFromObject(msg));
+            } catch (IOException e) {
+                log.error(
+                    "Error while handling IO after renaming in central query: {}",
+                    e.getMessage());
+            }
+        }
+
+        for (int i = 0; i < config.getMetricServiceConfig().getDropCacheTries(); i++) {
+            dropCacheClient.dropCache(getOpenTSDBApiDropCacheUrl());
+        }
+    }
+
+    class RenameTask implements Callable<RenameResult> {
+        private final OpenTSDBClient client;
+        private final OpenTSDBRename renameReq;
+
+        public RenameTask(OpenTSDBClient client, OpenTSDBRename renameReq) {
+            this.client = client;
+            this.renameReq = renameReq;
+        }
+
+        @Override
+        public RenameResult call() {
+            RenameResult renameResult = new RenameResult();
+            for(int x = 0; x < RETRY_CT; x++){
+                renameResult = client.rename(renameReq);
+                if(renameResult.code == 200){
+                    break;
+                } else if(renameResult.code < 500){
+                    break; // shouldn't retry on 400-level statuses
+                }
+            }
+            return renameResult;
+        }
+    }
 
     @Override
     public OpenTSDBQueryReturn query(MetricRequest query) {
@@ -150,6 +371,15 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
     private String getOpenTSDBApiQueryUrl() {
         return String.format("%s/api/query", config.getMetricServiceConfig().getOpenTsdbUrl());
+    }
+    private String getOpenTSDBApiSuggestUrl(){
+        return String.format("%s/api/suggest", config.getMetricServiceConfig().getOpenTsdbUrl());
+    }
+    private String getOpenTSDBApiRenameUrl() {
+        return String.format("%s/api/uid/rename", config.getMetricServiceConfig().getOpenTsdbUrl());
+    }
+    private String getOpenTSDBApiDropCacheUrl(){
+        return String.format("%s/api/dropcaches", config.getMetricServiceConfig().getOpenTsdbUrl());
     }
 
     private static OpenTSDBSubQuery createOTSDBQuery(MetricQuery mq) {

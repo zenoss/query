@@ -20,17 +20,13 @@ import com.google.common.collect.Multimaps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+
 import org.zenoss.app.annotations.API;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
-import org.zenoss.app.metricservice.api.impl.MetricStorageAPI;
-import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryResult;
-import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryReturn;
-import org.zenoss.app.metricservice.api.impl.QueryStatus;
+import org.zenoss.app.metricservice.api.impl.*;
 import org.zenoss.app.metricservice.api.impl.QueryStatus.QueryStatusEnum;
-import org.zenoss.app.metricservice.api.impl.Utils;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
-import org.zenoss.app.metricservice.api.model.v2.MetricQuery;
-import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
+import org.zenoss.app.metricservice.api.model.v2.*;
 import org.zenoss.app.metricservice.api.model.v2.QueryResult;
 import org.zenoss.app.metricservice.buckets.Value;
 import org.zenoss.app.metricservice.calculators.Closure;
@@ -44,6 +40,7 @@ import javax.annotation.Nullable;
 import javax.ws.rs.WebApplicationException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -52,6 +49,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.io.Writer;
+import java.io.IOException;
 
 @API
 public class QueryServiceImpl implements QueryService {
@@ -120,6 +119,16 @@ public class QueryServiceImpl implements QueryService {
             }
         }
         return qrb.build();
+    }
+
+    @Override
+    public void rename(RenameRequest renameRequest, Writer writer) {
+        String patternType = renameRequest.getPatternType();
+        if (patternType.equals(RenameRequest.PTYPE_PREFIX)) {
+            metricStorage.renamePrefix(renameRequest, writer);
+        } else if (patternType.equals(RenameRequest.PTYPE_WHOLE)) {
+            metricStorage.renameWhole(renameRequest, writer);
+        }
     }
 
     private OpenTSDBQueryReturn getOpenTSDBQueryResults(Collection<MetricQuery> metricQueries, MetricRequest query) {

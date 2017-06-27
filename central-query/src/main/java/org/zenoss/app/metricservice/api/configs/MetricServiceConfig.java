@@ -80,6 +80,8 @@ public class MetricServiceConfig {
     @JsonProperty
     private int connectionManagerTimeoutMs= 5000;
 
+    @JsonProperty
+    private int dropCacheTries = 5;
 
     public int getMaxTotalPoolConnections() {
         return maxTotalPoolConnections;
@@ -243,5 +245,9 @@ public class MetricServiceConfig {
      */
     public int getConnectionManagerTimeoutMs() {
         return connectionManagerTimeoutMs;
+    }
+
+    public int getDropCacheTries() {
+        return dropCacheTries;
     }
 }

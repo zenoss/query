@@ -4,7 +4,9 @@ import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
+import org.zenoss.app.metricservice.api.model.v2.RenameRequest;
 
+import java.io.Writer;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +20,8 @@ public interface MetricStorageAPI {
                                           Map<String, List<String>> tags, List<MetricSpecification> queries)
             throws IOException;
 
-
     String getSourceId();
 
+    void renamePrefix(RenameRequest renameRequest, Writer writer);
+    void renameWhole(RenameRequest renameRequest, Writer writer);
 }

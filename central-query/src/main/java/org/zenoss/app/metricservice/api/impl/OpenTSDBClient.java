@@ -10,10 +10,12 @@
  */
 package org.zenoss.app.metricservice.api.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -24,23 +26,104 @@ import org.slf4j.LoggerFactory;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Map;
 
 public class OpenTSDBClient {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(OpenTSDBClient.class);
 
-
     private final DefaultHttpClient httpClient;
-    private final String queryURL;
+    private final String providedURL;
 
+    private static final ObjectMapper objectMapper = Utils.getObjectMapper();
 
     public OpenTSDBClient(DefaultHttpClient httpClient, String url) {
         this.httpClient = httpClient;
-        this.queryURL = url;
+        this.providedURL = url;
+    }
+
+    public SuggestResult suggest(OpenTSDBSuggest suggest){
+        final BasicHttpContext context = new BasicHttpContext();
+        final HttpPost httpPost = new HttpPost(providedURL);
+        final String jsonQueryString = Utils.jsonStringFromObject(suggest);
+        StringEntity input;
+        try{
+            input = new StringEntity(jsonQueryString);
+        } catch (UnsupportedEncodingException e){
+            log.error("UnsupportedEncodingException converting json string {} to StringEntity: {}", jsonQueryString, e.getMessage());
+            throw new IllegalArgumentException("Could not create StringEntity from query.", e);
+        }
+        input.setContentType("application/json");
+        httpPost.setEntity(input);
+        SuggestResult result = new SuggestResult();
+        try {
+            HttpResponse response = httpClient.execute(httpPost, context);
+            String json = EntityUtils.toString(response.getEntity());
+            result.suggestions = objectMapper.readValue(json, ArrayList.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            httpPost.releaseConnection();
+        }
+
+        return result;
+    }
+
+    public DropResult dropCache(String dropCacheUrl){
+        final BasicHttpContext context = new BasicHttpContext();
+        final HttpGet httpDrop = new HttpGet(dropCacheUrl);
+        final HttpResponse dropResponse;
+        try {
+            dropResponse = httpClient.execute(httpDrop, context);
+            StatusLine status = dropResponse.getStatusLine();
+            DropResult result = new DropResult();
+            result.reasonPhrase = status.getReasonPhrase();
+            result.statusCode = status.getStatusCode();
+            log.debug("Dropping OpenTSDB cache.. %s, %i", status.getReasonPhrase(), status.getStatusCode());
+            return result;
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            httpDrop.releaseConnection();
+        }
+        return null;
+    }
+
+    public RenameResult rename(OpenTSDBRename rename) {
+        final BasicHttpContext context = new BasicHttpContext();
+        final HttpPost httpPost = new HttpPost(providedURL);
+        final String jsonQueryString = Utils.jsonStringFromObject(rename);
+        StringEntity input;
+        try{
+            input = new StringEntity(jsonQueryString);
+        } catch (UnsupportedEncodingException e){
+            log.error("UnsupportedEncodingException converting json string {} to StringEntity: {}", jsonQueryString, e.getMessage());
+            throw new IllegalArgumentException("Could not create StringEntity from query.", e);
+        }
+        input.setContentType("application/json");
+        httpPost.setEntity(input);
+        RenameResult result = new RenameResult();
+        result.request = rename;
+        try {
+            HttpResponse response = httpClient.execute(httpPost, context);
+            StatusLine status = response.getStatusLine();
+            InputStream in = response.getEntity().getContent();
+            OpenTSDBRenameResult content = objectMapper.readValue(in, OpenTSDBRenameResult.class);
+            result.reason = content.getError();
+            result.code = status.getStatusCode();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            httpPost.releaseConnection();
+        }
+
+        return result;
     }
 
     public OpenTSDBQueryReturn query(OpenTSDBQuery query) {
         final BasicHttpContext context = new BasicHttpContext();
-        final HttpPost httpPost = new HttpPost(queryURL);
+        final HttpPost httpPost = new HttpPost(providedURL);
         final String jsonQueryString = Utils.jsonStringFromObject(query);
         StringEntity input;
         try {

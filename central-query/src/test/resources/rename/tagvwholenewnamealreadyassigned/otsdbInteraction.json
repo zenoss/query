@@ -1,0 +1,10 @@
+{
+  "request": {
+    "tagv": "foo",
+    "name": "bar"
+  },
+  "response": {
+      "result":"false",
+      "error":"When trying rename(\"foo\", \"bar\") on UniqueId(e8znhe3nx39spxjn8t55c6ywc-tsdb-uid, tagv, 3): new name already assigned ID=[0, 0, -87]"
+  }
+}
