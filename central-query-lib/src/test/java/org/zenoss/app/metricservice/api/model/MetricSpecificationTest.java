@@ -51,7 +51,7 @@ public class MetricSpecificationTest {
     private static final Boolean TEST_RATE = Boolean.TRUE;
     private static final Long COUNTER_MAX = 67123l;
     private static final Long RESET_THRESHOLD = 9876543l;
-    private static final RateOptions TEST_RATE_OPTIONS = makeTestRateOptions(true, COUNTER_MAX, RESET_THRESHOLD);
+    private static final RateOptions TEST_RATE_OPTIONS = makeTestRateOptions(true, COUNTER_MAX, RESET_THRESHOLD, false);
     private static final Map<String, List<String>> TEST_TAGS = makeTestTags();
 
     private static Map<String, List<String>> makeTestTags() {
@@ -61,11 +61,12 @@ public class MetricSpecificationTest {
         return result;
     }
 
-    private static RateOptions makeTestRateOptions(Boolean counter, Long counterMax, Long resetThreshold) {
+    private static RateOptions makeTestRateOptions(Boolean counter, Long counterMax, Long resetThreshold, Boolean dropResets) {
         RateOptions result = new RateOptions();
         result.setCounter(counter);
         result.setCounterMax(counterMax);
         result.setResetThreshold(resetThreshold);
+        result.setDropResets(dropResets);
         return result;
     }
 

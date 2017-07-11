@@ -49,7 +49,7 @@ public class RateOptionsTest {
         Assert.assertTrue(ms.getRateOptions().getCounter());
         Assert.assertNull(ms.getRateOptions().getCounterMax());
         Assert.assertNull(ms.getRateOptions().getResetThreshold());
-        Assert.assertEquals("avg:rate{counter}:laLoadInt", ms.toString(true));
+        Assert.assertEquals("avg:rate{dropcounter,,0}:laLoadInt", ms.toString(true));
     }
 
     @Test

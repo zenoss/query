@@ -49,6 +49,9 @@ public class RateOptions {
     @JsonProperty
     private Long resetThreshold = null;
 
+    @JsonProperty
+    private Boolean dropResets = null;
+
     /**
      * @return the counter
      */
@@ -89,5 +92,19 @@ public class RateOptions {
      */
     public final void setResetThreshold(Long resetThreshold) {
         this.resetThreshold = resetThreshold;
+    }
+
+    /**
+     * @return the dropResets
+     */
+    public final Boolean getDropResets() {
+        return dropResets;
+    }
+
+    /**
+     * @param dropResets the dropResets to set
+     */
+    public final void setDropResets(Boolean dropResets) {
+        this.dropResets = dropResets;
     }
 }

@@ -345,21 +345,28 @@ public class MetricSpecification {
         }
         if (rate) {
             buf.append("rate");
-            if (withRateOptions && rateOptions != null) {
+            if (withRateOptions) {
+                /* set Drop Reset if no max counter AND (no reset value OR reset value is 0) */
+                if (rateOptions.getCounterMax() == null && 
+                    (rateOptions.getResetThreshold() == null || rateOptions.getResetThreshold() == 0)) {
+                    rateOptions.setDropResets(true);
+                }
+
                 buf.append('{');
-                if (rateOptions.getCounter() != null) {
-                    if (rateOptions.getCounter()) {
-                        buf.append("counter");
-                        if (rateOptions.getCounterMax() != null) {
-                            buf.append(',');
-                            buf.append(rateOptions.getCounterMax());
-                        } else if (rateOptions.getResetThreshold() != null) {
-                            buf.append(',');
-                        }
-                        if (rateOptions.getResetThreshold() != null) {
-                            buf.append(',');
-                            buf.append(rateOptions.getResetThreshold());
-                        }
+                if (rateOptions == null || (rateOptions.getDropResets() != null && rateOptions.getDropResets())) {
+                    buf.append("dropcounter,,0");
+                }
+                else if (rateOptions.getCounter() != null && rateOptions.getCounter()) {
+                    buf.append("counter");
+                    if (rateOptions.getCounterMax() != null) {
+                        buf.append(',');
+                        buf.append(rateOptions.getCounterMax());
+                    } else if (rateOptions.getResetThreshold() != null) {
+                        buf.append(',');
+                    }
+                    if (rateOptions.getResetThreshold() != null) {
+                        buf.append(',');
+                        buf.append(rateOptions.getResetThreshold());
                     }
                 }
                 buf.append('}');
@@ -442,11 +449,20 @@ public class MetricSpecification {
             throw new RateFormatException("invalid number of options");
         }
 
-        if (!"counter".equals(parts[0].trim())) {
+        if ("dropcounter".equals(parts[0].trim())) {
+            options.setDropResets(true);
+            options.setCounter(true);
+            options.setCounterMax(null);
+            options.setResetThreshold(null); 
+        } 
+        else if ("counter".equals(parts[0].trim())) {
+            options.setCounter(true);
+            options.setDropResets(false);
+        } 
+        else {
             throw new RateFormatException(
-                "first option must be value \"counter\"");
+                "first option must be value \"counter\" or \"dropcounter\"");
         }
-        options.setCounter(true);
 
         if (parts.length > 1) {
             // We have at least a max value, so this should either be an empty

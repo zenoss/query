@@ -34,9 +34,14 @@ package org.zenoss.app.metricservice.api.impl;
 import org.zenoss.app.metricservice.api.model.RateOptions;
 
 public class OpenTSDBRateOption {
+    /*
+     * The default rate options combination is treated as "dropcounter"
+     * at REST API level to avoid wraparound spikes
+     */
     public boolean counter = true;
     public long counterMax = Long.MAX_VALUE;
     public long resetValue = 0;
+    public boolean dropResets = true;
 
     public OpenTSDBRateOption() {}
 
@@ -50,6 +55,9 @@ public class OpenTSDBRateOption {
             }
             if (null != rateOptions.getResetThreshold()) {
                 resetValue = rateOptions.getResetThreshold();
+            }
+            if (null != rateOptions.getDropResets()) {
+                dropResets = rateOptions.getDropResets();
             }
         }
     }
