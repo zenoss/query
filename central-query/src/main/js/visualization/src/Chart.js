@@ -1029,7 +1029,7 @@
                 this.request = this.__buildDataRequest(this.config);
                 this.maxRequest = jQuery.extend({}, this.request);
                 if (this.maxRequest.downsample !== null) {
-                    this.maxRequest.downsample = this.maxRequest.downsample.replace("avg", "max");
+                    this.maxRequest.downsample = "0all-max";
                 }
                 var maxValueRequest = $.ajax({
                     'url': visualization.url + visualization.urlPerformance,
@@ -1040,7 +1040,7 @@
                 });
                 this.minRequest = jQuery.extend({}, this.request);
                 if (this.minRequest.downsample !== null) {
-                    this.minRequest.downsample = this.minRequest.downsample.replace("avg", "min");
+                    this.minRequest.downsample = "0all-min";
                 }
                 var minValueRequest = $.ajax({
                     'url': visualization.url + visualization.urlPerformance,
