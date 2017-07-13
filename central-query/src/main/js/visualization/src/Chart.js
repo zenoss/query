@@ -950,18 +950,12 @@
         *     data from the maxValueRequest
         */
         __maxValues: function (data) {
-            var i, j, maxDataResults, maxValues = [];
             var maxResult = [];
-            for (i = 0; i < data.results.length; i++) {
-                 maxDataResults = data.results[i].datapoints;
-                 if (maxDataResults !== undefined){
-                     for (j = 0; j < maxDataResults.length; j++) {
-                         maxValues.push(maxDataResults[j].value);
-                      }
-                      maxResult.push(Math.max.apply(null, maxValues));
-                      maxValues = [];
-                 }
-            }
+            for (var i in data.series) {
+                if (typeof data.series[i].datapoints !== "undefined" && data.series[i].datapoints.length > 0) {        
+                    maxResult.push(data.series[i].datapoints[0][1]);
+                }
+            };
             this.__updateMaxResult(maxResult);
         },
         /**
@@ -971,18 +965,12 @@
         *     data from the minValueRequest
         */
         __minValues: function (data) {
-            var i, j, minDataResults, minValues = [];
             var minResult = [];
-            for (i = 0; i < data.results.length; i++) {
-                minDataResults = data.results[i].datapoints;
-                if (minDataResults !== undefined){
-                    for (j = 0; j < minDataResults.length; j++) {
-                        minValues.push(minDataResults[j].value);
-                    }
-                    minResult.push(Math.min.apply(null, minValues));
-                    minValues = [];
-                }
-            }
+            for (var i in data.series) {
+               if (typeof data.series[i].datapoints !== "undefined" && data.series[i].datapoints.length > 0) {
+                    minResult.push(data.series[i].datapoints[0][1]);
+               }
+            };
             this.__updateMinResult(minResult);
         },
         /**
@@ -1027,28 +1015,6 @@
 
             try {
                 this.request = this.__buildDataRequest(this.config);
-                this.maxRequest = jQuery.extend({}, this.request);
-                if (this.maxRequest.downsample !== null) {
-                    this.maxRequest.downsample = this.maxRequest.downsample.replace("avg", "max");
-                }
-                var maxValueRequest = $.ajax({
-                    'url': visualization.url + visualization.urlPerformance,
-                    'type': 'POST',
-                    'data': JSON.stringify(this.maxRequest),
-                    'dataType': 'json',
-                    'contentType': 'application/json'
-                });
-                this.minRequest = jQuery.extend({}, this.request);
-                if (this.minRequest.downsample !== null) {
-                    this.minRequest.downsample = this.minRequest.downsample.replace("avg", "min");
-                }
-                var minValueRequest = $.ajax({
-                    'url': visualization.url + visualization.urlPerformance,
-                    'type': 'POST',
-                    'data': JSON.stringify(this.minRequest),
-                    'dataType': 'json',
-                    'contentType': 'application/json'
-                });
                 this.updateRequest = $.ajax({
                     'url': visualization.url + visualization.urlPerformance,
                     'type': 'POST',
@@ -1056,12 +1022,53 @@
                     'dataType': 'json',
                     'contentType': 'application/json'
                 });
+                var v2UrlPerformance = "/api/performance/query2/";
+                this.maxRequest = jQuery.extend({}, this.request);
+                if (this.maxRequest.downsample !== null) {
+		    this.maxRequest.queries = this.maxRequest.metrics;
+                    delete this.maxRequest.metrics;
+                    for (var i in this.maxRequest.queries){
+                        this.maxRequest.queries[i].downsample = "0all-max";
+                        if (this.maxRequest.queries[i].metric) {
+                            this.maxRequest.queries[i].rate = false;
+                        } else {
+                            this.maxRequest.queries.splice(i,1);
+                        }
+                    }
+                }
+                var maxValueRequest = $.ajax({
+                    'url': visualization.url + v2UrlPerformance,
+                    'type': 'POST',
+                    'data': JSON.stringify(this.maxRequest),
+                    'dataType': 'json',
+                    'contentType': 'application/json'
+                });
+                this.minRequest = jQuery.extend({}, this.request);
+                if (this.minRequest.downsample !== null) {
+                    this.minRequest.queries = this.minRequest.metrics;
+                    delete this.minRequest.metrics;
+                    for (var i in this.minRequest.queries) {
+                        this.minRequest.queries[i].downsample = "0all-min";
+                        if (this.minRequest.queries[i].metric) {
+                            this.minRequest.queries[i].rate = false;
+                        } else {
+                            this.minRequest.queries.splice(i,1);
+                        };
+                    }
+                }
+                var minValueRequest = $.ajax({
+                    'url': visualization.url + v2UrlPerformance,
+                    'type': 'POST',
+                    'data': JSON.stringify(this.minRequest),
+                    'dataType': 'json',
+                    'contentType': 'application/json'
+                });
 
-                $.when(maxValueRequest, minValueRequest, this.updateRequest)
+                $.when(this.updateRequest, maxValueRequest, minValueRequest)
                     .then(function(response1, response2, response3) {
-                        var data = response3[0];
-                        self.__maxValues(response1[0]);
-                        self.__minValues(response2[0]);
+                        var data = response1[0];
+                        self.__maxValues(response2[0]);
+                        self.__minValues(response3[0]);
 
                         self.plots = self.__processResult(self.request, data);
 
