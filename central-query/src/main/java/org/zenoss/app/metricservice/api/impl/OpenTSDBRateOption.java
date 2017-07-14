@@ -32,20 +32,25 @@
 package org.zenoss.app.metricservice.api.impl;
 
 import org.zenoss.app.metricservice.api.model.RateOptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OpenTSDBRateOption {
     /*
-     * The default rate options combination is treated as "dropcounter"
+     * The default values for rate options 
      * at REST API level to avoid wraparound spikes
      */
-    public boolean counter = true;
+    public boolean counter = false;
     public long counterMax = Long.MAX_VALUE;
     public long resetValue = 0;
-    public boolean dropResets = true;
+    public boolean dropResets = false;
+
+    private static final Logger log = LoggerFactory.getLogger(OpenTSDBRateOption.class);
 
     public OpenTSDBRateOption() {}
 
     public OpenTSDBRateOption(RateOptions rateOptions) {
+        /* use the given values if provided in rateOptions */
         if (null != rateOptions) {
             if (null != rateOptions.getCounter()) {
                 counter = rateOptions.getCounter();
@@ -58,6 +63,10 @@ public class OpenTSDBRateOption {
             }
             if (null != rateOptions.getDropResets()) {
                 dropResets = rateOptions.getDropResets();
+            }
+            else if ((counterMax == Long.MAX_VALUE) && (resetValue == 0)) {
+                /* dropResets for when counterMax not given && resetValue not given */
+                dropResets = true;
             }
         }
     }

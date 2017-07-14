@@ -126,6 +126,7 @@ public class OpenTSDBClient {
         final HttpPost httpPost = new HttpPost(providedURL);
         final String jsonQueryString = Utils.jsonStringFromObject(query);
         StringEntity input;
+
         try {
             input = new StringEntity(jsonQueryString);
         } catch (UnsupportedEncodingException e) {

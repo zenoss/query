@@ -8,9 +8,10 @@
         "metric": "cgroup.cpuacct.system",
         "rate": false,
         "rateOptions": {
-          "counter": true,
+          "counter": false,
           "counterMax": 9223372036854775807,
-          "resetValue": 0
+          "resetValue": 0,
+          "dropResets": false
         },
         "tags": {
           "isvcname": "*"

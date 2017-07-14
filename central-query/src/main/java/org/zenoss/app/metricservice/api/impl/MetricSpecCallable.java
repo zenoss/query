@@ -95,7 +95,12 @@ class MetricSpecCallable implements Callable<OpenTSDBQueryResult> {
 
 
             result.rate = metricSpecification.getRate();
-            result.rateOptions = new OpenTSDBRateOption(metricSpecification.getRateOptions());
+            if (null != metricSpecification.getRateOptions()) {
+                result.rateOptions = new OpenTSDBRateOption(metricSpecification.getRateOptions());
+            }
+            else {
+                result.rateOptions = null;
+            }
             Map<String, List<String>> tags = metricSpecification.getTags();
             if (null != tags) {
                 for (Map.Entry<String, List<String>> tagEntry : tags.entrySet()) {
@@ -108,6 +113,4 @@ class MetricSpecCallable implements Callable<OpenTSDBQueryResult> {
         }
         return result;
     }
-
-
 }
