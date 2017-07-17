@@ -67,7 +67,7 @@ public final class Utils {
     public static final String START = "start";
     public static final String END = "end";
     public static final String COUNT = "count";
-    public static final double DEFAULT_DOWNSAMPLE_MULTIPLIER = 2.0;
+    public static final double DEFAULT_DOWNSAMPLE_MULTIPLIER = 1.0;
     public static final int DAYS_PER_YEAR = 365;
     public static final int DAYS_PER_WEEK= 7;
     public static final int HOURS_PER_DAY = 24;

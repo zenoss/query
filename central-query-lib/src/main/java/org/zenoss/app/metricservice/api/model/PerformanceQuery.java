@@ -161,8 +161,13 @@ public class PerformanceQuery {
         return downsampleMultiplier;
     }
 
+    @Deprecated
     public void setDownsampleMultiplier(double downsampleMultiplier) {
-        this.downsampleMultiplier = downsampleMultiplier;
+	//Changing this value not longer supported. Value was to ensure
+	//custom bucketing code had more then requested  datapoints.
+	//Newer versions of otsdb already align timestamps of
+	//downsampled metrics which makes the bucketing more accurate.
+	//Also this value is rarely if ever specified by the client
     }
 
     /**

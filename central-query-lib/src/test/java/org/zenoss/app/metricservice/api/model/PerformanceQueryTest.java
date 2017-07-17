@@ -74,7 +74,7 @@ public class PerformanceQueryTest {
     public void testGetAndSetDownsampleMultiplier() throws Exception {
         Assert.assertEquals("getDownsampleMultiplier() on uninitialized PerformanceQuery should return null.", Utils.DEFAULT_DOWNSAMPLE_MULTIPLIER, subject.getDownsampleMultiplier(), EPSILON);
         subject.setDownsampleMultiplier(DOWNSAMPLE_MULTIPLIER);
-        Assert.assertEquals("getDownsampleMultiplier() on initialized PerformanceQuery should return value passed in.", DOWNSAMPLE_MULTIPLIER, subject.getDownsampleMultiplier(), EPSILON);
+        Assert.assertEquals("getDownsampleMultiplier() on initialized PerformanceQuery should always return default.", Utils.DEFAULT_DOWNSAMPLE_MULTIPLIER, subject.getDownsampleMultiplier(), EPSILON);
     }
 
     @Test
