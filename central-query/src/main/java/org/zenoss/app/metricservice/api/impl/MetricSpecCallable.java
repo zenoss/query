@@ -37,10 +37,8 @@ import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import org.slf4j.LoggerFactory;
 
 class MetricSpecCallable implements Callable<OpenTSDBQueryResult> {
-
     private final MetricSpecification mSpec;
     private final OpenTSDBClient client;
     private final String start;

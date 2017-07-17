@@ -41,9 +41,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class ResourcesTest extends ResourceTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();

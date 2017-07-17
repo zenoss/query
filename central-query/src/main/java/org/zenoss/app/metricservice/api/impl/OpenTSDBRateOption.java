@@ -32,8 +32,6 @@
 package org.zenoss.app.metricservice.api.impl;
 
 import org.zenoss.app.metricservice.api.model.RateOptions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class OpenTSDBRateOption {
     /*
