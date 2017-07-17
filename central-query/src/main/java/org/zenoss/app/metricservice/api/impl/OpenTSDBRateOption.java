@@ -45,8 +45,6 @@ public class OpenTSDBRateOption {
     public long resetValue = 0;
     public boolean dropResets = false;
 
-    private static final Logger log = LoggerFactory.getLogger(OpenTSDBRateOption.class);
-
     public OpenTSDBRateOption() {}
 
     public OpenTSDBRateOption(RateOptions rateOptions) {

@@ -46,8 +46,6 @@ import java.io.IOException;
 @Produces(MediaType.APPLICATION_JSON)
 public class Resources {
 
-    private static final Logger log = LoggerFactory.getLogger(Resources.class);
-
     @Autowired
     AppConfiguration configuration;
 

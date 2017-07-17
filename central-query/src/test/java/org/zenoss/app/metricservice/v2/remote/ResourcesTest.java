@@ -41,7 +41,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ResourcesTest extends ResourceTest {
+
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final int MOCK_PORT = 4242;
     private static final String URL_PATH = "/api/v2/performance/query";
@@ -103,6 +107,24 @@ public class ResourcesTest extends ResourceTest {
         String expectedResultFile = "/simplequery/result.json";
         String metricRequestFile = "/simplequery/request.json";
         String otsdbInteraction = "/simplequery/otsdbInteraction.json";
+
+        testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
+    }
+
+    @Test
+    public void testRateOptionsQuery0() throws IOException, JSONException {
+        String expectedResultFile = "/rateoptionsquery/result.json";
+        String metricRequestFile = "/rateoptionsquery/request0.json";
+        String otsdbInteraction = "/rateoptionsquery/otsdbInteraction0.json";
+
+        testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
+    }
+
+    @Test
+    public void testRateOptionsQuery() throws IOException, JSONException {
+        String expectedResultFile = "/rateoptionsquery/result.json";
+        String metricRequestFile = "/rateoptionsquery/request.json";
+        String otsdbInteraction = "/rateoptionsquery/otsdbInteraction.json";
 
         testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
     }

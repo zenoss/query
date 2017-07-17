@@ -37,8 +37,10 @@ import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import org.slf4j.LoggerFactory;
 
 class MetricSpecCallable implements Callable<OpenTSDBQueryResult> {
+
     private final MetricSpecification mSpec;
     private final OpenTSDBClient client;
     private final String start;
@@ -92,7 +94,6 @@ class MetricSpecCallable implements Callable<OpenTSDBQueryResult> {
             String metricName = metricSpecification.getMetric();
             metricName = metricName.replace(" ", OpenTSDBMetricStorage.SPACE_REPLACEMENT);
             result.metric = metricName;
-
 
             result.rate = metricSpecification.getRate();
             if (null != metricSpecification.getRateOptions()) {
