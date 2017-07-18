@@ -42,6 +42,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class ResourcesTest extends ResourceTest {
+
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final int MOCK_PORT = 4242;
     private static final String URL_PATH = "/api/v2/performance/query";
@@ -103,6 +104,42 @@ public class ResourcesTest extends ResourceTest {
         String expectedResultFile = "/simplequery/result.json";
         String metricRequestFile = "/simplequery/request.json";
         String otsdbInteraction = "/simplequery/otsdbInteraction.json";
+
+        testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
+    }
+
+    @Test
+    public void testRateOptionsQuery_c_z_v() throws IOException, JSONException {
+        String expectedResultFile = "/rateoptionsquery/result.json";
+        String metricRequestFile = "/rateoptionsquery/request-c-z-v.json";
+        String otsdbInteraction = "/rateoptionsquery/otsdbInteraction-c-z-f.json";
+
+        testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
+    }
+
+    @Test
+    public void testRateOptionsQuery_c_n_v() throws IOException, JSONException {
+        String expectedResultFile = "/rateoptionsquery/result.json";
+        String metricRequestFile = "/rateoptionsquery/request-c-n-v.json";
+        String otsdbInteraction = "/rateoptionsquery/otsdbInteraction-c-n-f.json";
+
+        testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
+    }
+
+    @Test
+    public void testRateOptionsQuery_c_v_v() throws IOException, JSONException {
+        String expectedResultFile = "/rateoptionsquery/result.json";
+        String metricRequestFile = "/rateoptionsquery/request-c-v-v.json";
+        String otsdbInteraction = "/rateoptionsquery/otsdbInteraction-c-z-t.json";
+
+        testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
+    }
+
+    @Test
+    public void testRateOptionsQuery_c_n_t() throws IOException, JSONException {
+        String expectedResultFile = "/rateoptionsquery/result.json";
+        String metricRequestFile = "/rateoptionsquery/request-c-n-t.json";
+        String otsdbInteraction = "/rateoptionsquery/otsdbInteraction-c-n-t.json";
 
         testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
     }

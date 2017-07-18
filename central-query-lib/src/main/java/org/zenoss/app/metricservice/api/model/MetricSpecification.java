@@ -325,91 +325,9 @@ public class MetricSpecification {
         this.emit = emit;
     }
 
-    /**
-     * Encodes the current instance into the URL query parameter format that <a
-     * href="http://opentsdb.net/http-api.html#/q">OpenTSDB</a> supports.
-     * <p/>
-     * <em style="color: red">NOTE: This method supports a format that is
-     * proposed to OpenTSDB, but is not yet committed. This format include
-     * "rate" options to better support counter base metrics</em>
-     *
-     * @return OpenTSDB URL query formatted String instance
+    /*
+     * These methods are mainly to support the testability 
      */
-    public String toString(boolean withRateOptions) {
-        StringBuilder buf = new StringBuilder();
-        if (aggregator != null) {
-            buf.append(aggregator).append(':');
-        }
-        if (this.downsample != null) {
-            buf.append(this.downsample).append(':');
-        }
-        if (rate) {
-            buf.append("rate");
-            if (withRateOptions && rateOptions != null) {
-                buf.append('{');
-                if (rateOptions.getCounter() != null) {
-                    if (rateOptions.getCounter()) {
-                        buf.append("counter");
-                        if (rateOptions.getCounterMax() != null) {
-                            buf.append(',');
-                            buf.append(rateOptions.getCounterMax());
-                        } else if (rateOptions.getResetThreshold() != null) {
-                            buf.append(',');
-                        }
-                        if (rateOptions.getResetThreshold() != null) {
-                            buf.append(',');
-                            buf.append(rateOptions.getResetThreshold());
-                        }
-                    }
-                }
-                buf.append('}');
-            }
-            buf.append(':');
-        }
-        if (metric != null) {
-            buf.append(metric);
-        } else {
-            buf.append('[');
-            buf.append(name);
-            buf.append(']');
-        }
-        if (getTags() != null && getTags().size() > 0) {
-            Map<String, List<String>> joined = new HashMap<>();
-                joined.putAll(getTags());
-            buf.append('{');
-            boolean comma = false;
-            List<Map.Entry<String, List<String>>> sortedEntries = new LinkedList<>(joined.entrySet());
-            Collections.sort(sortedEntries, new Comparator<Map.Entry<String, List<String>>>(){
-                @Override
-                public int compare(Map.Entry<String, List<String>>a, Map.Entry<String, List<String>>b) {
-                    return (a.getKey().compareTo(b.getKey()));
-                }});
-
-            for (Map.Entry<String, List<String>> tag : sortedEntries) {
-                if (comma) {
-                    buf.append(',');
-                }
-                comma = true;
-                buf.append(tag.getKey()).append('=').append(Joiner.on("|").skipNulls().join(tag.getValue()));
-            }
-            buf.append('}');
-        }
-        return buf.toString();
-    }
-    /**
-     * Encodes the current instance into the URL query parameter format that <a
-     * href="http://opentsdb.net/http-api.html#/q">OpenTSDB</a> supports.
-     * <p/>
-     * <em style="color: red">NOTE: This method supports a format that is
-     * proposed to OpenTSDB, but is not yet committed. This format include
-     * "rate" options to better support counter base metrics</em>
-     *
-     * @return OpenTSDB URL query formatted String instance
-     */
-    public String toString() {
-        return this.toString(false);
-    }
-
 
     /**
      * @param value
@@ -442,11 +360,20 @@ public class MetricSpecification {
             throw new RateFormatException("invalid number of options");
         }
 
-        if (!"counter".equals(parts[0].trim())) {
+        if ("dropcounter".equals(parts[0].trim())) {
+            options.setDropResets(true);
+            options.setCounter(true);
+            options.setCounterMax(null);
+            options.setResetThreshold(null); 
+        } 
+        else if ("counter".equals(parts[0].trim())) {
+            options.setCounter(true);
+            options.setDropResets(false);
+        } 
+        else {
             throw new RateFormatException(
-                "first option must be value \"counter\"");
+                "first option must be value \"counter\" or \"dropcounter\"");
         }
-        options.setCounter(true);
 
         if (parts.length > 1) {
             // We have at least a max value, so this should either be an empty
