@@ -37,16 +37,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.zenoss.app.annotations.API;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
-import org.zenoss.app.metricservice.api.impl.MetricStorageAPI;
-import org.zenoss.app.metricservice.api.impl.OpenTSDBMetricStorage;
-import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryResult;
-import org.zenoss.app.metricservice.api.impl.OpenTSDBQueryReturn;
-import org.zenoss.app.metricservice.api.impl.Utils;
+import org.zenoss.app.metricservice.api.impl.*;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.app.metricservice.api.model.v2.MetricRequest;
+import org.zenoss.app.metricservice.api.model.v2.RenameRequest;
 
 import java.io.IOException;
+import java.io.Writer;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -204,5 +202,13 @@ public class MockMetricStorage implements MetricStorageAPI {
     @Override
     public String getSourceId() {
         return SOURCE_ID;
+    }
+
+    @Override
+    public void renamePrefix(RenameRequest renameRequest, Writer writer) {
+    }
+
+    @Override
+    public void renameWhole(RenameRequest renameRequest, Writer writer) {
     }
 }

@@ -1390,8 +1390,10 @@ if (typeof exports !== 'undefined') {
         if (!this.$div.length) {
             throw new utils.Error('SelectorError', 'unknown selector specified, "' + this.name + '"');
         }
-
         this.printOptimized = config.printOptimized;
+        if (this.printOptimized) {
+            this.$div.addClass('print-optimized');
+        }
 
         // base should be something like 1000 or 1024
         this.base = config.base || 1000;
@@ -1417,6 +1419,7 @@ if (typeof exports !== 'undefined') {
         this.timezone = config.timezone || jstz.determine().name();
         this.svgwrapper = document.createElement('div');
         $(this.svgwrapper).addClass('zenchart');
+
         this.$div.append($(this.svgwrapper));
         this.containerSelector = '#' + name + ' .zenchart';
 
@@ -1627,6 +1630,9 @@ if (typeof exports !== 'undefined') {
                     )) {
                     return this.plots[i];
                 }
+                if (this.plots[i] === dp) { // projections
+                    return this.plots[i];
+                }
             }
             return undefined;
         },
@@ -1815,9 +1821,11 @@ if (typeof exports !== 'undefined') {
                             color.color = dp.color;
                         }
                         box = $(cols[0]).find('div.zenfooter_box');
-                        box.css('background-color', color.color);
-                        box.css('border-color', color.color);
-                        box.css('opacity', color.opacity);
+                        box.css({
+                            'background-color': color.color,
+                            'border-color': color.color,
+                            'opacity': color.opacity
+                        });
 
                         // Metric name
                         label = dp.legend || dp.metric;
@@ -1889,12 +1897,15 @@ if (typeof exports !== 'undefined') {
             // Add thresholds
             if (this.config.overlays && this.config.overlays.length) {
                 // One row for the stats table header
-                tr = document.createElement('tr');
-                $(tr).addClass("zenfooter_tablerow_header");
-                tr.innerHTML = '<th class="footer_header zenfooter_box_column"></th>' +
-                    '<th class="footer_header zenfooter_data_text" colspan="5">Thresholds</th>';
-                $(this.table).append($(tr));
-                rows.push($(tr));
+                tr = $(this.table).find('tr.zenfooter_tablerow_thresholds');
+                if (tr.length === 0) {
+                    tr = document.createElement('tr');
+                    $(tr).addClass("zenfooter_tablerow_header zenfooter_tablerow_thresholds");
+                    tr.innerHTML = '<th class="footer_header zenfooter_box_column"></th>' +
+                        '<th class="footer_header zenfooter_data_text" colspan="5">Thresholds</th>';
+                    $(this.table).append($(tr));
+                    rows.push($(tr));
+                }
 
                 for (i = 0; i < this.config.overlays.length; i++) {
                     dp = this.config.overlays[i];
@@ -1925,9 +1936,11 @@ if (typeof exports !== 'undefined') {
                     // color box
                     $(cols[0])
                         .find('div.zenfooter_box')
-                        .css('background-color', color.color)
-                        .css('border-color', color.color)
-                        .css('opacity', color.opacity);
+                        .css({
+                            'background-color': color.color,
+                            'border-color': color.color,
+                            'opacity': color.opacity
+                        });
 
                     // Threshold
                     label = dp.legend + '*';
@@ -2039,6 +2052,55 @@ if (typeof exports !== 'undefined') {
                     $(row).append(projectionColumn);
                 }
             }.bind(this));
+
+            // Add Projections to the lower legend.
+            // Only add projections if we've gotten all of the projection data.
+            if (projections && projections.length && projections.length == this.projections.length) {
+                // One row for the stats table header
+                var rows = $(this.table).find('tr.zenfooter_value_row');
+                var tr = $(this.table).find('tr.zenfooter_tablerow_projections');
+                if (tr.length === 0) {
+                    tr = document.createElement('tr');
+                    $(tr).addClass("zenfooter_tablerow_header zenfooter_tablerow_projections");
+                    tr.innerHTML = '<th class="footer_header zenfooter_box_column"></th>' +
+                        '<th class="footer_header zenfooter_data_text" colspan="5">Projections</th>';
+                    $(this.table).append($(tr));
+                    rows.push($(tr));
+                }
+
+                for (i = 0; i < projections.length; i++) {
+                    var projection = projections[i];
+
+                    var row = rows.length;
+                    tr = this.__appendFooterRow();
+                    rows.push(tr);
+                    this.__setLegendEvents(tr[0], projection);
+
+                    var cols = $(rows[row]).find('td');
+
+                    // footer color
+                    var color = {
+                        color: projection.color,
+                        opacity: 1
+                    };
+
+                    // color box
+                    $(cols[0])
+                        .find('div.zenfooter_box')
+                        .css({
+                            'background-color': color.color,
+                            'border-color': color.color,
+                            'opacity': color.opacity
+                        });
+
+                    // Threshold
+                    var label = projection.key;
+                    $(cols[1])
+                        .html(label)
+                        .attr('colspan','8') // 5 + 3 projection cells
+                        .addClass('zenfooter_threshold');
+                }
+            }
 
             this.resize();
         },

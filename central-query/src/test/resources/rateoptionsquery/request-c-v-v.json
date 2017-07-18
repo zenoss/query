@@ -1,0 +1,18 @@
+{
+  "start": "1437520683",
+  "end": "1437521231",
+  "queries": [
+    {
+      "metric": "cgroup.cpuacct.user",
+      "rate": true,
+       "rateOptions": {
+          "counter": true
+       },
+      "tags": {
+        "isvcname": [
+          "elasticsearch-serviced"
+        ]
+      }
+    }
+  ]
+}

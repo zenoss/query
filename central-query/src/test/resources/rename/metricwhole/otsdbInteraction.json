@@ -1,0 +1,9 @@
+{
+  "request": {
+    "metric": "foo",
+    "name": "bar"
+  },
+  "response": {
+      "result":"true"
+  }
+}

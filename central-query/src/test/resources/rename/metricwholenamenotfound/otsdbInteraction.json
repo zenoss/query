@@ -1,0 +1,10 @@
+{
+  "request": {
+    "metric": "foo",
+    "name": "bar"
+  },
+  "response": {
+      "result":"false",
+      "error":"Name(\"foo\") does not exist"
+  }
+}

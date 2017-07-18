@@ -34,13 +34,19 @@ package org.zenoss.app.metricservice.api.impl;
 import org.zenoss.app.metricservice.api.model.RateOptions;
 
 public class OpenTSDBRateOption {
-    public boolean counter = true;
+    /*
+     * The default values for rate options 
+     * at REST API level to avoid wraparound spikes
+     */
+    public boolean counter = false;
     public long counterMax = Long.MAX_VALUE;
     public long resetValue = 0;
+    public boolean dropResets = false;
 
     public OpenTSDBRateOption() {}
 
     public OpenTSDBRateOption(RateOptions rateOptions) {
+        /* use the given values if provided in rateOptions */
         if (null != rateOptions) {
             if (null != rateOptions.getCounter()) {
                 counter = rateOptions.getCounter();
@@ -50,6 +56,18 @@ public class OpenTSDBRateOption {
             }
             if (null != rateOptions.getResetThreshold()) {
                 resetValue = rateOptions.getResetThreshold();
+            }
+            if (null != rateOptions.getDropResets()) {
+                dropResets = rateOptions.getDropResets();
+            }
+            /* if the user specifies counterMax AND resetThreshold */
+            else if ((null != rateOptions.getCounterMax()) &&
+                     (null != rateOptions.getResetThreshold())) {
+                dropResets = false;
+            } 
+            else if ((counterMax == Long.MAX_VALUE) && (resetValue == 0)) {
+                /* dropResets for when counterMax && resetValue */
+                dropResets = true;
             }
         }
     }

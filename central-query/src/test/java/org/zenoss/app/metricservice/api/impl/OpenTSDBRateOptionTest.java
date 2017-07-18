@@ -38,6 +38,7 @@ public class OpenTSDBRateOptionTest {
     private static final Boolean COUNTER = true;
     private static final Long COUNTER_MAX = 13l;
     private static final Long RESET_THRESHOLD = 10l;
+    private static final Boolean DROPRESETS = false;
 
     @Test
     public void testFromRateOptions() {
@@ -45,10 +46,12 @@ public class OpenTSDBRateOptionTest {
         rateOptions.setCounter(COUNTER);
         rateOptions.setCounterMax(COUNTER_MAX);
         rateOptions.setResetThreshold(RESET_THRESHOLD);
+        rateOptions.setDropResets(DROPRESETS);
         OpenTSDBRateOption subject = new OpenTSDBRateOption(rateOptions);
         assertEquals(COUNTER, subject.counter);
         assertEquals((Long)COUNTER_MAX, Long.valueOf(subject.counterMax));
         assertEquals((Long)RESET_THRESHOLD, Long.valueOf(subject.resetValue));
+        assertEquals(DROPRESETS, subject.dropResets);
     }
 
 }
