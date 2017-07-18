@@ -109,19 +109,37 @@ public class ResourcesTest extends ResourceTest {
     }
 
     @Test
-    public void testRateOptionsQuery0() throws IOException, JSONException {
+    public void testRateOptionsQuery_c_z_v() throws IOException, JSONException {
         String expectedResultFile = "/rateoptionsquery/result.json";
-        String metricRequestFile = "/rateoptionsquery/request0.json";
-        String otsdbInteraction = "/rateoptionsquery/otsdbInteraction0.json";
+        String metricRequestFile = "/rateoptionsquery/request-c-z-v.json";
+        String otsdbInteraction = "/rateoptionsquery/otsdbInteraction-c-z-f.json";
 
         testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
     }
 
     @Test
-    public void testRateOptionsQuery() throws IOException, JSONException {
+    public void testRateOptionsQuery_c_n_v() throws IOException, JSONException {
         String expectedResultFile = "/rateoptionsquery/result.json";
-        String metricRequestFile = "/rateoptionsquery/request.json";
-        String otsdbInteraction = "/rateoptionsquery/otsdbInteraction.json";
+        String metricRequestFile = "/rateoptionsquery/request-c-n-v.json";
+        String otsdbInteraction = "/rateoptionsquery/otsdbInteraction-c-n-f.json";
+
+        testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
+    }
+
+    @Test
+    public void testRateOptionsQuery_c_v_v() throws IOException, JSONException {
+        String expectedResultFile = "/rateoptionsquery/result.json";
+        String metricRequestFile = "/rateoptionsquery/request-c-v-v.json";
+        String otsdbInteraction = "/rateoptionsquery/otsdbInteraction-c-z-t.json";
+
+        testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
+    }
+
+    @Test
+    public void testRateOptionsQuery_c_n_t() throws IOException, JSONException {
+        String expectedResultFile = "/rateoptionsquery/result.json";
+        String metricRequestFile = "/rateoptionsquery/request-c-n-t.json";
+        String otsdbInteraction = "/rateoptionsquery/otsdbInteraction-c-n-t.json";
 
         testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
     }

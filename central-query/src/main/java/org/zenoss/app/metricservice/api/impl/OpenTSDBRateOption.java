@@ -60,8 +60,13 @@ public class OpenTSDBRateOption {
             if (null != rateOptions.getDropResets()) {
                 dropResets = rateOptions.getDropResets();
             }
+            /* if the user specifies counterMax AND resetThreshold */
+            else if ((null != rateOptions.getCounterMax()) &&
+                     (null != rateOptions.getResetThreshold())) {
+                dropResets = false;
+            } 
             else if ((counterMax == Long.MAX_VALUE) && (resetValue == 0)) {
-                /* dropResets for when counterMax not given && resetValue not given */
+                /* dropResets for when counterMax && resetValue */
                 dropResets = true;
             }
         }
