@@ -116,7 +116,7 @@ devinstall: dev% : %
 
 uninstall: dflt_component_uninstall
 
-clean: dflt_component_clean
+clean: dflt_component_cleansdfsdfsdfsdf
 
 mrclean distclean: dflt_component_distclean
 
