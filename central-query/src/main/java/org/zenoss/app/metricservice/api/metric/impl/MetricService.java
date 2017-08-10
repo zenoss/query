@@ -54,6 +54,7 @@ import org.zenoss.app.metricservice.api.impl.Utils;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.app.metricservice.buckets.Buckets;
+import org.zenoss.app.metricservice.calculators.BadExpressionException;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
@@ -141,8 +142,14 @@ public class MetricService implements MetricServiceAPI {
         if (!Strings.isNullOrEmpty(returnMethod)) {
             rb.header("Access-Control-Allow-Headers", returnMethod);
         }
-
-        return rb.build();
+        Response r;
+        try {
+            r = rb.build();
+        } catch (WebApplicationException e) {
+            r = makeCORS(Response.serverError(), returnMethod);
+        }
+        return r;
+//        return rb.build();
     }
 
 
@@ -157,6 +164,7 @@ public class MetricService implements MetricServiceAPI {
             UnsupportedOperationException e = new UnsupportedOperationException("Series is no longer supported.");
             throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
         }
+        // FIXME: ZEN-26776 - idea for Thursday: modify MetricServiceWorker to return result with BAD_REQUEST status and error message in body, rather than throw WAE.
         return makeCORS(Response.ok(
                 new MetricServiceWorker(id.or(NOT_SPECIFIED),
                         start.or(config.getMetricServiceConfig().getDefaultStartTime()),
@@ -268,7 +276,6 @@ public class MetricService implements MetricServiceAPI {
             if (downsample != null && downsample.length() > 1) {
                 bucketSize = Utils.parseDuration(downsample);
                 log.debug("Downsample was {}: setting bucketSize to {}.", downsample, bucketSize);
-
             }
             try {
                 writeResultsUsingJacksonWriter(output, otsdbResponse, bucketSize);
@@ -276,6 +283,12 @@ public class MetricService implements MetricServiceAPI {
                 throw new WebApplicationException(
                         Utils.getErrorResponse(id,
                                 Response.Status.NOT_FOUND.getStatusCode(),
+                                String.format("Unable to write results: %s", e.getMessage()),
+                                e.getMessage()));
+            } catch (BadExpressionException e) {
+                throw new WebApplicationException(
+                        Utils.getErrorResponse(id,
+                                Response.Status.BAD_REQUEST.getStatusCode(),
                                 String.format("Unable to write results: %s", e.getMessage()),
                                 e.getMessage()));
             }
@@ -330,7 +343,7 @@ public class MetricService implements MetricServiceAPI {
         }
 
         private void writeResultsUsingJacksonWriter(OutputStream output, Iterable<OpenTSDBQueryResult> results, long bucketSize)
-                throws IOException, ClassNotFoundException {
+                throws IOException, ClassNotFoundException, BadExpressionException {
             log.debug("Using JacksonWriter to generate JSON results.");
             try (JacksonWriter writer = new JacksonWriter(new OutputStreamWriter(output, "UTF-8"))) {
                 log.debug("processing results");

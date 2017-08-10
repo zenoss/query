@@ -450,14 +450,14 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
     private static String createModifiedDownsampleRequest(String downsample, double downsampleMultiplier) {
         if (null == downsample || downsample.isEmpty() || downsampleMultiplier <= 0.0) {
-            log.warn("Bad downsample or multiplier. Returning original downsample value of {}.", downsample);
+            log.debug("Bad downsample or multiplier. Returning original downsample value of {}.", downsample);
             return downsample;
         }
         long duration = Utils.parseDuration(downsample);
         String aggregation = parseAggregation(downsample);
         long newDuration = (long) (duration / downsampleMultiplier);
         if (newDuration <= 0) {
-            log.warn("Applying value {} of downsampleMultiplier to downsample value of {} would result in a request with resolution finer than 1 sec. returning 1 second.", downsampleMultiplier, downsample);
+            log.info("Applying value {} of downsampleMultiplier to downsample value of {} would result in a request with resolution finer than 1 sec. returning 1 second.", downsampleMultiplier, downsample);
             newDuration = 1;
         }
         return String.format("%ds-%s", newDuration, aggregation);

@@ -43,12 +43,10 @@ import org.zenoss.app.metricservice.buckets.Buckets;
 import org.zenoss.app.metricservice.buckets.Interpolator;
 import org.zenoss.app.metricservice.buckets.InterpolatorFactory;
 import org.zenoss.app.metricservice.buckets.Value;
-import org.zenoss.app.metricservice.calculators.Closure;
-import org.zenoss.app.metricservice.calculators.MetricCalculator;
-import org.zenoss.app.metricservice.calculators.MetricCalculatorFactory;
-import org.zenoss.app.metricservice.calculators.ReferenceProvider;
-import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
+import org.zenoss.app.metricservice.calculators.*;
 
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -120,7 +118,7 @@ public class DefaultResultProcessor implements ResultProcessor,
      * java.io.BufferedReader, java.util.List, long)
      */
     @Override
-    public Buckets<IHasShortcut> processResults() throws IOException, ClassNotFoundException {
+    public Buckets<IHasShortcut> processResults() throws IOException, ClassNotFoundException, BadExpressionException {
         initialize();
 
         for (MetricSpecification metricSpecification : queries) {
@@ -173,7 +171,7 @@ public class DefaultResultProcessor implements ResultProcessor,
     }
 
 
-    private void calculateValues(List<MetricSpecification> calculatedValues, Buckets<IHasShortcut> buckets) {
+    private void calculateValues(List<MetricSpecification> calculatedValues, Buckets<IHasShortcut> buckets) throws BadExpressionException {
         for (MetricSpecification metricSpecification : calculatedValues) {
             Tags tags = Tags.fromValue(metricSpecification.getTags());
             MetricKey key = keyCache.get(metricSpecification.getMetricOrName(), metricSpecification.getNameOrMetric(), metricSpecification.getId(), tags);
@@ -197,6 +195,10 @@ public class DefaultResultProcessor implements ResultProcessor,
                          * Just because a reference was not in the same bucket does not
                          * mean a real failure. It is legitimate.
                          */
+                    } catch (BadExpressionException e) {
+                        // log and rethrow
+                        log.error(e.getMessage());
+                        throw e;
                     }
                 }
             }
