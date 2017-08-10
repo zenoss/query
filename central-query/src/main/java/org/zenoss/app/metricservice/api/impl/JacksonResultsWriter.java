@@ -62,7 +62,7 @@ public class JacksonResultsWriter {
             writer.write(resultJson);
     }
 
-    private SeriesQueryResult makeResults(List<MetricSpecification> queries, Buckets<IHasShortcut> buckets,
+    public SeriesQueryResult makeResults(List<MetricSpecification> queries, Buckets<IHasShortcut> buckets,
                                           String id, String sourceId, long startTs, String startTimeConfig, long endTs,
                                           String endTimeConfig, ReturnSet returnset) {
         SeriesQueryResult result = new SeriesQueryResult();
