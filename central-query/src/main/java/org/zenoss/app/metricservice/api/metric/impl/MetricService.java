@@ -136,26 +136,6 @@ public class MetricService implements MetricServiceAPI {
     }
 
 
-//    private static Response makeCORS(Response.ResponseBuilder responseBuilder, String returnMethod) {
-//        Response.ResponseBuilder rb = responseBuilder //Response.ok()
-//                .type(MediaType.APPLICATION_JSON)
-//                .header("Access-Control-Allow-Origin", "*")
-//                .header("Access-Control-Allow-Methods", "POST, OPTIONS");
-//
-//        if (!Strings.isNullOrEmpty(returnMethod)) {
-//            rb.header("Access-Control-Allow-Headers", returnMethod);
-//        }
-//        Response r;
-//        try {
-//            r = rb.build();
-//        } catch (WebApplicationException e) {
-//            r = makeCORS(Response.serverError(), returnMethod);
-//        }
-//        return r;
-////        return rb.build();
-//    }
-
-
     public SeriesQueryResult executeQuery(Optional<String> id, Optional<String> start, Optional<String> end, Optional<ReturnSet> returnset, Optional<Boolean> series, Optional<String> downsample, double downsampleMultiplier, Optional<Map<String, List<String>>> tags, List<MetricSpecification> metrics) {
         log.debug("Thread {}: entering MetricService.query()", Thread.currentThread().getId());
         //series should always be true.
@@ -163,7 +143,6 @@ public class MetricService implements MetricServiceAPI {
             UnsupportedOperationException e = new UnsupportedOperationException("Series is no longer supported.");
             throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
         }
-        // FIXME: ZEN-26776 - idea for Thursday: modify MetricServiceWorker to return result with BAD_REQUEST status and error message in body, rather than throw WAE.
         MetricServiceWorker worker = new MetricServiceWorker(id.or(NOT_SPECIFIED),
                         start.or(config.getMetricServiceConfig().getDefaultStartTime()),
                         end.or(config.getMetricServiceConfig().getDefaultEndTime()),
@@ -184,38 +163,11 @@ public class MetricService implements MetricServiceAPI {
         return makeCORS(Response.ok().entity(queryResult), MediaType.APPLICATION_JSON);
     }
 
-
-//    public Response oldquery(Optional<String> id, Optional<String> start, Optional<String> end,
-//                          Optional<ReturnSet> returnset, Optional<Boolean> series, Optional<String> downsample,
-//                          double downsampleMultiplier, Optional<Map<String, List<String>>> tags,
-//                          List<MetricSpecification> metrics) {
-//        log.debug("Thread {}: entering MetricService.query()", Thread.currentThread().getId());
-//        //series should always be true.
-//        if (!series.or(this.config.getMetricServiceConfig().getDefaultSeries())) {
-//            UnsupportedOperationException e = new UnsupportedOperationException("Series is no longer supported.");
-//            throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
-//        }
-//        // FIXME: ZEN-26776 - idea for Thursday: modify MetricServiceWorker to return result with BAD_REQUEST status and error message in body, rather than throw WAE.
-//        return makeCORS(Response.ok(
-//                new MetricServiceWorker(id.or(NOT_SPECIFIED),
-//                        start.or(config.getMetricServiceConfig().getDefaultStartTime()),
-//                        end.or(config.getMetricServiceConfig().getDefaultEndTime()),
-//                        returnset.or(config.getMetricServiceConfig().getDefaultReturnSet()),
-//
-//                        downsample.orNull(), downsampleMultiplier,
-//                        tags.orNull(),
-//                        metrics), MediaType.APPLICATION_JSON));
-//    }
-
     @Override
     public Response options(String request) {
         corsHeaders = request;
         return makeCORS(Response.ok(), request);
     }
-//
-//    private Response makeCORS(Response.ResponseBuilder responseBuilder) {
-//        return makeCORS(responseBuilder, corsHeaders);
-//    }
 
     private class MetricServiceWorker{
         private final String id;
@@ -319,81 +271,6 @@ public class MetricService implements MetricServiceAPI {
             return result;
         }
 
-//        /*
-//         * (non-Javadoc)
-//         *
-//         * @see javax.ws.rs.core.StreamingOutput#write(java.io.OutputStream)
-//         */
-//        @Override
-//        public void write(OutputStream output) throws IOException,
-//                WebApplicationException {
-//
-//            validateParameters();
-//            // Validate the input parameters. Throw exception if any are bad.
-//
-//            String convertedStartTime = Long.toString(start);
-//            String convertedEndTime = Long.toString(end);
-//            log.debug("write() entry.");
-//            Iterable<OpenTSDBQueryResult> otsdbResponse = null;
-//            try {
-//                // The getReader call queries the datastore (e.g. openTSDB) and returns a otsdbResponse for streaming the results.
-//                otsdbResponse = api.getResponse(config, id, convertedStartTime, convertedEndTime, returnset,
-//                        downsample, downsampleMultiplier, tags, metricFilter(queries));
-//                if (null == otsdbResponse) {
-//                    throw new IOException("Unable to get otsdbResponse from api.");
-//                }
-//
-//                if (returnset == ReturnSet.LAST) {
-//                    log.debug("Applying last filter.");
-//                    otsdbResponse = translateOpenTsdbInputToLastInput(otsdbResponse, start, end); //new LastFilter(otsdbResponse, start, end);
-//                }
-//            } catch (WebApplicationException wae) {
-//                // Log 404 messages at lower level.
-//                if (Response.Status.NOT_FOUND.getStatusCode() == getStatusFromWebApplicationException(wae)) {
-//                    log.debug("Caught web exception ({}). Status: 404 (Not found). Rethrowing.", wae.getMessage());
-//                } else {
-//                    log.error("Caught web exception ({}). Rethrowing.", wae.getMessage());
-//                }
-//                throw wae;
-//            } catch (IOException e) {
-//                log.error("Failed to connect to metric data source: {} : {}", e.getClass().getName(), e.getMessage(), e);
-//                throw new WebApplicationException(
-//                        Utils.getErrorResponse(
-//                                id,
-//                                Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-//                                String.format("Unable to connect to performance metric data source: %s", e.getMessage()),
-//                                e.getMessage()));
-//            }
-//
-//            /**
-//             * Deal with no bucket specification better. Create a bucket size of
-//             * 1 second means that we are behaving correctly, but it also means
-//             * we are going a lot more work than we really need to as we would
-//             * just directly stream the results without processing them into
-//             * buckets.
-//             */
-//            long bucketSize = 1;
-//            if (downsample != null && downsample.length() > 1) {
-//                bucketSize = Utils.parseDuration(downsample);
-//                log.debug("Downsample was {}: setting bucketSize to {}.", downsample, bucketSize);
-//            }
-//            try {
-//                writeResultsUsingJacksonWriter(output, otsdbResponse, bucketSize);
-//            } catch (ClassNotFoundException e) {
-//                throw new WebApplicationException(
-//                        Utils.getErrorResponse(id,
-//                                Response.Status.NOT_FOUND.getStatusCode(),
-//                                String.format("Unable to write results: %s", e.getMessage()),
-//                                e.getMessage()));
-//            } catch (BadExpressionException e) {
-//                throw new WebApplicationException(
-//                        Utils.getErrorResponse(id,
-//                                Response.Status.BAD_REQUEST.getStatusCode(),
-//                                String.format("Unable to write results: %s", e.getMessage()),
-//                                e.getMessage()));
-//            }
-//        }
-
         private int getStatusFromWebApplicationException(WebApplicationException wae) {
             // Response.getStatus uses -1 for 'not set'. We will, too.
             int result = -1;
@@ -441,20 +318,6 @@ public class MetricService implements MetricServiceAPI {
             }
             series.setDataPoints(dataPointSingleton);
         }
-
-//        private void writeResultsUsingJacksonWriter(OutputStream output, Iterable<OpenTSDBQueryResult> results, long bucketSize)
-//                throws IOException, ClassNotFoundException, BadExpressionException {
-//            log.debug("Using JacksonWriter to generate JSON results.");
-//            try (JacksonWriter writer = new JacksonWriter(new OutputStreamWriter(output, "UTF-8"))) {
-//                log.debug("processing results");
-//                ResultProcessor processor = new DefaultResultProcessor(results, queries, bucketSize);
-//                Buckets<IHasShortcut> buckets = processor.processResults();
-//                log.debug("results processed.");
-//                jacksonResultsWriter.writeResults(writer, queries, buckets,
-//                        id, api.getSourceId(), start, startTime, end, endTime, returnset);
-//                log.debug("back from jacksonResultsWriter");
-//            }
-//        }
 
         private SeriesQueryResult makeResults(Iterable<OpenTSDBQueryResult> results, long bucketSize)
                 throws ClassNotFoundException, BadExpressionException {
