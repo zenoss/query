@@ -31,6 +31,8 @@
 
 package org.zenoss.app.metricservice.api.impl;
 
+
+import org.junit.Assert;
 import org.junit.Test;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
@@ -39,7 +41,6 @@ import org.zenoss.app.metricservice.buckets.Buckets;
 import org.zenoss.app.metricservice.testutil.ConstantSeriesGenerator;
 import org.zenoss.app.metricservice.testutil.SeriesGenerator;
 
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -52,11 +53,12 @@ public class JacksonResultsWriterTest {
     private static final long DATA_TIMESTAMP_STEP = 600;
 
     @Test
-    public void testWriteResults() throws Exception {
+    public void testMakeResults() {
         JacksonResultsWriter victim = new JacksonResultsWriter();
         String[] queryStrings = new String[] {
-            "avg:laLoadInt1{tag1=*,tag2=*}",
-            "sum:laLoadInt5{tag1=*,tag2=*}" };
+                "avg:laLoadInt1{tag1=*,tag2=*}",
+                "sum:laLoadInt5{tag1=*,tag2=*}" };
+        SeriesQueryResult sqrExpected = new SeriesQueryResult();
 
         List<MetricSpecification> queries = makeTestQueries(queryStrings);
         long startTs = DATA_START_TIMESTAMP;
@@ -69,10 +71,9 @@ public class JacksonResultsWriterTest {
         String startTimeConfig = Long.toString(startTs);
         String endTimeConfig = Long.toString(endTs);
         ReturnSet returnset = ReturnSet.ALL;
-        StringWriter writer = new StringWriter();
-        victim.writeResults(writer, queries, buckets, id, sourceId, startTs, startTimeConfig, endTs, endTimeConfig, returnset);
-        say("RESULTS:");
-        say(writer.toString());
+        final SeriesQueryResult seriesQueryResult = victim.makeResults(queries, buckets, id, sourceId, startTs, startTimeConfig, endTs, endTimeConfig, returnset);
+        Assert.assertNotNull(seriesQueryResult);
+        Assert.assertTrue("Unexpected result", sqrExpected.equals(seriesQueryResult));
     }
 
     private Buckets<IHasShortcut> makeTestBuckets(List<MetricSpecification> queries, SeriesGenerator generator, long startTimestamp, long endTimestamp, long step) {

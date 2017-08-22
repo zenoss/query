@@ -52,16 +52,6 @@ public class JacksonResultsWriter {
 
     private static final Logger log = LoggerFactory.getLogger(JacksonResultsWriter.class);
 
-    public void writeResults(Writer writer, List<MetricSpecification> queries, Buckets<IHasShortcut> buckets,
-                             String id, String sourceId, long startTs, String startTimeConfig, long endTs,
-                             String endTimeConfig, ReturnSet returnset) throws IOException {
-            SeriesQueryResult results = makeResults(queries, buckets, id, sourceId, startTs, startTimeConfig, endTs, endTimeConfig, returnset);
-            // write results (JSON serialization)
-            String resultJson = Utils.jsonStringFromObject(results);
-            log.debug("Resulting JSON: {}", resultJson);
-            writer.write(resultJson);
-    }
-
     public SeriesQueryResult makeResults(List<MetricSpecification> queries, Buckets<IHasShortcut> buckets,
                                           String id, String sourceId, long startTs, String startTimeConfig, long endTs,
                                           String endTimeConfig, ReturnSet returnset) {
