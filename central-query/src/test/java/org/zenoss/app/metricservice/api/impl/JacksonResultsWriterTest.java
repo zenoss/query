@@ -31,6 +31,9 @@
 
 package org.zenoss.app.metricservice.api.impl;
 
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.Assert;
 import org.junit.Test;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.api.model.ReturnSet;
@@ -39,24 +42,26 @@ import org.zenoss.app.metricservice.buckets.Buckets;
 import org.zenoss.app.metricservice.testutil.ConstantSeriesGenerator;
 import org.zenoss.app.metricservice.testutil.SeriesGenerator;
 
-import java.io.StringWriter;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 
 public class JacksonResultsWriterTest {
     private static final String TESTID = "TEST_ID";
+    private static final String TEST_SOURCE_ID = "test_source_id";
     private static final long DATA_START_TIMESTAMP = 1078033800;
     private static final long DATA_END_TIMESTAMP = 1078034400;
     private static final long DATA_TIMESTAMP_STEP = 600;
 
     @Test
-    public void testWriteResults() throws Exception {
+    public void testMakeResults() throws IOException {
         JacksonResultsWriter victim = new JacksonResultsWriter();
         String[] queryStrings = new String[] {
-            "avg:laLoadInt1{tag1=*,tag2=*}",
-            "sum:laLoadInt5{tag1=*,tag2=*}" };
+                "avg:laLoadInt1{tag1=*,tag2=*}",
+                "sum:laLoadInt5{tag1=*,tag2=*}" };
 
         List<MetricSpecification> queries = makeTestQueries(queryStrings);
         long startTs = DATA_START_TIMESTAMP;
@@ -65,14 +70,35 @@ public class JacksonResultsWriterTest {
         Buckets<IHasShortcut> buckets = makeTestBuckets(queries, new ConstantSeriesGenerator(10.0), startTs, endTs, step);
         BucketTestUtilities.dumpBucketsToStdout(buckets);
         String id = TESTID;
-        String sourceId = "test_source_id";
+        String sourceId = TEST_SOURCE_ID;
         String startTimeConfig = Long.toString(startTs);
         String endTimeConfig = Long.toString(endTs);
         ReturnSet returnset = ReturnSet.ALL;
-        StringWriter writer = new StringWriter();
-        victim.writeResults(writer, queries, buckets, id, sourceId, startTs, startTimeConfig, endTs, endTimeConfig, returnset);
-        say("RESULTS:");
-        say(writer.toString());
+
+        Collection<QueryResult> expectedResults = new ArrayList<>();
+
+        String qr1str = "{\"metric\":\"laLoadInt1\",\"tags\":{\"tag1\":[\"*\"],\"tag2\":[\"*\"]},\"datapoints\":[{\"timestamp\":1078033800, \"value\":10.0},{\"timestamp\":1078034400, \"value\":10.0}]}";
+        String qr2str = "{\"metric\":\"laLoadInt5\",\"tags\":{\"tag1\":[\"*\"],\"tag2\":[\"*\"]},\"datapoints\":[{\"timestamp\":1078033800, \"value\":10.0},{\"timestamp\":1078034400, \"value\":10.0}]}";
+        ObjectMapper mapper = new ObjectMapper();
+        QueryResult qr1 = mapper.readValue(qr1str, QueryResult.class);
+        QueryResult qr2 = mapper.readValue(qr2str, QueryResult.class);
+        expectedResults.add(qr1);
+        expectedResults.add(qr2);
+
+        final SeriesQueryResult seriesQueryResult = victim.makeResults(queries, buckets, id, sourceId, startTs, startTimeConfig, endTs, endTimeConfig, returnset);
+
+        Assert.assertNotNull(seriesQueryResult);
+        Assert.assertEquals("client ID mismatch in query result", id, seriesQueryResult.getClientId());
+        Assert.assertEquals("endTime mismatch in query result", endTimeConfig, seriesQueryResult.getEndTime());
+        Assert.assertEquals("endTimeActual mismatch in query result", endTs, seriesQueryResult.getEndTimeActual());
+        Assert.assertEquals("returnset mismatch in query result", returnset, seriesQueryResult.getReturnset());
+        Assert.assertEquals("series mismatch in query result", true, seriesQueryResult.isSeries());
+        Assert.assertEquals("source mismatch in query result", sourceId, seriesQueryResult.getSource());
+        Assert.assertEquals("startTime mismatch in query result", startTimeConfig, seriesQueryResult.getStartTime());
+        Assert.assertEquals("startTimeActual mismatch in query result", startTs, seriesQueryResult.getStartTimeActual());
+        Collection<QueryResult> ar = seriesQueryResult.getResults();
+        Assert.assertEquals("result sizes mismatch in query results", expectedResults.size(), ar.size());
+        Assert.assertEquals("results mismatch in query results", expectedResults, ar);
     }
 
     private Buckets<IHasShortcut> makeTestBuckets(List<MetricSpecification> queries, SeriesGenerator generator, long startTimestamp, long endTimestamp, long step) {

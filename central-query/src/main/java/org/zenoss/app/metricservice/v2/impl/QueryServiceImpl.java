@@ -11,6 +11,8 @@
 
 package org.zenoss.app.metricservice.v2.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
@@ -29,11 +31,7 @@ import org.zenoss.app.metricservice.api.model.ReturnSet;
 import org.zenoss.app.metricservice.api.model.v2.*;
 import org.zenoss.app.metricservice.api.model.v2.QueryResult;
 import org.zenoss.app.metricservice.buckets.Value;
-import org.zenoss.app.metricservice.calculators.Closure;
-import org.zenoss.app.metricservice.calculators.MetricCalculator;
-import org.zenoss.app.metricservice.calculators.MetricCalculatorFactory;
-import org.zenoss.app.metricservice.calculators.ReferenceProvider;
-import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
+import org.zenoss.app.metricservice.calculators.*;
 import org.zenoss.app.metricservice.v2.QueryService;
 
 import javax.annotation.Nullable;
@@ -110,7 +108,7 @@ public class QueryServiceImpl implements QueryService {
                         qrb.addSeries(m.metric, m.getDataPoints(), m.tags);
                     }
                     qrb.setStatus(otsdbResults.getStatus());
-                } catch (UnknownReferenceException e) {
+                } catch (UnknownReferenceException | BadExpressionException e) {
                     QueryStatus status = new QueryStatus();
                     status.setMessage(e.getMessage());
                     status.setStatus(QueryStatusEnum.ERROR);
@@ -163,7 +161,7 @@ public class QueryServiceImpl implements QueryService {
         return results;
     }
 
-    private void applyRPN(Entry<String, Collection<MetricQuery>> specs, Iterable<OpenTSDBQueryResult> result) throws UnknownReferenceException {
+    private void applyRPN(Entry<String, Collection<MetricQuery>> specs, Iterable<OpenTSDBQueryResult> result) throws UnknownReferenceException, BadExpressionException {
         for (final OpenTSDBQueryResult r : result) {
             MetricCalculator calc;
             try {

@@ -31,6 +31,9 @@
 
 package org.zenoss.app.metricservice.api.impl;
 
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
 public class QueryResultDataPoint {
     private long timestamp;
     private double value;
@@ -56,5 +59,27 @@ public class QueryResultDataPoint {
 
     public void setValue(double value) {
         this.value = value;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+
+        if (o == null || getClass() != o.getClass()) return false;
+
+        QueryResultDataPoint that = (QueryResultDataPoint) o;
+
+        return new EqualsBuilder()
+                .append(timestamp, that.timestamp)
+                .append(value, that.value)
+                .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37)
+                .append(timestamp)
+                .append(value)
+                .toHashCode();
     }
 }
