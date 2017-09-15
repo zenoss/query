@@ -33,6 +33,7 @@ package org.zenoss.app.metricservice.calculators.rpn;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zenoss.app.metricservice.calculators.BadExpressionException;
 import org.zenoss.app.metricservice.calculators.BaseMetricCalculator;
 import org.zenoss.app.metricservice.calculators.Closure;
 import org.zenoss.app.metricservice.calculators.UnknownReferenceException;
@@ -499,7 +500,7 @@ public class Calculator extends BaseMetricCalculator {
      */
     @Override
     public double evaluate(String expression, Closure closure)
-            throws UnknownReferenceException {
+            throws UnknownReferenceException, BadExpressionException {
         clear();
         return doEvaluate(expression, closure);
     }
@@ -513,7 +514,7 @@ public class Calculator extends BaseMetricCalculator {
      */
     @Override
     public double evaluate(double value, Closure closure)
-            throws UnknownReferenceException {
+            throws UnknownReferenceException, BadExpressionException {
         clear();
         push(value);
         return doEvaluate(getExpression(), closure);
@@ -527,7 +528,7 @@ public class Calculator extends BaseMetricCalculator {
      * .zenoss.app.metricservice.calculators.Closure)
      */
     @Override
-    public double evaluate(Closure closure) throws UnknownReferenceException {
+    public double evaluate(Closure closure) throws UnknownReferenceException, BadExpressionException {
         clear();
         return doEvaluate(getExpression(), closure);
     }
@@ -541,7 +542,7 @@ public class Calculator extends BaseMetricCalculator {
      */
     @Override
     public double evaluate(double value, String expression, Closure closure)
-            throws UnknownReferenceException {
+            throws UnknownReferenceException, RPNException {
         clear();
         push(value);
         return doEvaluate(expression, closure);
@@ -568,217 +569,222 @@ public class Calculator extends BaseMetricCalculator {
      *         the value is not removed from the stack.
      */
     private double doEvaluate(String expression, Closure closure)
-            throws UnknownReferenceException {
+            throws UnknownReferenceException, RPNException {
         String[] terms = expression.split(",");
         String term;
         String ref;
-        for (String term1 : terms) {
-            term = (ref = term1.trim()).toLowerCase();
-            if (term.length() == 0) {
-                continue;
+        try {
+            for (String term1 : terms) {
+                term = (ref = term1.trim()).toLowerCase();
+                if (term.length() == 0) {
+                    continue;
+                }
+                switch (term.charAt(0)) {
+                    case '+':
+                        if (term.length() == 1) {
+                            add();
+                        } else {
+                            try {
+                                push(Double.valueOf(term));
+                            } catch (NumberFormatException e) {
+                                log.debug("Term {} did not parse as number, treating as reference.", term);
+                                pushReference(ref, closure);
+                            }
+                        }
+                        break;
+                    case '-':
+                        if (term.length() == 1) {
+                            subtract();
+                        } else {
+                            try {
+                                push(Double.valueOf(term));
+                            } catch (NumberFormatException e) {
+                                log.debug("Term {} did not parse as number, treating as reference.", term);
+                                pushReference(ref, closure);
+                            }
+                        }
+                        break;
+                    case '/':
+                        if (term.length() == 1) {
+                            divide();
+                        } else {
+                            pushReference(ref, closure);
+                        }
+                        break;
+                    case '*':
+                        if (term.length() == 1) {
+                            multiply();
+                        } else {
+                            pushReference(ref, closure);
+                        }
+                        break;
+                    case '%':
+                        if (term.length() == 1) {
+                            modulo();
+                        } else {
+                            pushReference(ref, closure);
+                        }
+                        break;
+                    case 'a':
+                        if ("avg".equals(term)) {
+                            avg();
+                        } else if ("abs".equals(term)) {
+                            abs();
+                        } else if ("atan".equals(term)) {
+                            atan();
+                        } else if ("atan2".equals(term)) {
+                            atan2();
+                        } else if ("addnan".equals(term)) {
+                            addnan();
+                        } else {
+                            pushReference(ref, closure);
+                        }
+                        break;
+                    case 'c':
+                        if ("cos".equals(term)) {
+                            cos();
+                        } else if ("ceil".equals(term)) {
+                            ceil();
+                        } else {
+                            pushReference(ref, closure);
+                        }
+                        break;
+                    case 'd':
+                        if ("dup".equals(term)) {
+                            duplicate();
+                        } else if ("deg2rad".equals(term)) {
+                            deg2rad();
+                        } else {
+                            pushReference(ref, closure);
+                        }
+                        break;
+                    case 'e':
+                        if ("exc".equals(term)) {
+                            exchange();
+                        } else if ("exp".equals(term)) {
+                            exp();
+                        } else if ("eq".equals(term)) {
+                            eq();
+                        } else {
+                            pushReference(ref, closure);
+                        }
+                        break;
+                    case 'f':
+                        if ("floor".equals(term)) {
+                            floor();
+                        } else {
+                            pushReference(ref, closure);
+                        }
+                        break;
+                    case 'g':
+                        if ("gt".equals(term)) {
+                            gt();
+                        } else if ("ge".equals(term)) {
+                            ge();
+                        } else {
+                            pushReference(ref, closure);
+                        }
+                        break;
+                    case 'i':
+                        if ("if".equals(term)) {
+                            ifte();
+                        } else if ("isinf".equals(term)) {
+                            isInfinity();
+                        } else if ("isunkn".equals(term)) {
+                            isInfinity();
+                        } else if ("inf".equals(term)) {
+                            infinity();
+                        } else {
+                            pushReference(ref, closure);
+                        }
+                        break;
+                    case 'l':
+                        if ("limit".equals(term)) {
+                            limit();
+                        } else if ("log".equals(term)) {
+                            log();
+                        } else if ("lt".equals(term)) {
+                            lt();
+                        } else if ("le".equals(term)) {
+                            le();
+                        } else {
+                            pushReference(ref, closure);
+                        }
+                        break;
+                    case 'm':
+                        if ("min".equals(term)) {
+                            min();
+                        } else if ("max".equals(term)) {
+                            max();
+                        } else {
+                            pushReference(ref, closure);
+                        }
+                        break;
+                    case 'n':
+                        if ("neginf".equals(term)) {
+                            negInfinity();
+                        } else if ("now".equals(term)) {
+                            now();
+                        } else if ("ne".equals(term)) {
+                            ne();
+                        } else {
+                            pushReference(ref, closure);
+                        }
+                        break;
+                    case 'r':
+                        if ("rev".equals(term)) {
+                            rev();
+                        } else if ("rad2deg".equals(term)) {
+                            rad2deg();
+                        } else {
+                            pushReference(ref, closure);
+                        }
+                        break;
+                    case 's':
+                        if ("sqrt".equals(term)) {
+                            sqrt();
+                        } else if ("sort".equals(term)) {
+                            sort();
+                        } else if ("sin".equals(term)) {
+                            sin();
+                        } else {
+                            pushReference(ref, closure);
+                        }
+                        break;
+                    case 't':
+                        if ("tan".equals(term)) {
+                            tan();
+                        } else {
+                            pushReference(ref, closure);
+                        }
+                        break;
+                    case 'u':
+                        if ("unkn".equals(term)) {
+                            unknown();
+                        } else if ("un".equals(term)) {
+                            isUnknown();
+                        } else {
+                            pushReference(ref, closure);
+                        }
+                        break;
+                    default:
+                        if (Character.isDigit(term.charAt(0))) {
+                            try {
+                                push(Double.valueOf(term));
+                            } catch (NumberFormatException e) {
+                                log.debug("Term {} did not parse as number, treating as reference.", term);
+                                pushReference(ref, closure);
+                            }
+                        }
+                        if (Character.isLetter(term.charAt(0))) {
+                            pushReference(ref, closure);
+                        }
+                        break;
+                }
             }
-            switch (term.charAt(0)) {
-                case '+':
-                    if (term.length() == 1) {
-                        add();
-                    } else {
-                        try {
-                            push(Double.valueOf(term));
-                        } catch (NumberFormatException e) {
-                            log.debug("Term {} did not parse as number, treating as reference.", term);
-                            pushReference(ref, closure);
-                        }
-                    }
-                    break;
-                case '-':
-                    if (term.length() == 1) {
-                        subtract();
-                    } else {
-                        try {
-                            push(Double.valueOf(term));
-                        } catch (NumberFormatException e) {
-                            log.debug("Term {} did not parse as number, treating as reference.", term);
-                            pushReference(ref, closure);
-                        }
-                    }
-                    break;
-                case '/':
-                    if (term.length() == 1) {
-                        divide();
-                    } else {
-                        pushReference(ref, closure);
-                    }
-                    break;
-                case '*':
-                    if (term.length() == 1) {
-                        multiply();
-                    } else {
-                        pushReference(ref, closure);
-                    }
-                    break;
-                case '%':
-                    if (term.length() == 1) {
-                        modulo();
-                    }   else {
-                        pushReference(ref, closure);
-                    }
-                    break;
-                case 'a':
-                    if ("avg".equals(term)) {
-                        avg();
-                    } else if ("abs".equals(term)) {
-                        abs();
-                    } else if ("atan".equals(term)) {
-                        atan();
-                    } else if ("atan2".equals(term)) {
-                        atan2();
-                    } else if ("addnan".equals(term)) {
-                        addnan();
-                    } else {
-                        pushReference(ref, closure);
-                    }
-                    break;
-                case 'c':
-                    if ("cos".equals(term)) {
-                        cos();
-                    } else if ("ceil".equals(term)) {
-                        ceil();
-                    } else {
-                        pushReference(ref, closure);
-                    }
-                    break;
-                case 'd':
-                    if ("dup".equals(term)) {
-                        duplicate();
-                    } else if ("deg2rad".equals(term)) {
-                        deg2rad();
-                    } else {
-                        pushReference(ref, closure);
-                    }
-                    break;
-                case 'e':
-                    if ("exc".equals(term)) {
-                        exchange();
-                    } else if ("exp".equals(term)) {
-                        exp();
-                    } else if ("eq".equals(term)) {
-                        eq();
-                    } else {
-                        pushReference(ref, closure);
-                    }
-                    break;
-                case 'f':
-                    if ("floor".equals(term)) {
-                        floor();
-                    } else {
-                        pushReference(ref, closure);
-                    }
-                    break;
-                case 'g':
-                    if ("gt".equals(term)) {
-                        gt();
-                    } else if ("ge".equals(term)) {
-                        ge();
-                    } else {
-                        pushReference(ref, closure);
-                    }
-                    break;
-                case 'i':
-                    if ("if".equals(term)) {
-                        ifte();
-                    } else if ("isinf".equals(term)) {
-                        isInfinity();
-                    } else if ("isunkn".equals(term)) {
-                        isInfinity();
-                    } else if ("inf".equals(term)) {
-                        infinity();
-                    } else {
-                        pushReference(ref, closure);
-                    }
-                    break;
-                case 'l':
-                    if ("limit".equals(term)) {
-                        limit();
-                    } else if ("log".equals(term)) {
-                        log();
-                    } else if ("lt".equals(term)) {
-                        lt();
-                    } else if ("le".equals(term)) {
-                        le();
-                    } else {
-                        pushReference(ref, closure);
-                    }
-                    break;
-                case 'm':
-                    if ("min".equals(term)) {
-                        min();
-                    } else if ("max".equals(term)) {
-                        max();
-                    } else {
-                        pushReference(ref, closure);
-                    }
-                    break;
-                case 'n':
-                    if ("neginf".equals(term)) {
-                        negInfinity();
-                    } else if ("now".equals(term)) {
-                        now();
-                    } else if ("ne".equals(term)) {
-                        ne();
-                    } else {
-                        pushReference(ref, closure);
-                    }
-                    break;
-                case 'r':
-                    if ("rev".equals(term)) {
-                        rev();
-                    } else if ("rad2deg".equals(term)) {
-                        rad2deg();
-                    } else {
-                        pushReference(ref, closure);
-                    }
-                    break;
-                case 's':
-                    if ("sqrt".equals(term)) {
-                        sqrt();
-                    } else if ("sort".equals(term)) {
-                        sort();
-                    } else if ("sin".equals(term)) {
-                        sin();
-                    } else {
-                        pushReference(ref, closure);
-                    }
-                    break;
-                case 't':
-                    if ("tan".equals(term)) {
-                        tan();
-                    } else {
-                        pushReference(ref, closure);
-                    }
-                    break;
-                case 'u':
-                    if ("unkn".equals(term)) {
-                        unknown();
-                    } else if ("un".equals(term)) {
-                        isUnknown();
-                    } else {
-                        pushReference(ref, closure);
-                    }
-                    break;
-                default:
-                    if (Character.isDigit(term.charAt(0))) {
-                        try {
-                            push(Double.valueOf(term));
-                        } catch (NumberFormatException e) {
-                            log.debug("Term {} did not parse as number, treating as reference.", term);
-                            pushReference(ref, closure);
-                        }
-                    }
-                    if (Character.isLetter(term.charAt(0))) {
-                        pushReference(ref, closure);
-                    }
-                    break;
-            }
+        } catch (IndexOutOfBoundsException e) {
+            log.error(String.format("Unable to apply expression %s", expression));
+            throw new RPNException(expression, e);
         }
         return peek();
     }
@@ -792,7 +798,7 @@ public class Calculator extends BaseMetricCalculator {
      */
     @Override
     public double evaluate(double value, String expression)
-            throws UnknownReferenceException {
+            throws UnknownReferenceException, BadExpressionException {
         return evaluate(value, expression, null);
     }
 
@@ -804,7 +810,7 @@ public class Calculator extends BaseMetricCalculator {
      * .lang.String)
      */
     @Override
-    public double evaluate(String expression) throws UnknownReferenceException {
+    public double evaluate(String expression) throws UnknownReferenceException, BadExpressionException {
         return evaluate(expression, null);
     }
 
@@ -816,7 +822,7 @@ public class Calculator extends BaseMetricCalculator {
      * )
      */
     @Override
-    public double evaluate(double value) throws UnknownReferenceException {
+    public double evaluate(double value) throws UnknownReferenceException, BadExpressionException {
         return evaluate(value, (Closure) null);
     }
 
@@ -826,7 +832,7 @@ public class Calculator extends BaseMetricCalculator {
      * @see org.zenoss.app.metricservice.calculators.MetricCalculator#evaluate()
      */
     @Override
-    public double evaluate() throws UnknownReferenceException {
+    public double evaluate() throws UnknownReferenceException, BadExpressionException {
         return evaluate((Closure) null);
     }
 }

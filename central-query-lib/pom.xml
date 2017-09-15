@@ -7,7 +7,7 @@
         <relativePath>../pom.xml</relativePath>
         <groupId>org.zenoss</groupId>
         <artifactId>central-query-parent</artifactId>
-        <version>0.1.23</version>
+        <version>0.1.24</version>
     </parent>
 
     <groupId>org.zenoss</groupId>
@@ -65,6 +65,11 @@
             <artifactId>validation-api</artifactId>
             <version>1.0.0.GA</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <version>2.6</version>
         </dependency>
     </dependencies>
 

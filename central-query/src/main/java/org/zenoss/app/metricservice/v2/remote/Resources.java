@@ -21,9 +21,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.zenoss.app.AppConfiguration;
+import org.zenoss.app.metricservice.api.impl.QueryStatus;
 import org.zenoss.app.metricservice.api.impl.Utils;
 import org.zenoss.app.metricservice.api.model.v2.*;
 import org.zenoss.app.metricservice.v2.QueryService;
+import org.zenoss.app.metricservice.v2.impl.QueryResultBuilder;
 import org.zenoss.app.security.ZenossTenant;
 import org.zenoss.app.zauthbundle.ZappSecurity;
 import org.zenoss.dropwizardspring.annotations.Resource;
@@ -71,7 +73,22 @@ public class Resources {
             Map<String, List<String>> tags = addTenantId(mq.getTags());
             mq.setTags(tags);
         }
-        QueryResult result = api.query(metricRequest);
+        QueryResult result = null;
+//        result = api.query(metricRequest);
+
+        try {
+            result = api.query(metricRequest);
+        } catch (java.lang.RuntimeException e) {
+            if (result == null) {
+                QueryResultBuilder qrb = new QueryResultBuilder();
+                QueryStatus status = new QueryStatus();
+                status.setMessage(String.format("(FROM Resources.query): %s Exception: %s", e.getClass(), e.getMessage()));
+                status.setStatus(QueryStatus.QueryStatusEnum.ERROR);
+                qrb.setStatus(status);
+            }
+            log.error("Exception caught handling request", e);
+            throw new WebApplicationException(e);
+        }
         return result;
     }
 

@@ -68,10 +68,10 @@ public interface MetricCalculator {
      * @return result of the expression evaluation
      */
     double evaluate(double value, String expression, Closure closure)
-            throws UnknownReferenceException;
+            throws UnknownReferenceException, BadExpressionException;
 
     double evaluate(double value, String expression)
-            throws UnknownReferenceException;
+            throws UnknownReferenceException, BadExpressionException;
 
     /**
      * Evaluate the given expression.
@@ -81,9 +81,9 @@ public interface MetricCalculator {
      * @return result of the expression evaluation
      */
     public double evaluate(String expression, Closure closure)
-            throws UnknownReferenceException;
+            throws UnknownReferenceException, BadExpressionException;
 
-    public double evaluate(String expression) throws UnknownReferenceException;
+    public double evaluate(String expression) throws UnknownReferenceException, BadExpressionException;
 
     /**
      * Evaluate the saved expression using the given value as an initial value
@@ -97,11 +97,11 @@ public interface MetricCalculator {
      * @return result of the saved expression evaluation
      */
     public double evaluate(double value, Closure closure)
-            throws UnknownReferenceException;
+            throws UnknownReferenceException, BadExpressionException;
 
-    public double evaluate(double value) throws UnknownReferenceException;
+    public double evaluate(double value) throws UnknownReferenceException, BadExpressionException;
 
-    public double evaluate(Closure closure) throws UnknownReferenceException;
+    public double evaluate(Closure closure) throws UnknownReferenceException, BadExpressionException;
 
-    public double evaluate() throws UnknownReferenceException;
+    public double evaluate() throws UnknownReferenceException, BadExpressionException;
 }

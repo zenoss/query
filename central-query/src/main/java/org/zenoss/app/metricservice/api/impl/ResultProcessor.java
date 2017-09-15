@@ -32,6 +32,7 @@
 package org.zenoss.app.metricservice.api.impl;
 
 import org.zenoss.app.metricservice.buckets.Buckets;
+import org.zenoss.app.metricservice.calculators.BadExpressionException;
 
 import java.io.IOException;
 
@@ -54,5 +55,5 @@ public interface ResultProcessor {
      * @throws ClassNotFoundException
      *             when a calculation engine cannot be loaded
      */
-    public Buckets<IHasShortcut> processResults() throws IOException, ClassNotFoundException;
+    public Buckets<IHasShortcut> processResults() throws IOException, ClassNotFoundException, BadExpressionException;
 }
