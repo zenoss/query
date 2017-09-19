@@ -11,12 +11,8 @@ import com.yammer.dropwizard.testing.ResourceTest;
 import org.apache.shiro.subject.PrincipalCollection;
 import org.apache.shiro.subject.Subject;
 import org.json.JSONException;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
-import org.skyscreamer.jsonassert.JSONCompare;
-import org.skyscreamer.jsonassert.JSONCompareMode;
-import org.skyscreamer.jsonassert.JSONCompareResult;
 import org.zenoss.app.metricservice.MetricServiceAppConfiguration;
 import org.zenoss.app.metricservice.api.configs.MetricServiceConfig;
 import org.zenoss.app.metricservice.api.impl.OpenTSDBMetricStorage;
@@ -44,7 +40,7 @@ import static org.mockito.Mockito.when;
 public class ResourcesTest extends ResourceTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final int MOCK_PORT = 4242;
+    private static final int MOCK_PORT = 42424;
     private static final String URL_PATH = "/api/v2/performance/query";
     private static final String OTSDB_QUERY_PATH = "/api/query";
 
@@ -60,7 +56,9 @@ public class ResourcesTest extends ResourceTest {
     protected void setUpResources() throws Exception {
         configuration = mock(MetricServiceAppConfiguration.class);
         when(configuration.getMetricServiceConfig()).thenReturn(new MetricServiceConfig());
-
+        configuration.getMetricServiceConfig().setIgnoreRateOption(false);
+        configuration.getMetricServiceConfig().setOpenTsdbUrl("http://localhost:"+MOCK_PORT);
+	
         security = mock(ZappSecurity.class);
 
         OpenTSDBMetricStorage otsdb = new OpenTSDBMetricStorage();
@@ -127,6 +125,40 @@ public class ResourcesTest extends ResourceTest {
     }
 
     @Test
+    public void testIgnoreRateOption() throws IOException, JSONException {
+        try {
+            configuration.getMetricServiceConfig().setIgnoreRateOption(true);
+
+            String expectedResultFile = "/ignorerateoptionquery/result.json";
+            String metricRequestFile = "/ignorerateoptionquery/request.json";
+            String otsdbInteraction = "/ignorerateoptionquery/otsdbInteraction.json";
+            testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
+        } finally {
+            configuration.getMetricServiceConfig().setIgnoreRateOption(false);
+
+        }
+    }
+
+    @Test
+    public void testSpanCutoff() throws IOException, JSONException {
+        try {
+            configuration.getMetricServiceConfig().setIgnoreRateOption(true);
+            configuration.getMetricServiceConfig().setRateOptionCutoffTs(1437520981);
+            String expectedResultFile = "/spancutoff/result.json";
+            String metricRequestFile = "/spancutoff/request.json";
+            String pre_otsdbInteraction = "/spancutoff/precutoff-otsdbInteraction.json";
+            String post_otsdbInteraction = "/spancutoff/postcutoff-otsdbInteraction.json";
+            String gauge_otsdbInteraction = "/spancutoff/gauge-otsdbInteraction.json";
+
+            testQuery(expectedResultFile, metricRequestFile, pre_otsdbInteraction, post_otsdbInteraction, gauge_otsdbInteraction);
+        } catch (Exception e) {
+	    e.printStackTrace();
+        } finally {
+            configuration.getMetricServiceConfig().setIgnoreRateOption(false);
+
+        }
+    }
+    @Test
     public void testRateOptionsQuery_c_v_v() throws IOException, JSONException {
         String expectedResultFile = "/rateoptionsquery/result.json";
         String metricRequestFile = "/rateoptionsquery/request-c-v-v.json";
@@ -140,7 +172,6 @@ public class ResourcesTest extends ResourceTest {
         String expectedResultFile = "/rateoptionsquery/result.json";
         String metricRequestFile = "/rateoptionsquery/request-c-n-t.json";
         String otsdbInteraction = "/rateoptionsquery/otsdbInteraction-c-n-t.json";
-
         testQuery(expectedResultFile, metricRequestFile, otsdbInteraction);
     }
 
@@ -205,9 +236,10 @@ public class ResourcesTest extends ResourceTest {
      * @param metricRequestFile     File that contains the metric request to make
      * @param otsdbInteractionFiles File(s) that contains the opentsdb request that is expected to be made and the mock result.
      *                              See {@link OtsdbInteraction} class.
-     * @throws IOException          Thrown by CharStreams.toString() and Utils.getObjectMapper()
-     * @throws JSONException        Thrown by JSONCompare
+     * @throws IOException   Thrown by CharStreams.toString() and Utils.getObjectMapper()
+     * @throws JSONException Thrown by JSONCompare
      */
+
     private void testQuery(String expectedResultFile, String metricRequestFile, String... otsdbInteractionFiles) throws IOException, JSONException {
         InputStream input = this.getClass().getResourceAsStream(expectedResultFile);
         String expectedJSON = CharStreams.toString(new InputStreamReader(input));

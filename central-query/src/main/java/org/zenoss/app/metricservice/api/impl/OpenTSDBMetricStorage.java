@@ -52,7 +52,6 @@ import org.zenoss.app.metricservice.api.model.v2.*;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.ws.rs.WebApplicationException;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -92,13 +91,14 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
     @Override
     public void renamePrefix(RenameRequest renameRequest, Writer writer) {
         OpenTSDBClient renameClient =
-            new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiRenameUrl());
+                new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiRenameUrl());
         OpenTSDBClient suggestClient =
-            new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiSuggestUrl());
+                new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiSuggestUrl());
         OpenTSDBClient dropCacheClient =
             new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropCacheUrl());
         OpenTSDBClient dropWriterCacheClient =
             new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropWriterCacheUrl());
+
 
         final String oldPrefix = renameRequest.getOldName();
         final String newPrefix = renameRequest.getNewName();
@@ -106,7 +106,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
         ExecutorService executorService = getExecutorService();
         CompletionService<RenameResult> renameCompletionService =
-            new ExecutorCompletionService<>(executorService);
+                new ExecutorCompletionService<>(executorService);
 
         OpenTSDBSuggest otsdbSuggestRequest = new OpenTSDBSuggest();
 
@@ -120,7 +120,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         SuggestResult suggestResult = suggestClient.suggest(otsdbSuggestRequest);
         ArrayList<String> suggestions = suggestResult.suggestions;
 
-        for(String s: suggestions){
+        for (String s : suggestions) {
             String replace = s.replaceFirst(oldPrefix, newPrefix);
             final OpenTSDBRename renameReq = new OpenTSDBRename();
 
@@ -142,19 +142,19 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
                 final Future<RenameResult> result = renameCompletionService.take();
 
                 // Write the progress.
-                int percent = (int) ((float) i/nTasks*100);
+                int percent = (int) ((float) i / nTasks * 100);
 
                 msg.setType(RenameLogMsg.TYPE_PROGRESS);
                 msg.setContent(
-                    String.format(
-                        "Renaming %s prefix %s to %s: %d out of %d tasks completed (%d%%).",
-                        type,
-                        oldPrefix,
-                        newPrefix,
-                        i,
-                        nTasks,
-                        percent
-                    )
+                        String.format(
+                                "Renaming %s prefix %s to %s: %d out of %d tasks completed (%d%%).",
+                                type,
+                                oldPrefix,
+                                newPrefix,
+                                i,
+                                nTasks,
+                                percent
+                        )
                 );
 
                 writer.write(Utils.jsonStringFromObject(msg) + "\n");
@@ -171,13 +171,13 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
                     msg.setType(RenameLogMsg.TYPE_ERROR);
                     msg.setContent(
-                        String.format(
-                            "Error while renaming %s prefix %s to %s in OpenTSDB: %s",
-                            type,
-                            oldName,
-                            newName,
-                            r.reason
-                        )
+                            String.format(
+                                    "Error while renaming %s prefix %s to %s in OpenTSDB: %s",
+                                    type,
+                                    oldName,
+                                    newName,
+                                    r.reason
+                            )
                     );
 
                     log.error(msg.getContent());
@@ -185,27 +185,27 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
                 }
             } catch (InterruptedException e) {
                 log.error(
-                    "Error while processing a renaming task result: {}",
-                    e.getMessage()
+                        "Error while processing a renaming task result: {}",
+                        e.getMessage()
                 );
             } catch (ExecutionException e) {
                 log.error(
-                    "Error while processing a renaming task result: {}",
-                    e.getMessage()
+                        "Error while processing a renaming task result: {}",
+                        e.getMessage()
                 );
             } catch (IOException e) {
                 log.error(
-                    "Error while writing the progress of renaming tasks: {}",
-                    e.getMessage()
+                        "Error while writing the progress of renaming tasks: {}",
+                        e.getMessage()
                 );
             }
         }
 
         log.info(
-            "Renaming {} prefix {} to {} completed.",
-            type,
-            oldPrefix,
-            newPrefix
+                "Renaming {} prefix {} to {} completed.",
+                type,
+                oldPrefix,
+                newPrefix
         );
 
         // No. of dropcache calls to make after renaming.
@@ -223,11 +223,15 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
     @Override
     public void renameWhole(RenameRequest renameRequest, Writer writer) {
         OpenTSDBClient renameClient =
-            new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiRenameUrl());
+                new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiRenameUrl());
         OpenTSDBClient dropCacheClient =
+<<<<<<< 4382c945a0cf46793aaf6de6ce010f12be05aa7c
             new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropCacheUrl());
         OpenTSDBClient dropWriterCacheClient =
             new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropWriterCacheUrl());
+=======
+                new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropCacheUrl());
+>>>>>>> WIP. Done except for cleanup
 
         final String type = renameRequest.getType();
         final String oldName = renameRequest.getOldName();
@@ -244,15 +248,15 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
         RenameResult renameResult = new RenameResult();
         RenameLogMsg msg = new RenameLogMsg();
-        for(int x = 0; x < RETRY_CT; x++){
+        for (int x = 0; x < RETRY_CT; x++) {
             renameResult = renameClient.rename(otsdbRenameRequest);
-            if(renameResult.code == 200){
+            if (renameResult.code == 200) {
                 msg.setType(RenameLogMsg.TYPE_INFO);
                 msg.setContent(String.format(
-                    "Renaming %s %s to %s completed.",
-                    type,
-                    oldName,
-                    newName
+                        "Renaming %s %s to %s completed.",
+                        type,
+                        oldName,
+                        newName
                 ));
                 log.info(msg.getContent());
                 try {
@@ -261,7 +265,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
                     log.error("Error while handling IO after renaming in central query");
                 }
                 break;
-            } else if(renameResult.code < 500){
+            } else if (renameResult.code < 500) {
                 break; // shouldn't retry on 400-level statuses
             }
         }
@@ -269,19 +273,19 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         if (!(renameResult.code >= 200 && renameResult.code <= 299)) {
             msg.setType(RenameLogMsg.TYPE_ERROR);
             msg.setContent(String.format(
-                "Error while renaming %s %s to %s in OpenTSDB: %s",
-                type,
-                oldName,
-                newName,
-                renameResult.reason
+                    "Error while renaming %s %s to %s in OpenTSDB: %s",
+                    type,
+                    oldName,
+                    newName,
+                    renameResult.reason
             ));
             log.error(msg.getContent());
             try {
                 writer.write(Utils.jsonStringFromObject(msg));
             } catch (IOException e) {
                 log.error(
-                    "Error while handling IO after renaming in central query: {}",
-                    e.getMessage());
+                        "Error while handling IO after renaming in central query: {}",
+                        e.getMessage());
             }
         }
 
@@ -305,11 +309,11 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         @Override
         public RenameResult call() {
             RenameResult renameResult = new RenameResult();
-            for(int x = 0; x < RETRY_CT; x++){
+            for (int x = 0; x < RETRY_CT; x++) {
                 renameResult = client.rename(renameReq);
-                if(renameResult.code == 200){
+                if (renameResult.code == 200) {
                     break;
-                } else if(renameResult.code < 500){
+                } else if (renameResult.code < 500) {
                     break; // shouldn't retry on 400-level statuses
                 }
             }
@@ -337,7 +341,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         }
 
         OpenTSDBClient client = new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiQueryUrl());
-        OpenTSDBQueryReturn result = client.query(otsdbQuery);
+        OpenTSDBQueryReturn result = client.query(otsdbQuery, this.config.getMetricServiceConfig().isIgnoreRateOption(), this.config.getMetricServiceConfig().getRateOptionCutoffTs());
         for (OpenTSDBQueryResult series : result.getResults()) {
             series.metric = series.metric.replace(SPACE_REPLACEMENT, " ");
         }
@@ -382,13 +386,16 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
     private String getOpenTSDBApiQueryUrl() {
         return String.format("%s/api/query", config.getMetricServiceConfig().getOpenTsdbUrl());
     }
-    private String getOpenTSDBApiSuggestUrl(){
+
+    private String getOpenTSDBApiSuggestUrl() {
         return String.format("%s/api/suggest", config.getMetricServiceConfig().getOpenTsdbUrl());
     }
+
     private String getOpenTSDBApiRenameUrl() {
         return String.format("%s/api/uid/rename", config.getMetricServiceConfig().getOpenTsdbUrl());
     }
-    private String getOpenTSDBApiDropCacheUrl(){
+
+    private String getOpenTSDBApiDropCacheUrl() {
         return String.format("%s/api/dropcaches", config.getMetricServiceConfig().getOpenTsdbUrl());
     }
     private String getOpenTSDBApiDropWriterCacheUrl(){
@@ -416,18 +423,17 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
             // ignore any tags.  Otherwise we process the tags.
             List<Filter> filters = mq.getFilters();
             if (null != filters && !filters.isEmpty()) {
-                for(Filter filter : filters) {
+                for (Filter filter : filters) {
                     result.addFilter(
-                        new OpenTSDBFilter(
-                            filter.getType(),
-                            Tags.sanitizeKey(filter.getTagk()),
-                            filter.getFilter(),
-                            filter.getGroupBy()
-                        )
+                            new OpenTSDBFilter(
+                                    filter.getType(),
+                                    Tags.sanitizeKey(filter.getTagk()),
+                                    filter.getFilter(),
+                                    filter.getGroupBy()
+                            )
                     );
                 }
-            }
-            else {
+            } else {
                 Map<String, List<String>> tags = mq.getTags();
                 if (null != tags) {
                     for (Map.Entry<String, List<String>> tagEntry : tags.entrySet()) {
@@ -480,7 +486,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         List<Callable<OpenTSDBQueryResult>> callables = new ArrayList<>(queries.size());
         DefaultHttpClient httpClient = getHttpClient();
         for (MetricSpecification mSpec : queries) {
-            MetricSpecCallable callable = new MetricSpecCallable(httpClient, start, end, mSpec, getOpenTSDBApiQueryUrl());
+            MetricSpecCallable callable = new MetricSpecCallable(httpClient, start, end, mSpec, getOpenTSDBApiQueryUrl(), this.config.getMetricServiceConfig().isIgnoreRateOption(), this.config.getMetricServiceConfig().getRateOptionCutoffTs());
             callables.add(callable);
         }
         List<Future<OpenTSDBQueryResult>> futures = invokeCallables(callables);

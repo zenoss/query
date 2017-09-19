@@ -86,6 +86,12 @@ public class MetricServiceConfig {
     @JsonProperty
     private int dropCacheTries = 5;
 
+    @JsonProperty
+    private boolean ignoreRateOption = true;
+
+    @JsonProperty
+    private long rateOptionCutoffTs = -1;
+
     public int getMaxTotalPoolConnections() {
         return maxTotalPoolConnections;
     }
@@ -277,4 +283,29 @@ public class MetricServiceConfig {
     public int getDropCacheTries() {
         return dropCacheTries;
     }
+
+    /**
+     * Ignore option to treat metric as a rate.
+     * @return
+     */
+    public boolean isIgnoreRateOption() {
+        return ignoreRateOption;
+    }
+
+    public void setIgnoreRateOption(boolean ignoreRateOption) {
+        this.ignoreRateOption = ignoreRateOption;
+    }
+
+    /**
+     * unix timestamp of when the rate storage changed
+     * @return
+     */
+    public long getRateOptionCutoffTs() {
+        return rateOptionCutoffTs;
+    }
+
+    public void setRateOptionCutoffTs(long rateOptionCutoffTs) {
+        this.rateOptionCutoffTs = rateOptionCutoffTs;
+    }
+
 }
