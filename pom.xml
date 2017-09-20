@@ -9,7 +9,7 @@
 
     <groupId>org.zenoss</groupId>
     <artifactId>central-query-parent</artifactId>
-    <version>0.1.25-SNAPSHOT</version>
+    <version>0.1.24-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>central-query-parent</name>
