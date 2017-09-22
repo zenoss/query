@@ -7,7 +7,7 @@
         <relativePath>../pom.xml</relativePath>
         <groupId>org.zenoss</groupId>
         <artifactId>central-query-parent</artifactId>
-        <version>0.1.24</version>
+        <version>0.1.25</version>
     </parent>
 
     <properties>
