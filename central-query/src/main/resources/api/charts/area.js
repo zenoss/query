@@ -109,14 +109,6 @@
                 model.legendState = state.disabled;
             });
 
-            // on click, grab the time value under the cursor
-            // and pass over to graphPanel.js to zoom in and
-            // center chart
-            model.area.dispatch.on("elementClick", function(e){
-                var xval = e[0].point.x || 0;
-                chart.zoomTo(xval);
-            });
-
             chart.updateXLabels(data.startTimeActual * 1000, data.endTimeActual * 1000, _chart.model().xAxis);
             // since were controlling labels ourselves,
             // tell nvd3 not to try to format them
