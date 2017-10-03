@@ -79,15 +79,6 @@
 
         },
 
-        relTimeToMS : function(val) {
-            var agoMatch, unitMatch, count, unit;
-            agoMatch = /ago/.exec(val);
-            unitMatch = timeUnitsRegExp.exec(val);
-            count = +val.slice(0, unitMatch.index);
-            unit = val.slice(unitMatch.index, agoMatch.index - 1);
-            return count * TIME_UNITS[unit];
-        },
-
         build : function(chart, data) {
             // OK. Area charts really want data points to match up on keys,
             // which
