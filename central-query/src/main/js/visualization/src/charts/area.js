@@ -68,6 +68,24 @@
             model.height($(chart.svgwrapper).height());
             model.width($(chart.svgwrapper).width());
             chart.svg.transition().duration(0).call(model);
+
+            var bigRect = chart.svg.select('.nv-stackedAreaChart > g > rect')[0][0];
+            var availHeight = bigRect.height.animVal.value;
+            var availWidth = bigRect.width.animVal.value;
+
+            chart.svg.select('.rm-interactive')
+                .attr('height', availHeight)
+                .attr('width', availWidth);
+
+        },
+
+        relTimeToMS : function(val) {
+            var agoMatch, unitMatch, count, unit;
+            agoMatch = /ago/.exec(val);
+            unitMatch = timeUnitsRegExp.exec(val);
+            count = +val.slice(0, unitMatch.index);
+            unit = val.slice(unitMatch.index, agoMatch.index - 1);
+            return count * TIME_UNITS[unit];
         },
 
         build : function(chart, data) {
@@ -145,7 +163,29 @@
                 nv.utils.windowResize(function() {
                     chart.svg.call(model);
                 });
-            });
+
+                var bigRect = chart.svg.select('.nv-stackedAreaChart > g > rect')[0][0];
+                var availHeight = bigRect.height.animVal.value;
+                var availWidth = bigRect.width.animVal.value;
+
+                chart.svg.select('.nv-stackedAreaChart > g')
+                    .append('rect')
+                    .attr('class', 'rm-interactive')
+                        .attr('style', 'opacity:0')
+                        .attr('height', availHeight)
+                        .attr('width', availWidth)
+                    .on("click", function (d, i) {
+                            var bounds = this.getBoundingClientRect();
+                            var tmStart = chart.normalizeTimeToMs(chart.config.range.start);
+                            var tmEnd = chart.normalizeTimeToMs(chart.config.range.end);
+                            // see 'magic' comment above to understand the -90
+                            var pct = (d3.event.offsetX - 90) / bounds.width;
+                            var tmDelta = (tmEnd - tmStart) * pct;
+                            var tmClicked = tmStart + Math.floor(tmDelta);
+                            chart.zoomTo(tmClicked);
+                        });
+                    });
+
             return _chart;
         },
         render : function() {
