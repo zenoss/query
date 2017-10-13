@@ -8,7 +8,8 @@ metrics:
   defaultStartTime: 1h-ago
   defaultEndTime: now
   defaultSeries: true
-  openTsdbUrl: http://127.0.0.1:4242
+  openTsdbReaderUrl: http://127.0.0.1:4242
+  openTsdbWriterUrl: http://127.0.0.1:4243
   defaultTsdTimeZone: UTC
   connectionTimeoutMs: 20000
   sendRateOptions: false

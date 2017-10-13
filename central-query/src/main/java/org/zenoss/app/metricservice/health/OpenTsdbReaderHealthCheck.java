@@ -47,14 +47,14 @@ import java.util.Map;
 
 @Configuration
 @HealthCheck
-public class OpenTsdbHealthCheck extends com.yammer.metrics.core.HealthCheck {
+public class OpenTsdbReaderHealthCheck extends com.yammer.metrics.core.HealthCheck {
     @Autowired
     MetricServiceAppConfiguration config;
 
     private static DefaultHttpClient httpclient = new DefaultHttpClient();
 
-    protected OpenTsdbHealthCheck() {
-        super("OpenTSDB");
+    protected OpenTsdbReaderHealthCheck() {
+        super("OpenTSDB Reader");
     }
 
     @Override
@@ -66,7 +66,7 @@ public class OpenTsdbHealthCheck extends com.yammer.metrics.core.HealthCheck {
 
         try {
 
-            HttpGet httpget = new HttpGet(config.getMetricServiceConfig().getOpenTsdbUrl() + "/api/stats");
+            HttpGet httpget = new HttpGet(config.getMetricServiceConfig().getOpenTsdbReaderUrl() + "/api/stats");
             HttpResponse response = httpclient.execute(httpget);
 
             entity = response.getEntity();
@@ -74,7 +74,7 @@ public class OpenTsdbHealthCheck extends com.yammer.metrics.core.HealthCheck {
 
             int code = response.getStatusLine().getStatusCode();
             if (code != Response.Status.OK.getStatusCode()) {
-                return Result.unhealthy("Unexpected result code from OpenTSDB Server: " + code);
+                return Result.unhealthy("Unexpected result code from OpenTSDB Reader Server: " + code);
             }
 
             // Exception if unable to parse object from input stream.
