@@ -50,10 +50,7 @@ public class MetricServiceConfig {
     private Boolean defaultSeries = Boolean.FALSE;
 
     @JsonProperty
-    private String openTsdbReaderUrl = "http://localhost:4242";
-
-    @JsonProperty
-    private String openTsdbWriterUrl = "http://localhost:4243";
+    private String openTsdbUrl = "http://localhost:4242";
 
     @JsonProperty
     private String defaultTsdTimeZone = "UTC";
@@ -147,17 +144,10 @@ public class MetricServiceConfig {
     }
 
     /**
-     * @return the openTsdbReaderUrl
+     * @return the openTsdbUrl
      */
-    public final String getOpenTsdbReaderUrl() {
-        return openTsdbReaderUrl;
-    }
-
-    /**
-     * @return the openTsdbWriterUrl
-     */
-    public final String getOpenTsdbWriterUrl() {
-        return openTsdbWriterUrl;
+    public final String getOpenTsdbUrl() {
+        return openTsdbUrl;
     }
 
     /**
@@ -196,37 +186,19 @@ public class MetricServiceConfig {
     }
 
     /**
-     * @param openTsdbReaderUrl the openTsdbReaderUrl to set
+     * @param openTsdbUrl the openTsdbUrl to set
      */
-
-    public final void setOpenTsdbReaderUrl(String openTsdbReaderUrl) {
+    public final void setOpenTsdbUrl(String openTsdbUrl) {
 
         /**
          * If the given value ends with a '/', then lets trim it as we will add
          * that later on.
          */
-        if (openTsdbReaderUrl.endsWith("/")) {
-            this.openTsdbReaderUrl = openTsdbReaderUrl.substring(0,
-                    openTsdbReaderUrl.length() - 1);
+        if (openTsdbUrl.endsWith("/")) {
+            this.openTsdbUrl = openTsdbUrl.substring(0,
+                    openTsdbUrl.length() - 1);
         } else {
-            this.openTsdbReaderUrl = openTsdbReaderUrl;
-        }
-    }
-
-    /**
-     * @param openTsdbWriterUrl the openTsdbWriterUrl to set
-     */
-    public final void setOpenTsdbWriterUrl(String openTsdbWriterUrl) {
-
-        /**
-         * If the given value ends with a '/', then lets trim it as we will add
-         * that later on.
-         */
-        if (openTsdbWriterUrl.endsWith("/")) {
-            this.openTsdbWriterUrl = openTsdbWriterUrl.substring(0,
-                    openTsdbWriterUrl.length() - 1);
-        } else {
-            this.openTsdbWriterUrl = openTsdbWriterUrl;
+            this.openTsdbUrl = openTsdbUrl;
         }
     }
 
