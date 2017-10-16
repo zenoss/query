@@ -95,10 +95,8 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
             new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiRenameUrl());
         OpenTSDBClient suggestClient =
             new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiSuggestUrl());
-        OpenTSDBClient dropReaderCacheClient =
-            new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropReaderCacheUrl());
-        OpenTSDBClient dropWriterCacheClient =
-            new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropWriterCacheUrl());
+        OpenTSDBClient dropCacheClient =
+            new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropCacheUrl());
 
         final String oldPrefix = renameRequest.getOldName();
         final String newPrefix = renameRequest.getNewName();
@@ -213,8 +211,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         // in order to hit all of them, although it does not gurantee that all of
         // them will be hit.
         for (int i = 0; i < config.getMetricServiceConfig().getDropCacheTries(); i++) {
-            dropReaderCacheClient.dropCache(getOpenTSDBApiDropReaderCacheUrl());
-            dropWriterCacheClient.dropCache(getOpenTSDBApiDropWriterCacheUrl());
+            dropCacheClient.dropCache(getOpenTSDBApiDropCacheUrl());
         }
     }
 
@@ -222,10 +219,8 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
     public void renameWhole(RenameRequest renameRequest, Writer writer) {
         OpenTSDBClient renameClient =
             new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiRenameUrl());
-        OpenTSDBClient dropReaderCacheClient =
-            new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropReaderCacheUrl());
-        OpenTSDBClient dropWriterCacheClient =
-            new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropWriterCacheUrl());
+        OpenTSDBClient dropCacheClient =
+            new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropCacheUrl());
 
         final String type = renameRequest.getType();
         final String oldName = renameRequest.getOldName();
@@ -284,8 +279,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         }
 
         for (int i = 0; i < config.getMetricServiceConfig().getDropCacheTries(); i++) {
-            dropReaderCacheClient.dropCache(getOpenTSDBApiDropReaderCacheUrl());
-            dropWriterCacheClient.dropCache(getOpenTSDBApiDropWriterCacheUrl());
+            dropCacheClient.dropCache(getOpenTSDBApiDropCacheUrl());
         }
     }
 
@@ -376,19 +370,16 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
 
     private String getOpenTSDBApiQueryUrl() {
-        return String.format("%s/api/query", config.getMetricServiceConfig().getOpenTsdbReaderUrl());
+        return String.format("%s/api/query", config.getMetricServiceConfig().getOpenTsdbUrl());
     }
     private String getOpenTSDBApiSuggestUrl(){
-        return String.format("%s/api/suggest", config.getMetricServiceConfig().getOpenTsdbReaderUrl());
+        return String.format("%s/api/suggest", config.getMetricServiceConfig().getOpenTsdbUrl());
     }
     private String getOpenTSDBApiRenameUrl() {
-        return String.format("%s/api/uid/rename", config.getMetricServiceConfig().getOpenTsdbReaderUrl());
+        return String.format("%s/api/uid/rename", config.getMetricServiceConfig().getOpenTsdbUrl());
     }
-    private String getOpenTSDBApiDropReaderCacheUrl(){
-        return String.format("%s/api/dropcaches", config.getMetricServiceConfig().getOpenTsdbReaderUrl());
-    }
-    private String getOpenTSDBApiDropWriterCacheUrl(){
-        return String.format("%s/api/dropcaches", config.getMetricServiceConfig().getOpenTsdbWriterUrl());
+    private String getOpenTSDBApiDropCacheUrl(){
+        return String.format("%s/api/dropcaches", config.getMetricServiceConfig().getOpenTsdbUrl());
     }
 
     private static OpenTSDBSubQuery createOTSDBQuery(MetricQuery mq) {
