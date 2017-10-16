@@ -97,6 +97,8 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
             new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiSuggestUrl());
         OpenTSDBClient dropCacheClient =
             new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropCacheUrl());
+        OpenTSDBClient dropWriterCacheClient =
+            new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropWriterCacheUrl());
 
         final String oldPrefix = renameRequest.getOldName();
         final String newPrefix = renameRequest.getNewName();
@@ -212,6 +214,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         // them will be hit.
         for (int i = 0; i < config.getMetricServiceConfig().getDropCacheTries(); i++) {
             dropCacheClient.dropCache(getOpenTSDBApiDropCacheUrl());
+            dropWriterCacheClient.dropCache(getOpenTSDBApiDropWriterCacheUrl());
         }
     }
 
@@ -221,6 +224,8 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
             new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiRenameUrl());
         OpenTSDBClient dropCacheClient =
             new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropCacheUrl());
+        OpenTSDBClient dropWriterCacheClient =
+            new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropWriterCacheUrl());
 
         final String type = renameRequest.getType();
         final String oldName = renameRequest.getOldName();
@@ -280,6 +285,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
         for (int i = 0; i < config.getMetricServiceConfig().getDropCacheTries(); i++) {
             dropCacheClient.dropCache(getOpenTSDBApiDropCacheUrl());
+            dropWriterCacheClient.dropCache(getOpenTSDBApiDropWriterCacheUrl());
         }
     }
 
@@ -380,6 +386,9 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
     }
     private String getOpenTSDBApiDropCacheUrl(){
         return String.format("%s/api/dropcaches", config.getMetricServiceConfig().getOpenTsdbUrl());
+    }
+    private String getOpenTSDBApiDropWriterCacheUrl(){
+        return String.format("%s/api/dropcaches", config.getMetricServiceConfig().getOpenTsdbWriterUrl());
     }
 
     private static OpenTSDBSubQuery createOTSDBQuery(MetricQuery mq) {
