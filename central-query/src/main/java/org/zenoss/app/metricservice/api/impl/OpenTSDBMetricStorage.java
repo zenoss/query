@@ -213,7 +213,9 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         // in order to hit all of them, although it does not gurantee that all of
         // them will be hit.
         for (int i = 0; i < config.getMetricServiceConfig().getDropCacheTries(); i++) {
+            log.info("Making a dropcaches request at {}: request {}", getOpenTSDBApiDropCacheUrl(), i+1);
             dropCacheClient.dropCache(getOpenTSDBApiDropCacheUrl());
+            log.info("Making a dropcaches request at {}: request {}", getOpenTSDBApiDropWriterCacheUrl(), i+1);
             dropWriterCacheClient.dropCache(getOpenTSDBApiDropWriterCacheUrl());
         }
     }
@@ -284,7 +286,9 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         }
 
         for (int i = 0; i < config.getMetricServiceConfig().getDropCacheTries(); i++) {
+            log.info("Making a dropcaches request at {}: request {}", getOpenTSDBApiDropCacheUrl(), i+1);
             dropCacheClient.dropCache(getOpenTSDBApiDropCacheUrl());
+            log.info("Making a dropcaches request at {}: request {}", getOpenTSDBApiDropWriterCacheUrl(), i+1);
             dropWriterCacheClient.dropCache(getOpenTSDBApiDropWriterCacheUrl());
         }
     }
