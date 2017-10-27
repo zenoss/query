@@ -53,6 +53,9 @@ public class MetricServiceConfig {
     private String openTsdbUrl = "http://localhost:4242";
 
     @JsonProperty
+    private String openTsdbWriterUrl = "http://localhost:4243";
+
+    @JsonProperty
     private String defaultTsdTimeZone = "UTC";
 
     @JsonProperty
@@ -151,6 +154,13 @@ public class MetricServiceConfig {
     }
 
     /**
+     * @return the openTsdbWriterUrl
+     */
+    public final String getOpenTsdbWriterUrl() {
+        return openTsdbWriterUrl;
+    }
+
+    /**
      * @return the defaultTsdTimeZone
      */
     public final String getDefaultTsdTimeZone() {
@@ -199,6 +209,23 @@ public class MetricServiceConfig {
                     openTsdbUrl.length() - 1);
         } else {
             this.openTsdbUrl = openTsdbUrl;
+        }
+    }
+
+    /**
+     * @param openTsdbWriterUrl the openTsdbWriterUrl to set
+     */
+    public final void setOpenTsdbWriterUrl(String openTsdbWriterUrl) {
+
+        /**
+         * If the given value ends with a '/', then lets trim it as we will add
+         * that later on.
+         */
+        if (openTsdbWriterUrl.endsWith("/")) {
+            this.openTsdbWriterUrl = openTsdbWriterUrl.substring(0,
+                    openTsdbWriterUrl.length() - 1);
+        } else {
+            this.openTsdbWriterUrl = openTsdbWriterUrl;
         }
     }
 

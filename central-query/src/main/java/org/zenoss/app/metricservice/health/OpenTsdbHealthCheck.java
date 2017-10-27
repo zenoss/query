@@ -54,7 +54,7 @@ public class OpenTsdbHealthCheck extends com.yammer.metrics.core.HealthCheck {
     private static DefaultHttpClient httpclient = new DefaultHttpClient();
 
     protected OpenTsdbHealthCheck() {
-        super("OpenTSDB");
+        super("OpenTSDB Reader");
     }
 
     @Override
@@ -74,7 +74,7 @@ public class OpenTsdbHealthCheck extends com.yammer.metrics.core.HealthCheck {
 
             int code = response.getStatusLine().getStatusCode();
             if (code != Response.Status.OK.getStatusCode()) {
-                return Result.unhealthy("Unexpected result code from OpenTSDB Server: " + code);
+                return Result.unhealthy("Unexpected result code from OpenTSDB Reader: " + code);
             }
 
             // Exception if unable to parse object from input stream.

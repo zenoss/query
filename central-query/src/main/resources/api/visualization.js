@@ -1487,7 +1487,7 @@ if (typeof exports !== 'undefined') {
          *            If toEng function should ignore the preferred unit
          *            and calculate a unit based on `value`
          */
-        formatValue: function (value, ignorePreferred, skipCalc) {
+        formatValue: function (value, ignorePreferred, dpFormat, skipCalc) {
             /*
              * If we were given a undefined value, Infinity, of NaN (all things that
              * can't be formatted, then just return the value.
@@ -1495,8 +1495,11 @@ if (typeof exports !== 'undefined') {
             if (!$.isNumeric(value)) {
                 return value;
             }
+            if (dpFormat === undefined) {
+                dpFormat = this.format;
+            }
 
-            return toEng(value, ignorePreferred ? undefined : this.preferredYUnit, this.format, this.base, skipCalc);
+            return toEng(value, ignorePreferred ? undefined : this.preferredYUnit, dpFormat, this.base, skipCalc);
         },
 
         /**
@@ -1876,7 +1879,7 @@ if (typeof exports !== 'undefined') {
                             }
 
                             for (v = 0; v < vals.length; v += 1) {
-                                $(cols[2 + v]).html(this.formatValue(vals[v], undefined, dp.displayFullValue));
+                                $(cols[2 + v]).html(this.formatValue(vals[v], undefined, dp.format, dp.displayFullValue));
                             }
                         }
                         row += 1;
@@ -3333,7 +3336,7 @@ if (typeof exports !== 'undefined') {
 
         try {
             // if sprintf is passed a format it doesn't understand an exception is thrown
-            formatted = sprintf(format, result);
+            formatted = sprintf(format || DEFAULT_NUMBER_FORMAT, result);
         } catch (err) {
             console.error("Invalid format", format, "using default", DEFAULT_NUMBER_FORMAT);
             formatted = sprintf(DEFAULT_NUMBER_FORMAT, result);
