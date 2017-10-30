@@ -126,6 +126,9 @@
                 model.showLegend(false);
             }
 
+            // keep chart from drawing outside its boundaries
+            model.clipEdge(true);
+
             // ensure that there are no duplicate ticks on the y axis
             model.yAxis.tickFormat(chart.dedupeYLabels(model));
             model.yAxis.axisLabel(chart.yAxisLabel);
