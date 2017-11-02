@@ -224,6 +224,8 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
     public void renameWhole(RenameRequest renameRequest, Writer writer) {
         OpenTSDBClient renameClient =
             new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiRenameUrl());
+        OpenTSDBClient suggestClient =
+            new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiSuggestUrl());
         OpenTSDBClient dropCacheClient =
             new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropCacheUrl());
         OpenTSDBClient dropWriterCacheClient =
@@ -233,57 +235,106 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         final String oldName = renameRequest.getOldName();
         final String newName = renameRequest.getNewName();
 
-        OpenTSDBRename otsdbRenameRequest = new OpenTSDBRename();
-        otsdbRenameRequest.name = newName;
+        OpenTSDBSuggest otsdbSuggestRequest = new OpenTSDBSuggest();
 
         if (type.equals(RenameRequest.TYPE_METRIC)) {
-            otsdbRenameRequest.metric = oldName;
+            otsdbSuggestRequest.type = OpenTSDBSuggest.TYPE_METRIC;
         } else if (type.equals(RenameRequest.TYPE_TAGV)) {
-            otsdbRenameRequest.tagv = oldName;
+            otsdbSuggestRequest.type = OpenTSDBSuggest.TYPE_TAGV;
         }
 
-        RenameResult renameResult = new RenameResult();
-        RenameLogMsg msg = new RenameLogMsg();
-        for(int x = 0; x < RETRY_CT; x++){
-            renameResult = renameClient.rename(otsdbRenameRequest);
-            if(renameResult.code == 200){
-                msg.setType(RenameLogMsg.TYPE_INFO);
-                msg.setContent(String.format(
-                    "Renaming %s %s to %s completed.",
-                    type,
-                    oldName,
-                    newName
-                ));
-                log.info(msg.getContent());
-                try {
-                    writer.write(Utils.jsonStringFromObject(msg));
-                } catch (IOException e) {
-                    log.error("Error while handling IO after renaming in central query");
+        otsdbSuggestRequest.q = oldName;
+        SuggestResult suggestResult = suggestClient.suggest(otsdbSuggestRequest);
+        ArrayList<String> suggestions = suggestResult.suggestions;
+
+        if (suggestions.contains(oldName)) {
+
+            ExecutorService executorService = getExecutorService();
+            CompletionService<RenameResult> renameCompletionService =
+                new ExecutorCompletionService<>(executorService);
+            RenameLogMsg msg = new RenameLogMsg();
+
+            for(String s: suggestions){
+                if (s.equals(oldName)) {
+                    String replace = s.replaceFirst(oldName, newName);
+                    final OpenTSDBRename renameReq = new OpenTSDBRename();
+
+                    if (type.equals(RenameRequest.TYPE_METRIC)) {
+                        renameReq.metric = s;
+                    } else if (type.equals(RenameRequest.TYPE_TAGV)) {
+                        renameReq.tagv = s;
+                    }
+
+                    renameReq.name = replace;
+                    renameCompletionService.submit(new RenameTask(renameClient, renameReq));
                 }
-                break;
-            } else if(renameResult.code < 500){
-                break; // shouldn't retry on 400-level statuses
             }
-        }
 
-        if (!(renameResult.code >= 200 && renameResult.code <= 299)) {
-            msg.setType(RenameLogMsg.TYPE_ERROR);
-            msg.setContent(String.format(
-                "Error while renaming %s %s to %s in OpenTSDB: %s",
-                type,
-                oldName,
-                newName,
-                renameResult.reason
-            ));
-            log.error(msg.getContent());
             try {
-                writer.write(Utils.jsonStringFromObject(msg));
+                final Future<RenameResult> result = renameCompletionService.take();
+
+                RenameResult r = result.get();
+                String oldNameRequest = "";
+                String newNameRequest = r.request.name;
+                if (r.request.metric == null) {
+                    oldNameRequest = r.request.tagv;
+                } else {
+                    oldNameRequest = r.request.metric;
+                }
+
+                if (r.code == 200) {
+                    msg.setType(RenameLogMsg.TYPE_PROGRESS);
+                    msg.setContent(
+                        String.format(
+                            "Renaming %s %s to %s completed.",
+                            type,
+                            oldNameRequest,
+                            newNameRequest
+                        )
+                    );
+                    writer.write(Utils.jsonStringFromObject(msg) + "\n");
+                }
+
+                if (!(r.code >= 200 && r.code <= 299)) {
+
+                    msg.setType(RenameLogMsg.TYPE_ERROR);
+                    msg.setContent(
+                        String.format(
+                            "Error while renaming %s %s to %s in OpenTSDB: %s",
+                            type,
+                            oldNameRequest,
+                            newNameRequest,
+                            r.reason
+                        )
+                    );
+
+                    log.error(msg.getContent());
+                    writer.write(Utils.jsonStringFromObject(msg) + "\n");
+                }
+            } catch (InterruptedException e) {
+                log.error(
+                    "Error while processing a renaming task result: {}",
+                    e.getMessage()
+                );
+            } catch (ExecutionException e) {
+                log.error(
+                    "Error while processing a renaming task result: {}",
+                    e.getMessage()
+                );
             } catch (IOException e) {
                 log.error(
-                    "Error while handling IO after renaming in central query: {}",
-                    e.getMessage());
+                    "Error while writing the progress of renaming tasks: {}",
+                    e.getMessage()
+                );
             }
         }
+
+        log.info(
+            "Renaming {} {} to {} completed.",
+            type,
+            oldName,
+            newName
+        );
 
         for (int i = 0; i < config.getMetricServiceConfig().getDropCacheTries(); i++) {
             log.info("Making a dropcaches request at {}: request {}", getOpenTSDBApiDropCacheUrl(), i+1);
