@@ -238,8 +238,6 @@ public class OpenTSDBClient {
         final HttpPost httpPost = new HttpPost(providedURL);
 
         final String jsonQueryString = Utils.jsonStringFromObject(query);
-        log.info("JPL query");
-        log.info(jsonQueryString);
         StringEntity input;
         try {
             input = new StringEntity(jsonQueryString);
