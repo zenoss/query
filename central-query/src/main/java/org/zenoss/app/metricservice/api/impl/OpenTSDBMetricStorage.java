@@ -225,13 +225,9 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         OpenTSDBClient renameClient =
                 new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiRenameUrl());
         OpenTSDBClient dropCacheClient =
-<<<<<<< 4382c945a0cf46793aaf6de6ce010f12be05aa7c
             new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropCacheUrl());
         OpenTSDBClient dropWriterCacheClient =
             new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropWriterCacheUrl());
-=======
-                new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiDropCacheUrl());
->>>>>>> WIP. Done except for cleanup
 
         final String type = renameRequest.getType();
         final String oldName = renameRequest.getOldName();
