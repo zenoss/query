@@ -87,7 +87,7 @@ public class MetricServiceConfig {
     private int dropCacheTries = 5;
 
     @JsonProperty
-    private boolean ignoreRateOption = true;
+    private boolean ignoreRateOption = false;
 
     @JsonProperty
     private long rateOptionCutoffTs = -1;
