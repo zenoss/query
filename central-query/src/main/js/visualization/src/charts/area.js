@@ -285,7 +285,18 @@
                 unsorted.push(entry.x);
             });
         });
-        return [...new Set(unsorted)].sort();
+        let uniqs = spread(unsorted).sort();
+        return uniqs;
+    }
+
+    function spread(array) {
+        let uniqElems = [];
+        array.forEach( function (elem) {
+            if (uniqElems.indexOf(elem) < 0 ) {
+                uniqElems.push(elem);
+            }
+        });
+        return uniqElems;
     }
 
     // latest timestamp within all series will be first entry
