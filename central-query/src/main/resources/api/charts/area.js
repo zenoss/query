@@ -213,10 +213,10 @@
          * If there is only one plot in the chart we are done, there is
          * nothing to be done.
          */
-
         if (chart.plots.length < 2) {
             return;
         }
+
         chart.plots.forEach(function(plot) {
             plot.values.forEach(function(v) {
                 if (keys[v.x] === undefined) {
@@ -251,7 +251,6 @@
     function __align(chart) {
         let data = chart.plots;
         let normalizedstamps = adjustedKeys(data);
-        let firststamp = firstEntry(data);
         data.forEach(function (series) {
             // ---- series ----
             let pts = [];
