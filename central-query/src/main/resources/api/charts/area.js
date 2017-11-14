@@ -209,11 +209,11 @@
     function __cull(chart) {
 
         var i, keys = [];
-        var savedplots = chart.plots;
         /*
          * If there is only one plot in the chart we are done, there is
          * nothing to be done.
          */
+
         if (chart.plots.length < 2) {
             return;
         }
