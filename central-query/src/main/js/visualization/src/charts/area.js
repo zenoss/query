@@ -240,14 +240,14 @@
         });
     }
 
-     /**
-     * Aligns the plots in a chart so that data points within all plots
-     * share common timestamps to allow proper stacking.
-     *
-     * @param chart the chart that contains the plots to align
-     *
-     * @access private
-     */
+    /**
+    * Aligns the plots in a chart so that data points within all plots
+    * share common timestamps to allow proper stacking.
+    *
+    * @param chart the chart that contains the plots to align
+    *
+    * @access private
+    */
     function __align(chart) {
         let data = chart.plots;
         let normalizedstamps = adjustedKeys(data);
@@ -280,8 +280,8 @@
     // returns array of all timestamps contained within all series
     function allStamps(data) {
         let unsorted = [];
-        data.map( function(series) {
-            series.values.map( function(entry) {
+        data.map(function (series) {
+            series.values.map(function (entry) {
                 unsorted.push(entry.x);
             });
         });
@@ -291,8 +291,8 @@
 
     function spread(array) {
         let uniqElems = [];
-        array.forEach( function (elem) {
-            if (uniqElems.indexOf(elem) < 0 ) {
+        array.forEach(function (elem) {
+            if (uniqElems.indexOf(elem) < 0) {
                 uniqElems.push(elem);
             }
         });
@@ -302,7 +302,7 @@
     // latest timestamp within all series will be first entry
     // of timestamp-aligned adjusted series
     function firstEntry(data) {
-        var firsts = data.map(series => {
+        var firsts = data.map(function (series) {
             return series.values[0].x;
         });
         return Math.max.apply(null, firsts);
