@@ -280,8 +280,9 @@
     // returns array of all timestamps contained within all series
     function allStamps(data) {
         let unsorted = [];
-        data.map(series => {
-            series.values.map(entry => {
+        console.log("boogity");
+        data.map( function(series) {
+            series.values.map( function(entry) {
                 unsorted.push(entry.x);
             });
         });
