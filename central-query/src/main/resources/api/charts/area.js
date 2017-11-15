@@ -31,7 +31,7 @@
             // makes sense as this is how they stack things. To make this work
             // we
             // going to walk the points and make sure they match
-            __cull(chart);
+            __align(chart);
 
             var _chart = chart.closure,
                 model = _chart.model();
@@ -70,8 +70,10 @@
             chart.svg.transition().duration(0).call(model);
 
             var bigRect = chart.svg.select('.nv-stackedAreaChart > g > rect')[0][0];
-            var availHeight = bigRect.height.animVal.value;
-            var availWidth = bigRect.width.animVal.value;
+            if (bigRect != null) {
+                var availHeight = bigRect.height.animVal.value;
+                var availWidth = bigRect.width.animVal.value;
+            }
 
             chart.svg.select('.rm-interactive')
                 .attr('height', availHeight)
@@ -81,11 +83,9 @@
 
         build : function(chart, data) {
             // OK. Area charts really want data points to match up on keys,
-            // which
-            // makes sense as this is how they stack things. To make this work
-            // we
-            // going to walk the points and make sure they match
-            __cull(chart);
+            // which makes sense as this is how they stack things. To make this work
+            // we going to walk the points and make sure they match
+            __align(chart);
 
             // create new area Chart
             var _chart = new Chart();
@@ -156,8 +156,10 @@
                 });
 
                 var bigRect = chart.svg.select('.nv-stackedAreaChart > g > rect')[0][0];
-                var availHeight = bigRect.height.animVal.value;
-                var availWidth = bigRect.width.animVal.value;
+                if (bigRect != null) {
+                    var availHeight = bigRect.height.animVal.value;
+                    var availWidth = bigRect.width.animVal.value;
+                }
 
                 chart.svg.select('.nv-stackedAreaChart > g')
                     .append('rect')
@@ -236,6 +238,74 @@
                 }
             }
         });
+    }
+
+    /**
+    * Aligns the plots in a chart so that data points within all plots
+    * share common timestamps to allow proper stacking.
+    *
+    * @param chart the chart that contains the plots to align
+    *
+    * @access private
+    */
+    function __align(chart) {
+        let data = chart.plots;
+        let normalizedstamps = adjustedKeys(data);
+        data.forEach(function (series) {
+            // ---- series ----
+            let pts = [];
+            let highi = 0;
+            normalizedstamps.forEach(function (outStamp) {
+                // ---- datapoints ----
+                let outValue;
+                for (let i = highi; i < series.values.length; i++) {
+                    if (series.values[i].x > outStamp) {
+                        break; // found later timestamp; use previous value
+                    }
+                    highi = i;
+                    outValue = series.values[i].y;
+                }
+                pts.push({ 'x': outStamp, 'y': outValue });
+            });
+            series.values = pts;
+        });
+    }
+
+    function adjustedKeys(data) {
+        let as = allStamps(data);
+        let fe = firstEntry(data);
+        return as.splice(as.indexOf(fe));
+    }
+
+    // returns array of all timestamps contained within all series
+    function allStamps(data) {
+        let unsorted = [];
+        data.map(function (series) {
+            series.values.map(function (entry) {
+                unsorted.push(entry.x);
+            });
+        });
+        let uniqs = spread(unsorted).sort();
+        return uniqs;
+    }
+
+    function spread(array) {
+        let uniqElems = [];
+        array.forEach(function (elem) {
+            if (uniqElems.indexOf(elem) < 0) {
+                uniqElems.push(elem);
+            }
+        });
+        return uniqElems;
+    }
+
+    // latest timestamp within all series will be first entry
+    // of timestamp-aligned adjusted series
+    function firstEntry(data) {
+        var firsts = data.map(function (series) {
+            return series.values[0].x;
+        });
+        return Math.max.apply(null, firsts);
     }
 
     /**
