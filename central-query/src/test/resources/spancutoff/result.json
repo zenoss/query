@@ -1,0 +1,64 @@
+{
+  "series": [
+    {
+      "datapoints": [
+        [
+          1437520683,
+          107561.0
+        ],
+        [
+          1437521223,
+          107714.0
+        ]
+      ],
+      "metric": "cgroup.cpuacct.user",
+      "tags": {
+        "isvc": "true",
+        "isvcname": "elasticsearch-serviced"
+      }
+    },
+    {
+      "datapoints": [
+        [
+          1437520763,
+          59288.0
+        ],
+        [
+          1437520773,
+          59289.0
+        ],
+        [
+          1437520783,
+          59290.0
+        ],
+        [
+          1437520793,
+          59292.0
+        ],
+        [
+          1437520803,
+          59294.0
+        ],
+        [
+          1437520813,
+          59297.0
+        ]
+      ],
+      "metric": "cgroup.cpuacct.system",
+      "tags": {
+        "isvc": "true",
+        "isvcname": "elasticsearch-serviced"
+      }
+    }
+  ],
+  "statuses": [
+    {
+      "message": "",
+      "status": "SUCCESS"
+    },
+    {
+      "message": "",
+      "status": "SUCCESS"
+    }
+  ]
+}
