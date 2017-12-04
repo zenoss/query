@@ -158,6 +158,26 @@ public class ResourcesTest extends ResourceTest {
 
         }
     }
+
+    @Test
+    public void testPreCutoff() throws IOException, JSONException {
+        try {
+            configuration.getMetricServiceConfig().setIgnoreRateOption(true);
+            configuration.getMetricServiceConfig().setRateOptionCutoffTs(1437521231);
+            String expectedResultFile = "/precutoff/result.json";
+            String metricRequestFile = "/precutoff/request.json";
+            String pre_otsdbInteraction = "/precutoff/precutoff-otsdbInteraction.json";
+            String gauge_otsdbInteraction = "/precutoff/gauge-otsdbInteraction.json";
+
+            testQuery(expectedResultFile, metricRequestFile, pre_otsdbInteraction, gauge_otsdbInteraction);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            configuration.getMetricServiceConfig().setIgnoreRateOption(false);
+
+        }
+    }
+
     @Test
     public void testRateOptionsQuery_c_v_v() throws IOException, JSONException {
         String expectedResultFile = "/rateoptionsquery/result.json";
