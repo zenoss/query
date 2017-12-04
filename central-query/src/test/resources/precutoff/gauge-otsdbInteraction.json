@@ -1,0 +1,44 @@
+{
+  "request": {
+    "start": "1437520683",
+    "end": "1437521231",
+    "queries": [
+      {
+        "aggregator": "avg",
+        "metric": "cgroup.cpuacct.system",
+        "rate": false,
+        "rateOptions": {
+          "counter": false,
+          "counterMax": 9223372036854775807,
+          "resetValue": 0,
+          "dropResets": false
+        },
+        "tags": {
+          "isvcname": "elasticsearch-serviced"
+        }
+      }
+    ],
+    "noAnnotations": false,
+    "globalAnnotations": false,
+    "msResolution": false,
+    "showTSUIDs": false
+  },
+  "response": [
+    {
+      "metric": "cgroup.cpuacct.system",
+      "tags": {
+        "isvc": "true",
+        "isvcname": "elasticsearch-serviced"
+      },
+      "aggregateTags": [],
+      "dps": {
+        "1437520763": 59288.0,
+        "1437520773": 59289.0,
+        "1437520783": 59290.0,
+        "1437520793": 59292.0,
+        "1437520803": 59294.0,
+        "1437520813": 59297.0
+      }
+    }
+  ]
+}
