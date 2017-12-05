@@ -124,7 +124,10 @@ public class OpenTSDBClient {
 
     public OpenTSDBQueryReturn query(OpenTSDBQuery query, boolean ignoreRateOption, long rateCutoffDate) {
         ArrayList<OpenTSDBQueryReturn> results = new ArrayList<>();
+        log.debug("ignoreRateOption is {}", ignoreRateOption);
+        log.debug("rateCutoffDate is {}", rateCutoffDate);
         if (ignoreRateOption) {
+
             //does query spans cutoff date
             boolean spansCutoff = false;
             //is query for time period before cutoff date
@@ -132,15 +135,19 @@ public class OpenTSDBClient {
             try {
                 long startTs = Utils.parseDate(query.start);
                 long endTs = Utils.parseDate(query.end);
-
-                if (rateCutoffDate > startTs && rateCutoffDate < endTs) {
-                    spansCutoff = true;
-                }else if (rateCutoffDate > startTs) {
-                    preCutoff = true;
-                }
+                log.debug("start timestamp is {} - {}", query.start, startTs);
+                log.debug("end timestamp is {} - {}", query.end, endTs);
+                long rateCutoffDateSeconds = Utils.parseDate(String.valueOf(rateCutoffDate));
+		if (rateCutoffDateSeconds > startTs && rateCutoffDateSeconds < endTs) {
+		    spansCutoff = true;
+		}else if (rateCutoffDateSeconds > startTs) {
+		    preCutoff = true;
+		}
             } catch (ParseException e) {
                 e.printStackTrace();
             }
+
+            log.debug("spans is {} precutoff is {}", spansCutoff, preCutoff);
 
             ArrayList<OpenTSDBSubQuery> cutoffQueries = new ArrayList<>();
             Iterator<OpenTSDBSubQuery> iter = query.queries.iterator();
@@ -257,6 +264,7 @@ public class OpenTSDBClient {
         final HttpPost httpPost = new HttpPost(providedURL);
 
         final String jsonQueryString = Utils.jsonStringFromObject(query);
+        log.trace("query is {}", jsonQueryString);
         StringEntity input;
         try {
             input = new StringEntity(jsonQueryString);
@@ -326,3 +334,4 @@ public class OpenTSDBClient {
         return new OpenTSDBQueryReturn(resultArray, queryStatus);
     }
 }
+
