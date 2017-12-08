@@ -124,18 +124,30 @@ public class OpenTSDBClient {
 
     public OpenTSDBQueryReturn query(OpenTSDBQuery query, boolean ignoreRateOption, long rateCutoffDate) {
         ArrayList<OpenTSDBQueryReturn> results = new ArrayList<>();
+        log.debug("ignoreRateOption is {}", ignoreRateOption);
+        log.debug("rateCutoffDate is {}", rateCutoffDate);
         if (ignoreRateOption) {
+
+            //does query spans cutoff date
             boolean spansCutoff = false;
+            //is query for time period before cutoff date
+            boolean preCutoff = false;
             try {
                 long startTs = Utils.parseDate(query.start);
                 long endTs = Utils.parseDate(query.end);
-
-                if (rateCutoffDate > startTs && rateCutoffDate < endTs) {
-                    spansCutoff = true;
-                }
+                log.debug("start timestamp is {} - {}", query.start, startTs);
+                log.debug("end timestamp is {} - {}", query.end, endTs);
+                long rateCutoffDateSeconds = Utils.parseDate(String.valueOf(rateCutoffDate));
+		if (rateCutoffDateSeconds > startTs && rateCutoffDateSeconds < endTs) {
+		    spansCutoff = true;
+		}else if (rateCutoffDateSeconds > startTs) {
+		    preCutoff = true;
+		}
             } catch (ParseException e) {
                 e.printStackTrace();
             }
+
+            log.debug("spans is {} precutoff is {}", spansCutoff, preCutoff);
 
             ArrayList<OpenTSDBSubQuery> cutoffQueries = new ArrayList<>();
             Iterator<OpenTSDBSubQuery> iter = query.queries.iterator();
@@ -143,7 +155,7 @@ public class OpenTSDBClient {
             while (iter.hasNext()) {
                 OpenTSDBSubQuery q = iter.next();
                 if (q.rate) {
-                    if (spansCutoff) {
+                    if (spansCutoff || preCutoff) {
                         cutoffQueries.add(q);
                         iter.remove();
                     } else {
@@ -157,35 +169,49 @@ public class OpenTSDBClient {
                 //if original query still has sub queries (gauges) make that request as well
                 ArrayList<OpenTSDBQueryReturn> responses = new ArrayList<>(2);
                 for (OpenTSDBSubQuery q : cutoffQueries) {
-                    OpenTSDBQuery preCutoff = new OpenTSDBQuery();
-                    preCutoff.start = query.start;
-                    preCutoff.end = String.valueOf(rateCutoffDate);
-
-                    OpenTSDBQuery postCutoff = new OpenTSDBQuery();
-                    postCutoff.start = String.valueOf(rateCutoffDate);
-                    postCutoff.end = query.end;
-
-                    preCutoff.addSubQuery(q);
-                    OpenTSDBSubQuery postQ = new OpenTSDBSubQuery();
-                    //post cutoff queries are stored as already calculated rates
-                    postQ.rate = false;
-                    postQ.rateOptions = q.rateOptions;
-                    postQ.aggregator = q.aggregator;
-                    postQ.metric = q.metric;
-                    postQ.downsample = q.downsample;
-                    postQ.tags = q.tags;
-                    postQ.filters = q.filters;
-                    postCutoff.addSubQuery(postQ);
-
-                    OpenTSDBQueryReturn preResult = this.query(preCutoff);
+                    OpenTSDBQuery preCutoffQ = new OpenTSDBQuery();
+                    preCutoffQ.start = query.start;
+                    //If query spans cutoff use cutoff as the end, otherwise query ends before cutoffdate
+                    if (spansCutoff) {
+                        preCutoffQ.end = String.valueOf(rateCutoffDate);
+                    } else {
+                        preCutoffQ.end = query.end;
+                    }
+                    preCutoffQ.addSubQuery(q);
+                    OpenTSDBQueryReturn preResult = this.query(preCutoffQ);
                     if (preResult.getStatus().getStatus() == QueryStatus.QueryStatusEnum.ERROR) {
                         return preResult;
                     }
-                    OpenTSDBQueryReturn postResult = this.query(postCutoff);
-                    if (postResult.getStatus().getStatus() == QueryStatus.QueryStatusEnum.ERROR) {
-                        return postResult;
+                    results.add(preResult);
+                    if (spansCutoff) {
+                        OpenTSDBQueryReturn postResult = null;
+                        OpenTSDBQuery postCutoff = new OpenTSDBQuery();
+                        postCutoff.start = String.valueOf(rateCutoffDate);
+                        postCutoff.end = query.end;
+
+
+                        OpenTSDBSubQuery postQ = new OpenTSDBSubQuery();
+                        //post cutoff queries are stored as already calculated rates
+                        postQ.rate = false;
+                        postQ.rateOptions = q.rateOptions;
+                        postQ.aggregator = q.aggregator;
+                        postQ.metric = q.metric;
+                        postQ.downsample = q.downsample;
+                        postQ.tags = q.tags;
+                        postQ.filters = q.filters;
+                        postCutoff.addSubQuery(postQ);
+                        postResult = this.query(postCutoff);
+
+                        if (postResult.getStatus().getStatus() == QueryStatus.QueryStatusEnum.ERROR) {
+                            return postResult;
+                        }
+                        results.add(postResult);
                     }
-                    results.add(this.mergeResults(preResult, postResult));
+                    if (results.size()>1) {
+                        OpenTSDBQueryReturn merged = this.mergeResults(results.toArray(new OpenTSDBQueryReturn[2]));
+                        results.clear();
+                        results.add(merged);
+                    }
                     responses.clear();
                 }
             }
@@ -213,12 +239,12 @@ public class OpenTSDBClient {
         return new OpenTSDBQueryReturn(finalResults, new QueryStatus(QueryStatus.QueryStatusEnum.SUCCESS, ""));
     }
 
-    private OpenTSDBQueryReturn mergeResults(OpenTSDBQueryReturn preCutoff, OpenTSDBQueryReturn postCutoff) {
+    private OpenTSDBQueryReturn mergeResults(OpenTSDBQueryReturn... result) {
         //Join the results of one metric query that has been split,
         // every query can return multiple results so make a key from the metricname and aggregated tags
         Map<String, OpenTSDBQueryResult> results = new HashMap<>();
-        OpenTSDBQueryReturn[] both = new OpenTSDBQueryReturn[]{preCutoff, postCutoff};
-        for (OpenTSDBQueryReturn input : both) {
+//        OpenTSDBQueryReturn[] both = new OpenTSDBQueryReturn[]{preCutoff, postCutoff};
+        for (OpenTSDBQueryReturn input : result) {
             for (OpenTSDBQueryResult x : input.getResults()) {
                 TreeMap<String, String> tags = new TreeMap<>(x.tags);
                 String key = x.metric + tags;
@@ -238,6 +264,7 @@ public class OpenTSDBClient {
         final HttpPost httpPost = new HttpPost(providedURL);
 
         final String jsonQueryString = Utils.jsonStringFromObject(query);
+        log.trace("query is {}", jsonQueryString);
         StringEntity input;
         try {
             input = new StringEntity(jsonQueryString);
@@ -307,3 +334,4 @@ public class OpenTSDBClient {
         return new OpenTSDBQueryReturn(resultArray, queryStatus);
     }
 }
+
