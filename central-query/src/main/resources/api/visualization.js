@@ -3343,7 +3343,7 @@ if (typeof exports !== 'undefined') {
             console.error("Invalid format", format, "using default", DEFAULT_NUMBER_FORMAT);
             formatted = sprintf(DEFAULT_NUMBER_FORMAT, result);
             if ((Number(formatted) === 0) && val){
-                return  toEng(val, undefined, format, base, skipCalc)
+                return toEng(val, undefined, format, base, skipCalc)
             }
         }
 
