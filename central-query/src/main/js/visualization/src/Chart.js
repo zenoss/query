@@ -598,10 +598,8 @@
                                     vals[min] = Math.min(vals[min], v.y);
                                     vals[max] = Math.max(vals[max], v.y);
                                 }
-                                vals[avg] += v.y;
                                 vals[cur] = v.y;
                             }
-                            vals[avg] = vals[avg] / plot.values.length;
 
                             if (isFinite(this.maxResult[row])) {
                                 vals[max] = this.maxResult[row];
@@ -610,6 +608,7 @@
                                 vals[min] = this.minResult[row];
                             }
 
+                            vals[avg] = (vals[max] + vals[min]) / 2
                             for (v = 0; v < vals.length; v += 1) {
                                 $(cols[2 + v]).html(this.formatValue(vals[v], undefined, dp.format, dp.displayFullValue));
                             }

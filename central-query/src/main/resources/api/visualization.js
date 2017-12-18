@@ -1866,10 +1866,8 @@ if (typeof exports !== 'undefined') {
                                     vals[min] = Math.min(vals[min], v.y);
                                     vals[max] = Math.max(vals[max], v.y);
                                 }
-                                vals[avg] += v.y;
                                 vals[cur] = v.y;
                             }
-                            vals[avg] = vals[avg] / plot.values.length;
 
                             if (isFinite(this.maxResult[row])) {
                                 vals[max] = this.maxResult[row];
@@ -1878,6 +1876,7 @@ if (typeof exports !== 'undefined') {
                                 vals[min] = this.minResult[row];
                             }
 
+                            vals[avg] = (vals[max] + vals[min]) / 2
                             for (v = 0; v < vals.length; v += 1) {
                                 $(cols[2 + v]).html(this.formatValue(vals[v], undefined, dp.format, dp.displayFullValue));
                             }
@@ -3343,8 +3342,8 @@ if (typeof exports !== 'undefined') {
         } catch (err) {
             console.error("Invalid format", format, "using default", DEFAULT_NUMBER_FORMAT);
             formatted = sprintf(DEFAULT_NUMBER_FORMAT, result);
-            if ((Number(formatted) === 0) && val ){
-                return toEng(val, undefined, format, base, skipCalc)
+            if ((Number(formatted) === 0) && val){
+                return  toEng(val, undefined, format, base, skipCalc)
             }
         }
 
