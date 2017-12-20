@@ -1,9 +1,9 @@
 {
   "name": "Visualization.js",
   "devDependencies": {
-    "gulp": "~3.6.2",
+    "gulp": "^3.9.1",
+    "gulp-concat": "~2.2.0",
     "gulp-livereload": "~1.3.1",
-    "gulp-util": "~2.2.14",
-    "gulp-concat": "~2.2.0"
+    "gulp-util": "~2.2.14"
   }
 }

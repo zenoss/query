@@ -584,12 +584,17 @@
                             avg = 3;
                             init = false;
 
+                            // ZEN-29274 - sometimes plot.values[n].y is a null
+                            // and it breaks average calculation
+                            var dpLen = 0;
+
                             for (vIdx = 0; vIdx < plot.values.length; vIdx++) {
                                 v = plot.values[vIdx];
                                 // don't attempt to calculate nulls
                                 if (v.y === null) {
                                     continue;
                                 }
+                                dpLen += 1;
                                 if (!init) {
                                     vals[min] = v.y;
                                     vals[max] = v.y;
@@ -598,6 +603,7 @@
                                     vals[min] = Math.min(vals[min], v.y);
                                     vals[max] = Math.max(vals[max], v.y);
                                 }
+                                vals[avg] += v.y;
                                 vals[cur] = v.y;
                             }
 
@@ -608,7 +614,7 @@
                                 vals[min] = this.minResult[row];
                             }
 
-                            vals[avg] = (vals[max] + vals[min]) / 2
+                            vals[avg] = vals[avg] / dpLen;
                             for (v = 0; v < vals.length; v += 1) {
                                 $(cols[2 + v]).html(this.formatValue(vals[v], undefined, dp.format, dp.displayFullValue));
                             }
