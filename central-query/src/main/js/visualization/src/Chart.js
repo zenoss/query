@@ -584,12 +584,17 @@
                             avg = 3;
                             init = false;
 
+                            // ZEN-29274 - sometimes plot.values[n].y is a null
+                            // and it breaks average calculation
+                            var dpLen = 0;
+
                             for (vIdx = 0; vIdx < plot.values.length; vIdx++) {
                                 v = plot.values[vIdx];
                                 // don't attempt to calculate nulls
                                 if (v.y === null) {
                                     continue;
                                 }
+                                dpLen += 1;
                                 if (!init) {
                                     vals[min] = v.y;
                                     vals[max] = v.y;
@@ -601,7 +606,6 @@
                                 vals[avg] += v.y;
                                 vals[cur] = v.y;
                             }
-                            vals[avg] = vals[avg] / plot.values.length;
 
                             if (isFinite(this.maxResult[row])) {
                                 vals[max] = this.maxResult[row];
@@ -610,6 +614,7 @@
                                 vals[min] = this.minResult[row];
                             }
 
+                            vals[avg] = vals[avg] / dpLen;
                             for (v = 0; v < vals.length; v += 1) {
                                 $(cols[2 + v]).html(this.formatValue(vals[v], undefined, dp.format, dp.displayFullValue));
                             }
@@ -2076,7 +2081,7 @@
             console.error("Invalid format", format, "using default", DEFAULT_NUMBER_FORMAT);
             formatted = sprintf(DEFAULT_NUMBER_FORMAT, result);
             if ((Number(formatted) === 0) && val){
-                return  toEng(val, undefined, format, base, skipCalc)
+                return toEng(val, undefined, format, base, skipCalc)
             }
         }
 
