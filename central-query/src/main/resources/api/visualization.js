@@ -1573,6 +1573,28 @@ if (typeof exports !== 'undefined') {
             // resize wrapper to ensure enough space for graph
             $(this.svgwrapper).outerHeight(height);
 
+            // ZEN-29235 enforce minimum chart width to prevent squished chart
+            var minChartWidth = 480;
+            var cols = Math.max(1, Zenoss.settings.graphColumns);
+            var minColsWrapWidth = (minChartWidth + 30) * cols + 40;
+            var gphBody = $('#device_graphs-body, #device_component_graphs-body').width() - 20;
+            var colsWrapWidth = Math.max(gphBody, minColsWrapWidth);
+
+            var zGraphColsWrap = $('#device_graphs-body > div:first-child, #device_component_graphs-body > div:first-child');
+            zGraphColsWrap.addClass('z-graph-cols-wrap').width(colsWrapWidth);
+
+            var svgw = $(this.svgwrapper).width();
+            var svgwrap = Math.max(svgw, minChartWidth);
+            $(this.svgwrapper).width(svgwrap);
+
+            // component graphs need a tad extra help overriding
+            // injected styles both for stretching and squeezing
+            if (gphBody > minColsWrapWidth) {
+                $('#device_component_graphs-innerCt').removeAttr('style');
+            } else {
+                $('#device_component_graphs-body .x-column, #device_component_graphs-body .x-panel-body').removeAttr('style');
+            }
+
             if (this.impl) {
                 this.impl.resize(this);
             }
@@ -3240,7 +3262,7 @@ if (typeof exports !== 'undefined') {
         calculateResultsMax: function (data) {
             // extract array of value arrays
             var seriesVals = data.map(function (series) {
-                return series.datapoints.map(function (datapt) { 
+                return series.datapoints.map(function (datapt) {
                     return datapt.value === "NaN" ? 0 : +datapt.value; });
             });
             // flatten array and calculate max value
@@ -3392,4 +3414,3 @@ window.zenoss = {
 };
 
 })();
-
