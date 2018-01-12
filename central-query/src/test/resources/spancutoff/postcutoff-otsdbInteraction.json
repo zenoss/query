@@ -1,0 +1,40 @@
+{
+  "request": {
+    "start": "1437520981",
+    "end": "1437521231",
+    "queries": [
+      {
+        "aggregator": "avg",
+        "metric": "cgroup.cpuacct.user",
+        "rate": false,
+        "rateOptions": {
+          "counter": true,
+          "counterMax": 9223372036854775807,
+          "resetValue": 1234,
+          "dropResets": true
+        },
+        "tags": {
+          "isvcname": "elasticsearch-serviced"
+        }
+      }
+    ],
+    "noAnnotations": false,
+    "globalAnnotations": false,
+    "msResolution": false,
+    "showTSUIDs": false
+  },
+  "response": [
+    {
+      "metric": "cgroup.cpuacct.user",
+      "tags": {
+        "isvc": "true",
+        "isvcname": "elasticsearch-serviced"
+      },
+      "aggregateTags": [],
+      "dps": {
+        "1437521223": 107714.0
+      }
+    }
+  ]
+}
+

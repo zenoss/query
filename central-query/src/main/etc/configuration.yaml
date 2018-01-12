@@ -12,7 +12,7 @@ metrics:
   defaultTsdTimeZone: UTC
   connectionTimeoutMs: 20000
   sendRateOptions: false
-
+  ignoreRateOption: true
   # parameters to configure connection pool for querying OpenTsdb:
   # Total connections allowed per pool
   maxTotalPoolConnections: 100

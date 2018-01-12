@@ -43,12 +43,16 @@ class MetricSpecCallable implements Callable<OpenTSDBQueryResult> {
     private final OpenTSDBClient client;
     private final String start;
     private final String end;
+    private final boolean ignoreRateOption;
+    private long rateCutoffDate;
 
-    public MetricSpecCallable(DefaultHttpClient httpClient, String start, String end, MetricSpecification mSpec, String queryURL) {
+    public MetricSpecCallable(DefaultHttpClient httpClient, String start, String end, MetricSpecification mSpec, String queryURL, boolean ignoreRateOption, long rateCutoffDate) {
         this.start = start;
         this.end = end;
+        this.ignoreRateOption = ignoreRateOption;
         client = new OpenTSDBClient(httpClient, queryURL);
         this.mSpec = mSpec;
+        this.rateCutoffDate = rateCutoffDate;
     }
 
     @Override
@@ -63,7 +67,7 @@ class MetricSpecCallable implements Callable<OpenTSDBQueryResult> {
 
         query.addSubQuery(creatOTSDBSubQuery(mSpec));
 
-        OpenTSDBQueryReturn queryResult = this.client.query(query);
+        OpenTSDBQueryReturn queryResult = this.client.query(query, this.ignoreRateOption, this.rateCutoffDate);
         OpenTSDBQueryResult result;
         if (queryResult.getStatus().getStatus() != QueryStatusEnum.SUCCESS) {
             result = new OpenTSDBQueryResult();
@@ -96,8 +100,7 @@ class MetricSpecCallable implements Callable<OpenTSDBQueryResult> {
             result.rate = metricSpecification.getRate();
             if (null != metricSpecification.getRateOptions()) {
                 result.rateOptions = new OpenTSDBRateOption(metricSpecification.getRateOptions());
-            }
-            else {
+            } else {
                 result.rateOptions = null;
             }
             Map<String, List<String>> tags = metricSpecification.getTags();

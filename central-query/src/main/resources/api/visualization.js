@@ -1573,6 +1573,28 @@ if (typeof exports !== 'undefined') {
             // resize wrapper to ensure enough space for graph
             $(this.svgwrapper).outerHeight(height);
 
+            // ZEN-29235 enforce minimum chart width to prevent squished chart
+            var minChartWidth = 480;
+            var cols = Math.max(1, Zenoss.settings.graphColumns);
+            var minColsWrapWidth = (minChartWidth + 30) * cols + 40;
+            var gphBody = $('#device_graphs-body, #device_component_graphs-body').width() - 20;
+            var colsWrapWidth = Math.max(gphBody, minColsWrapWidth);
+
+            var zGraphColsWrap = $('#device_graphs-body > div:first-child, #device_component_graphs-body > div:first-child');
+            zGraphColsWrap.addClass('z-graph-cols-wrap').width(colsWrapWidth);
+
+            var svgw = $(this.svgwrapper).width();
+            var svgwrap = Math.max(svgw, minChartWidth);
+            $(this.svgwrapper).width(svgwrap);
+
+            // component graphs need a tad extra help overriding
+            // injected styles both for stretching and squeezing
+            if (gphBody > minColsWrapWidth) {
+                $('#device_component_graphs-innerCt').removeAttr('style');
+            } else {
+                $('#device_component_graphs-body .x-column, #device_component_graphs-body .x-panel-body').removeAttr('style');
+            }
+
             if (this.impl) {
                 this.impl.resize(this);
             }
@@ -1852,12 +1874,17 @@ if (typeof exports !== 'undefined') {
                             avg = 3;
                             init = false;
 
+                            // ZEN-29274 - sometimes plot.values[n].y is a null
+                            // and it breaks average calculation
+                            var dpLen = 0;
+
                             for (vIdx = 0; vIdx < plot.values.length; vIdx++) {
                                 v = plot.values[vIdx];
                                 // don't attempt to calculate nulls
                                 if (v.y === null) {
                                     continue;
                                 }
+                                dpLen += 1;
                                 if (!init) {
                                     vals[min] = v.y;
                                     vals[max] = v.y;
@@ -1869,7 +1896,6 @@ if (typeof exports !== 'undefined') {
                                 vals[avg] += v.y;
                                 vals[cur] = v.y;
                             }
-                            vals[avg] = vals[avg] / plot.values.length;
 
                             if (isFinite(this.maxResult[row])) {
                                 vals[max] = this.maxResult[row];
@@ -1878,6 +1904,7 @@ if (typeof exports !== 'undefined') {
                                 vals[min] = this.minResult[row];
                             }
 
+                            vals[avg] = vals[avg] / dpLen;
                             for (v = 0; v < vals.length; v += 1) {
                                 $(cols[2 + v]).html(this.formatValue(vals[v], undefined, dp.format, dp.displayFullValue));
                             }
@@ -3235,7 +3262,7 @@ if (typeof exports !== 'undefined') {
         calculateResultsMax: function (data) {
             // extract array of value arrays
             var seriesVals = data.map(function (series) {
-                return series.datapoints.map(function (datapt) { 
+                return series.datapoints.map(function (datapt) {
                     return datapt.value === "NaN" ? 0 : +datapt.value; });
             });
             // flatten array and calculate max value
@@ -3337,9 +3364,15 @@ if (typeof exports !== 'undefined') {
         try {
             // if sprintf is passed a format it doesn't understand an exception is thrown
             formatted = sprintf(format || DEFAULT_NUMBER_FORMAT, result);
+            if ((Number(formatted) === 0) && val){
+                return toEng(val, undefined, format, base, skipCalc)
+            }
         } catch (err) {
             console.error("Invalid format", format, "using default", DEFAULT_NUMBER_FORMAT);
             formatted = sprintf(DEFAULT_NUMBER_FORMAT, result);
+            if ((Number(formatted) === 0) && val){
+                return toEng(val, undefined, format, base, skipCalc)
+            }
         }
 
         // TODO - make graph y axis capable of expanding to
