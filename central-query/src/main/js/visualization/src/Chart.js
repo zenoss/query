@@ -294,7 +294,6 @@
         resize: function () {
             var $footer = this.$div.find(".zenfooter");
             var $title = this.$div.find(".graph_title");
-            var $gphBody = this.$div.find("[id$=_graph-body]");
 
             var theight = parseInt($title.outerHeight(), 10);
             var fheight = this.__hasFooter() ? parseInt($footer.outerHeight(), 10) : 0;
@@ -309,17 +308,24 @@
             var minChartWidth = Math.max(svgw, 480);
             $(this.svgwrapper).width(minChartWidth);
 
-            var cols = Math.max(1, Zenoss.settings.graphColumns);
-            var minColsWrapWidth = (minChartWidth + 30) * cols + 40;
-            var gphBodyWidth = $gphBody.width() - 20;
-            var colsWrapWidth = Math.max(gphBodyWidth, minColsWrapWidth);
+            var panelWidth = $('#detail_card_panel-body').width();
+            var zScrollDiv = $('[id$=_graphs-body] > div:first-child');
+            zScrollDiv.addClass('z-graph-cols-wrap');
 
-            var zGraphColsWrap = $('[id$=_graphs-body] > div:first-child');
-            zGraphColsWrap.addClass('z-graph-cols-wrap').width(colsWrapWidth);
+            // column Auto setting: 2 cols at 1000 pixels
+            var cols = Zenoss.settings.graphColumns;
+            if (cols === 0) {
+                cols = panelWidth > 999 ? 2 : 1;
+            }
+
+            var minWrapWidth = (minChartWidth + 10) * cols + 40;
+            var colsWrapWidth = Math.max(panelWidth, minWrapWidth) - 40;
+
+            zScrollDiv.width(colsWrapWidth);
 
             // component graphs need a tad extra help overriding
             // injected styles both for stretching and squeezing
-            if (gphBodyWidth > minColsWrapWidth) {
+            if (panelWidth > minWrapWidth) {
                 $('#device_component_graphs-innerCt').removeAttr('style');
             } else {
                 $('#device_component_graphs-body .x-column, #device_component_graphs-body .x-panel-body').removeAttr('style');
