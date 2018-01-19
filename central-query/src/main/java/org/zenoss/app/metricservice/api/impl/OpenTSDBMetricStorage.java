@@ -283,7 +283,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
                 }
 
                 if (r.code == 200) {
-                    msg.setType(RenameLogMsg.TYPE_PROGRESS);
+                    msg.setType(RenameLogMsg.TYPE_INFO);
                     msg.setContent(
                         String.format(
                             "Renaming %s %s to %s completed.",
