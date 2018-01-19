@@ -85,18 +85,18 @@ public class RenameResourceTest extends ResourceTest {
     public void testMetricWhole() throws IOException, JSONException {
         String expectedResultFile = "/rename/metricwhole/result.json";
         String metricRequestFile = "/rename/metricwhole/request.json";
+        String suggestInteraction = "/rename/metricwhole/suggestInteraction.json";
         String otsdbInteraction = "/rename/metricwhole/otsdbInteraction.json";
 
-        testRename(expectedResultFile, metricRequestFile, otsdbInteraction);
+        testRename(expectedResultFile, metricRequestFile, suggestInteraction, otsdbInteraction);
     }
 
     @Test
     public void testMetricWholeNameNotFound() throws IOException, JSONException {
-        String expectedResultFile = "/rename/metricwholenamenotfound/result.json";
         String metricRequestFile = "/rename/metricwholenamenotfound/request.json";
-        String otsdbInteraction = "/rename/metricwholenamenotfound/otsdbInteraction.json";
+        String suggestInteraction = "/rename/metricwholenamenotfound/suggestInteraction.json";
 
-        testBadRequest(expectedResultFile, metricRequestFile, otsdbInteraction);
+        testNoResult(metricRequestFile, suggestInteraction);
     }
 
     @Test
@@ -105,28 +105,30 @@ public class RenameResourceTest extends ResourceTest {
             "/rename/metricwholenewnamealreadyassigned/result.json";
         String metricRequestFile =
             "/rename/metricwholenewnamealreadyassigned/request.json";
+        String suggestInteraction =
+            "/rename/metricwholenewnamealreadyassigned/suggestInteraction.json";
         String otsdbInteraction =
             "/rename/metricwholenewnamealreadyassigned/otsdbInteraction.json";
 
-        testBadRequest(expectedResultFile, metricRequestFile, otsdbInteraction);
+        testBadRequest(expectedResultFile, metricRequestFile, suggestInteraction, otsdbInteraction);
     }
 
     @Test
     public void testTagvWhole() throws IOException, JSONException {
         String expectedResultFile = "/rename/tagvwhole/result.json";
         String metricRequestFile = "/rename/tagvwhole/request.json";
+        String suggestInteraction = "/rename/tagvwhole/suggestInteraction.json";
         String otsdbInteraction = "/rename/tagvwhole/otsdbInteraction.json";
 
-        testRename(expectedResultFile, metricRequestFile, otsdbInteraction);
+        testRename(expectedResultFile, metricRequestFile, suggestInteraction, otsdbInteraction);
     }
 
     @Test
     public void testTagvWholeNameNotFound() throws IOException, JSONException {
-        String expectedResultFile = "/rename/tagvwholenamenotfound/result.json";
         String metricRequestFile = "/rename/tagvwholenamenotfound/request.json";
-        String otsdbInteraction = "/rename/tagvwholenamenotfound/otsdbInteraction.json";
+        String suggestInteraction = "/rename/tagvwholenamenotfound/suggestInteraction.json";
 
-        testBadRequest(expectedResultFile, metricRequestFile, otsdbInteraction);
+        testNoResult(metricRequestFile, suggestInteraction);
     }
 
     @Test
@@ -135,10 +137,12 @@ public class RenameResourceTest extends ResourceTest {
             "/rename/tagvwholenewnamealreadyassigned/result.json";
         String metricRequestFile =
             "/rename/tagvwholenewnamealreadyassigned/request.json";
+        String suggestInteraction =
+            "/rename/tagvwholenewnamealreadyassigned/suggestInteraction.json";
         String otsdbInteraction =
             "/rename/tagvwholenewnamealreadyassigned/otsdbInteraction.json";
 
-        testBadRequest(expectedResultFile, metricRequestFile, otsdbInteraction);
+        testBadRequest(expectedResultFile, metricRequestFile, suggestInteraction, otsdbInteraction);
     }
 
     @Test
@@ -155,6 +159,17 @@ public class RenameResourceTest extends ResourceTest {
             suggestInteraction,
             rename1Interaction,
             rename2Interaction
+        );
+    }
+
+    @Test
+    public void testMetricPrefixNotFound() throws IOException, JSONException {
+        String metricRequestFile = "/rename/metricprefixnotfound/request.json";
+        String suggestInteraction = "/rename/metricprefixnotfound/suggestInteraction.json";
+
+        testNoResult(
+            metricRequestFile,
+            suggestInteraction
         );
     }
 
@@ -231,12 +246,22 @@ public class RenameResourceTest extends ResourceTest {
         for (String otsdbInteraction : otsdbInteractionFiles) {
             input = this.getClass().getResourceAsStream(otsdbInteraction);
             String interactionJson = CharStreams.toString(new InputStreamReader(input));
-            OtsdbInteraction interaction =
-                MAPPER.readValue(interactionJson, OtsdbInteraction.class);
-            String otsdbRequest = Utils.jsonStringFromObject(interaction.request);
-            String otsdbResponse = Utils.jsonStringFromObject(interaction.response);
+            String otsdbRequest;
+            String otsdbResponse;
+            String path;
+            try {
+                OtsdbInteraction interaction = MAPPER.readValue(interactionJson, OtsdbInteraction.class);
+                otsdbRequest = Utils.jsonStringFromObject(interaction.request);
+                otsdbResponse = Utils.jsonStringFromObject(interaction.response);
+                path = OTSDB_RENAME_PATH;
+            } catch (JsonMappingException e) {
+                SuggestInteraction interaction = MAPPER.readValue(interactionJson, SuggestInteraction.class);
+                otsdbRequest = Utils.jsonStringFromObject(interaction.request);
+                otsdbResponse = Utils.jsonStringFromObject(interaction.response);
+                path = OTSDB_SUGGEST_PATH;
+            }
 
-            stubFor(post(urlEqualTo(OTSDB_RENAME_PATH))
+            stubFor(post(urlEqualTo(path))
                     .withHeader(HttpHeaders.CONTENT_TYPE, matching("application/json"))
                     .withRequestBody(equalToJson(otsdbRequest))
                     .willReturn(aResponse()
@@ -324,17 +349,28 @@ public class RenameResourceTest extends ResourceTest {
         for (String otsdbInteraction : otsdbInteractionFiles) {
             input = this.getClass().getResourceAsStream(otsdbInteraction);
             String interactionJson = CharStreams.toString(new InputStreamReader(input));
-            OtsdbInteraction interaction = MAPPER.readValue(interactionJson, OtsdbInteraction.class);
-            String otsdbRequest = Utils.jsonStringFromObject(interaction.request);
-            String otsdbResponse = Utils.jsonStringFromObject(interaction.response);
-            stubFor(post(urlEqualTo(OTSDB_RENAME_PATH))
+            String otsdbRequest;
+            String otsdbResponse;
+            String path;
+            try {
+                OtsdbInteraction interaction = MAPPER.readValue(interactionJson, OtsdbInteraction.class);
+                otsdbRequest = Utils.jsonStringFromObject(interaction.request);
+                otsdbResponse = Utils.jsonStringFromObject(interaction.response);
+                path = OTSDB_RENAME_PATH;
+            } catch (JsonMappingException e) {
+                SuggestInteraction interaction = MAPPER.readValue(interactionJson, SuggestInteraction.class);
+                otsdbRequest = Utils.jsonStringFromObject(interaction.request);
+                otsdbResponse = Utils.jsonStringFromObject(interaction.response);
+                path = OTSDB_SUGGEST_PATH;
+            }
+
+            stubFor(post(urlEqualTo(path))
                     .withHeader(HttpHeaders.CONTENT_TYPE, matching("application/json"))
                     .withRequestBody(equalToJson(otsdbRequest))
                     .willReturn(aResponse()
                             .withStatus(400)
                             .withHeader("Content-Type", "application/json")
                             .withBody(otsdbResponse)));
-
         }
 
         String qr = client().resource(URL_PATH)
@@ -343,6 +379,44 @@ public class RenameResourceTest extends ResourceTest {
 
         assertNotNull(qr);
         assertJsonEquals(expectedJSON, qr);
+    }
+
+    private void testNoResult(String metricRequestFile, String... otsdbInteractionFiles) throws IOException, JSONException {
+        InputStream input = this.getClass().getResourceAsStream(metricRequestFile);
+        String metricRequest = CharStreams.toString(new InputStreamReader(input));
+
+        for (String otsdbInteraction : otsdbInteractionFiles) {
+            input = this.getClass().getResourceAsStream(otsdbInteraction);
+            String interactionJson = CharStreams.toString(new InputStreamReader(input));
+            String otsdbRequest;
+            String otsdbResponse;
+            String path;
+            try {
+                OtsdbInteraction interaction = MAPPER.readValue(interactionJson, OtsdbInteraction.class);
+                otsdbRequest = Utils.jsonStringFromObject(interaction.request);
+                otsdbResponse = Utils.jsonStringFromObject(interaction.response);
+                path = OTSDB_RENAME_PATH;
+            } catch (JsonMappingException e) {
+                SuggestInteraction interaction = MAPPER.readValue(interactionJson, SuggestInteraction.class);
+                otsdbRequest = Utils.jsonStringFromObject(interaction.request);
+                otsdbResponse = Utils.jsonStringFromObject(interaction.response);
+                path = OTSDB_SUGGEST_PATH;
+            }
+
+            stubFor(post(urlEqualTo(path))
+                    .withHeader(HttpHeaders.CONTENT_TYPE, matching("application/json"))
+                    .withRequestBody(equalToJson(otsdbRequest))
+                    .willReturn(aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(otsdbResponse)));
+        }
+
+        String qr = client().resource(URL_PATH)
+                .type(MediaType.APPLICATION_JSON_TYPE)
+                .post(String.class, metricRequest);
+
+        assertEquals("", qr);
     }
 
     /**

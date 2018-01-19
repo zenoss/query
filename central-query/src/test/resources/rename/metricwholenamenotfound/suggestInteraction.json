@@ -1,0 +1,8 @@
+{
+  "request": {
+    "type": "metrics",
+    "q": "foo",
+    "max": 2147483647
+  },
+  "response": []
+}
