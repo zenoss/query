@@ -2397,7 +2397,11 @@ if (typeof exports !== 'undefined') {
                         self.projections.forEach(function (projection) {
                             var projectionRequest = self.__buildProjectionRequest(self.config, self.request, projection);
                             // can fail if the projection is requesting a metric not present
+                            // but we still want to update graph with new data
                             if (!projectionRequest) {
+                                if (self.closure) {
+                                    self.__updateData(data);
+                                }
                                 return;
                             }
                             $.ajax({
