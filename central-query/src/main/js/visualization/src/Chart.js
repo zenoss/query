@@ -49,7 +49,7 @@
             ticks: 4,
             breakpoint: 20,
             format: function (tz, d) {
-                return moment.utc(d).tz(tz).format("HH:mm:ss");
+                return moment.utc(d).tz(tz).format("HH:mm");
             }
         }, {
             name: "day",
@@ -57,7 +57,7 @@
             ticks: 3,
             breakpoint: 7,
             format: function (tz, d) {
-                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
+                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm");
             }
         }, {
             name: "week",
@@ -65,7 +65,7 @@
             ticks: 3,
             breakpoint: 4,
             format: function (tz, d) {
-                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
+                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm");
             }
         }, {
             name: "month",
@@ -73,7 +73,7 @@
             ticks: 3,
             breakpoint: 13,
             format: function (tz, d) {
-                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
+                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm");
             }
         }, {
             name: "year",
@@ -82,7 +82,7 @@
             ticks: 3,
             breakpoint: 1000,
             format: function (tz, d) {
-                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
+                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm");
             }
         }
     ];
@@ -292,39 +292,44 @@
          * footer, and then resizes the underlying chart.
          */
         resize: function () {
-            var theight, fheight, height, span;
-
             var $footer = this.$div.find(".zenfooter");
             var $title = this.$div.find(".graph_title");
 
-            theight = parseInt($title.outerHeight(), 10);
-            fheight = this.__hasFooter() ? parseInt($footer.outerHeight(), 10) : 0;
-            height = parseInt(this.$div.height(), 10) - fheight - theight;
-            span = $(this.message).find('span');
+            var theight = parseInt($title.outerHeight(), 10);
+            var fheight = this.__hasFooter() ? parseInt($footer.outerHeight(), 10) : 0;
+            var height = parseInt(this.$div.height(), 10) - fheight - theight;
+            var span = $(this.message).find('span');
 
             // resize wrapper to ensure enough space for graph
             $(this.svgwrapper).outerHeight(height);
 
             // ZEN-29235 enforce minimum chart width to prevent squished chart
-            var minChartWidth = 480;
-            var cols = Math.max(1, Zenoss.settings.graphColumns);
-            var minColsWrapWidth = (minChartWidth + 30) * cols + 40;
-            var gphBody = $('#device_graphs-body, #device_component_graphs-body').width() - 20;
-            var colsWrapWidth = Math.max(gphBody, minColsWrapWidth);
-
-            var zGraphColsWrap = $('#device_graphs-body > div:first-child, #device_component_graphs-body > div:first-child');
-            zGraphColsWrap.addClass('z-graph-cols-wrap').width(colsWrapWidth);
-
             var svgw = $(this.svgwrapper).width();
-            var svgwrap = Math.max(svgw, minChartWidth);
-            $(this.svgwrapper).width(svgwrap);
+            var minChartWidth = Math.max(svgw, 480);
+            $(this.svgwrapper).width(minChartWidth);
+
+            var panelWidth = $('#detail_card_panel-body').width();
+            var zScrollDiv = $('[id$=_graphs-body] > div:first-child');
+            zScrollDiv.addClass('z-graph-cols-wrap');
+
+            // column Auto setting: 2 cols at 1000 pixels
+            var cols = Zenoss.settings.graphColumns;
+            if (cols === 0) {
+                cols = panelWidth > 999 ? 2 : 1;
+            }
+
+            var minWrapWidth = (minChartWidth + 10) * cols + 40;
+            var colsWrapWidth = Math.max(panelWidth, minWrapWidth) - 40;
+
+            zScrollDiv.width(colsWrapWidth);
 
             // component graphs need a tad extra help overriding
             // injected styles both for stretching and squeezing
-            if (gphBody > minColsWrapWidth) {
+            if (panelWidth > minWrapWidth) {
                 $('#device_component_graphs-innerCt').removeAttr('style');
             } else {
                 $('#device_component_graphs-body .x-column, #device_component_graphs-body .x-panel-body').removeAttr('style');
+                $('#device_graphs-innerCt .x-column, #device_component_graphs-innerCt .x-column').width(minChartWidth);
             }
 
             if (this.impl) {
@@ -1124,7 +1129,11 @@
                         self.projections.forEach(function (projection) {
                             var projectionRequest = self.__buildProjectionRequest(self.config, self.request, projection);
                             // can fail if the projection is requesting a metric not present
+                            // but we still want to update graph with new data
                             if (!projectionRequest) {
+                                if (self.closure) {
+                                    self.__updateData(data);
+                                }
                                 return;
                             }
                             $.ajax({
@@ -1874,7 +1883,7 @@
          * @access public
          * @default "MM/DD/YY HH:mm:ss"
          */
-        dateFormat: DATE_FORMAT + " HH:mm:ss",
+        dateFormat: DATE_FORMAT + " HH:mm",
 
         // uses TIME_DATA to determine which time range we care about
         // and format labels representative of that time range
