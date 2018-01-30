@@ -3386,7 +3386,14 @@ if (typeof exports !== 'undefined') {
 
         // TODO - make graph y axis capable of expanding to
         // accommodate long numbers
-        return shortenNumber(formatted, targetLength) + symbol;
+
+        // allow adding percent sign to values
+        var percentSign = "";
+        if (formatted.indexOf("%") !== -1) {
+            formatted = formatted.split("%")[0];
+            percentSign = "%";
+        }
+        return shortenNumber(formatted, targetLength) + symbol + percentSign;
     }
 
     // attempts to make a long floating point number
