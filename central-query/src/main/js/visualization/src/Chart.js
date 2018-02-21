@@ -49,7 +49,7 @@
             ticks: 4,
             breakpoint: 20,
             format: function (tz, d) {
-                return moment.utc(d).tz(tz).format("HH:mm:ss");
+                return moment.utc(d).tz(tz).format("HH:mm");
             }
         }, {
             name: "day",
@@ -57,7 +57,7 @@
             ticks: 3,
             breakpoint: 7,
             format: function (tz, d) {
-                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
+                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm");
             }
         }, {
             name: "week",
@@ -65,7 +65,7 @@
             ticks: 3,
             breakpoint: 4,
             format: function (tz, d) {
-                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
+                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm");
             }
         }, {
             name: "month",
@@ -73,7 +73,7 @@
             ticks: 3,
             breakpoint: 13,
             format: function (tz, d) {
-                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
+                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm");
             }
         }, {
             name: "year",
@@ -82,7 +82,7 @@
             ticks: 3,
             breakpoint: 1000,
             format: function (tz, d) {
-                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm:ss");
+                return moment.utc(d).tz(tz).format(DATE_FORMAT + " HH:mm");
             }
         }
     ];
@@ -292,18 +292,45 @@
          * footer, and then resizes the underlying chart.
          */
         resize: function () {
-            var theight, fheight, height, span;
-
             var $footer = this.$div.find(".zenfooter");
             var $title = this.$div.find(".graph_title");
 
-            theight = parseInt($title.outerHeight(), 10);
-            fheight = this.__hasFooter() ? parseInt($footer.outerHeight(), 10) : 0;
-            height = parseInt(this.$div.height(), 10) - fheight - theight;
-            span = $(this.message).find('span');
+            var theight = parseInt($title.outerHeight(), 10);
+            var fheight = this.__hasFooter() ? parseInt($footer.outerHeight(), 10) : 0;
+            var height = parseInt(this.$div.height(), 10) - fheight - theight;
+            var span = $(this.message).find('span');
 
             // resize wrapper to ensure enough space for graph
             $(this.svgwrapper).outerHeight(height);
+
+            // ZEN-29235 enforce minimum chart width to prevent squished chart
+            var svgw = $(this.svgwrapper).width();
+            var minChartWidth = Math.max(svgw, 480);
+            $(this.svgwrapper).width(minChartWidth);
+
+            var panelWidth = $('#detail_card_panel-body').width();
+            var zScrollDiv = $('[id$=_graphs-body] > div:first-child');
+            zScrollDiv.addClass('z-graph-cols-wrap');
+
+            // column Auto setting: 2 cols at 1000 pixels
+            var cols = Zenoss.settings.graphColumns;
+            if (cols === 0) {
+                cols = panelWidth > 999 ? 2 : 1;
+            }
+
+            var minWrapWidth = (minChartWidth + 10) * cols + 40;
+            var colsWrapWidth = Math.max(panelWidth, minWrapWidth) - 40;
+
+            zScrollDiv.width(colsWrapWidth);
+
+            // component graphs need a tad extra help overriding
+            // injected styles both for stretching and squeezing
+            if (panelWidth > minWrapWidth) {
+                $('#device_component_graphs-innerCt').removeAttr('style');
+            } else {
+                $('#device_component_graphs-body .x-column, #device_component_graphs-body .x-panel-body').removeAttr('style');
+                $('#device_graphs-innerCt .x-column, #device_component_graphs-innerCt .x-column').width(minChartWidth);
+            }
 
             if (this.impl) {
                 this.impl.resize(this);
@@ -584,12 +611,17 @@
                             avg = 3;
                             init = false;
 
+                            // ZEN-29274 - sometimes plot.values[n].y is a null
+                            // and it breaks average calculation
+                            var dpLen = 0;
+
                             for (vIdx = 0; vIdx < plot.values.length; vIdx++) {
                                 v = plot.values[vIdx];
                                 // don't attempt to calculate nulls
                                 if (v.y === null) {
                                     continue;
                                 }
+                                dpLen += 1;
                                 if (!init) {
                                     vals[min] = v.y;
                                     vals[max] = v.y;
@@ -601,7 +633,6 @@
                                 vals[avg] += v.y;
                                 vals[cur] = v.y;
                             }
-                            vals[avg] = vals[avg] / plot.values.length;
 
                             if (isFinite(this.maxResult[row])) {
                                 vals[max] = this.maxResult[row];
@@ -610,6 +641,7 @@
                                 vals[min] = this.minResult[row];
                             }
 
+                            vals[avg] = vals[avg] / dpLen;
                             for (v = 0; v < vals.length; v += 1) {
                                 $(cols[2 + v]).html(this.formatValue(vals[v], undefined, dp.format, dp.displayFullValue));
                             }
@@ -1097,7 +1129,11 @@
                         self.projections.forEach(function (projection) {
                             var projectionRequest = self.__buildProjectionRequest(self.config, self.request, projection);
                             // can fail if the projection is requesting a metric not present
+                            // but we still want to update graph with new data
                             if (!projectionRequest) {
+                                if (self.closure) {
+                                    self.__updateData(data);
+                                }
                                 return;
                             }
                             $.ajax({
@@ -1847,7 +1883,7 @@
          * @access public
          * @default "MM/DD/YY HH:mm:ss"
          */
-        dateFormat: DATE_FORMAT + " HH:mm:ss",
+        dateFormat: DATE_FORMAT + " HH:mm",
 
         // uses TIME_DATA to determine which time range we care about
         // and format labels representative of that time range
@@ -1967,7 +2003,7 @@
         calculateResultsMax: function (data) {
             // extract array of value arrays
             var seriesVals = data.map(function (series) {
-                return series.datapoints.map(function (datapt) { 
+                return series.datapoints.map(function (datapt) {
                     return datapt.value === "NaN" ? 0 : +datapt.value; });
             });
             // flatten array and calculate max value
@@ -2076,13 +2112,20 @@
             console.error("Invalid format", format, "using default", DEFAULT_NUMBER_FORMAT);
             formatted = sprintf(DEFAULT_NUMBER_FORMAT, result);
             if ((Number(formatted) === 0) && val){
-                return  toEng(val, undefined, format, base, skipCalc)
+                return toEng(val, undefined, format, base, skipCalc)
             }
         }
 
         // TODO - make graph y axis capable of expanding to
         // accommodate long numbers
-        return shortenNumber(formatted, targetLength) + symbol;
+
+        // allow adding percent sign to values
+        var percentSign = "";
+        if (formatted.indexOf("%") !== -1) {
+            formatted = formatted.split("%")[0];
+            percentSign = "%";
+        }
+        return shortenNumber(formatted, targetLength) + symbol + percentSign;
     }
 
     // attempts to make a long floating point number
