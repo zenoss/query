@@ -169,8 +169,27 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
                         oldName = r.request.metric;
                     }
 
-                    msg.setType(RenameLogMsg.TYPE_ERROR);
-                    msg.setContent(
+                    if (r.reason.contains("does not exist")) {
+                        msg.setType(RenameLogMsg.TYPE_INFO);
+                        msg.setContent(
+                            String.format(
+                                    "Couldn't rename %s prefix %s to %s in OpenTSDB: %s",
+                                    type,
+                                    oldName,
+                                    newName,
+                                    r.reason
+                           )
+                        );
+                        log.info(msg.getContent());
+
+                        try {
+                            writer.write(Utils.jsonStringFromObject(msg));
+                        } catch (IOException e) {
+                            log.error("Error while handling IO after renaming in central query");
+                        }
+                    } else {
+                        msg.setType(RenameLogMsg.TYPE_ERROR);
+                        msg.setContent(
                             String.format(
                                     "Error while renaming %s prefix %s to %s in OpenTSDB: %s",
                                     type,
@@ -178,10 +197,11 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
                                     newName,
                                     r.reason
                             )
-                    );
+                        );
 
-                    log.error(msg.getContent());
-                    writer.write(Utils.jsonStringFromObject(msg) + "\n");
+                        log.error(msg.getContent());
+                        writer.write(Utils.jsonStringFromObject(msg) + "\n");
+                    }
                 }
             } catch (InterruptedException e) {
                 log.error(
@@ -222,6 +242,7 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
 
     @Override
     public void renameWhole(RenameRequest renameRequest, Writer writer) {
+
         OpenTSDBClient renameClient =
                 new OpenTSDBClient(this.getHttpClient(), getOpenTSDBApiRenameUrl());
         OpenTSDBClient dropCacheClient =
@@ -267,23 +288,44 @@ public class OpenTSDBMetricStorage implements MetricStorageAPI {
         }
 
         if (!(renameResult.code >= 200 && renameResult.code <= 299)) {
-            msg.setType(RenameLogMsg.TYPE_ERROR);
-            msg.setContent(String.format(
+            if (renameResult.reason.contains("does not exist")) {
+                msg.setType(RenameLogMsg.TYPE_INFO);
+                msg.setContent(String.format(
+                    "Couldn't rename %s %s to %s in OpenTSDB: %s",
+                    type,
+                    oldName,
+                    newName,
+                    renameResult.reason
+                    )
+                );
+                log.info(msg.getContent());
+
+                try {
+                    writer.write(Utils.jsonStringFromObject(msg));
+                } catch (IOException e) {
+                    log.error("Error while handling IO after renaming in central query");
+                }
+            } else {
+                msg.setType(RenameLogMsg.TYPE_ERROR);
+                msg.setContent(String.format(
                     "Error while renaming %s %s to %s in OpenTSDB: %s",
                     type,
                     oldName,
                     newName,
                     renameResult.reason
-            ));
-            log.error(msg.getContent());
-            try {
-                writer.write(Utils.jsonStringFromObject(msg));
-            } catch (IOException e) {
-                log.error(
-                        "Error while handling IO after renaming in central query: {}",
-                        e.getMessage());
+                    )
+                );
+
+                log.error(msg.getContent());
+                try {
+                    writer.write(Utils.jsonStringFromObject(msg));
+                } catch (IOException e) {
+                    log.error(
+                            "Error while handling IO after renaming in central query: {}",
+                            e.getMessage());
+                }
             }
-        }
+        } 
 
         for (int i = 0; i < config.getMetricServiceConfig().getDropCacheTries(); i++) {
             log.info("Making a dropcaches request at {}: request {}", getOpenTSDBApiDropCacheUrl(), i+1);
