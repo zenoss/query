@@ -304,33 +304,10 @@
             $(this.svgwrapper).outerHeight(height);
 
             // ZEN-29235 enforce minimum chart width to prevent squished chart
-            var svgw = $(this.svgwrapper).width();
+            // ZEN-30102
+            var svgw = $(this.svgwrapper).parent().width();
             var minChartWidth = Math.max(svgw, 480);
             $(this.svgwrapper).width(minChartWidth);
-
-            var panelWidth = $('#detail_card_panel-body').width();
-            var zScrollDiv = $('[id$=_graphs-body] > div:first-child');
-            zScrollDiv.addClass('z-graph-cols-wrap');
-
-            // column Auto setting: 2 cols at 1000 pixels
-            var cols = Zenoss.settings.graphColumns;
-            if (cols === 0) {
-                cols = panelWidth > 999 ? 2 : 1;
-            }
-
-            var minWrapWidth = (minChartWidth + 10) * cols + 40;
-            var colsWrapWidth = Math.max(panelWidth, minWrapWidth) - 40;
-
-            zScrollDiv.width(colsWrapWidth);
-
-            // component graphs need a tad extra help overriding
-            // injected styles both for stretching and squeezing
-            if (panelWidth > minWrapWidth) {
-                $('#device_component_graphs-innerCt').removeAttr('style');
-            } else {
-                $('#device_component_graphs-body .x-column, #device_component_graphs-body .x-panel-body').removeAttr('style');
-                $('#device_graphs-innerCt .x-column, #device_component_graphs-innerCt .x-column').width(minChartWidth);
-            }
 
             if (this.impl) {
                 this.impl.resize(this);
