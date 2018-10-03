@@ -249,16 +249,16 @@
     * @access private
     */
     function __align(chart) {
-        let data = chart.plots;
-        let normalizedstamps = adjustedKeys(data);
+        var data = chart.plots;
+        var normalizedstamps = adjustedKeys(data);
         data.forEach(function (series) {
             // ---- series ----
-            let pts = [];
-            let highi = 0;
+            var pts = [];
+            var highi = 0;
             normalizedstamps.forEach(function (outStamp) {
                 // ---- datapoints ----
-                let outValue;
-                for (let i = highi; i < series.values.length; i++) {
+                var outValue;
+                for (var i = highi; i < series.values.length; i++) {
                     if (series.values[i].x > outStamp) {
                         break; // found later timestamp; use previous value
                     }
@@ -272,25 +272,25 @@
     }
 
     function adjustedKeys(data) {
-        let as = allStamps(data);
-        let fe = firstEntry(data);
+        var as = allStamps(data);
+        var fe = firstEntry(data);
         return as.splice(as.indexOf(fe));
     }
 
     // returns array of all timestamps contained within all series
     function allStamps(data) {
-        let unsorted = [];
+        var unsorted = [];
         data.map(function (series) {
             series.values.map(function (entry) {
                 unsorted.push(entry.x);
             });
         });
-        let uniqs = spread(unsorted).sort();
+        var uniqs = spread(unsorted).sort();
         return uniqs;
     }
 
     function spread(array) {
-        let uniqElems = [];
+        var uniqElems = [];
         array.forEach(function (elem) {
             if (uniqElems.indexOf(elem) < 0) {
                 uniqElems.push(elem);
