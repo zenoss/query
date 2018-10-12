@@ -169,6 +169,7 @@
 
         this.maxResult = undefined;
         this.minResult = undefined;
+        this.downsample = 'avg';
 
         this.svg = d3.select(this.svgwrapper).append('svg');
         try {
@@ -1039,7 +1040,10 @@
 
             try {
                 this.request = this.__buildDataRequest(this.config);
-                this.maxRequest = jQuery.extend({}, this.request);
+                // use downsample selected by user in zenoss-prodbin\Products\ZenUI3\browser\resources\js\zenoss\form\graphPanel.js
+                // default downsample = 'avg';
+                this.request.downsample = this.request.downsample.replace("avg", this.downsample);
+                /*this.maxRequest = jQuery.extend({}, this.request);
                 if (this.maxRequest.downsample !== null) {
                     this.maxRequest.downsample = this.maxRequest.downsample.replace("avg", "max");
                 }
@@ -1060,7 +1064,7 @@
                     'data': JSON.stringify(this.minRequest),
                     'dataType': 'json',
                     'contentType': 'application/json'
-                });
+                });*/
                 this.updateRequest = $.ajax({
                     'url': visualization.url + visualization.urlPerformance,
                     'type': 'POST',
@@ -1069,12 +1073,15 @@
                     'contentType': 'application/json'
                 });
 
-                $.when(maxValueRequest, minValueRequest, this.updateRequest)
+                /*$.when(maxValueRequest, minValueRequest, this.updateRequest)
                     .then(function(response1, response2, response3) {
                         var data = response3[0];
                         self.__maxValues(response1[0]);
-                        self.__minValues(response2[0]);
-
+                        self.__minValues(response2[0]);*/
+                $.when(this.updateRequest)
+                    .then(function(data) {
+                        self.__maxValues(data);
+                        self.__minValues(data);
                         self.plots = self.__processResult(self.request, data);
 
                         // setPreferred y unit (k, G, M, etc)
