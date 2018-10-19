@@ -169,7 +169,7 @@
 
         this.maxResult = undefined;
         this.minResult = undefined;
-        this.downsample = 'avg';
+        this.downsample = this.config.aggregation || 'avg';
 
         this.svg = d3.select(this.svgwrapper).append('svg');
         try {
@@ -305,8 +305,13 @@
             $(this.svgwrapper).outerHeight(height);
 
             // ZEN-29235 enforce minimum chart width to prevent squished chart
-            // ZEN-30102
-            var svgw = $(this.svgwrapper).parent().width();
+            // ZEN-30102, ZEN-29401
+            // 30 - space that is needed for X Axis last label to not overlap chart boundaries;
+            // possible solution to not reduce chart width is to change
+            //      label anchor - (start/middle/end) but prev/next labels could overlaps;
+            //      rotate label - but it need addition height for long labels;
+            //      break line - don't know how to do that :);
+            var svgw = $(this.svgwrapper).parent().width()-30;
             var minChartWidth = Math.max(svgw, 480);
             $(this.svgwrapper).width(minChartWidth);
 
@@ -1042,7 +1047,9 @@
                 this.request = this.__buildDataRequest(this.config);
                 // use downsample selected by user in zenoss-prodbin\Products\ZenUI3\browser\resources\js\zenoss\form\graphPanel.js
                 // default downsample = 'avg';
-                this.request.downsample = this.request.downsample.replace("avg", this.downsample);
+                if (this.request.downsample) {
+                    this.request.downsample = this.request.downsample.replace("avg", this.downsample);
+                }
                 /*this.maxRequest = jQuery.extend({}, this.request);
                 if (this.maxRequest.downsample !== null) {
                     this.maxRequest.downsample = this.maxRequest.downsample.replace("avg", "max");
@@ -1304,7 +1311,7 @@
         __buildDataRequest: function (config) {
             var request = {};
 
-            if (config !== undefined) {
+            if (config) {
 
                 if (config.range) {
                     if (config.range.start) {
@@ -1322,7 +1329,7 @@
                 //     request.series = config.series;
                 // }
 
-                if (config.downsample !== undefined) {
+                if (config.downsample) {
                     request.downsample = config.downsample;
 
                     // if no downsample provided, calculate one
@@ -1886,6 +1893,12 @@
             // set number of ticks based on unit
             axis.ticks(timeFormat.ticks)
                 .tickFormat(timeFormat.format.bind(null, this.timezone));
+        },
+
+        // change anchor position of last label in X Axis;
+        // it is not used but to not lose this leave it here;
+        fixXAxisLabelAnchor: function() {
+            this.svg.selectAll('.nv-axisMaxMin-x:last-child').select('text').style('text-anchor', 'end');
         },
 
         dedupeYLabels: function (model) {
