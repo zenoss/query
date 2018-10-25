@@ -1050,28 +1050,6 @@
                 if (this.request.downsample) {
                     this.request.downsample = this.request.downsample.replace("avg", this.downsample);
                 }
-                /*this.maxRequest = jQuery.extend({}, this.request);
-                if (this.maxRequest.downsample !== null) {
-                    this.maxRequest.downsample = this.maxRequest.downsample.replace("avg", "max");
-                }
-                var maxValueRequest = $.ajax({
-                    'url': visualization.url + visualization.urlPerformance,
-                    'type': 'POST',
-                    'data': JSON.stringify(this.maxRequest),
-                    'dataType': 'json',
-                    'contentType': 'application/json'
-                });
-                this.minRequest = jQuery.extend({}, this.request);
-                if (this.minRequest.downsample !== null) {
-                    this.minRequest.downsample = this.minRequest.downsample.replace("avg", "min");
-                }
-                var minValueRequest = $.ajax({
-                    'url': visualization.url + visualization.urlPerformance,
-                    'type': 'POST',
-                    'data': JSON.stringify(this.minRequest),
-                    'dataType': 'json',
-                    'contentType': 'application/json'
-                });*/
                 this.updateRequest = $.ajax({
                     'url': visualization.url + visualization.urlPerformance,
                     'type': 'POST',
@@ -1080,11 +1058,6 @@
                     'contentType': 'application/json'
                 });
 
-                /*$.when(maxValueRequest, minValueRequest, this.updateRequest)
-                    .then(function(response1, response2, response3) {
-                        var data = response3[0];
-                        self.__maxValues(response1[0]);
-                        self.__minValues(response2[0]);*/
                 $.when(this.updateRequest)
                     .then(function(data) {
                         self.__maxValues(data);
