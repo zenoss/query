@@ -630,7 +630,7 @@
                                 vals[avg] = this.avgResult[row];
                             }
 
-                            for (v = 0; v < vals.length; v += 1) {
+                            for (v = 0; v < vals.length; v++) {
                                 $(cols[2 + v]).html(this.formatValue(vals[v], undefined, dp.format, dp.displayFullValue));
                             }
                         }
@@ -1391,10 +1391,6 @@
                 }
 
                 request.series = true;
-                // series should always be true
-                // if (config.series !== undefined) {
-                //     request.series = config.series;
-                // }
 
                 if (config.downsample) {
                     request.downsample = config.downsample;
