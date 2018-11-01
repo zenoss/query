@@ -78,7 +78,6 @@
             chart.svg.select('.rm-interactive')
                 .attr('height', availHeight)
                 .attr('width', availWidth);
-
         },
 
         build : function(chart, data) {
@@ -177,7 +176,7 @@
                             var tmClicked = tmStart + Math.floor(tmDelta);
                             chart.zoomTo(tmClicked);
                         });
-                    });
+            });
 
             return _chart;
         },

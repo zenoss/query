@@ -169,6 +169,8 @@
 
         this.maxResult = undefined;
         this.minResult = undefined;
+        this.avgResult = undefined;
+        this.downsample = this.config.aggregation || 'avg';
 
         this.svg = d3.select(this.svgwrapper).append('svg');
         try {
@@ -304,8 +306,13 @@
             $(this.svgwrapper).outerHeight(height);
 
             // ZEN-29235 enforce minimum chart width to prevent squished chart
-            // ZEN-30102
-            var svgw = $(this.svgwrapper).parent().width();
+            // ZEN-30102, ZEN-29401
+            // 30 - space that is needed for X Axis last label to not overlap chart boundaries;
+            // possible solution to not reduce chart width is to change
+            //      label anchor - (start/middle/end) but prev/next labels could overlaps;
+            //      rotate label - but it need addition height for long labels;
+            //      break line - don't know how to do that :);
+            var svgw = $(this.svgwrapper).parent().width()-30;
             var minChartWidth = Math.max(svgw, 480);
             $(this.svgwrapper).width(minChartWidth);
 
@@ -611,15 +618,19 @@
                                 vals[cur] = v.y;
                             }
 
+                            vals[avg] = vals[avg] / dpLen;
+
                             if (isFinite(this.maxResult[row])) {
                                 vals[max] = this.maxResult[row];
                             }
                             if (isFinite(this.minResult[row])) {
                                 vals[min] = this.minResult[row];
                             }
+                            if (isFinite(this.avgResult[row])) {
+                                vals[avg] = this.avgResult[row];
+                            }
 
-                            vals[avg] = vals[avg] / dpLen;
-                            for (v = 0; v < vals.length; v += 1) {
+                            for (v = 0; v < vals.length; v++) {
                                 $(cols[2 + v]).html(this.formatValue(vals[v], undefined, dp.format, dp.displayFullValue));
                             }
                         }
@@ -956,6 +967,17 @@
             return this.minResult;
         },
         /**
+        * Update this.avgResult array that will be using in building the legend.
+        * @access private
+        * @param {object}
+        *     arr(ay) of avg values
+        * return this.avgResult
+        */
+        __updateAvgResult: function (arr) {
+            this.avgResult = arr;
+            return this.avgResult;
+        },
+        /**
         * Get max values for the period and pass them to the __updateMaxResult
         * @access private
         * @param {object}
@@ -998,6 +1020,27 @@
             this.__updateMinResult(minResult);
         },
         /**
+        * Get avg values for the period and pass them to the __updateAvgResult
+        * @access private
+        * @param {object}
+        *     data from the avgValueRequest
+        */
+        __avgValues: function (data) {
+            var i, j, datapoints, avg,
+                avgResult = [];
+            for (i = 0; i < data.results.length; i++) {
+                datapoints = data.results[i].datapoints;
+                avg = 0;
+                if (datapoints){
+                    for (j = 0; j < datapoints.length; j++) {
+                        avg += datapoints[j].value;
+                    }
+                    avgResult.push((avg/datapoints.length || 0));
+                }
+            }
+            this.__updateAvgResult(avgResult);
+        },
+        /**
          * Updates a graph with the changes specified in the given change set. To
          * remove a value from the configuration its value should be set to a
          * negative sign, '-'.
@@ -1038,29 +1081,64 @@
             this.__buildPlotInfo();
 
             try {
+                var prevSartDate = this.getStartDate(),
+                    prevEndDate = this.getEndDate(),
+                    newStartDate, newEndDate,
+                    // we load this graph first time if we have no min|max|avg results;
+                    isFirstLoad = !this.minResult || !this.maxResult || !this.avgResult;
+
                 this.request = this.__buildDataRequest(this.config);
-                this.maxRequest = jQuery.extend({}, this.request);
-                if (this.maxRequest.downsample !== null) {
-                    this.maxRequest.downsample = this.maxRequest.downsample.replace("avg", "max");
+                var maxValueRequest, minValueRequest, avgValueRequest,
+                    downsample = this.request.downsample;
+
+                newStartDate = this.getStartDate();
+                newEndDate = this.getEndDate();
+
+                // add downsampling and min/max requests only for large date periods;
+                if (downsample) {
+                    // load min/max/avg data only if we change date period
+                    // or first time if we have no min|max|avg data;
+                    if (!newStartDate.isSame(prevSartDate) || !newEndDate.isSame(prevEndDate) || isFirstLoad) {
+                        // if we are already downsampling with "max" no need to do this twice;
+                        if (this.downsample !== 'max') {
+                            this.maxRequest = jQuery.extend({}, this.request);
+                            this.maxRequest.downsample = downsample.replace("avg", "max");
+                            maxValueRequest = $.ajax({
+                                'url': visualization.url + visualization.urlPerformance,
+                                'type': 'POST',
+                                'data': JSON.stringify(this.maxRequest),
+                                'dataType': 'json',
+                                'contentType': 'application/json'
+                            });
+                        }
+                        // if we are already downsampling with "min" no need to do this twice;
+                        if (this.downsample !== 'min') {
+                            this.minRequest = jQuery.extend({}, this.request);
+                            this.minRequest.downsample = downsample.replace("avg", "min");
+                            minValueRequest = $.ajax({
+                                'url': visualization.url + visualization.urlPerformance,
+                                'type': 'POST',
+                                'data': JSON.stringify(this.minRequest),
+                                'dataType': 'json',
+                                'contentType': 'application/json'
+                            });
+                        }
+                        if (this.downsample !== 'avg') {
+                            this.avgRequest = jQuery.extend({}, this.request);
+                            avgValueRequest = $.ajax({
+                                'url': visualization.url + visualization.urlPerformance,
+                                'type': 'POST',
+                                'data': JSON.stringify(this.avgRequest),
+                                'dataType': 'json',
+                                'contentType': 'application/json'
+                            });
+                        }
+                    }
+                    // use downsample selected by user in zenoss-prodbin\Products\ZenUI3\browser\resources\js\zenoss\form\graphPanel.js
+                    // default downsample = 'avg';
+                    this.request.downsample = downsample.replace("avg", this.downsample);
                 }
-                var maxValueRequest = $.ajax({
-                    'url': visualization.url + visualization.urlPerformance,
-                    'type': 'POST',
-                    'data': JSON.stringify(this.maxRequest),
-                    'dataType': 'json',
-                    'contentType': 'application/json'
-                });
-                this.minRequest = jQuery.extend({}, this.request);
-                if (this.minRequest.downsample !== null) {
-                    this.minRequest.downsample = this.minRequest.downsample.replace("avg", "min");
-                }
-                var minValueRequest = $.ajax({
-                    'url': visualization.url + visualization.urlPerformance,
-                    'type': 'POST',
-                    'data': JSON.stringify(this.minRequest),
-                    'dataType': 'json',
-                    'contentType': 'application/json'
-                });
+
                 this.updateRequest = $.ajax({
                     'url': visualization.url + visualization.urlPerformance,
                     'type': 'POST',
@@ -1069,12 +1147,15 @@
                     'contentType': 'application/json'
                 });
 
-                $.when(maxValueRequest, minValueRequest, this.updateRequest)
-                    .then(function(response1, response2, response3) {
-                        var data = response3[0];
-                        self.__maxValues(response1[0]);
-                        self.__minValues(response2[0]);
-
+                $.when(maxValueRequest, minValueRequest, avgValueRequest, this.updateRequest)
+                    .then(function(response1, response2, response3, response4) {
+                        var data = response4[0],
+                            max = response1 ? response1[0] : data,
+                            min = response2 ? response2[0] : data,
+                            avg = response3 ? response3[0] : data;
+                        self.__maxValues(max);
+                        self.__minValues(min);
+                        self.__avgValues(avg);
                         self.plots = self.__processResult(self.request, data);
 
                         // setPreferred y unit (k, G, M, etc)
@@ -1297,7 +1378,7 @@
         __buildDataRequest: function (config) {
             var request = {};
 
-            if (config !== undefined) {
+            if (config) {
 
                 if (config.range) {
                     if (config.range.start) {
@@ -1310,12 +1391,8 @@
                 }
 
                 request.series = true;
-                // series should always be true
-                // if (config.series !== undefined) {
-                //     request.series = config.series;
-                // }
 
-                if (config.downsample !== undefined) {
+                if (config.downsample) {
                     request.downsample = config.downsample;
 
                     // if no downsample provided, calculate one
@@ -1879,6 +1956,12 @@
             // set number of ticks based on unit
             axis.ticks(timeFormat.ticks)
                 .tickFormat(timeFormat.format.bind(null, this.timezone));
+        },
+
+        // change anchor position of last label in X Axis;
+        // it is not used but to not lose this leave it here;
+        fixXAxisLabelAnchor: function() {
+            this.svg.selectAll('.nv-axisMaxMin-x:last-child').select('text').style('text-anchor', 'end');
         },
 
         dedupeYLabels: function (model) {
