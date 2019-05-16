@@ -664,14 +664,56 @@
 
                 for (i = 0; i < this.config.overlays.length; i++) {
                     dp = this.config.overlays[i];
-                    row = rows.length;
 
-                    if (row >= rows.length) {
-                        tr = this.__appendFooterRow();
-                        rows.push(tr);
-                        resize = true;
-                        this.__setLegendEvents(tr[0], dp);
+                    // we need 2 legends because we have 2 lines for each MinMax Thresholds
+                    var isMinMax = dp.values.length === 2 ? true : false;
+                    if (isMinMax) {
+                        var legendsEnd = [' min', ' max'];
+                        legendsEnd.forEach(function(value) {
+                            var dpMinMax = {
+                                legend: dp.legend + value,
+                            };
+                            row = rows.length;
+                            tr = this.__appendFooterRow();
+                            rows.push(tr);
+                            resize = true;
+                            this.__setLegendEvents(tr[0], dpMinMax);
+                            cols = $(rows[row]).find('td');
+
+                            // footer color
+                            if (dp.color) {
+                                color.color = dp.color;
+                            } else if (this.impl) {
+                                color = this.impl.color(this, this.closure, i + ll);
+                            } else {
+                                // unable to determine color
+                                color = {
+                                    color: "transparent",
+                                    opacity: 1
+                                };
+                            }
+                            // color box
+                            $(cols[0])
+                                .find('div.zenfooter_box')
+                                .css({
+                                    'background-color': color.color,
+                                    'border-color': color.color,
+                                    'opacity': color.opacity
+                                });
+                            // Threshold
+                            $(cols[1])
+                                .html(dpMinMax.legend + "*")
+                                .attr('colspan','8') // 5 + 3 projection cells
+                                .addClass('zenfooter_threshold');
+                        }, this);
+                        continue;
                     }
+
+                    row = rows.length;
+                    tr = this.__appendFooterRow();
+                    rows.push(tr);
+                    resize = true;
+                    this.__setLegendEvents(tr[0], dp);
 
                     cols = $(rows[row]).find('td');
 
@@ -1695,7 +1737,7 @@
 
                     // NOTE: each value in an overlay is used to draw a horizontal
                     // line at that y coordinate.
-                    overlay.values.sort().forEach(function(value, k){
+                    overlay.values.sort(function(a, b) {return a - b}).forEach(function(value, k){
                         var plot = {
                             'key': overlay.legend + "*",
                             'disabled': isDisabled,
