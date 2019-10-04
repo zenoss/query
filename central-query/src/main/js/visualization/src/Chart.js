@@ -425,6 +425,10 @@
                 this.plots.forEach(function(p) { p.disabled = false; });
             }
 
+            this.closure.model().dispatch.stateChange({
+                disabled: this.plots.map(function(p) { return p.disabled;})
+            });
+
             this.__redrawLowerLegend();
         },
 
@@ -568,7 +572,7 @@
                         }
                         box = $(cols[0]).find('div.zenfooter_box');
                         box.css({
-                            'background-color': color.color,
+                            'background-color': plot.disabled ? 'transparent' : color.color,
                             'border-color': color.color,
                             'opacity': color.opacity
                         });
