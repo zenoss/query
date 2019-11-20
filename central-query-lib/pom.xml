@@ -19,7 +19,7 @@
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
         <junit.version>4.11</junit.version>
-        <jackson.version>2.9.7</jackson.version>
+        <jackson.version>2.9.10.1</jackson.version>
         <guava.version>12.0</guava.version>
         <slf4j.version>1.7.10</slf4j.version>
         <ssl.cert.dir>target/cert</ssl.cert.dir>
