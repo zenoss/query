@@ -239,6 +239,9 @@ var visualization,
             d = moment().subtract(relativeTimeToMS(val), "ms");
 
         // parse as date object, date string, or ms since epoch
+        } else if (typeof val === "string" && val.indexOf("-UTC") !== -1){
+            val = val.replace("-UTC", "");
+            d = moment.utc(new Date(val))
         } else {
             d = moment(new Date(val));
         }
@@ -929,6 +932,11 @@ if (typeof exports !== 'undefined') {
                 source: "sprintf.min.js",
                 check: function(){
                     return !!window.sprintf;
+                }
+            },{
+                source: "jstz-1.0.4.min.js",
+                check: function(){
+                    return !!window.jstz;
                 }
             }
         ];
