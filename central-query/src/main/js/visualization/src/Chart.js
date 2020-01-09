@@ -2212,13 +2212,13 @@
             // if sprintf is passed a format it doesn't understand an exception is thrown
             formatted = sprintf(format || DEFAULT_NUMBER_FORMAT, result);
             if ((Number(formatted) === 0) && val){
-                return toEng(val, undefined, format, base, False)
+                return toEng(val, undefined, format, base, false)
             }
         } catch (err) {
             console.error("Invalid format", format, "using default", DEFAULT_NUMBER_FORMAT);
             formatted = sprintf(DEFAULT_NUMBER_FORMAT, result);
             if ((Number(formatted) === 0) && val){
-                return toEng(val, undefined, format, base, False)
+                return toEng(val, undefined, format, base, false)
             }
         }
 
