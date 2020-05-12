@@ -107,7 +107,7 @@
         [31536000000, '10d-avg']  // 1 Year
     ];
 
-
+    var lazyLoader = new LazyChartLoader(30);
     Chart = function (name, config) {
         this.name = name;
         this.config = config;
@@ -191,7 +191,7 @@
             if (this.request.metrics === undefined) {
                 debug.__warn('Chart configuration contains no metric sepcifications. No data will be displayed.');
             }
-            this.update();
+            lazyLoader.addChart(this);
         } catch (x) {
             debug.__error(x);
             this.__showError(x);
