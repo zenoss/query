@@ -28,6 +28,7 @@ gulp.task("build", function(){
             paths.src + "debug.js",
             paths.src + "dependency.js",
             paths.src + "visualization.js",
+            paths.src + "LazyChartLoader.js",
             paths.src + "Chart.js",
             paths.src + "outro.js",
         ])

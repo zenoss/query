@@ -3,6 +3,7 @@
 // various thingies
 var visualization,
 	utils,
+	LazyChartLoader,
 	Chart,
 	debug,
 	dependency;
@@ -239,6 +240,9 @@ var visualization,
             d = moment().subtract(relativeTimeToMS(val), "ms");
 
         // parse as date object, date string, or ms since epoch
+        } else if (typeof val === "string" && val.indexOf("-UTC") !== -1){
+            val = val.replace("-UTC", "");
+            d = moment.utc(new Date(val))
         } else {
             d = moment(new Date(val));
         }
@@ -930,6 +934,11 @@ if (typeof exports !== 'undefined') {
                 check: function(){
                     return !!window.sprintf;
                 }
+            },{
+                source: "jstz-1.0.4.min.js",
+                check: function(){
+                    return !!window.jstz;
+                }
             }
         ];
         var sources = [];
@@ -1267,6 +1276,61 @@ if (typeof exports !== 'undefined') {
 })();
 
 /**
+ * LazyChartLoader.js
+ */
+(function () {
+    "use strict";
+
+    /**
+     * This class is used for manage Chart loading. This class limits the number of graphs
+     * that make queries simultaneously. 
+     *
+     * @constructor
+     * @param maxParallelsCharts
+     *            the number of graphs that are loaded simultaneously
+     */
+
+    LazyChartLoader = function (maxParallelsCharts) {
+        this.maxParallelsCharts = maxParallelsCharts;
+        this.activeCall = 0;
+        this.chartQueue = [];
+    };
+
+    LazyChartLoader.prototype = {
+        constructor: LazyChartLoader,
+
+        addChart: function (chart) {
+            this.chartQueue.push(chart);
+            this.__checkQueue();
+        },
+
+        __onCompleteOrFailure: function () {
+            this.activeCall--;
+            this.__checkQueue();
+        },
+
+        __onChartUpdate: function (updatePromise) {
+            updatePromise.then(
+                this.__onCompleteOrFailure.bind(this),
+                this.__onCompleteOrFailure.bind(this)
+            );
+        },
+
+        __checkQueue: function () {
+            if (this.chartQueue.length && this.activeCall <= this.maxParallelsCharts) {
+                var chart = this.chartQueue.shift();
+                if (!chart) {
+                    return;
+                }
+                this.activeCall++;
+                chart.onUpdate = this.__onChartUpdate.bind(this);
+                chart.update();
+            }
+        }
+    }
+})();
+
+/**
  * Chart.js
  * main chart object
  */
@@ -1375,7 +1439,7 @@ if (typeof exports !== 'undefined') {
         [31536000000, '10d-avg']  // 1 Year
     ];
 
-
+    var lazyLoader = new LazyChartLoader(30);
     Chart = function (name, config) {
         this.name = name;
         this.config = config;
@@ -1459,7 +1523,7 @@ if (typeof exports !== 'undefined') {
             if (this.request.metrics === undefined) {
                 debug.__warn('Chart configuration contains no metric sepcifications. No data will be displayed.');
             }
-            this.update();
+            lazyLoader.addChart(this);
         } catch (x) {
             debug.__error(x);
             this.__showError(x);
