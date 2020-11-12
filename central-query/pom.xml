@@ -16,8 +16,8 @@
         <zapp.version>0.0.22</zapp.version>
         <metric-consumer.version>0.1.11</metric-consumer.version>
         <jersey.version>1.15</jersey.version>
-        <junit.version>4.11</junit.version>
-        <jackson.version>2.9.7</jackson.version>
+        <junit.version>4.13.1</junit.version>
+        <jackson.version>2.11.3</jackson.version>
         <spring.version>3.2.17.RELEASE</spring.version>
         <dropwizard.version>0.6.2</dropwizard.version>
         <jsdoc3.version>1.0.4</jsdoc3.version>
