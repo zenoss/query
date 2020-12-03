@@ -32,7 +32,7 @@
 package org.zenoss.app.metricservice.api.impl;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -66,7 +66,7 @@ public class OpenTSDBQueryResult {
     private QueryStatus status;
 
     public String debugString() {
-        return Objects.toStringHelper(getClass())
+        return MoreObjects.toStringHelper(getClass())
                 .add("aggregateTags", aggregateTags)
                 .add("dps", dps)
                 .add("metric", metric)
