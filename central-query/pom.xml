@@ -7,17 +7,17 @@
         <relativePath>../pom.xml</relativePath>
         <groupId>org.zenoss</groupId>
         <artifactId>central-query-parent</artifactId>
-        <version>0.1.38</version>
+        <version>0.1.39</version>
     </parent>
 
     <properties>
-        <maven.compiler.source>1.7</maven.compiler.source>
-        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
         <zapp.version>0.0.22</zapp.version>
-        <metric-consumer.version>0.1.11</metric-consumer.version>
+        <metric-consumer.version>0.1.14</metric-consumer.version>
         <jersey.version>1.15</jersey.version>
-        <junit.version>4.11</junit.version>
-        <jackson.version>2.9.7</jackson.version>
+        <junit.version>4.13.1</junit.version>
+        <jackson.version>2.11.3</jackson.version>
         <spring.version>3.2.17.RELEASE</spring.version>
         <dropwizard.version>0.6.2</dropwizard.version>
         <jsdoc3.version>1.0.4</jsdoc3.version>
@@ -28,6 +28,11 @@
     <groupId>org.zenoss</groupId>
     <artifactId>central-query</artifactId>
     <dependencies>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>29.0-jre</version>
+        </dependency>
         <dependency>
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>

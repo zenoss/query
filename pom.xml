@@ -9,7 +9,7 @@
 
     <groupId>org.zenoss</groupId>
     <artifactId>central-query-parent</artifactId>
-    <version>0.1.38</version>
+    <version>0.1.39</version>
     <packaging>pom</packaging>
 
     <name>central-query-parent</name>
@@ -19,7 +19,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>3.8.1</version>
+            <version>4.13.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
